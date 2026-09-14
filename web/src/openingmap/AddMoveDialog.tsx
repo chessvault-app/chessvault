@@ -1,5 +1,5 @@
 import { Check, Plus } from 'lucide-react';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
@@ -76,39 +76,36 @@ export function AddMoveDialog({
     };
   }, [source, ratings, side, facts.fen]);
 
-  const rows = useMemo<Row[]>(() => {
-    const children = new Map<string, string>();
-    for (const child of facts.mapNode.children as MapNode[]) {
-      if (child.san) children.set(child.san, child.id);
+  const children = new Map<string, string>();
+  for (const child of facts.mapNode.children as MapNode[]) {
+    if (child.san) children.set(child.san, child.id);
+  }
+  const prepared = new Set(coverage?.preparedMoves ?? []);
+  const games = (field ?? []).reduce((sum, m) => sum + m.total, 0);
+  const rows: Row[] = [];
+  const seen = new Set<string>();
+  for (const move of field ?? []) {
+    if (move.total === 0) continue;
+    seen.add(move.san);
+    rows.push({
+      san: move.san,
+      share: games > 0 ? move.total / games : null,
+      split: move,
+      prepared: prepared.has(move.san),
+      childId: children.get(move.san) ?? null,
+    });
+  }
+  // What the studies prepare and the map charts belongs on the list
+  // even when the field never plays it — that is YOUR move.
+  for (const san of prepared) {
+    if (!seen.has(san)) {
+      seen.add(san);
+      rows.push({ san, share: null, split: null, prepared: true, childId: children.get(san) ?? null });
     }
-    const prepared = new Set(coverage?.preparedMoves ?? []);
-    const games = (field ?? []).reduce((sum, m) => sum + m.total, 0);
-    const out: Row[] = [];
-    const seen = new Set<string>();
-    for (const move of field ?? []) {
-      if (move.total === 0) continue;
-      seen.add(move.san);
-      out.push({
-        san: move.san,
-        share: games > 0 ? move.total / games : null,
-        split: move,
-        prepared: prepared.has(move.san),
-        childId: children.get(move.san) ?? null,
-      });
-    }
-    // What the studies prepare and the map charts belongs on the list
-    // even when the field never plays it — that is YOUR move.
-    for (const san of prepared) {
-      if (!seen.has(san)) {
-        seen.add(san);
-        out.push({ san, share: null, split: null, prepared: true, childId: children.get(san) ?? null });
-      }
-    }
-    for (const [san, id] of children) {
-      if (!seen.has(san)) out.push({ san, share: null, split: null, prepared: false, childId: id });
-    }
-    return out;
-  }, [field, coverage, facts.mapNode.children]);
+  }
+  for (const [san, id] of children) {
+    if (!seen.has(san)) rows.push({ san, share: null, split: null, prepared: false, childId: id });
+  }
 
   /**
    * The typed move, judged here rather than by the caller: this sheet is

@@ -70,39 +70,36 @@ export function usePvPeek(enabled: boolean): PvPeekControls {
     setPeek(null);
   }, [cancel]);
 
-  const show = useCallback(
-    (ply: PvPly, fen: string, anchor: HTMLElement) => {
-      if (!enabled) return;
-      cancel();
-      // The li in a PV list, the text row in the Why card — either way the
-      // box the card has to stay off, so it never covers the moves.
-      const row = (anchor.closest('li') ?? anchor.parentElement ?? anchor).getBoundingClientRect();
-      const next = {
-        ply,
-        fen,
-        rect: anchor.getBoundingClientRect(),
-        row: { left: row.left, right: row.right },
-      };
-      // Already up: track the pointer along the line immediately. The
-      // delay guards the first open, not every move after it.
-      if (open.current) {
-        live.current = true;
-        setPeek(next);
-        return;
-      }
-      timer.current = window.setTimeout(() => {
-        open.current = true;
-        live.current = true;
-        setPeek(next);
-      }, OPEN_DELAY_MS);
-    },
-    [enabled, cancel],
-  );
+  const show = (ply: PvPly, fen: string, anchor: HTMLElement) => {
+    if (!enabled) return;
+    cancel();
+    // The li in a PV list, the text row in the Why card — either way the
+    // box the card has to stay off, so it never covers the moves.
+    const row = (anchor.closest('li') ?? anchor.parentElement ?? anchor).getBoundingClientRect();
+    const next = {
+      ply,
+      fen,
+      rect: anchor.getBoundingClientRect(),
+      row: { left: row.left, right: row.right },
+    };
+    // Already up: track the pointer along the line immediately. The
+    // delay guards the first open, not every move after it.
+    if (open.current) {
+      live.current = true;
+      setPeek(next);
+      return;
+    }
+    timer.current = window.setTimeout(() => {
+      open.current = true;
+      live.current = true;
+      setPeek(next);
+    }, OPEN_DELAY_MS);
+  };
 
-  const hide = useCallback(() => {
+  const hide = () => {
     cancel();
     timer.current = window.setTimeout(close, CLOSE_DELAY_MS);
-  }, [cancel, close]);
+  };
 
   // The card is placed from the rect the ply had when it was hovered, and
   // the list of lines scrolls inside the pane — so a scroll leaves it

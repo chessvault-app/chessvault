@@ -1,9 +1,7 @@
 import {
   memo,
-  useCallback,
   useEffect,
   useLayoutEffect,
-
   useRef,
   useState,
   type ReactNode,
@@ -1002,7 +1000,7 @@ export function SearchQueryHints({
   useLayoutEffect(() => {
     pickRef.current = onPick;
   });
-  const pick = useCallback((insert: string) => pickRef.current(insert), []);
+  const pick = (insert: string) => pickRef.current(insert);
 
   const [active, setActive] = useState(-1);
   const listRef = useRef<HTMLUListElement | null>(null);

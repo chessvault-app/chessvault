@@ -1,5 +1,5 @@
 import { Check, Plus } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { ONLINE_SOURCE, type FieldMove } from '@/repertoire/field';
@@ -93,11 +93,8 @@ export function FieldStats({
   }, [source, ratings, side, facts.fen]);
   const pending = useSlowLoad(loading && field === null);
 
-  const games = useMemo(() => (field ?? []).reduce((sum, m) => sum + m.total, 0), [field]);
-  const rows = useMemo(
-    () => (field ?? []).filter((m) => m.total > 0).sort((a, b) => b.total - a.total),
-    [field],
-  );
+  const games = (field ?? []).reduce((sum, m) => sum + m.total, 0);
+  const rows = (field ?? []).filter((m) => m.total > 0).sort((a, b) => b.total - a.total);
 
   if (!source) return null;
   if (needsToken) {

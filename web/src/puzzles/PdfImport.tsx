@@ -1,5 +1,5 @@
 import { Eye, FileUp, Pause, Play } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api, apiErrorMessage } from '@/lib/api';
 import { replaceBookPdf, suggestTitle, uploadBook } from '@/books/data';
@@ -323,16 +323,14 @@ export function PdfImport({
    * find it in the book, and enough to tell the three rows apart without
    * opening any of them. Pages with a single diagram say nothing extra.
    */
-  const place = useMemo(() => {
-    const total = new Map<number, number>();
-    for (const f of found) total.set(f.page, (total.get(f.page) ?? 0) + 1);
-    const seen = new Map<number, number>();
-    return found.map((f) => {
-      const nth = (seen.get(f.page) ?? 0) + 1;
-      seen.set(f.page, nth);
-      return { nth, of: total.get(f.page) ?? 1 };
-    });
-  }, [found]);
+  const total = new Map<number, number>();
+  for (const f of found) total.set(f.page, (total.get(f.page) ?? 0) + 1);
+  const seen = new Map<number, number>();
+  const place = found.map((f) => {
+    const nth = (seen.get(f.page) ?? 0) + 1;
+    seen.set(f.page, nth);
+    return { nth, of: total.get(f.page) ?? 1 };
+  });
   const scanning = mine && job.status === 'scanning';
   const paused = mine && job.status === 'paused';
   const reading = mine && job.status === 'reading';

@@ -1,5 +1,5 @@
 import { GitBranch } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { t } from '@/lib/i18n';
 import { MY_GAMES_SOURCE } from '@/repertoire/field';
 import { myFilterQuery } from '@/store/explorer';
@@ -80,10 +80,7 @@ export function GrowDialog({
   );
   // Empty means every game — myFilterQuery leaves out what is not set, and
   // the server reads a missing filter as no filter.
-  const filters = useMemo(
-    () => myFilterQuery({ speeds: speeds.length > 0 ? speeds : undefined, collectionOnly }),
-    [speeds, collectionOnly],
-  );
+  const filters = myFilterQuery({ speeds: speeds.length > 0 ? speeds : undefined, collectionOnly });
   const toggleSpeed = (id: Speed): void =>
     setSpeeds((prev) => {
       const next = prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id];
@@ -132,11 +129,8 @@ export function GrowDialog({
   }, [map.color, facts.path, floor, filters]);
 
   // The tips alone — a charted prefix is implied by its continuation.
-  const tips = useMemo(() => {
-    if (!lines) return [];
-    const prefixes = new Set(lines.map((l) => l.slice(0, -1).join(' ')));
-    return lines.filter((l) => !prefixes.has(l.join(' ')));
-  }, [lines]);
+  const prefixes = new Set((lines ?? []).map((l) => l.slice(0, -1).join(' ')));
+  const tips = (lines ?? []).filter((l) => !prefixes.has(l.join(' ')));
 
   return (
     <Dialog

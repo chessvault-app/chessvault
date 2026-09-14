@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { isCoarsePointer } from '@/lib/media';
 
 /**
@@ -246,12 +246,12 @@ export function useDialogFocus(active = true): (node: HTMLElement | null) => voi
   // callers chain refs in fresh arrows and React re-runs those every
   // render; the caret must be placed once per opening, not once per paint.
   const armed = useRef<HTMLElement | null>(null);
-  const ref = useCallback((next: HTMLElement | null) => {
+  const ref = (next: HTMLElement | null) => {
     setNode(next);
     if (!next || next === armed.current) return;
     armed.current = next;
     if (!next.contains(document.activeElement)) soleTextField(next)?.focus();
-  }, []);
+  };
 
   useEffect(() => {
     if (!active || !node) return;

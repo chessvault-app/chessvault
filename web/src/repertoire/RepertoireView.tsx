@@ -11,7 +11,7 @@ import {
   Settings2,
   TriangleAlert,
 } from 'lucide-react';
-import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSquares, pathTo, positionAt, updateNode } from '@shared/tree';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
@@ -628,7 +628,7 @@ export function RepertoireView() {
   // mainlineFrom EXCLUDES its starting node — prepend the root so index 0 is
   // the start position. Without it the first move fell off the moves panel
   // (slice(1) skipped a MOVE) and "First move" could never reach the start.
-  const line = useMemo(() => [tree.rootId, ...mainlineFrom(tree, tree.rootId)], [tree]);
+  const line = [tree.rootId, ...mainlineFrom(tree, tree.rootId)];
   const atTip = cursorId === tipId;
   /* The noted gap drawn on the board as an arrow, in the amber the
      callout is tinted, while the line goes on: the reply was never
@@ -636,11 +636,8 @@ export function RepertoireView() {
      a gap needs none: the board it ends on is the analysis board, and
      the reply was the last move, which its own highlight marks. Only at
      the tip, since the arrow belongs to the position it was noted in. */
-  const gapArrow = useMemo(
-    (): DrawShape[] =>
-      gap && phase !== 'ended' && atTip ? [{ orig: gap.orig, dest: gap.dest, brush: 'yellow' }] : [],
-    [gap, phase, atTip],
-  );
+  const gapArrow: DrawShape[] =
+    gap && phase !== 'ended' && atTip ? [{ orig: gap.orig, dest: gap.dest, brush: 'yellow' }] : [];
   const orientation = flipped ? (userColor === 'white' ? 'black' : 'white') : userColor;
 
   const canMove = phase === 'playing' && atTip && pos.turn === userColor;
@@ -652,232 +649,229 @@ export function RepertoireView() {
       ? (drillChapters ?? []).some((c) => getNode(c.tree, c.tree.rootId).children.length > 0)
       : drillChapter !== null &&
         getNode(drillChapter.tree, drillChapter.tree.rootId).children.length > 0;
-  const dests = useMemo(() => (canMove ? legalDests(tree, cursorId) : new Map()), [canMove, tree, cursorId]);
+  const dests = canMove ? legalDests(tree, cursorId) : new Map();
 
   // Fetch the field's reply and play it. The runId guard drops replies that
   // arrive after the game was restarted.
-  const reply = useCallback(
-    async (curTree: MoveTree, curId: NodeId, src: string, ratings: string) => {
-      const token = runId.current;
-      setPhase('thinking');
-      setError(null);
-      const started = Date.now();
-      // Both sources answer in the same shape — the server normalises the
-      // Lichess payload to the book contract — so only the URL differs.
-      const online = src === ONLINE_SOURCE;
-      const fallback = online
-        ? 'Could not reach the Lichess database.'
-        : 'Could not read the reference database.';
-      const fen = getNode(curTree, curId).fen;
-      // Chosen before the try: the React Compiler cannot lower a
-      // conditional inside one yet.
-      const url = online
-        ? `/api/explorer/lichess?fen=${encodeURIComponent(fen)}&ratings=${ratings}`
-        : `/api/refgames/explore?db=${encodeURIComponent(src)}&fen=${encodeURIComponent(fen)}`;
-      // Everything after the fetch, as a function of its own: the React
-      // Compiler cannot lower a conditional inside a try yet, and this is
-      // nothing but conditionals. Called from inside the try below, so a
-      // throw anywhere in it still lands in the same catch it always did.
-      const settle = async (body: { moves?: ExplorerMove[] } | null): Promise<void> => {
-        if (!body?.moves) {
-          setError(t(fallback));
-          setPhase('playing');
-          return;
+  const reply = async (curTree: MoveTree, curId: NodeId, src: string, ratings: string) => {
+    const token = runId.current;
+    setPhase('thinking');
+    setError(null);
+    const started = Date.now();
+    // Both sources answer in the same shape — the server normalises the
+    // Lichess payload to the book contract — so only the URL differs.
+    const online = src === ONLINE_SOURCE;
+    const fallback = online
+      ? 'Could not reach the Lichess database.'
+      : 'Could not read the reference database.';
+    const fen = getNode(curTree, curId).fen;
+    // Chosen before the try: the React Compiler cannot lower a
+    // conditional inside one yet.
+    const url = online
+      ? `/api/explorer/lichess?fen=${encodeURIComponent(fen)}&ratings=${ratings}`
+      : `/api/refgames/explore?db=${encodeURIComponent(src)}&fen=${encodeURIComponent(fen)}`;
+    // Everything after the fetch, as a function of its own: the React
+    // Compiler cannot lower a conditional inside a try yet, and this is
+    // nothing but conditionals. Called from inside the try below, so a
+    // throw anywhere in it still lands in the same catch it always did.
+    const settle = async (body: { moves?: ExplorerMove[] } | null): Promise<void> => {
+      if (!body?.moves) {
+        setError(t(fallback));
+        setPhase('playing');
+        return;
+      }
+      let choice = sampleMove(body.moves);
+      if (!choice) {
+        setPhase('ended');
+        return;
+      }
+      // Drill: steer the field toward the replies the study covers, so
+      // the session keeps testing memory instead of ending on every
+      // rare sideline. The commonest uncovered reply is still noted —
+      // and recorded as a gap — it just no longer stops play. Only a
+      // position where the study covers none of the field's replies
+      // falls through to the honest full-field sample, and ends below.
+      const drill = drillRef.current;
+      let note: DrillGap | null = null;
+      if (drill) {
+        const games = body.moves.reduce((sum, m) => sum + m.total, 0);
+        // In book: some candidate prepares the move, or it transposes
+        // into a position the scope holds anywhere (probed on a
+        // scratch tree; nothing is committed).
+        const inBook = (m: ExplorerMove): boolean => {
+          if (
+            drill.cands.some(
+              (c) => studyChild(drill.chapters[c.ci]!.tree, c.nodeId, m.san) !== null,
+            )
+          ) {
+            return true;
+          }
+          const probe = addUci(curTree, curId, m.uci);
+          return probe != null && drill.posIndex.has(fenKey(getNode(probe.tree, probe.nodeId).fen));
+        };
+        const covered = body.moves.filter((m) => m.total > 0 && inBook(m));
+        if (covered.length > 0) {
+          choice = sampleMove(covered) ?? choice;
+          const uncovered = body.moves
+            .filter((m) => m.total > 0 && !inBook(m))
+            .sort((a, b) => b.total - a.total)[0];
+          const probe =
+            uncovered && games > 0 && uncovered.total / games >= GAP_NOTE_SHARE
+              ? addUci(curTree, curId, uncovered.uci)
+              : undefined;
+          if (uncovered && probe) {
+            // Relevance: a gap is a SIDELINE of the study's subject.
+            // Past the trunk the study branches here anyway, so
+            // everything counts; so does everything past the ply the
+            // catalogue stops naming the trunk at, since the opening
+            // is settled by then. Before that, only a deviation that
+            // stays in the subject's opening family does — 1...c5
+            // is not a hole in a Ruy Lopez study, 3...Nf6 is
+            // (lanph3re's point). An unnamed subject gives no basis
+            // to filter, so everything counts, as before.
+            const probeFen = getNode(probe.tree, probe.nodeId).fen;
+            const key = fenKey(probeFen);
+            const depth = sansTo(curTree, curId).length;
+            let relevant = depth >= drill.trunkPly;
+            if (!relevant) {
+              if (drill.subject === undefined) {
+                drill.subject = await fetchSubject(drill.trunkFens);
+              }
+              if (drill.subject === null || depth >= drill.subject.ply) {
+                relevant = true;
+              } else {
+                let family = drill.families.get(key);
+                if (family === undefined) {
+                  family = await fetchFamily(probeFen);
+                  drill.families.set(key, family);
+                }
+                relevant = family === drill.subject.family;
+              }
+            }
+            if (relevant) {
+              const pct = Math.round((100 * uncovered.total) / games);
+              note = {
+                text: t(
+                  'The field also plays {san} in {pct}% of games, and your study has no answer to it.',
+                  { san: uncovered.san, pct },
+                ),
+                orig: uncovered.uci.slice(0, 2) as Key,
+                dest: uncovered.uci.slice(2, 4) as Key,
+                uci: uncovered.uci,
+                pct,
+              };
+              if (!drill.gapNoted.has(key)) {
+                drill.gapNoted.add(key);
+                recordDrill({
+                  key,
+                  result: 'gap',
+                  path: sansTo(probe.tree, probe.nodeId),
+                  played: uncovered.san,
+                });
+              }
+            }
+          }
         }
-        let choice = sampleMove(body.moves);
-        if (!choice) {
+      }
+      const wait = MIN_THINK_MS - (Date.now() - started);
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+      if (token !== runId.current) return;
+      const added = addUci(curTree, curId, choice.uci);
+      if (!added || token !== runId.current) {
+        if (!added) setPhase('ended');
+        return;
+      }
+      playSound(soundFor(getNode(added.tree, added.nodeId).san));
+      // The noted gap goes into the tree as a variation beside the reply
+      // that was played, carrying its share as a comment, so the moves
+      // panel shows the hole where it is rather than only naming it in
+      // the panel below (lanph3re's ask). Added AFTER the played move so
+      // that stays the mainline; the drill's own path never walks into
+      // it, since the candidates advance on the move that was played.
+      let shown = added.tree;
+      if (note) {
+        const branch = addUci(shown, curId, note.uci);
+        if (branch && !branch.existed) {
+          shown = updateNode(branch.tree, branch.nodeId, {
+            comment: t('{pct}% of games. No answer in the study.', { pct: note.pct }),
+          });
+        }
+      }
+      setTree(shown);
+      setTipId(added.nodeId);
+      setCursorId(added.nodeId);
+      const d = drillRef.current;
+      if (d) {
+        const san = getNode(added.tree, added.nodeId).san ?? '';
+        const newKey = fenKey(getNode(added.tree, added.nodeId).fen);
+        const next = advanceCands(d.chapters, d.posIndex, d.cands, san, newKey);
+        if (next.length === 0) {
+          // The scope covers none of the field's replies here — with
+          // nothing to steer to, the drill has hit the edge of the
+          // prep, and the honest full-field sample says what beat it.
+          const games = body.moves.reduce((sum, m) => sum + m.total, 0);
+          const pct = games > 0 ? Math.max(1, Math.round((100 * choice.total) / games)) : 0;
+          recordDrill({
+            key: newKey,
+            result: 'gap',
+            path: sansTo(added.tree, added.nodeId),
+            played: san,
+          });
+          setGap({
+            text: t('The field answered {san}, played in {pct}% of games here, and your study holds no reply.', {
+              san,
+              pct,
+            }),
+            orig: choice.uci.slice(0, 2) as Key,
+            dest: choice.uci.slice(2, 4) as Key,
+            uci: choice.uci,
+            pct,
+          });
+          setEndKind('gap');
           setPhase('ended');
           return;
         }
-        // Drill: steer the field toward the replies the study covers, so
-        // the session keeps testing memory instead of ending on every
-        // rare sideline. The commonest uncovered reply is still noted —
-        // and recorded as a gap — it just no longer stops play. Only a
-        // position where the study covers none of the field's replies
-        // falls through to the honest full-field sample, and ends below.
-        const drill = drillRef.current;
-        let note: DrillGap | null = null;
-        if (drill) {
-          const games = body.moves.reduce((sum, m) => sum + m.total, 0);
-          // In book: some candidate prepares the move, or it transposes
-          // into a position the scope holds anywhere (probed on a
-          // scratch tree; nothing is committed).
-          const inBook = (m: ExplorerMove): boolean => {
-            if (
-              drill.cands.some(
-                (c) => studyChild(drill.chapters[c.ci]!.tree, c.nodeId, m.san) !== null,
-              )
-            ) {
-              return true;
-            }
-            const probe = addUci(curTree, curId, m.uci);
-            return probe != null && drill.posIndex.has(fenKey(getNode(probe.tree, probe.nodeId).fen));
-          };
-          const covered = body.moves.filter((m) => m.total > 0 && inBook(m));
-          if (covered.length > 0) {
-            choice = sampleMove(covered) ?? choice;
-            const uncovered = body.moves
-              .filter((m) => m.total > 0 && !inBook(m))
-              .sort((a, b) => b.total - a.total)[0];
-            const probe =
-              uncovered && games > 0 && uncovered.total / games >= GAP_NOTE_SHARE
-                ? addUci(curTree, curId, uncovered.uci)
-                : undefined;
-            if (uncovered && probe) {
-              // Relevance: a gap is a SIDELINE of the study's subject.
-              // Past the trunk the study branches here anyway, so
-              // everything counts; so does everything past the ply the
-              // catalogue stops naming the trunk at, since the opening
-              // is settled by then. Before that, only a deviation that
-              // stays in the subject's opening family does — 1...c5
-              // is not a hole in a Ruy Lopez study, 3...Nf6 is
-              // (lanph3re's point). An unnamed subject gives no basis
-              // to filter, so everything counts, as before.
-              const probeFen = getNode(probe.tree, probe.nodeId).fen;
-              const key = fenKey(probeFen);
-              const depth = sansTo(curTree, curId).length;
-              let relevant = depth >= drill.trunkPly;
-              if (!relevant) {
-                if (drill.subject === undefined) {
-                  drill.subject = await fetchSubject(drill.trunkFens);
-                }
-                if (drill.subject === null || depth >= drill.subject.ply) {
-                  relevant = true;
-                } else {
-                  let family = drill.families.get(key);
-                  if (family === undefined) {
-                    family = await fetchFamily(probeFen);
-                    drill.families.set(key, family);
-                  }
-                  relevant = family === drill.subject.family;
-                }
-              }
-              if (relevant) {
-                const pct = Math.round((100 * uncovered.total) / games);
-                note = {
-                  text: t(
-                    'The field also plays {san} in {pct}% of games, and your study has no answer to it.',
-                    { san: uncovered.san, pct },
-                  ),
-                  orig: uncovered.uci.slice(0, 2) as Key,
-                  dest: uncovered.uci.slice(2, 4) as Key,
-                  uci: uncovered.uci,
-                  pct,
-                };
-                if (!drill.gapNoted.has(key)) {
-                  drill.gapNoted.add(key);
-                  recordDrill({
-                    key,
-                    result: 'gap',
-                    path: sansTo(probe.tree, probe.nodeId),
-                    played: uncovered.san,
-                  });
-                }
-              }
-            }
-          }
-        }
-        const wait = MIN_THINK_MS - (Date.now() - started);
-        if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-        if (token !== runId.current) return;
-        const added = addUci(curTree, curId, choice.uci);
-        if (!added || token !== runId.current) {
-          if (!added) setPhase('ended');
+        d.cands = next;
+        setGap(note);
+        if (expectedSans(d.chapters, next).length === 0) {
+          setEndKind('line');
+          setPhase('ended');
           return;
         }
-        playSound(soundFor(getNode(added.tree, added.nodeId).san));
-        // The noted gap goes into the tree as a variation beside the reply
-        // that was played, carrying its share as a comment, so the moves
-        // panel shows the hole where it is rather than only naming it in
-        // the panel below (lanph3re's ask). Added AFTER the played move so
-        // that stays the mainline; the drill's own path never walks into
-        // it, since the candidates advance on the move that was played.
-        let shown = added.tree;
-        if (note) {
-          const branch = addUci(shown, curId, note.uci);
-          if (branch && !branch.existed) {
-            shown = updateNode(branch.tree, branch.nodeId, {
-              comment: t('{pct}% of games. No answer in the study.', { pct: note.pct }),
-            });
-          }
-        }
-        setTree(shown);
-        setTipId(added.nodeId);
-        setCursorId(added.nodeId);
-        const d = drillRef.current;
-        if (d) {
-          const san = getNode(added.tree, added.nodeId).san ?? '';
-          const newKey = fenKey(getNode(added.tree, added.nodeId).fen);
-          const next = advanceCands(d.chapters, d.posIndex, d.cands, san, newKey);
-          if (next.length === 0) {
-            // The scope covers none of the field's replies here — with
-            // nothing to steer to, the drill has hit the edge of the
-            // prep, and the honest full-field sample says what beat it.
-            const games = body.moves.reduce((sum, m) => sum + m.total, 0);
-            const pct = games > 0 ? Math.max(1, Math.round((100 * choice.total) / games)) : 0;
-            recordDrill({
-              key: newKey,
-              result: 'gap',
-              path: sansTo(added.tree, added.nodeId),
-              played: san,
-            });
-            setGap({
-              text: t('The field answered {san}, played in {pct}% of games here, and your study holds no reply.', {
-                san,
-                pct,
-              }),
-              orig: choice.uci.slice(0, 2) as Key,
-              dest: choice.uci.slice(2, 4) as Key,
-              uci: choice.uci,
-              pct,
-            });
-            setEndKind('gap');
-            setPhase('ended');
-            return;
-          }
-          d.cands = next;
-          setGap(note);
-          if (expectedSans(d.chapters, next).length === 0) {
-            setEndKind('line');
-            setPhase('ended');
-            return;
-          }
-        }
-        // The reply and the turn, said to assistive tech: the status
-        // line is visual, and on a phone it is not even in the DOM while
-        // the Moves pane is showing. The gap note rides in the same
-        // sentence, since a second announce() would clear the first.
-        announce(
-          [
-            t('Your opponent played {san}. Your move.', {
-              san: getNode(added.tree, added.nodeId).san ?? '',
-            }),
-            note?.text,
-          ]
-            .filter(Boolean)
-            .join(' '),
-        );
-        setPhase('playing');
-      };
-      let failed = false;
-      let failure: unknown;
-      try {
-        const body = await api<{ moves?: ExplorerMove[] } | null>(url);
-        if (token !== runId.current) return;
-        await settle(body);
-      } catch (err) {
-        failed = true;
-        failure = err;
       }
-      if (!failed || token !== runId.current) return;
-      // The server's own words when it sent any (api() carried them out
-      // of the error envelope); the source's fallback for a network
-      // failure or anything else.
-      setError(failure instanceof ApiError && failure.status > 0 ? failure.message : t(fallback));
+      // The reply and the turn, said to assistive tech: the status
+      // line is visual, and on a phone it is not even in the DOM while
+      // the Moves pane is showing. The gap note rides in the same
+      // sentence, since a second announce() would clear the first.
+      announce(
+        [
+          t('Your opponent played {san}. Your move.', {
+            san: getNode(added.tree, added.nodeId).san ?? '',
+          }),
+          note?.text,
+        ]
+          .filter(Boolean)
+          .join(' '),
+      );
       setPhase('playing');
-    },
-    [],
-  );
+    };
+    let failed = false;
+    let failure: unknown;
+    try {
+      const body = await api<{ moves?: ExplorerMove[] } | null>(url);
+      if (token !== runId.current) return;
+      await settle(body);
+    } catch (err) {
+      failed = true;
+      failure = err;
+    }
+    if (!failed || token !== runId.current) return;
+    // The server's own words when it sent any (api() carried them out
+    // of the error envelope); the source's fallback for a network
+    // failure or anything else.
+    setError(failure instanceof ApiError && failure.status > 0 ? failure.message : t(fallback));
+    setPhase('playing');
+  };
 
   const onMove = (orig: string, dest: string): void => {
     if (!canMove) return;

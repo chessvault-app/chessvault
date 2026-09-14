@@ -1,5 +1,5 @@
 import { AlertTriangle, ChevronDown, Settings2 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
@@ -75,7 +75,7 @@ export function EngineBlock({
    * reads it for ever. terminal.ts has said this in its own comment since
    * it was written; only the eval bar was listening.
    */
-  const terminal = useMemo(() => terminalScore(node.fen), [node.fen]);
+  const terminal = terminalScore(node.fen);
 
   // Re-analyse whenever the position changes, or the engine is switched on.
   useEffect(() => {
@@ -281,11 +281,12 @@ function PvRow({
   const score = toWhitePov({ cp: line.cp, mate: line.mate }, turn);
 
   // Replaying the line to get SAN is not free, and `info` updates arrive many
-  // times a second — so memoise on the line's VALUE, not the array identity.
-  // parseInfo allocates a fresh moves array per info line, which made the
-  // old identity-keyed memo miss every single time.
+  // times a second — so the replay is keyed on the line's VALUE, not the
+  // array identity: parseInfo allocates a fresh moves array per info line,
+  // which made an identity-keyed memo miss every single time. The React
+  // Compiler memoises on what is read, and what is read here is pvKey.
   const pvKey = line.moves.join(' ');
-  const pv = useMemo(() => formatPv(fen, pvKey ? pvKey.split(' ') : []), [fen, pvKey]);
+  const pv = formatPv(fen, pvKey ? pvKey.split(' ') : []);
 
   /**
    * Opened by the chevron, which exists only where there is no pointer to

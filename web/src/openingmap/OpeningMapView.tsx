@@ -98,7 +98,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
   }, [loaded, load]);
 
   const map = doc?.maps.find((m) => m.color === color) ?? null;
-  const resolved = useMemo(() => (map ? resolveMap(map) : null), [map]);
+  const resolved = map ? resolveMap(map) : null;
   const { coverage, missing, ready: coverageReady } = useCoverage(map, resolved);
   const deviations = useDeviations(map, resolved);
 
@@ -153,14 +153,10 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
   // One label lookup for the whole canvas: each node's own position, as
   // deep as the catalogue can possibly name.
-  const labelFens = useMemo(() => {
-    if (!resolved) return [];
-    const fens: string[] = [];
-    for (const facts of resolved.nodes.values()) {
-      if (facts.fen && facts.ply > 0 && facts.ply <= NAMED_PLIES) fens.push(facts.fen);
-    }
-    return fens;
-  }, [resolved]);
+  const labelFens: string[] = [];
+  for (const facts of resolved?.nodes.values() ?? []) {
+    if (facts.fen && facts.ply > 0 && facts.ply <= NAMED_PLIES) labelFens.push(facts.fen);
+  }
   const { names, ready: labelsReady } = useOpeningLabels(labelFens);
   const labels = useMemo(() => {
     const out = new Map<string, string>();
@@ -1017,17 +1013,15 @@ function NodePanel({
   const title = isRoot ? t('Starting position') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
 
   // The line's deepest opening name — what a player calls where they are.
-  const lineFens = useMemo(() => {
-    const fens: string[] = [];
-    let cursor: string | null = node.id;
-    while (cursor) {
-      const step: ResolvedNode | undefined = resolved.nodes.get(cursor);
-      if (!step) break;
-      if (step.fen) fens.push(step.fen);
-      cursor = step.parentId;
-    }
-    return fens.reverse();
-  }, [resolved, node.id]);
+  const fens: string[] = [];
+  let cursor: string | null = node.id;
+  while (cursor) {
+    const step: ResolvedNode | undefined = resolved.nodes.get(cursor);
+    if (!step) break;
+    if (step.fen) fens.push(step.fen);
+    cursor = step.parentId;
+  }
+  const lineFens = fens.reverse();
   const lineName = useOpeningName(lineFens);
 
   const commit = (patch: Parameters<typeof updateFields>[3]): void =>
@@ -1069,11 +1063,8 @@ function NodePanel({
 
   // Continuations the studies prepare that the map does not chart yet:
   // promoting one onto the map is the primary flow, so it is one tap.
-  const chartable = useMemo(() => {
-    if (!coverage) return [];
-    const charted = new Set(node.children.map((c) => c.san));
-    return coverage.preparedMoves.filter((san) => !charted.has(san));
-  }, [coverage, node.children]);
+  const charted = new Set(node.children.map((c) => c.san));
+  const chartable = (coverage?.preparedMoves ?? []).filter((san) => !charted.has(san));
 
   const tags = node.tags ?? [];
 

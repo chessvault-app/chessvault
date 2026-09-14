@@ -1,7 +1,6 @@
 import { X } from 'lucide-react';
 import {
   createContext,
-  useCallback,
   useContext,
   useEffect,
   useLayoutEffect,
@@ -194,9 +193,10 @@ export function CanvasShell({
 
   const surface = useRef<HTMLDivElement | null>(null);
   const [panelEl, setPanelEl] = useState<HTMLElement | null>(null);
-  // Stable, or React detaches and re-attaches the ref every render, and
-  // each of those is a setState: two renders per render, forever.
-  const panelRef = useCallback((el: HTMLElement | null) => setPanelEl(el), []);
+  // Stable (the React Compiler's doing), or React detaches and re-attaches
+  // the ref every render, and each of those is a setState: two renders per
+  // render, forever.
+  const panelRef = (el: HTMLElement | null): void => setPanelEl(el);
   usePanelFocus(panelEl, panel?.takeFocus ?? 0, panel?.onClose ?? (() => {}));
 
   const [inset, setInset] = useState(0);

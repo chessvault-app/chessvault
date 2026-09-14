@@ -517,37 +517,34 @@ export function DatabaseGames({
   /** Live values for the panel: players and tournaments from THIS
       database's derived lookups, openings and ECO from the vendored
       catalogue. */
-  const suggestValues = useCallback(
-    async (field: string, value: string): Promise<ValueSuggestion[]> => {
-      if (field === 'opening' || field === 'eco') return catalogSuggest(field, value);
-      if (
-        field === 'player' ||
-        field === 'opponent' ||
-        field === 'white' ||
-        field === 'black' ||
-        field === 'event'
-      ) {
-        // An empty value still asks: the panel opens on the database's
-        // biggest names before a character is typed.
-        try {
-          const params = new URLSearchParams({ q: value.trim() });
-          if (field === 'event') params.set('field', 'event');
-          if (curDb) params.set('db', curDb);
-          const body = await api<{ names: { name: string; games: number }[] }>(
-            `/api/refgames/suggest?${params.toString()}`,
-          );
-          return body.names.map((n) => ({
-            v: n.name,
-            desc: t('{n} games', { n: n.games.toLocaleString() }),
-          }));
-        } catch {
-          return [];
-        }
+  const suggestValues = async (field: string, value: string): Promise<ValueSuggestion[]> => {
+    if (field === 'opening' || field === 'eco') return catalogSuggest(field, value);
+    if (
+      field === 'player' ||
+      field === 'opponent' ||
+      field === 'white' ||
+      field === 'black' ||
+      field === 'event'
+    ) {
+      // An empty value still asks: the panel opens on the database's
+      // biggest names before a character is typed.
+      try {
+        const params = new URLSearchParams({ q: value.trim() });
+        if (field === 'event') params.set('field', 'event');
+        if (curDb) params.set('db', curDb);
+        const body = await api<{ names: { name: string; games: number }[] }>(
+          `/api/refgames/suggest?${params.toString()}`,
+        );
+        return body.names.map((n) => ({
+          v: n.name,
+          desc: t('{n} games', { n: n.games.toLocaleString() }),
+        }));
+      } catch {
+        return [];
       }
-      return [];
-    },
-    [curDb],
-  );
+    }
+    return [];
+  };
   const [huntOpen, setHuntOpen] = useState(false);
   const [huntKind, setHuntKind] = useState<'position' | 'material' | 'motif'>('position');
   const [huntFen, setHuntFen] = useState('');
@@ -1030,17 +1027,18 @@ export function DatabaseGames({
   // The rows memoise on primitives, so every callback handed to them must
   // keep one identity for the component's life. Each forwards through a
   // ref to the LATEST handler — stable outside, fresh closure inside — the
-  // same idiom ArchiveBrowser and GamesBrowser use.
+  // same idiom ArchiveBrowser and GamesBrowser use. The one identity is
+  // the React Compiler's: each of these reads only the ref.
   // Written from a layout effect, before a row can be pressed, never in
   // render (the React Compiler refuses a ref written in render).
   const rowHandlers = useRef({ openGame, collect, selectRow, loadFinalFen });
   useLayoutEffect(() => {
     rowHandlers.current = { openGame, collect, selectRow, loadFinalFen };
   });
-  const rowOpen = useCallback((g: RefGame) => void rowHandlers.current.openGame(g), []);
-  const rowCollect = useCallback((g: RefGame) => void rowHandlers.current.collect(g), []);
-  const rowSelect = useCallback((g: RefGame) => rowHandlers.current.selectRow(g), []);
-  const rowLoadPreview = useCallback((g: RefGame) => rowHandlers.current.loadFinalFen(g), []);
+  const rowOpen = (g: RefGame) => void rowHandlers.current.openGame(g);
+  const rowCollect = (g: RefGame) => void rowHandlers.current.collect(g);
+  const rowSelect = (g: RefGame) => rowHandlers.current.selectRow(g);
+  const rowLoadPreview = (g: RefGame) => rowHandlers.current.loadFinalFen(g);
 
   // The ⋯ → Game details sheet: the details panel's content where the
   // rows are cards and no panel stands beside them.

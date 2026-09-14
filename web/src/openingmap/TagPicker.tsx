@@ -1,5 +1,5 @@
 import { BookOpen, ChevronLeft } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { pgnToChapters } from '@shared/pgn';
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
@@ -89,11 +89,9 @@ export function TagPicker({
     };
   }, [kind, rows]);
 
-  const list = useMemo(() => {
-    const all = rows[kind] ?? [];
-    const needle = filter.trim().toLowerCase();
-    return needle ? all.filter((r) => r.id.toLowerCase().includes(needle)) : all;
-  }, [rows, kind, filter]);
+  const all = rows[kind] ?? [];
+  const needle = filter.trim().toLowerCase();
+  const list = needle ? all.filter((r) => r.id.toLowerCase().includes(needle)) : all;
 
   const tagged = (tag: MapTag): boolean =>
     existing.some(

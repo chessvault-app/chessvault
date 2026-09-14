@@ -1,5 +1,5 @@
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { announce } from '@/lib/announce';
 import { t } from '@/lib/i18n';
@@ -62,65 +62,62 @@ export function usePdfSearch(
     setScanning(null);
   }, [doc]);
 
-  const run = useCallback(
-    (q: string) => {
-      const needle = q.trim().toLowerCase();
-      setQuery(q);
-      setHits([]);
-      setCurrent(-1);
-      const mine = ++token.current;
-      if (!doc || !needle) {
-        setScanning(null);
-        return;
-      }
-      void (async () => {
-        const found: SearchHit[] = [];
-        let jumped = false;
-        for (let n = 1; n <= doc.numPages; n++) {
-          if (token.current !== mine) return;
-          setScanning(n);
-          let pageHits: SearchHit[] = [];
-          try {
-            pageHits = await searchPage(doc, n, needle);
-          } catch {
-            pageHits = [];
-          }
-          if (token.current !== mine) return;
-          if (pageHits.length > 0) {
-            found.push(...pageHits);
-            setHits([...found]);
-            if (!jumped) {
-              jumped = true;
-              setCurrent(0);
-              onJump(pageHits[0]!.page);
-            }
-          }
-          // Let the page paint between reads; a text layer is quick, but
-          // three hundred of them back to back would hold the main thread.
-          await new Promise((r) => setTimeout(r, 0));
+  const run = (q: string) => {
+    const needle = q.trim().toLowerCase();
+    setQuery(q);
+    setHits([]);
+    setCurrent(-1);
+    const mine = ++token.current;
+    if (!doc || !needle) {
+      setScanning(null);
+      return;
+    }
+    void (async () => {
+      const found: SearchHit[] = [];
+      let jumped = false;
+      for (let n = 1; n <= doc.numPages; n++) {
+        if (token.current !== mine) return;
+        setScanning(n);
+        let pageHits: SearchHit[] = [];
+        try {
+          pageHits = await searchPage(doc, n, needle);
+        } catch {
+          pageHits = [];
         }
         if (token.current !== mine) return;
-        setScanning(null);
-        // Said once, at the end: the count in the box is repainted as
-        // pages are read, which a screen reader does not hear, and the
-        // first hit turned the page under the field without a word.
-        announce(
-          found.length > 0
-            ? t('{n} found, page {page}', { n: found.length, page: found[0]!.page })
-            : t('No matches'),
-        );
-      })();
-    },
-    [doc, onJump],
-  );
+        if (pageHits.length > 0) {
+          found.push(...pageHits);
+          setHits([...found]);
+          if (!jumped) {
+            jumped = true;
+            setCurrent(0);
+            onJump(pageHits[0]!.page);
+          }
+        }
+        // Let the page paint between reads; a text layer is quick, but
+        // three hundred of them back to back would hold the main thread.
+        await new Promise((r) => setTimeout(r, 0));
+      }
+      if (token.current !== mine) return;
+      setScanning(null);
+      // Said once, at the end: the count in the box is repainted as
+      // pages are read, which a screen reader does not hear, and the
+      // first hit turned the page under the field without a word.
+      announce(
+        found.length > 0
+          ? t('{n} found, page {page}', { n: found.length, page: found[0]!.page })
+          : t('No matches'),
+      );
+    })();
+  };
 
-  const clear = useCallback(() => {
+  const clear = () => {
     token.current += 1;
     setQuery('');
     setHits([]);
     setCurrent(-1);
     setScanning(null);
-  }, []);
+  };
 
   const step = (delta: number): void => {
     if (hits.length === 0) return;

@@ -1,5 +1,5 @@
 ﻿import { Database, FileText, Hammer, MoreHorizontal, Plus, Square, Trash2, Upload, Zap } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { announce } from '@/lib/announce';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -383,15 +383,10 @@ export function RefDbManager({
   // The search narrows the list that is showing. Substring, case-folded:
   // these are file names, and the useful query is "elite" or "2026".
   const needle = query.trim().toLowerCase();
-  const shownDbs = useMemo(
-    () => (needle ? databases.filter((d) => d.name.toLowerCase().includes(needle)) : databases),
-    [databases, needle],
-  );
-  const shownSources = useMemo(
-    () =>
-      needle ? (sources ?? []).filter((s) => s.name.toLowerCase().includes(needle)) : (sources ?? []),
-    [sources, needle],
-  );
+  const shownDbs = needle ? databases.filter((d) => d.name.toLowerCase().includes(needle)) : databases;
+  const shownSources = needle
+    ? (sources ?? []).filter((s) => s.name.toLowerCase().includes(needle))
+    : (sources ?? []);
 
   // Counted over EVERY collection, not the filtered view: a search that
   // hides three of five ticked files must not make the Build button say

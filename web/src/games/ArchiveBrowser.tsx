@@ -1,7 +1,6 @@
 import { ExternalLink, Globe, Info, Play, Plus } from 'lucide-react';
 import {
   memo,
-  useCallback,
   useEffect,
   useEffectEvent,
   useLayoutEffect,
@@ -827,7 +826,8 @@ export function ArchiveBrowser({
   // ref to the LATEST handler — stable outside, fresh closure inside —
   // which is what lets ticking one checkbox re-render one row instead of
   // the whole month (measured before: 562 GameRow renders per tick on a
-  // 281-game month; after: the two rows whose props changed).
+  // 281-game month; after: the two rows whose props changed). The one
+  // identity is the React Compiler's: each of these reads only the ref.
   // ↑/↓/Enter/Escape drive the table selection over the visible rows —
   // the same contract as the databases and collection tabs.
   const tableNav = useRef<TableNav | null>(null);
@@ -869,9 +869,9 @@ export function ArchiveBrowser({
   useLayoutEffect(() => {
     rowHandlers.current = { openInAnalysis, collect, selectRow };
   });
-  const rowOpen = useCallback((g: GameSummary) => void rowHandlers.current.openInAnalysis(g), []);
-  const rowCollect = useCallback((g: GameSummary) => void rowHandlers.current.collect(g), []);
-  const rowSelect = useCallback((g: GameSummary) => rowHandlers.current.selectRow(g), []);
+  const rowOpen = (g: GameSummary) => void rowHandlers.current.openInAnalysis(g);
+  const rowCollect = (g: GameSummary) => void rowHandlers.current.collect(g);
+  const rowSelect = (g: GameSummary) => rowHandlers.current.selectRow(g);
   // The ⋯ → Game details sheet, for the card rows.
   const [details, setDetails] = useState<GameSummary | null>(null);
   // The pinned column exists only while selecting (checkbox-only) —

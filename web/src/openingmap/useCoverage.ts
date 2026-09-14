@@ -73,7 +73,7 @@ export function useCoverage(
   // current one — a changed set of tags is a question not yet answered.
   const [settledFor, setSettledFor] = useState<string | null>(null);
   const tags = useMemo(() => (map ? collectStudyTags(map) : []), [map]);
-  const ids = useMemo(() => [...new Set(tags.map((t) => t.id))].sort(), [tags]);
+  const ids = [...new Set(tags.map((t) => t.id))].sort();
   const idsKey = ids.join('\n');
 
   // The drill record's word on the tagged studies: which positions were

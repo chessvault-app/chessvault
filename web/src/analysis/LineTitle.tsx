@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { getNode, pathTo } from '@shared/tree';
 import { useAnalysis } from '@/store/analysis';
 import { useOpeningName } from '@/lib/opening';
@@ -22,8 +21,6 @@ import { t } from '@/lib/i18n';
 export function LineTitle() {
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
-  const openingName = useOpeningName(
-    useMemo(() => pathTo(tree, cursorId).map((id) => getNode(tree, id).fen), [tree, cursorId]),
-  );
+  const openingName = useOpeningName(pathTo(tree, cursorId).map((id) => getNode(tree, id).fen));
   return <>{openingName ?? t('Starting position')}</>;
 }

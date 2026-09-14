@@ -1,6 +1,6 @@
 import { EditorContent, useEditor } from '@tiptap/react';
 import { ChevronLeft, Pencil } from 'lucide-react';
-import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
@@ -406,13 +406,10 @@ function NoteEditor({
   // scrolled under it, once for how much of the note it covers, so a Tab or
   // a Shift+Tab onto a board's controls lands below it rather than behind it.
   const pinHeader = usePinnedBand('top');
-  const setHeader = useCallback(
-    (el: HTMLDivElement | null) => {
-      headerRef.current = el;
-      pinHeader(el);
-    },
-    [pinHeader],
-  );
+  const setHeader = (el: HTMLDivElement | null) => {
+    headerRef.current = el;
+    pinHeader(el);
+  };
   const compact = useScrollCollapse(headerRef, phone && leadsWithHeading);
   // Whether the note has scrolled under the header at all, for its fill.
   const scrolled = useScrollCollapse(headerRef, true);

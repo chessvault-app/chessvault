@@ -83,9 +83,9 @@ export function DatabasesPage() {
   }, []);
   /** The row leaves when the server says the file is gone — see the
       panel's delSource, which owns that rule and now asks for it. */
-  const dropSource = useCallback((name: string) => {
+  const dropSource = (name: string) => {
     setSources((prev) => prev && prev.filter((s) => s.name !== name));
-  }, []);
+  };
 
   useEffect(() => {
     loadMeta();

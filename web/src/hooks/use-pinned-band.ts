@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useRef } from 'react';
 import { scrollParent } from '@/lib/scroll';
 
 /**
@@ -30,30 +30,27 @@ import { scrollParent } from '@/lib/scroll';
  */
 export function usePinnedBand(edge: 'top' | 'bottom'): (el: HTMLElement | null) => void {
   const held = useRef<{ ro: ResizeObserver; scroller: HTMLElement; prop: string } | null>(null);
-  return useCallback(
-    (el: HTMLElement | null) => {
-      const prev = held.current;
-      if (prev) {
-        prev.ro.disconnect();
-        prev.scroller.style.removeProperty(prev.prop);
-        if (!prev.scroller.style.getPropertyValue('--pin-top') && !prev.scroller.style.getPropertyValue('--pin-bottom')) {
-          prev.scroller.removeAttribute('data-pinned');
-        }
-        held.current = null;
+  return (el: HTMLElement | null) => {
+    const prev = held.current;
+    if (prev) {
+      prev.ro.disconnect();
+      prev.scroller.style.removeProperty(prev.prop);
+      if (!prev.scroller.style.getPropertyValue('--pin-top') && !prev.scroller.style.getPropertyValue('--pin-bottom')) {
+        prev.scroller.removeAttribute('data-pinned');
       }
-      if (!el) return;
-      const scroller = scrollParent(el);
-      if (!scroller) return;
-      const prop = edge === 'top' ? '--pin-top' : '--pin-bottom';
-      const publish = (): void => {
-        scroller.style.setProperty(prop, `${Math.round(el.getBoundingClientRect().height)}px`);
-        scroller.setAttribute('data-pinned', '');
-      };
-      const ro = new ResizeObserver(publish);
-      ro.observe(el);
-      publish();
-      held.current = { ro, scroller, prop };
-    },
-    [edge],
-  );
+      held.current = null;
+    }
+    if (!el) return;
+    const scroller = scrollParent(el);
+    if (!scroller) return;
+    const prop = edge === 'top' ? '--pin-top' : '--pin-bottom';
+    const publish = (): void => {
+      scroller.style.setProperty(prop, `${Math.round(el.getBoundingClientRect().height)}px`);
+      scroller.setAttribute('data-pinned', '');
+    };
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    publish();
+    held.current = { ro, scroller, prop };
+  };
 }

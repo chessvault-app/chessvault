@@ -199,35 +199,29 @@ function Dialog({
   // A page holds its close the same way on either shape: it plays its
   // own exit (DialogContent) and reports back through `finish`.
   const pageMode = React.useRef(false);
-  const setPageMode = React.useCallback((page: boolean) => {
+  const setPageMode = (page: boolean) => {
     pageMode.current = page;
-  }, []);
-  const setGuards = React.useCallback((next: DialogGuards | null) => {
+  };
+  const setGuards = (next: DialogGuards | null) => {
     guards.current = next;
-  }, []);
+  };
   // What runs once the held exit has played: the close, or whatever a
   // page's Back was going to do.
   const pending = React.useRef<(() => void) | null>(null);
-  const depart = React.useCallback(
-    (then: () => void) => {
-      if ((phone || pageMode.current) && open) {
-        pending.current = then;
-        setLeaving(true);
-      } else then();
-    },
-    [phone, open],
-  );
-  const close = React.useCallback(() => depart(() => onOpenChangeRef.current?.(false)), [depart]);
-  const finish = React.useCallback(() => {
+  const depart = (then: () => void) => {
+    if ((phone || pageMode.current) && open) {
+      pending.current = then;
+      setLeaving(true);
+    } else then();
+  };
+  const close = () => depart(() => onOpenChangeRef.current?.(false));
+  const finish = () => {
     const then = pending.current;
     pending.current = null;
     setLeaving(false);
     then?.();
-  }, []);
-  const leave = React.useMemo(
-    () => ({ leaving, depart, finish, setPageMode }),
-    [leaving, depart, finish, setPageMode],
-  );
+  };
+  const leave = { leaving, depart, finish, setPageMode };
   const handleOpenChangeComplete = (isOpen: boolean): void => {
     onOpenChangeComplete?.(isOpen);
     if (!isOpen && leaving) finish();
@@ -506,40 +500,37 @@ function DialogContent({
 
   // The X's verb: shut this window, then every window it was opened
   // inside (see CoverParent.dismissAll). Read through refs so the handle
-  // below keeps ONE identity for the life of the window — `close` is
-  // rebuilt from the call site's inline onOpenChange on every render, and
-  // a handle that changed with it would re-run every child's cover effect
-  // and rebuild its ResizeObserver each render.
+  // below keeps ONE identity for the life of the window — `close` changes
+  // with the props it is built from, and a handle that changed with it
+  // would re-run every child's cover effect and rebuild its
+  // ResizeObserver each time.
   const closeRef = React.useRef(close);
   const parentRef = React.useRef(coverParent);
   React.useLayoutEffect(() => {
     closeRef.current = close;
     parentRef.current = coverParent;
   });
-  const dismissAll = React.useCallback(() => {
+  const dismissAll = () => {
     closeRef.current();
     parentRef.current?.dismissAll();
-  }, []);
+  };
 
-  const asParent = React.useMemo(
-    () => ({
-      cover: (request: () => void) => {
-        pageRequests.current.push(request);
-        setCovered((c) => c + 1);
-        let released = false;
-        return () => {
-          if (released) return;
-          released = true;
-          pageRequests.current = pageRequests.current.filter((r) => r !== request);
-          setCovered((c) => c - 1);
-        };
-      },
-      height: () => card.current?.offsetHeight ?? 0,
-      host,
-      dismissAll,
-    }),
-    [dismissAll, host],
-  );
+  const asParent = {
+    cover: (request: () => void) => {
+      pageRequests.current.push(request);
+      setCovered((c) => c + 1);
+      let released = false;
+      return () => {
+        if (released) return;
+        released = true;
+        pageRequests.current = pageRequests.current.filter((r) => r !== request);
+        setCovered((c) => c - 1);
+      };
+    },
+    height: () => card.current?.offsetHeight ?? 0,
+    host,
+    dismissAll,
+  };
 
   // A LAYER never covers its parent; it is capped to it, and grows the
   // chevron once it has hidden it completely — see use-sheet-cover.
@@ -573,10 +564,10 @@ function DialogContent({
   React.useLayoutEffect(() => {
     requestRef.current = request;
   });
-  const route = React.useCallback(() => {
+  const route = () => {
     const top = pageRequests.current[pageRequests.current.length - 1];
     (top ?? requestRef.current)();
-  }, []);
+  };
 
   // The page tells its parent it is up for as long as it stands, and
   // lets go as it STARTS to leave, so the content under it returns on

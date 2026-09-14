@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -121,18 +121,17 @@ export function OpeningPicker({
       that many buttons to open a list costs most of a second. */
   const SHOWN = 300;
 
-  const { matches, hidden } = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    // An empty box offers the whole catalogue, ordered by ECO, with the
-    // curated few first — so the picker can be browsed and not only
-    // searched.
-    const pool = q
-      ? (all ?? []).filter(
-          (o) => o.eco.toLowerCase().startsWith(q) || o.name.toLowerCase().includes(q),
-        )
-      : [...TEMPLATES, ...(all ?? []).filter((o) => !TEMPLATES.some((tpl) => tpl.name === o.name))];
-    return { matches: pool.slice(0, SHOWN), hidden: Math.max(0, pool.length - SHOWN) };
-  }, [query, all]);
+  const q = query.trim().toLowerCase();
+  // An empty box offers the whole catalogue, ordered by ECO, with the
+  // curated few first — so the picker can be browsed and not only
+  // searched.
+  const pool = q
+    ? (all ?? []).filter(
+        (o) => o.eco.toLowerCase().startsWith(q) || o.name.toLowerCase().includes(q),
+      )
+    : [...TEMPLATES, ...(all ?? []).filter((o) => !TEMPLATES.some((tpl) => tpl.name === o.name))];
+  const matches = pool.slice(0, SHOWN);
+  const hidden = Math.max(0, pool.length - SHOWN);
 
   const pick = (o: OpeningTemplate): void => {
     onChange(o);

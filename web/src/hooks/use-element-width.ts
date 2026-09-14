@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 /**
  * An element's width, kept current by a ResizeObserver. Returned as a
@@ -8,7 +8,7 @@ import { useCallback, useRef, useState } from 'react';
 export function useElementWidth(): [(el: HTMLDivElement | null) => void, number] {
   const [width, setWidth] = useState(0);
   const ro = useRef<ResizeObserver | null>(null);
-  const attach = useCallback((el: HTMLDivElement | null) => {
+  const attach = (el: HTMLDivElement | null) => {
     ro.current?.disconnect();
     ro.current = null;
     if (!el) return;
@@ -16,6 +16,6 @@ export function useElementWidth(): [(el: HTMLDivElement | null) => void, number]
     observer.observe(el);
     setWidth(el.clientWidth);
     ro.current = observer;
-  }, []);
+  };
   return [attach, width];
 }

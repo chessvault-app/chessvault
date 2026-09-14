@@ -5,7 +5,6 @@ import {
   useEffect,
   useEffectEvent,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
   type MutableRefObject,
@@ -244,36 +243,33 @@ export function GamesBrowser({
   /** Live values for the panel: players and events aggregate from the
       rows already in the page; openings and ECO come from the vendored
       catalogue, same as everywhere. */
-  const suggestCollection = useCallback(
-    async (field: string, value: string): Promise<ValueSuggestion[]> => {
-      if (field === 'opening' || field === 'eco') return catalogSuggest(field, value);
-      // An empty value still counts — the panel opens on the
-      // collection's most frequent names before a character is typed.
-      const v = value.trim().toLowerCase();
-      const counted = new Map<string, number>();
-      if (field === 'event') {
-        for (const g of games) {
-          if (g.event && g.event.toLowerCase().includes(v))
-            counted.set(g.event, (counted.get(g.event) ?? 0) + 1);
-        }
-      } else if (['player', 'opponent', 'white', 'black'].includes(field)) {
-        for (const g of games) {
-          for (const name of field === 'white'
-            ? [g.white]
-            : field === 'black'
-              ? [g.black]
-              : [g.white, g.black]) {
-            if (name.toLowerCase().startsWith(v)) counted.set(name, (counted.get(name) ?? 0) + 1);
-          }
+  const suggestCollection = async (field: string, value: string): Promise<ValueSuggestion[]> => {
+    if (field === 'opening' || field === 'eco') return catalogSuggest(field, value);
+    // An empty value still counts — the panel opens on the
+    // collection's most frequent names before a character is typed.
+    const v = value.trim().toLowerCase();
+    const counted = new Map<string, number>();
+    if (field === 'event') {
+      for (const g of games) {
+        if (g.event && g.event.toLowerCase().includes(v))
+          counted.set(g.event, (counted.get(g.event) ?? 0) + 1);
+      }
+    } else if (['player', 'opponent', 'white', 'black'].includes(field)) {
+      for (const g of games) {
+        for (const name of field === 'white'
+          ? [g.white]
+          : field === 'black'
+            ? [g.black]
+            : [g.white, g.black]) {
+          if (name.toLowerCase().startsWith(v)) counted.set(name, (counted.get(name) ?? 0) + 1);
         }
       }
-      return [...counted]
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 50)
-        .map(([name, n]) => ({ v: name, desc: t('{n} games', { n: String(n) }) }));
-    },
-    [games],
-  );
+    }
+    return [...counted]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 50)
+      .map(([name, n]) => ({ v: name, desc: t('{n} games', { n: String(n) }) }));
+  };
   const [importing, setImporting] = useState(false);
   // The host's handles are filled from a layout effect, not during
   // render: a ref written in render is what the React Compiler, which
@@ -518,21 +514,16 @@ export function GamesBrowser({
   // while their closures stay fresh (a bookmark toggle used to re-render
   // every row in the list; now it re-renders the one that changed). The
   // ref is written from a layout effect, before any row can be pressed,
-  // and never during render.
+  // and never during render. The one identity is the React Compiler's:
+  // each of these reads only the ref.
   const rowHandlers = useRef({ dropGame, toggleBookmark, renameGame, openGame });
   useLayoutEffect(() => {
     rowHandlers.current = { dropGame, toggleBookmark, renameGame, openGame };
   });
-  const rowOpen = useCallback((g: GameSummary) => rowHandlers.current.openGame(g), []);
-  const rowDrop = useCallback((g: GameSummary) => rowHandlers.current.dropGame(g), []);
-  const rowBookmark = useCallback(
-    (g: GameSummary) => void rowHandlers.current.toggleBookmark(g),
-    [],
-  );
-  const rowRename = useCallback(
-    (g: GameSummary, to: string) => void rowHandlers.current.renameGame(g, to),
-    [],
-  );
+  const rowOpen = (g: GameSummary) => rowHandlers.current.openGame(g);
+  const rowDrop = (g: GameSummary) => rowHandlers.current.dropGame(g);
+  const rowBookmark = (g: GameSummary) => void rowHandlers.current.toggleBookmark(g);
+  const rowRename = (g: GameSummary, to: string) => void rowHandlers.current.renameGame(g, to);
 
   // Built once and shared: the archive renders twice (beside the
   // collection, and in the phone's window) and each copy needs it.
@@ -846,7 +837,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
    * had gone in. The same lenient parser the server reads with, so the
    * two agree on what a game is.
    */
-  const gameCount = useMemo(() => (pgn.trim() ? parsePgn(pgn).length : 0), [pgn]);
+  const gameCount = pgn.trim() ? parsePgn(pgn).length : 0;
 
   /**
    * iOS scrolls a focused field into view by shoving the whole window,

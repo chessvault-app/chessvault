@@ -12,7 +12,7 @@ import {
   Settings2,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import type { Color } from 'chessops/types';
 import { roleToChar } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
@@ -230,12 +230,12 @@ function Trainer({
   // is the trainer's visible session context: without it nothing on the
   // solving screen said how training was going.
   const [solvedToday, setSolvedToday] = useState<number | null>(null);
-  const refreshToday = useCallback(async () => {
+  const refreshToday = async () => {
     const n = await fetchSolvedToday();
     // null is "the server did not answer", not "nought solved" — the line
     // simply stays as it was, which before the first answer is absent.
     if (n !== null) setSolvedToday(n);
-  }, []);
+  };
 
   /**
    * Whether meta has answered at all, which is not the same as what it
@@ -264,7 +264,7 @@ function Trainer({
    * once and never back.
    */
   const [dbWasReady] = useState(() => localStorage.getItem(DB_READY_KEY) === '1');
-  const refreshMeta = useCallback(async () => {
+  const refreshMeta = async () => {
     // Meta is decoration around the trainer (counts, the setup gate); if
     // the server is away, loadNext will say so where it can be acted on.
     // Nothing conditional inside the try (the React Compiler cannot
@@ -281,27 +281,24 @@ function Trainer({
       }
     }
     setMetaAnswered(true);
-  }, []);
+  };
 
-  const report = useCallback(
-    async (id: string, win: boolean) => {
-      if (reported.current) return;
-      reported.current = true;
-      const send = (): Promise<{ user: UserState } | null> =>
-        api<{ user: UserState }>('/api/puzzles/attempt', {
-          method: 'POST',
-          json: { id, win, counted: mode === 'fresh' },
-        }).catch(() => null);
-      // One quiet retry a moment later — see retryOnce.
-      const data = await retryOnce(send);
-      if (data) {
-        const { user } = data;
-        setMeta((m) => (m ? { ...m, user } : m));
-        if (win && mode === 'fresh') setSolvedToday((n) => (n === null ? n : n + 1));
-      }
-    },
-    [mode],
-  );
+  const report = async (id: string, win: boolean) => {
+    if (reported.current) return;
+    reported.current = true;
+    const send = (): Promise<{ user: UserState } | null> =>
+      api<{ user: UserState }>('/api/puzzles/attempt', {
+        method: 'POST',
+        json: { id, win, counted: mode === 'fresh' },
+      }).catch(() => null);
+    // One quiet retry a moment later — see retryOnce.
+    const data = await retryOnce(send);
+    if (data) {
+      const { user } = data;
+      setMeta((m) => (m ? { ...m, user } : m));
+      if (win && mode === 'fresh') setSolvedToday((n) => (n === null ? n : n + 1));
+    }
+  };
 
   /**
    * Put a puzzle on the board and start its clock.
@@ -422,11 +419,8 @@ function Trainer({
   // analysis tab's table. Rebuilt per ply; puzzle lines are short.
   // Built from ply 0 so the Moves panel exists (empty) from the very
   // first frame instead of popping in after the setup move.
-  const answerTree = useMemo(() => (puzzle ? puzzleTree(puzzle, plies).tree : null), [puzzle, plies]);
-  const answerIds = useMemo(
-    () => (answerTree ? mainlineFrom(answerTree, answerTree.rootId) : []),
-    [answerTree],
-  );
+  const answerTree = puzzle ? puzzleTree(puzzle, plies).tree : null;
+  const answerIds = answerTree ? mainlineFrom(answerTree, answerTree.rootId) : [];
 
   // Any machine progress snaps the board back to live.
   useEffect(() => setReview(null), [plies, phase]);

@@ -148,21 +148,18 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const { doc, error, retry } = useBookPdf(id, book?.bytes ?? null);
   const [reservedPage] = useState(() => parsePageShape(localStorage.getItem(pageShapeKey(id))));
   const pages = doc?.numPages ?? book?.pages ?? reservedPage?.pages ?? 0;
-  const rememberPage = useCallback(
-    (aspect: number) => {
-      if (!doc) return;
-      localStorage.setItem(
-        pageShapeKey(id),
-        // Keeps the contents flag the outline effect below wrote.
-        JSON.stringify({
-          aspect,
-          pages: doc.numPages,
-          contents: parsePageShape(localStorage.getItem(pageShapeKey(id)))?.contents ?? false,
-        }),
-      );
-    },
-    [id, doc],
-  );
+  const rememberPage = (aspect: number) => {
+    if (!doc) return;
+    localStorage.setItem(
+      pageShapeKey(id),
+      // Keeps the contents flag the outline effect below wrote.
+      JSON.stringify({
+        aspect,
+        pages: doc.numPages,
+        contents: parsePageShape(localStorage.getItem(pageShapeKey(id)))?.contents ?? false,
+      }),
+    );
+  };
 
   // The book's row from the shelf: its title, and where reading stopped.
   const load = useCallback(async (force = false): Promise<void> => {
@@ -189,17 +186,14 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   useEffect(() => {
     if (pageNo === 0 && book) setPageNo(book.lastPage ?? 1);
   }, [book, pageNo]);
-  const goTo = useCallback(
-    (n: number): void => {
-      // Guarded here, for every caller: a NaN got through the desktop
-      // page field once, and NaN as the page blanked the book, with the
-      // arrows dead after it (NaN plus one is still NaN).
-      if (!Number.isFinite(n)) return;
-      const max = pages || Infinity;
-      setPageNo(Math.min(Math.max(1, Math.round(n)), max));
-    },
-    [pages],
-  );
+  const goTo = (n: number): void => {
+    // Guarded here, for every caller: a NaN got through the desktop
+    // page field once, and NaN as the page blanked the book, with the
+    // arrows dead after it (NaN plus one is still NaN).
+    if (!Number.isFinite(n)) return;
+    const max = pages || Infinity;
+    setPageNo(Math.min(Math.max(1, Math.round(n)), max));
+  };
   // Where the reader is, saved a second after it settles and when leaving.
   const pending = useRef<number | null>(null);
   useEffect(() => {

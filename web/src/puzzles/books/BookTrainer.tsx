@@ -171,10 +171,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   const node = tree ? getNode(tree, cursorId) : null;
   // One position replay per cursor move, not one per render.
   const pos = useMemo(() => (tree ? positionAt(tree, cursorId) : null), [tree, cursorId]);
-  const dests = useMemo(
-    () => (tree && phase === 'solving' ? legalDests(tree, cursorId) : new Map<string, string[]>()),
-    [tree, cursorId, phase],
-  );
+  const dests = tree && phase === 'solving' ? legalDests(tree, cursorId) : new Map<string, string[]>();
 
   const report = async (win: boolean): Promise<void> => {
     if (reported.current || !puzzle) return;

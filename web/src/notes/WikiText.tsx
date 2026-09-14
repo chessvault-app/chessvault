@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useSyncExternalStore } from 'react';
+import { Fragment, useEffect, useSyncExternalStore } from 'react';
 import { WIKI_RE, parseWikiMatch } from '@shared/wikiLinks';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
@@ -67,7 +67,7 @@ function WikiSpan({
 }) {
   const state = stateOf(target, docs);
   const dead = state !== 'ok' && state !== 'unknown';
-  const open = useCallback(() => void resolveAndOpen(target), [target]);
+  const open = () => void resolveAndOpen(target);
 
   // A link that names nothing says so on hover and is announced as a link
   // in neither mode: there is nothing to open, so `role` and the tab stop

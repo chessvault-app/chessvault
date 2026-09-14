@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 
 /**
  * An element's height, kept current by a ResizeObserver — the vertical
@@ -9,7 +9,7 @@ import { useCallback, useRef, useState } from 'react';
 export function useElementHeight(): [(el: HTMLDivElement | null) => void, number] {
   const [height, setHeight] = useState(0);
   const ro = useRef<ResizeObserver | null>(null);
-  const attach = useCallback((el: HTMLDivElement | null) => {
+  const attach = (el: HTMLDivElement | null) => {
     ro.current?.disconnect();
     ro.current = null;
     if (!el) return;
@@ -17,6 +17,6 @@ export function useElementHeight(): [(el: HTMLDivElement | null) => void, number
     observer.observe(el);
     setHeight(el.clientHeight);
     ro.current = observer;
-  }, []);
+  };
   return [attach, height];
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { allTargets } from './wikiDocs';
 import {
   PENDING_LINK,
@@ -43,7 +43,9 @@ export function useWikiSuggest({
   sync: () => void;
   onKeyDown: (event: React.KeyboardEvent) => void;
 } {
-  const store = useMemo(() => createSuggestStore(), []);
+  // One store for the hook's life, as state: a plain call would rest on
+  // the compiler caching it, and a store is not a derived value.
+  const [store] = useState(createSuggestStore);
   // Held in a ref rather than closed over: `sync` is handed to a change
   // handler and to a selection listener, and a version of it that changed
   // identity on every keystroke would re-bind the listener on every one.
@@ -129,35 +131,32 @@ export function useWikiSuggest({
   // element that is no longer on the page.
   useEffect(() => () => store.close(), [store]);
 
-  const onKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      /* The list is on screen but focus is not in it — the caret is still
-         in the box, which is the point of the thing. So the keys that
-         drive the list are taken here, ahead of the box's own handling,
-         and only while it is open. */
-      if (!store.snapshot().open) return;
-      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-        event.preventDefault();
-        store.move(event.key === 'ArrowDown' ? 1 : -1);
-        return;
-      }
-      if (event.key === 'Enter' || event.key === 'Tab') {
-        // Enter in a comment box makes a new line and Tab leaves the field;
-        // while a name is being completed, both mean "take this one".
-        if (store.commit()) event.preventDefault();
-        return;
-      }
-      if (event.key === 'Escape') {
-        // Stopped here: Escape also closes the sheet this box sits in on a
-        // phone, and dismissing the list should not also throw away the
-        // comment being written.
-        event.preventDefault();
-        event.stopPropagation();
-        store.close();
-      }
-    },
-    [store],
-  );
+  const onKeyDown = (event: React.KeyboardEvent) => {
+    /* The list is on screen but focus is not in it — the caret is still
+       in the box, which is the point of the thing. So the keys that
+       drive the list are taken here, ahead of the box's own handling,
+       and only while it is open. */
+    if (!store.snapshot().open) return;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      store.move(event.key === 'ArrowDown' ? 1 : -1);
+      return;
+    }
+    if (event.key === 'Enter' || event.key === 'Tab') {
+      // Enter in a comment box makes a new line and Tab leaves the field;
+      // while a name is being completed, both mean "take this one".
+      if (store.commit()) event.preventDefault();
+      return;
+    }
+    if (event.key === 'Escape') {
+      // Stopped here: Escape also closes the sheet this box sits in on a
+      // phone, and dismissing the list should not also throw away the
+      // comment being written.
+      event.preventDefault();
+      event.stopPropagation();
+      store.close();
+    }
+  };
 
   return { store, sync, onKeyDown };
 }

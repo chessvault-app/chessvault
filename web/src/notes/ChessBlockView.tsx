@@ -6,7 +6,7 @@ import {
   FlipHorizontal2,
   Trash2,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { parseSquare } from 'chessops/util';
 import type { Color } from 'chessops/types';
 import { chessFencePgn } from '@shared/chessFence';
@@ -150,16 +150,12 @@ export function ChessBlockView({ node, updateAttributes, deleteNode, selected, e
   const [pasteError, setPasteError] = useState<string | null>(null);
 
   const current = getNode(tree, cursorId);
-  // The check flag is taken inside the memo: a method call on `pos` in
-  // render reads to the React Compiler as a possible mutation, which is
-  // what kept it from preserving this memoisation.
-  const { pos, inCheck } = useMemo(() => {
-    const p = positionAt(tree, cursorId);
-    return { pos: p, inCheck: p.isCheck() };
-  }, [tree, cursorId]);
-  // Memoised by the React Compiler on what it reads (the tree and the
-  // cursor, in one block with `current`); a useMemo of its own here was
-  // one the compiler could not keep, and refused the whole component for.
+  // The position, its check flag and the legal moves are memoised by the
+  // React Compiler on what they read (the tree and the cursor), as one
+  // block: a method call on `pos` reads to it as a possible mutation, so
+  // the flag is taken right beside the replay rather than after it.
+  const pos = positionAt(tree, cursorId);
+  const inCheck = pos.isCheck();
   const dests = legalDests(tree, cursorId);
   const lastMove = moveSquares(current);
   /** Whether the pieces can be moved: the note is open for editing, and on

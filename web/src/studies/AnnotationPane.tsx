@@ -1,7 +1,7 @@
 import { INPUT_BASE } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertCircle, ChevronDown } from 'lucide-react';
-import { useCallback, useEffect, useEffectEvent, useId, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useId, useLayoutEffect, useRef, useState } from 'react';
 import { getNode } from '@shared/tree';
 import { safeCommentText } from '@shared/pgn';
 import { NAG_GLYPH } from '@/analysis/notation';
@@ -67,9 +67,29 @@ function nagName(nag: number): string {
 
 /** Whether the glyph palette is unfolded — a preference, so it persists. */
 const PALETTE_KEY = 'vault:nag-palette';
-/** Whether the browser sizes a textarea to its content on its own (see fit). */
+/** Whether the browser sizes a textarea to its content on its own (see fitBox). */
 const FIELD_SIZING =
   typeof CSS !== 'undefined' && typeof CSS.supports === 'function' && CSS.supports('field-sizing', 'content');
+
+/**
+ * The JS fallback that grows the comment box to its text where the browser
+ * does not know `field-sizing: content` (the reasoning sits above its call
+ * site in AnnotationPane). `border` is measured once and kept by the caller.
+ */
+function fitBox(el: HTMLTextAreaElement | null, border: { current: number | null }): void {
+  if (FIELD_SIZING) return;
+  if (!el) return;
+  // scrollHeight is content + padding; the border is ours to add back, or
+  // the box settles two pixels short and scrolls its own last line.
+  if (border.current === null) border.current = el.offsetHeight - el.clientHeight;
+  const b = border.current;
+  if (el.scrollHeight > el.clientHeight) {
+    el.style.height = `${el.scrollHeight + b}px`;
+    return;
+  }
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight + b}px`;
+}
 
 /**
  * Said when `safeCommentText` has just changed something under the caret.
@@ -127,14 +147,14 @@ export function AnnotationPane({
   // the React Compiler refuses. The callback ref fills both.
   const [boxEl, setBoxEl] = useState<HTMLTextAreaElement | null>(null);
   const [sheetBoxEl, setSheetBoxEl] = useState<HTMLTextAreaElement | null>(null);
-  const bindBox = useCallback((el: HTMLTextAreaElement | null) => {
+  const bindBox = (el: HTMLTextAreaElement | null): void => {
     box.current = el;
     setBoxEl(el);
-  }, []);
-  const bindSheetBox = useCallback((el: HTMLTextAreaElement | null) => {
+  };
+  const bindSheetBox = (el: HTMLTextAreaElement | null): void => {
     sheetBox.current = el;
     setSheetBoxEl(el);
-  }, []);
+  };
   const pane = useRef<HTMLDivElement>(null);
   // The sheet's field is named by the sheet's title, which is the same text.
   const sheetTitleId = useId();
@@ -171,29 +191,16 @@ export function AnnotationPane({
   // layouts before paint. The border is measured once (it does not change
   // with the text), and a note that has only GROWN skips the reset: with
   // an explicit height on, scrollHeight is already the content's height.
+  // A module function over the two refs rather than a closure in render, so
+  // the effects below depend on nothing made per render.
   const border = useRef<number | null>(null);
-  const fit = useCallback(() => {
-    if (FIELD_SIZING) return;
-    const el = box.current;
-    if (!el) return;
-    // scrollHeight is content + padding; the border is ours to add back, or
-    // the box settles two pixels short and scrolls its own last line.
-    if (border.current === null) border.current = el.offsetHeight - el.clientHeight;
-    const b = border.current;
-    if (el.scrollHeight > el.clientHeight) {
-      el.style.height = `${el.scrollHeight + b}px`;
-      return;
-    }
-    el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight + b}px`;
-  }, []);
 
   // `editing` is a dependency because it is what MOUNTS the textarea: turning
   // the toolbar on over a note that was already long left the box at its two
   // rows until the next keystroke, which is when the deps last changed
   // (lanph3re's report). Layout effect, not effect: the resize lands before
   // paint, so a long note never flashes at two rows on the way in.
-  useLayoutEffect(fit, [fit, draft, cursorId, coarse, editing]);
+  useLayoutEffect(() => fitBox(box.current, border), [draft, cursorId, coarse, editing]);
 
   // Width is the other half of how tall the text is: the columns either side
   // are draggable and the window resizes, and either rewraps the note. Width
@@ -205,11 +212,11 @@ export function AnnotationPane({
     const observer = new ResizeObserver(() => {
       if (el.clientWidth === last) return;
       last = el.clientWidth;
-      fit();
+      fitBox(box.current, border);
     });
     observer.observe(el);
     return () => observer.disconnect();
-  }, [fit, coarse, editing]);
+  }, [coarse, editing]);
 
   useEffect(() => {
     localStorage.setItem(PALETTE_KEY, paletteOpen ? 'open' : 'closed');

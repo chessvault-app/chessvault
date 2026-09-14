@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '@/lib/utils';
 
@@ -296,7 +296,7 @@ export function PuzzleList({
   // can be ~1,000 entries, and the old shape scanned it once per tier plus
   // once per tile for numbering. Memoised by the React Compiler on what it
   // reads (puzzles, drafts, and progress and cycle through stateOf).
-  const draftIds = useMemo(() => new Set(drafts.map((d) => d.id)), [drafts]);
+  const draftIds = new Set(drafts.map((d) => d.id));
   const items: BookPuzzle[] = [
     ...puzzles,
     ...drafts.map((d) => ({

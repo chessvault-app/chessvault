@@ -1,10 +1,8 @@
 import { LayoutDashboard } from 'lucide-react';
 import {
-  useCallback,
   useEffect,
   useEffectEvent,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
   type CSSProperties,
@@ -162,10 +160,7 @@ function Workspace() {
   const openingTree = useAnalysis((s) => s.tree);
   const openingCursor = useAnalysis((s) => s.cursorId);
   const openingName = useOpeningName(
-    useMemo(
-      () => pathTo(openingTree, openingCursor).map((id) => getNode(openingTree, id).fen),
-      [openingTree, openingCursor],
-    ),
+    pathTo(openingTree, openingCursor).map((id) => getNode(openingTree, id).fen),
   );
   const [loadOpen, setLoadOpen] = useState(false);
 
@@ -239,7 +234,7 @@ function Workspace() {
   const boardColEl = useRef<HTMLDivElement | null>(null);
   const [boardColH, setBoardColH] = useState(0);
   const boardColRO = useRef<ResizeObserver | null>(null);
-  const boardColRef = useCallback((el: HTMLDivElement | null) => {
+  const boardColRef = (el: HTMLDivElement | null): void => {
     boardColRO.current?.disconnect();
     boardColRO.current = null;
     boardColEl.current = el;
@@ -248,7 +243,7 @@ function Workspace() {
     observer.observe(el);
     setBoardColH(el.clientHeight);
     boardColRO.current = observer;
-  }, []);
+  };
   useLayoutEffect(() => {
     if (boardColEl.current) setBoardColH(boardColEl.current.clientHeight);
   }, [budget, laneW]);
@@ -300,11 +295,11 @@ function Workspace() {
   // the key bump is what makes an already-mounted browser remount and
   // consume it.
   const [huntSeq, setHuntSeq] = useState(0);
-  const huntInBand = useCallback((fen: string, db: string): void => {
+  const huntInBand = (fen: string, db: string): void => {
     handOffPositionHunt(fen, db);
     setSel(null);
     setHuntSeq((n) => n + 1);
-  }, []);
+  };
 
   // Selecting a row loads the game onto the board, in place — the whole
   // reason this page exists, and why there is no details column: the
