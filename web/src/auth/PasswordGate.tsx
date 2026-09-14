@@ -61,6 +61,10 @@ export function PasswordGate({ children }: { children: ReactNode }) {
     if (stage === 'password' ? !password : otp.trim().length < 6) return;
     setBusy(true);
     setError(null);
+    // Stage one sends the password alone; the server replies needTotp
+    // when an authenticator is configured. Built before the try (the
+    // React Compiler cannot lower a conditional inside one yet).
+    const body = JSON.stringify(stage === 'code' ? { password, code: otp } : { password });
     let res: Response;
     try {
       // Raw fetch on purpose — a wrong password answers 401, and through
@@ -69,9 +73,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
       res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        // Stage one sends the password alone; the server replies needTotp
-        // when an authenticator is configured.
-        body: JSON.stringify(stage === 'code' ? { password, code: otp } : { password }),
+        body,
       });
     } catch {
       // A tailnet blip at exactly this moment used to leave the button on
@@ -80,10 +82,10 @@ export function PasswordGate({ children }: { children: ReactNode }) {
       setError(navigator.onLine ? t('Vault server unreachable') : t('No internet connection'));
       return;
     }
-    const body = (await res.json().catch(() => ({}))) as { error?: string; needTotp?: boolean };
+    const reply = (await res.json().catch(() => ({}))) as { error?: string; needTotp?: boolean };
     setBusy(false);
     if (res.ok) {
-      if (body.needTotp) {
+      if (reply.needTotp) {
         setStage('code');
         setCode('');
         return;
@@ -95,7 +97,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
       setError(t('Too many attempts. Wait a few minutes.'));
       return;
     }
-    if (body.error === 'wrong authenticator code') {
+    if (reply.error === 'wrong authenticator code') {
       setError(t('Wrong authenticator code.'));
       setCode('');
       return;

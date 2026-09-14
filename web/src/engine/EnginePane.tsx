@@ -459,12 +459,16 @@ function EngineRow() {
   const demo = isDemo();
 
   const refresh = useCallback(async (): Promise<void> => {
+    // The answer is read after the try (the React Compiler cannot lower a
+    // `??` inside one yet).
+    let nets: NetStatus[];
     try {
-      const { nets } = await api<{ nets: NetStatus[] }>('/api/engine/nets');
-      setStatus(nets.find((n) => n.name === FULL_NET) ?? null);
+      ({ nets } = await api<{ nets: NetStatus[] }>('/api/engine/nets'));
     } catch (error) {
       setFailed(apiErrorMessage(error));
+      return;
     }
+    setStatus(nets.find((n) => n.name === FULL_NET) ?? null);
   }, []);
 
   useEffect(() => {

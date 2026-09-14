@@ -880,10 +880,11 @@ function Hub() {
         // are missing. Named all the same, so the slot below does not
         // record this visit's shape from an answer it never had.
         fail('meta', e);
-      } finally {
-        if (live) setMetaIn(true);
-        done('meta');
       }
+      // After the try rather than in a finally, which the React Compiler
+      // cannot lower yet; nothing above returns early.
+      if (live) setMetaIn(true);
+      done('meta');
     })();
     void fetchSolvedToday()
       .then((n) => {
@@ -902,13 +903,12 @@ function Hub() {
       } catch (e) {
         // The panel says so; the dashboard tile still reaches the log.
         fail('history', e);
-      } finally {
-        // In the finally, so a failed answer is still an answer: it used
-        // to be set only on success, and the panel's skeleton stood for
-        // as long as the page did.
-        if (live) setHistoryIn(true);
-        done('history');
       }
+      // After the try, so a failed answer is still an answer: it used to
+      // be set only on success, and the panel's skeleton stood for as long
+      // as the page did.
+      if (live) setHistoryIn(true);
+      done('history');
     })();
     // The two boards. Drawn here rather than described, because a puzzle
     // page whose subject is nowhere on it is a menu about chess.
@@ -968,14 +968,13 @@ function Hub() {
         // draw; anything else is the shelf not loading, which used to be
         // drawn as "No puzzle book yet" over a vault that has books.
         if (!(e instanceof ApiError && e.status === 404)) fail('book', e);
-      } finally {
-        if (live) {
-          // Covers a failure before the shelf answered at all.
-          setBooksIn(true);
-          setBookIn(true);
-        }
-        done('book');
       }
+      if (live) {
+        // Covers a failure before the shelf answered at all.
+        setBooksIn(true);
+        setBookIn(true);
+      }
+      done('book');
     })();
     return () => {
       live = false;

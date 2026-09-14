@@ -1,5 +1,5 @@
 import { BarChart3, Check, ChevronLeft, ChevronRight, Eye, History, LayoutGrid, Pencil, RotateCcw, RotateCw, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { TrainerBoard, TrainerNavBar, TrainerPanes } from '@/components/trainer-shell';
@@ -148,7 +148,13 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     };
   }, [slug]);
 
-  useEffect(() => {
+  // Keyed on the PUZZLE, not the book object. Recording an attempt folds
+  // the server's new progress into the cached book, which is a new object
+  // every time — so depending on `book` here meant submitting an answer
+  // rebuilt the tree and threw you back to the start of the puzzle you
+  // had just solved. An Effect Event reads the puzzle without it being a
+  // dependency.
+  const startPuzzle = useEffectEvent(() => {
     if (!puzzle) return;
     const fresh = createTree(puzzle.fen);
     setTree(fresh);
@@ -160,12 +166,9 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     setEngineApproved(false);
     setFlipped(false);
     reported.current = false;
-    // Keyed on the PUZZLE, not the book object. Recording an attempt folds
-    // the server's new progress into the cached book, which is a new object
-    // every time — so depending on `book` here meant submitting an answer
-    // rebuilt the tree and threw you back to the start of the puzzle you
-    // had just solved.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    startPuzzle();
   }, [puzzleId, puzzle?.fen]);
 
   const node = tree ? getNode(tree, cursorId) : null;
@@ -319,7 +322,9 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       }
       replay = result.tree;
       at = result.nodeId;
-      i++;
+      // Not `i++`: the React Compiler cannot lower an update expression
+      // on a variable a closure captures.
+      i = i + 1;
       setTree(replay);
       setCursorId(at);
       if (i < solution.uci.length) timers.current.push(setTimeout(step, 650));
@@ -369,11 +374,13 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
 
   // The verdict is a coloured line in the panel; say it out loud too
   // (see lib/announce — same treatment as the Lichess trainer's verdicts).
-  useEffect(() => {
+  const announceVerdict = useEffectEvent(() => {
     if (phase === 'done') {
       announce(won ? t('Solved') : helped ? t('Solved with help') : t('Not solved'));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    announceVerdict();
   }, [phase]);
 
   // Sound per rendered position; the root (no move reached it) is silent.

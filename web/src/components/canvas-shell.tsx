@@ -57,7 +57,11 @@ export function useCanvasInset(): number {
 function usePanelFocus(node: HTMLElement | null, takeFocus: number, onClose: () => void): void {
   const outside = useRef<HTMLElement | SVGElement | null>(null);
   const close = useRef(onClose);
-  close.current = onClose;
+  // Filled from a layout effect, not in render (the React Compiler refuses
+  // a ref written in render); the listeners below read it later.
+  useLayoutEffect(() => {
+    close.current = onClose;
+  });
 
   useEffect(() => {
     if (!node) return;

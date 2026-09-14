@@ -47,6 +47,33 @@ export type ShelfSorts<S extends string> = readonly { value: S; label: string }[
  * own list pasted in. `natural` is the direction each sort starts in,
  * the one its name means; picking a sort resets to it.
  */
+/** The shelf's remembered order on this device, or the natural one. A
+    function of its own so its try/catch stays out of the hook, which the
+    React Compiler memoises and cannot lower a conditional inside a try
+    for. */
+function storedShelfOrder<S extends string>(
+  key: string,
+  sorts: ShelfSorts<S>,
+  natural: Record<S, ShelfDir>,
+  fallback: S,
+): { sort: S; dir: ShelfDir; layout: ShelfLayout } {
+  try {
+    const saved = JSON.parse(localStorage.getItem(key) ?? '{}') as Partial<{
+      sort: S;
+      dir: ShelfDir;
+      layout: ShelfLayout;
+    }>;
+    const sort = sorts.some((s) => s.value === saved.sort) ? saved.sort! : fallback;
+    return {
+      sort,
+      dir: saved.dir === 'asc' || saved.dir === 'desc' ? saved.dir : natural[sort],
+      layout: saved.layout === 'list' ? 'list' : 'grid',
+    };
+  } catch {
+    return { sort: fallback, dir: natural[fallback], layout: 'grid' };
+  }
+}
+
 export function useShelfOrder<S extends string>(
   key: string,
   sorts: ShelfSorts<S>,
@@ -60,23 +87,7 @@ export function useShelfOrder<S extends string>(
   layout: ShelfLayout;
   setLayout: (layout: ShelfLayout) => void;
 } {
-  const [state, setState] = useState<{ sort: S; dir: ShelfDir; layout: ShelfLayout }>(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(key) ?? '{}') as Partial<{
-        sort: S;
-        dir: ShelfDir;
-        layout: ShelfLayout;
-      }>;
-      const sort = sorts.some((s) => s.value === saved.sort) ? saved.sort! : fallback;
-      return {
-        sort,
-        dir: saved.dir === 'asc' || saved.dir === 'desc' ? saved.dir : natural[sort],
-        layout: saved.layout === 'list' ? 'list' : 'grid',
-      };
-    } catch {
-      return { sort: fallback, dir: natural[fallback], layout: 'grid' };
-    }
-  });
+  const [state, setState] = useState(() => storedShelfOrder(key, sorts, natural, fallback));
   useEffect(() => {
     try {
       localStorage.setItem(key, JSON.stringify(state));

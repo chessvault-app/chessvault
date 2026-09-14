@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
@@ -32,7 +32,8 @@ export function ChipRow({
     setCan((prev) => (prev.left === left && prev.right === right ? prev : { left, right }));
   };
 
-  useEffect(() => {
+  // Attached once, reading the latest `update` through an Effect Event.
+  const attach = useEffectEvent((): (() => void) | undefined => {
     const el = ref.current;
     if (!el) return;
     update();
@@ -50,8 +51,8 @@ export function ChipRow({
       el.removeEventListener('wheel', onWheel);
       ro.disconnect();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- attach once
-  }, []);
+  });
+  useEffect(() => attach(), []);
 
   const nudge = (dir: -1 | 1): void => {
     // Plain scrollBy: smooth-behavior scrollBy silently no-ops on these

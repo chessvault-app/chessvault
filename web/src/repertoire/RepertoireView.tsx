@@ -11,7 +11,7 @@ import {
   Settings2,
   TriangleAlert,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { addSan, addUci, createTree, getNode, legalDests, mainlineFrom, moveSquares, pathTo, positionAt, updateNode } from '@shared/tree';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
 import type { Chapter, MoveTree, NodeId } from '@shared/types';
@@ -570,7 +570,7 @@ export function RepertoireView() {
 
   // Idle previews the chosen opening immediately, last move highlighted —
   // or, in drill mode, the chosen chapter's starting position.
-  useEffect(() => {
+  const seedBoard = useEffectEvent(() => {
     if (phase !== 'idle') return;
     if (mode === 'drill') {
       if (mapDrill) {
@@ -593,15 +593,16 @@ export function RepertoireView() {
     setTree(seeded);
     setTipId(tip);
     setCursorId(tip);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    seedBoard();
   }, [template, phase, mode, drillChapters, chapterIdx, mapDrill]);
 
   // The endings and the errors, announced once each as they land. The
   // replies and the refusals are announced where they happen; these two
   // arrive from several paths, and one effect is what keeps them all
   // said. The gap ending's sentence is the callout's own.
-  useEffect(() => {
-    if (phase !== 'ended') return;
+  const announceEnd = useEffectEvent(() => {
     announce(
       endKind === 'line'
         ? t('End of your prepared line. Every move matched the study.')
@@ -609,7 +610,10 @@ export function RepertoireView() {
           ? (gap?.text ?? '')
           : t('This line has run past the database. You are on your own now.'),
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    if (phase !== 'ended') return;
+    announceEnd();
   }, [phase]);
   useEffect(() => {
     if (error) announce(error);
@@ -660,13 +664,14 @@ export function RepertoireView() {
       const fallback = online
         ? 'Could not reach the Lichess database.'
         : 'Could not read the reference database.';
+      const fen = getNode(curTree, curId).fen;
+      // Chosen before the try: the React Compiler cannot lower a
+      // conditional inside one yet.
+      const url = online
+        ? `/api/explorer/lichess?fen=${encodeURIComponent(fen)}&ratings=${ratings}`
+        : `/api/refgames/explore?db=${encodeURIComponent(src)}&fen=${encodeURIComponent(fen)}`;
       try {
-        const fen = getNode(curTree, curId).fen;
-        const body = await api<{ moves?: ExplorerMove[] } | null>(
-          online
-            ? `/api/explorer/lichess?fen=${encodeURIComponent(fen)}&ratings=${ratings}`
-            : `/api/refgames/explore?db=${encodeURIComponent(src)}&fen=${encodeURIComponent(fen)}`,
-        );
+        const body = await api<{ moves?: ExplorerMove[] } | null>(url);
         if (token !== runId.current) return;
         if (!body?.moves) {
           setError(t(fallback));

@@ -95,28 +95,37 @@ export function lazyRoute<T extends ComponentType<any>>(
       ));
 
   const Route: FunctionComponent<ComponentProps<T>> = function Route(props: ComponentProps<T>) {
-    const [, redraw] = useState(0);
+    // Left to React as written. The compiler takes a component made
+    // inside a factory for a top-level one: `ready` and `failure`, the
+    // factory's own variables, read as module constants to it, so it
+    // cached the first (empty) output for good and, once they were read
+    // through state instead, outlined the initialiser to module scope,
+    // where `ready` is not defined. Every page came up blank, then threw.
+    'use no memo';
+    const [settled, setSettled] = useState<{ ready: T | null; failure: unknown } | null>(() =>
+      ready || failure ? { ready, failure } : null,
+    );
     // In render, not in an effect: effects run after the paint, and the
     // chunk should be asked for while the browser is already fetching the
     // shell's own files, not a frame later.
-    if (!ready && !failure) void fetchModule();
+    if (!settled) void fetchModule();
     useEffect(() => {
-      if (ready) return;
+      if (settled) return;
       let live = true;
       void fetchModule().then(() => {
-        if (live) redraw((n) => n + 1);
+        if (live) setSettled({ ready, failure });
       });
       return () => {
         live = false;
       };
-    }, []);
+    }, [settled]);
     // Thrown from render so the route's error boundary catches it, which
     // is where lazy() used to put it.
-    if (failure) throw failure;
+    if (settled?.failure) throw settled.failure;
     // Until then the same empty box the Suspense fallback drew, and for
     // the same reason: a section's chunk usually beats the next paint, so
     // anything more would be a skeleton nobody sees.
-    return ready ? createElement(ready, props) : null;
+    return settled?.ready ? createElement(settled.ready, props) : null;
   };
   return Object.assign(Route, { pending: () => (ready || failure ? null : fetchModule()) });
 }

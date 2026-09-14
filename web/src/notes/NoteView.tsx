@@ -1,6 +1,6 @@
 import { EditorContent, useEditor } from '@tiptap/react';
 import { ChevronLeft, Pencil } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
@@ -346,33 +346,38 @@ function NoteEditor({
   // Leaving flushes an autosave that was armed but had not fired. Only
   // that: with autosave off there is no timer, and the leave guard has
   // already asked what to do with the changes and been answered.
-  useEffect(() => {
-    return () => {
-      // A park still on the clock would fire at a note nobody has open.
-      // Whatever is already parked stays: that is the whole point of it.
-      cancelPark();
-      if (saveTimer.current) {
-        clearTimeout(saveTimer.current);
-        saveTimer.current = null;
-        if (editor && !editor.isDestroyed) {
-          void save(docToMarkdown(editor.state.doc, front.current));
-        }
+  // What leaving the editor does, as an Effect Event: it reads the latest
+  // save and park without them being dependencies (the React Compiler
+  // refuses a suppressed list), and runs from the effect's cleanup.
+  const onLeaveEditor = useEffectEvent(() => {
+    // A park still on the clock would fire at a note nobody has open.
+    // Whatever is already parked stays: that is the whole point of it.
+    cancelPark();
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current);
+      saveTimer.current = null;
+      if (editor && !editor.isDestroyed) {
+        void save(docToMarkdown(editor.state.doc, front.current));
       }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }
+  });
+  useEffect(() => {
+    return () => onLeaveEditor();
   }, [editor]);
 
   // See StudyView: the same claim on the way out, for the same reasons.
-  useEffect(() => {
-    if (!editor) return;
-    return registerLeaveGuard({
+  const guardLeaving = useEffectEvent(() =>
+    registerLeaveGuard({
       name: id.split('/').at(-1)!,
-      isDirty: () => docToMarkdown(editor.state.doc, front.current) !== lastSaved.current,
-      save: () => save(docToMarkdown(editor.state.doc, front.current)),
+      isDirty: () => docToMarkdown(editor!.state.doc, front.current) !== lastSaved.current,
+      save: () => save(docToMarkdown(editor!.state.doc, front.current)),
       discard,
       autoSaves: () => usePrefs.getState().autosave,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }),
+  );
+  useEffect(() => {
+    if (!editor) return;
+    return guardLeaving();
   }, [editor, id]);
 
   useEffect(() => {

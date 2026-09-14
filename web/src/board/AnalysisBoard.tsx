@@ -6,7 +6,7 @@ import {
   ChevronRight,
   FlipHorizontal2,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { DrawShape } from '@lichess-org/chessground/draw';
 import type { Key } from '@lichess-org/chessground/types';
 import { getNode, legalDests, moveSquares, pathTo, positionAt } from '@shared/tree';
@@ -137,12 +137,12 @@ export function AnalysisBoard({
   // tick for a position that never changed.
   // moveSquares, not a plain slice: castling highlights the king's real
   // destination (lichess-style), not the rook square its uci encodes.
-  const lastMove = useMemo(
-    () => moveSquares(node),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the values the helper reads
-    [node.uci, node.san],
-  );
-  const shapes = useMemo(() => toDrawShapes(node.shapes), [node.shapes]);
+  // A plain call now: the React Compiler memoises it on `node`, which
+  // only changes when the cursor moves, so an engine tick still reuses
+  // the same pair (the hand-written memo keyed on uci and san did the
+  // same and needed a suppressed dependency list to say so).
+  const lastMove = moveSquares(node);
+  const shapes = toDrawShapes(node.shapes);
 
   // Whether the move on screen is book — from the opening catalogue, on
   // any branch, so the badge follows the cursor into variations; deferred
@@ -185,12 +185,14 @@ export function AnalysisBoard({
   // too: going back to the starting position is silent there as well.
   // A move sounds; the absence of a move does not.
   const lastCursor = useRef<string | null>(null);
-  useEffect(() => {
+  const soundTheMove = useEffectEvent(() => {
     if (lastCursor.current !== null && lastCursor.current !== cursorId && node.san) {
       playSound(soundForSan(node.san));
     }
     lastCursor.current = cursorId;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    soundTheMove();
   }, [cursorId]);
 
   // Mouse wheel over the board steps through the game. Registered manually:
@@ -645,7 +647,9 @@ function useRepeat(step: () => void): {
   // Read through a ref so the handlers can stay stable while `step` — a
   // store action, but not guaranteed to be — is free to change.
   const latest = useRef(step);
-  latest.current = step;
+  useLayoutEffect(() => {
+    latest.current = step;
+  });
   const timers = useRef<{
     delay: ReturnType<typeof setTimeout> | null;
     tick: ReturnType<typeof setInterval> | null;

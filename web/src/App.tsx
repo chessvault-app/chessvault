@@ -23,7 +23,7 @@ import {
   X,
   Crown,
 } from 'lucide-react';
-import { Component, Fragment, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { Component, Fragment, Suspense, useEffect, useEffectEvent, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { displayName, useVaultInfo } from '@/lib/vaultName';
 import { lazyRoute } from '@/lib/lazyRoute';
@@ -415,11 +415,14 @@ function Shell() {
   const recordOpen = useRecentOpens((s) => s.record);
   const opened = recentOpenOf(section, params);
   const openedKey = opened ? `${opened.section}/${opened.id}` : null;
-  useEffect(() => {
+  // The key, not the object: a new object per render would re-record.
+  // An Effect Event reads the object without it being a dependency.
+  const recordOpened = useEffectEvent(() => {
     if (opened) recordOpen(opened);
-    // The key, not the object: a new object per render would re-record.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openedKey, recordOpen]);
+  });
+  useEffect(() => {
+    recordOpened();
+  }, [openedKey]);
   // Ctrl/Cmd B folds and unfolds the sidebar, the registry's own key for
   // it and VS Code's. Only where there is a sidebar (md), and not while
   // a window owns the keyboard or a field has it. The switch is the

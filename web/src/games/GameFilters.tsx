@@ -3,7 +3,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
-  useMemo,
+
   useRef,
   useState,
   type ReactNode,
@@ -878,6 +878,26 @@ const HintRow = memo(function HintRow({
   );
 });
 
+/**
+ * The server's own match, applied to what is in hand while its answer for
+ * this key is still out: players and names by prefix, tournaments by any
+ * word. Once the answer has landed it is used as sent.
+ */
+function liveSuggestions(
+  fetchKey: string | null,
+  fetched: { key: string; list: ValueSuggestion[] },
+  typedValue: string,
+  contains: boolean,
+): ValueSuggestion[] {
+  if (fetchKey === null) return [];
+  if (fetched.key === fetchKey) return fetched.list;
+  const needle = typedValue.toLowerCase();
+  return fetched.list.filter((val) => {
+    const name = val.v.toLowerCase();
+    return contains ? name.includes(needle) : name.startsWith(needle);
+  });
+}
+
 export function SearchQueryHints({
   query,
   onPick,
@@ -939,28 +959,20 @@ export function SearchQueryHints({
       clearTimeout(timer);
     };
   }, [suggest, fetchKey]);
-  const live = useMemo(() => {
-    if (fetchKey === null) return [];
-    if (fetched.key === fetchKey) return fetched.list;
-    // The server's own match, applied to what is in hand: players and
-    // names by prefix, tournaments by any word.
-    const needle = typedValue.toLowerCase();
-    const contains = valueOp?.key === 'event';
-    return fetched.list.filter((val) => {
-      const name = val.v.toLowerCase();
-      return contains ? name.includes(needle) : name.startsWith(needle);
-    });
-  }, [fetchKey, fetched, typedValue, valueOp]);
+  // Memoised by the React Compiler on what it reads (the hand-written
+  // memo's list did not match what the compiler inferred, so it refused
+  // the whole component).
+  const live = liveSuggestions(fetchKey, fetched, typedValue, valueOp?.key === 'event');
   // The answer is out and nothing in hand fits: rows where the names
   // will land, past the app's hold, in place of a hint that reads as
   // "nothing found".
   const waiting = useSlowLoad(fetchKey !== null && fetched.key !== fetchKey && live.length === 0);
 
   // One flat list whatever the mode, so the keyboard walks it blind.
-  // Memoised as DATA: the rows are memo components over these, and an
-  // active-row change must not reconcile a catalogue of thousands.
-  const entries = useMemo<HintItem[]>(
-    () =>
+  // Memoised as DATA (by the React Compiler, on what it reads): the rows
+  // are memo components over these, and an active-row change must not
+  // reconcile a catalogue of thousands.
+  const entries: HintItem[] =
       prefixOps.length > 0
         ? prefixOps.map((op) => ({
             id: `op:${op.key}`,
@@ -985,13 +997,11 @@ export function SearchQueryHints({
                 primary: val.v,
                 secondary: val.desc,
               }))
-            : [],
-    // Everything above derives from the query and the fetched values.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [query, live],
-  );
+            : [];
   const pickRef = useRef(onPick);
-  pickRef.current = onPick;
+  useLayoutEffect(() => {
+    pickRef.current = onPick;
+  });
   const pick = useCallback((insert: string) => pickRef.current(insert), []);
 
   const [active, setActive] = useState(-1);
@@ -1005,10 +1015,12 @@ export function SearchQueryHints({
   // the memo pass didn't cure. Fixed-height rows make the window pure
   // arithmetic on scrollTop.
   const [scrollTop, setScrollTop] = useState(0);
+  // Keyed on what `entries` derives from (the query and the fetched
+  // names), the deps the memo above used to carry.
   useEffect(() => {
     setScrollTop(0);
     if (listRef.current) listRef.current.scrollTop = 0;
-  }, [entries]);
+  }, [query, live]);
   // Walking with the keyboard must not leave the active row outside the
   // fold — computed from the row index, since the row may not be
   // mounted yet for scrollIntoView to find.
@@ -1055,8 +1067,7 @@ export function SearchQueryHints({
     () => () => {
       if (controlRef) controlRef.current = null;
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [controlRef],
   );
 
   const hint =

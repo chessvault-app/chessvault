@@ -953,13 +953,20 @@ const SLICE_OPACITY = [0.45, 0.32, 0.22, 0.15, 0.1, 0.07];
 function Donut({ shares, ink, total }: { shares: { ending: Ending; games: number; share: number }[]; ink: string; total: number }) {
   const R = 100 / (2 * Math.PI);
   const GAP = 2;
-  let offset = 0;
+  // Each slice's offset is the running sum of the shares before it,
+  // summed here rather than in the map's callback: the React Compiler
+  // cannot compile a variable reassigned inside a render-time lambda.
+  const starts: number[] = [];
+  let acc = 0;
+  for (const s of shares) {
+    starts.push(acc);
+    acc += s.share;
+  }
   return (
     <div className="relative mx-auto size-28">
       <svg viewBox="0 0 40 40" className={cn('size-full -rotate-90', ink)} role="img" aria-label={t('{n} games', { n: exact.format(total) })}>
         {shares.map((s, at) => {
-          const start = offset;
-          offset += s.share;
+          const start = starts[at]!;
           // A slice thinner than the gap is drawn whole; one that is
           // the whole ring needs no gap at all.
           const drawn = shares.length === 1 ? 100 : Math.max(s.share - GAP, Math.min(s.share, 1));

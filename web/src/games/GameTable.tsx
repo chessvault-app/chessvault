@@ -334,7 +334,6 @@ export function GameTableHeader({
   // has focus, opens the set; Up and Down walk it, Escape comes back.
   const entry = useRef<HTMLButtonElement | null>(null);
   const grips = useRef<(HTMLSpanElement | null)[]>([]);
-  let gripIndex = 0;
   return (
     <div className="border-border relative border-t">
       <button
@@ -362,7 +361,7 @@ export function GameTableHeader({
       <div
         className={cn(GRID, 'text-muted-foreground min-h-7 py-1 text-xs font-medium')}
       >
-        {colsOf(withStanding, withNotation).map((c) =>
+        {colsOf(withStanding, withNotation).map((c, gripIndex) =>
           c.id === 'standing' ? (
             // Pinned like the rows' own standing cell (see below), and
             // without a resize handle — a pinned column's width is the
@@ -424,9 +423,9 @@ export function GameTableHeader({
                 aria-valuemin={c.min}
                 aria-valuemax={COL_MAX}
                 tabIndex={-1}
-                ref={((i: number) => (el: HTMLSpanElement | null) => {
-                  grips.current[i] = el;
-                })(gripIndex++)}
+                ref={(el: HTMLSpanElement | null) => {
+                  grips.current[gripIndex] = el;
+                }}
                 onKeyDown={(e) => {
                   const live = grips.current.filter(Boolean) as HTMLSpanElement[];
                   const at = live.indexOf(e.currentTarget);

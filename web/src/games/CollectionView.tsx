@@ -119,8 +119,9 @@ export function CollectionView() {
   const togglePin = (): void => {
     const next = !pinned;
     setChoice(next);
+    const stored = next ? '1' : '0';
     try {
-      localStorage.setItem(PIN_KEY, next ? '1' : '0');
+      localStorage.setItem(PIN_KEY, stored);
     } catch {
       /* the session still remembers; it just will not survive a reload */
     }

@@ -14,7 +14,7 @@ import {
   X,
   Search,
 } from 'lucide-react';
-import { Suspense, lazy, useEffect, useState, useRef } from 'react';
+import { Suspense, lazy, useEffect, useEffectEvent, useState, useRef } from 'react';
 import { BrandMark, Wordmark } from '@/components/brand-mark';
 import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
@@ -896,18 +896,6 @@ export function HomePage() {
     board: boardStudy !== null,
   };
 
-  // Remembered for the NEXT launch's reservation, above.
-  useEffect(() => {
-    if (data === null) return;
-    localStorage.setItem(CONTINUE_KEY, JSON.stringify(shape));
-    // Beside it, because the checklist is known from this same answer and
-    // is drawn at every width — the dashboard's shape below has to wait
-    // for a second batch a phone never asks for.
-    localStorage.setItem(CHECKLIST_SHOWN_KEY, storedChecklist(showChecklist));
-    for (const key of CONTINUE_LEGACY_KEYS) localStorage.removeItem(key);
-    // `shape` is derived from data; keying on data is keying on it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
 
   // First-run steps, each ending in a feature lighting up. The list only
   // exists while something is unlit, and can be dismissed for good.
@@ -933,6 +921,24 @@ export function HomePage() {
         ];
   const showChecklist =
     show('checklist') && data !== null && checklist.some((step) => !step.done);
+
+  // Remembered for the NEXT launch's reservation, above. Placed after
+  // showChecklist, which it reads: the React Compiler refuses a read
+  // before the declaration.
+  // `shape` is derived from data; keying on data is keying on it. An
+  // Effect Event reads the derived values without them being dependencies.
+  const rememberShape = useEffectEvent(() => {
+    localStorage.setItem(CONTINUE_KEY, JSON.stringify(shape));
+    // Beside it, because the checklist is known from this same answer and
+    // is drawn at every width — the dashboard's shape below has to wait
+    // for a second batch a phone never asks for.
+    localStorage.setItem(CHECKLIST_SHOWN_KEY, storedChecklist(showChecklist));
+    for (const key of CONTINUE_LEGACY_KEYS) localStorage.removeItem(key);
+  });
+  useEffect(() => {
+    if (data === null) return;
+    rememberShape();
+  }, [data]);
 
   // Whether the Training panel has a single row to offer. Stated once,
   // because the dashboard's "nothing at all" card is the negation of every
@@ -969,12 +975,14 @@ export function HomePage() {
   // Written only once BOTH batches are in, because that is when the grid
   // is drawn: storing it on `data` alone would record a dashboard with no
   // games in it every launch, and reserve one short from then on.
+  // `dashShape` is derived from the two answers; keying on them is
+  // keying on it.
+  const rememberDash = useEffectEvent(() => {
+    localStorage.setItem(DASH_KEY, JSON.stringify(dashShape));
+  });
   useEffect(() => {
     if (data === null || dash === null) return;
-    localStorage.setItem(DASH_KEY, JSON.stringify(dashShape));
-    // `dashShape` is derived from the two answers; keying on them is
-    // keying on it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    rememberDash();
   }, [data, dash]);
 
 

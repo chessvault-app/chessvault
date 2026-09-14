@@ -12,7 +12,7 @@ import {
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { Fragment, useContext, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { Fragment, useContext, useEffect, useEffectEvent, useId, useMemo, useRef, useState } from 'react';
 import { parseBoardFen } from 'chessops/fen';
 import { parseSquare } from 'chessops/util';
 import type { Color, Piece, Role, Square } from 'chessops/types';
@@ -239,7 +239,7 @@ export function EditorView({
   // The host window's title row follows the page (see onChainChange).
   const onChainChangeRef = useRef(onChainChange);
   onChainChangeRef.current = onChainChange;
-  useEffect(() => {
+  const tellChain = useEffectEvent(() => {
     const tell = onChainChangeRef.current;
     if (!tell) return;
     if (!paging || chain.page === 'board') {
@@ -261,7 +261,9 @@ export function EditorView({
         else goto(chain.page === 'load' ? 'position' : 'load');
       },
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- goto is stable in effect
+  });
+  useEffect(() => {
+    tellChain();
   }, [paging, chain.page]);
   // The host must not keep a page title for an editor that is gone.
   useEffect(() => () => onChainChangeRef.current?.(null), []);
@@ -318,15 +320,18 @@ export function EditorView({
     const looksLikePgn = /^\s*\[/.test(value) || /1\s*\.\s*[A-Za-z]/.test(value);
     let fenToLoad = value;
     if (looksLikePgn) {
+      let first: ReturnType<typeof pgnToChapters>[number] | undefined;
       try {
-        const first = pgnToChapters(value)[0];
-        if (!first) throw new Error('no games');
-        const tree = first.tree;
-        const lastId = mainlineFrom(tree, tree.rootId).at(-1) ?? tree.rootId;
-        fenToLoad = getNode(tree, lastId).fen;
+        first = pgnToChapters(value)[0];
       } catch {
-        return 'That PGN could not be read.';
+        first = undefined;
       }
+      // No games is as unreadable as a parse failure; decided after the
+      // try, which the React Compiler cannot lower a throw inside of.
+      if (!first) return 'That PGN could not be read.';
+      const tree = first.tree;
+      const lastId = mainlineFrom(tree, tree.rootId).at(-1) ?? tree.rootId;
+      fenToLoad = getNode(tree, lastId).fen;
     }
     const next = fromFen(fenToLoad);
     if (!next) return 'That FEN could not be read.';

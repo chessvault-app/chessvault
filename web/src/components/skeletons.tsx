@@ -125,10 +125,13 @@ export function Arrival({
   children: React.ReactNode;
   className?: string;
 }) {
-  const shown = useRef(false);
-  if (pending) shown.current = true;
+  // Whether a placeholder has ever been on screen here: state adjusted
+  // during render (React's own pattern for a value that follows a prop)
+  // rather than a ref written in render, which the React Compiler refuses.
+  const [shown, setShown] = useState(false);
+  if (pending && !shown) setShown(true);
   return (
-    <div className={cn(!pending && shown.current && 'max-sm:animate-in max-sm:fade-in-0 max-sm:duration-150', className)}>
+    <div className={cn(!pending && shown && 'max-sm:animate-in max-sm:fade-in-0 max-sm:duration-150', className)}>
       {children}
     </div>
   );

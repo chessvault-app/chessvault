@@ -1,5 +1,5 @@
 import { ExternalLink, Globe, Info, Play, Plus } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { create } from 'zustand';
 
 import { api, apiErrorMessage } from '@/lib/api';
@@ -355,7 +355,10 @@ export function ArchiveBrowser({
   const setMonth = (v: string): void => useArchiveBrowse.setState({ month: v });
   const setMonthGames = (v: GameSummary[]): void => useArchiveBrowse.setState({ monthGames: v });
   // First run on a device: fall back to the profile usernames from Settings.
-  useEffect(() => {
+  // Effect Events (useEffectEvent) where an effect reads the latest state
+  // without wanting to re-run on it: what the suppressed dependency lists
+  // said by hand, and what the React Compiler refuses to compile past.
+  const prefillUsername = useEffectEvent(() => {
     if (username.trim()) return;
     void api<{ profile?: { chesscom?: string; lichess?: string } }>('/api/settings')
       .then((s) => {
@@ -365,7 +368,9 @@ export function ArchiveBrowser({
       .catch(() => {
         /* a cosmetic prefill: the field simply stays empty */
       });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    prefillUsername();
   }, [provider]);
   const apiBase = provider === 'chesscom' ? '/api/games/archive' : '/api/games/lichess';
   /**
@@ -451,9 +456,10 @@ export function ArchiveBrowser({
       }
     } catch (failure) {
       setError(t(apiErrorMessage(failure)));
-    } finally {
-      setLoading(null);
     }
+    // After the try, not in a finally: the React Compiler cannot lower
+    // one yet, and both arms fall through to here.
+    setLoading(null);
   };
 
   /**
@@ -467,12 +473,14 @@ export function ArchiveBrowser({
    * per mount.
    */
   const autoLooked = useRef(false);
-  useEffect(() => {
+  const lookUpOnce = useEffectEvent(() => {
     if (provider !== site || autoLooked.current) return;
     if (months.length > 0 || loading !== null || !username.trim()) return;
     autoLooked.current = true;
     void loadMonths();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    lookUpOnce();
   }, [site, provider, username, months.length, loading]);
 
   /**
@@ -546,10 +554,14 @@ export function ArchiveBrowser({
           cursor: s.cursor + 1,
         }));
       }
-    } finally {
-      loadingMore.current = false;
-      setLoading(null);
+    } catch {
+      // A month that will not come stops the page here; the rows already
+      // added stay, and the sentinel asks again when it is next in view.
+      // (Caught rather than left to a finally, which the React Compiler
+      // cannot lower; this was a `void` call, so nothing read the throw.)
     }
+    loadingMore.current = false;
+    setLoading(null);
   };
 
   /**
@@ -559,7 +571,7 @@ export function ArchiveBrowser({
    * rather than stopping at a spinner and waiting. Re-armed whenever the
    * cursor moves, because the sentinel is a new element each time.
    */
-  useEffect(() => {
+  const watchSentinel = useEffectEvent((): (() => void) | undefined => {
     const node = moreSentinel.current;
     if (!node || month !== ALL_MONTHS || cursor >= months.length) return;
     const io = new IntersectionObserver(
@@ -570,8 +582,8 @@ export function ArchiveBrowser({
     );
     io.observe(node);
     return () => io.disconnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [month, cursor, months.length]);
+  });
+  useEffect(() => watchSentinel(), [month, cursor, months.length]);
 
   const loadMonth = async (m: string): Promise<void> => {
     onSelectRef.current?.(null);
@@ -682,9 +694,11 @@ export function ArchiveBrowser({
   // This browser answers for ITS site whatever another instance left
   // in the shared browse store — the other provider's tab. Reconciling
   // is the same reset switching sites has always cost.
-  useEffect(() => {
+  const reconcileSite = useEffectEvent(() => {
     if (provider !== site) switchProvider(site);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    reconcileSite();
   }, [site, provider]);
 
   /**
