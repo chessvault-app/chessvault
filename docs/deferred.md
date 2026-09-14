@@ -16,16 +16,24 @@ the work.
 measured on the branch `vt-experiment` (2026-09-14): each kept route
 slot as a `<ViewTransition>`, the route committed in a Transition with
 the direction as its type, the same four slides drawn on the slots
-instead of the root. It runs, and a push settles about 200 ms sooner
-on a slowed phone, but two things the hand-rolled transition in
-`lib/router.ts` gets right it does not: React snapshots the incoming
-page at its first commit, before its data has arrived, so the shelf
-slides away under a blank page and the content lands afterwards; and
-the shared board's flight from card to page does not run. The first
-needs data read through Suspense (`use()`) so the snapshot waits for
-it, which is the trigger: the day a page's data loads that way, the
-branch is worth rebasing and measuring again. Until then the router
-keeps `document.startViewTransition` with `flushSync`.
+instead of the root. Measured with the demo's API slowed by 300 ms
+(`CHESS_LAG=1`) and the CPU four times, the two are the same page turn:
+both slide the incoming page's placeholder in over the darkened shelf
+and land its content afterwards, both settle within 10 ms of each
+other, both keep every frame they keep. (Measured against the
+unslowed demo the branch looked worse, because the demo answers in the
+render's own task and the root snapshot caught the whole page while
+React's per-slot snapshot caught its first commit; that was the demo,
+not the design.) One thing main does that the branch does not: on a
+pop the shared board flies from the page back into its card
+(`lib/shared-board`), and under React's transition it vanishes instead.
+It has not been diagnosed. And the branch pays for `routeSettled()`
+with a one-call patch of `document.startViewTransition`, since React
+hands back no promise. The trigger is either of those falling away:
+the board flight explained and restored, or a page's data read through
+Suspense so React's transition ends when the page is whole and the
+patch goes. Until then the router keeps `document.startViewTransition`
+with `flushSync`.
 
 **Absorbing the Databases manager into the games-page browser.** One
 surface for browsing and managing instead of two. Deliberately deferred:
