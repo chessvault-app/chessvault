@@ -44,6 +44,10 @@ The puzzle hub's boards stop changing under you.
   Puzzle themes tiles and their section headings, the dashboard's
   difficulty bands, More's group headings and the licence list all step
   up a rung under the phone width like the home rows did.
+- **Panel titles follow their rows up on a phone.** After the row lift
+  a panel's name ("Training", "Cycles", the move list's position title)
+  sat at 14 over rows of 16. It takes the row size under the phone
+  width; a desktop keeps the registry's 14.
 
 ## 0.11.0
 

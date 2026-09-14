@@ -272,7 +272,13 @@ export function PanelHeader({ title, actions, actionsClassName, className }: Pan
           fine in English and ships. Doing it once means it cannot be
           forgotten; a caller that already translated passes Korean, and
           t() on a string with no entry returns it unchanged. */}
-      <CardTitle className="min-w-0 flex-1 truncate text-sm">
+      {/* The row rung under md (type-row's phone value), because the rows
+          under a phone panel are 16 and a band's name a rung under its own
+          rows is a hierarchy upside down: the dashboard's Training panel
+          measured 14 over 16 after the phone row lift. As a variant and
+          not the bare class, since CardTitle's own text-base is emitted
+          after .type-row and would win the cascade. */}
+      <CardTitle className="min-w-0 flex-1 truncate text-sm max-md:type-row">
         {typeof title === 'string' ? t(title) : title}
       </CardTitle>
       {/* The actions take exactly their own width and the title takes the

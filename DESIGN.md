@@ -382,12 +382,24 @@ setting them in mono made every one of them look like a terminal.
   strip with the board's own controls and every point it takes is a point
   off the board.
 - **Title** (500, 16px / `text-base`): section titles, setting rows.
-- **Panel title** (500, 14px / `text-sm`): the header of a panel, via
-  `PanelHeader`, in the registry's own card-title voice. Deliberately on
-  the body rung, not Title: a panel's header shares a row with its
-  controls and reads as the name of a band, not a section of the page
-  (`docs/design-principles.md`, "A panel's header").
-- **Body** (400, 14px / `text-sm`): body copy, list rows, panel text.
+- **Panel title** (500, 14px / `text-sm`; `type-row`'s 16px under `md`): the header
+  of a panel, via `PanelHeader`, in the registry's own card-title voice.
+  Deliberately on the row rung, not Title: a panel's header shares a row
+  with its controls and reads as the name of a band, not a section of
+  the page (`docs/design-principles.md`, "A panel's header"). It follows
+  the rows under it up on a phone for the same reason: a band's name a
+  rung under the band's own rows is a hierarchy upside down.
+- **Body** (400, 14px / `text-sm`): body copy and panel text.
+- **Row** (400, 14px / `type-row`; **16px under `md`**): a list row's
+  line and the panel heading over it. The same class at both widths and
+  a different size, because the two platforms disagree: a desktop row is
+  13 to 14 (macOS, Windows, dense tables) and a phone row is 16 or 17
+  (iOS Body, Material Body Large). Under `md` the class also carries
+  Body's weight and Title's size, on purpose: on a phone the row IS the
+  body.
+- **Row tail** (400, 12px / `type-row-sub`; **14px under `md`**): the
+  date, count or word beside a row's text, and a shelf card's meta line.
+  Label's size on a desktop, Body's on a phone.
 - **Label** (500, 12px / `text-xs`): captions and dense labels only.
 - **Small control** (500, 12.8px / `text-[0.8rem]`): the label inside a
   `size="sm"` Button, Toggle or calendar cell. The registry's own value,
@@ -426,6 +438,19 @@ emphasis. They are a figure list at body size now.
 The 12px rung is captions — the size Material, Fluent and GitHub all
 reserve for them. Body once sat there at 284 call sites, which on a phone
 is 70% of the size every other app on the device uses.
+
+**The Phone Row Rule.** Under `md`, a line the reader chooses a row by
+is 16px and the line under it is 14; nothing a reader must read to use
+the page is under 14, and 12 is left to chips, codes, coordinates and
+a tile's label under its icon (the tab bar's own size). The rule is
+carried by `type-row` and `type-row-sub`, never by `max-md:text-*` at a
+call site, and the rungs are named `type-*` and not `text-*` because
+twMerge reads an unknown `text-*` as a colour and drops it beside a real
+one (measured: the theme tiles' labels inherited 16px at every width).
+Exempt on purpose: data tables (Insights stays at Body with Label
+headers, Material's own table sizes), and anything on the Fitted-Glyph
+list. Form labels are the registry's Label at 14 and are a separate
+decision.
 
 **The Board Pays Last Rule.** On a page whose subject is a board, chrome
 gives up a rung before the board gives up a pixel. That is why the page
