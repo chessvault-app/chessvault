@@ -30,7 +30,7 @@ import { lazyRoute } from '@/lib/lazyRoute';
 import { HomePage } from '@/home/HomePage';
 import { atRoute, decodeSegment, navigate, parse, registerRoutePending, sectionHref, useRoute, type Section } from '@/lib/router';
 import { scrollPageToTop } from '@/lib/scroll';
-import { KeepAlive } from '@/lib/keep-alive';
+import { KeepAlive, lastRouteOf, rememberRoute } from '@/lib/keep-alive';
 import { useTabScrub } from '@/hooks/use-tab-scrub';
 import { PasswordGate } from '@/auth/PasswordGate';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/components/mobile-action-bar';
@@ -382,8 +382,35 @@ function renderSection(section: Section, params: string[]): ReactNode {
   }
 }
 
+/**
+ * Open a section from a tab or a sidebar row.
+ *
+ * Where it was last, since the page under it is still there (KeepAlive):
+ * a tab bar's tab returns to the stack it left, and a shelf that is kept
+ * with a note open over it would otherwise be reached only by Back.
+ * The section that is ALREADY open goes to its root instead, which is a
+ * tab bar's second tap on both platforms: up from the leaf, and from the
+ * root itself to the top of the page (the bottom bar does that part).
+ * The board, editor and workspace are not kept and open plainly.
+ */
+function openSection(section: Section, active: Section, ...root: string[]): void {
+  if (section !== active && !UNKEPT.has(section)) {
+    const last = lastRouteOf(section);
+    if (last) {
+      navigate(...last);
+      return;
+    }
+  }
+  navigate(section, ...root);
+}
+
 function Shell() {
   const { section, params } = useRoute();
+  // Where each section is, for openSection. Every route change, since the
+  // kept section under a tab is at its last route, not its root.
+  useEffect(() => {
+    rememberRoute(section, sectionHref(section, ...params));
+  }, [section, params]);
   // What was opened, for the quick switcher's Recent group (store/recent).
   const recordOpen = useRecentOpens((s) => s.record);
   const opened = recentOpenOf(section, params);
@@ -884,7 +911,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
             <TitleTip title={folded ? t(label) : undefined} side={tipSide}>
             <NavLink
               href={sectionHref(section)}
-              onActivate={() => navigate(section)}
+              onActivate={() => openSection(section, active)}
               aria-label={t(label)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
@@ -983,7 +1010,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
         <TitleTip title={folded ? t('Databases') : undefined} side={tipSide}>
         <NavLink
           href={sectionHref('databases')}
-          onActivate={() => navigate('databases')}
+          onActivate={() => openSection('databases', active)}
           aria-label={t('Databases')}
           aria-current={active === 'databases' ? 'page' : undefined}
           className={cn(
@@ -1019,7 +1046,7 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
           <TitleTip title={t('Settings')} side={folded ? tipSide : undefined}>
             <NavLink
               href={sectionHref('settings')}
-              onActivate={() => navigate('settings')}
+              onActivate={() => openSection('settings', active)}
               aria-label={t('Settings')}
               aria-current={active === 'settings' ? 'page' : undefined}
               className={cn(
@@ -1151,13 +1178,15 @@ function MobileNav({ active }: { active: Section }) {
       // anywhere — a page consulted now and then, opened every time
       // anyone reached for training.
       go: () => {
-        const target = section === 'puzzles' ? sectionHref('puzzles', 'hub') : sectionHref(section);
+        const root = section === 'puzzles' ? sectionHref('puzzles', 'hub') : sectionHref(section);
         // Already here: the second tap goes back to the top of the
         // page, which is what a tab bar's current tab does on both
-        // platforms. `navigate` would do nothing on the same hash.
-        if (atRoute(target)) scrollPageToTop();
-        else if (section === 'puzzles') navigate('puzzles', 'hub');
-        else navigate(section);
+        // platforms. `navigate` would do nothing on the same hash. From
+        // a leaf of this section it goes up to the root, and from another
+        // section it returns to where this one was (openSection).
+        if (atRoute(root)) scrollPageToTop();
+        else if (section === 'puzzles') openSection('puzzles', active, 'hub');
+        else openSection(section, active);
       },
     })),
     {
