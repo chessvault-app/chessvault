@@ -9,9 +9,7 @@ import { INITIAL_FEN } from '@shared/tree';
 import { Board } from '@/board/Board';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
-import { ProgressBar } from '@/components/progress-bar';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { t } from '@/lib/i18n';
 import { Figures } from '@/components/figures';
@@ -707,26 +705,27 @@ function Hub() {
           </PlaceCard>
           <PlaceCard icon={BookMarked} title={t('Puzzle books')} go={() => navigate('puzzles', 'books')}>
             {book ? (
-              // The book you were last in, with the bar the shelf row wore.
-              // A "continue" line that does not go empty on the day you
-              // import your first book: an untouched book is still the
-              // thing you were about to start, and its bar is at nought.
-              <span className="flex items-center gap-2">
-                <span data-user-text className="text-muted-foreground truncate text-sm">
+              // The book you were last in and how far you are, in words. A
+              // "continue" line that does not go empty on the day you import
+              // your first book: an untouched book is still the thing you
+              // were about to start, at nought. The shelf row's bar was
+              // tried here and dropped: squeezed between a title and a count
+              // on a phone it was too short to read (lanph3re, 2026-09-14).
+              <span className="text-muted-foreground flex items-center gap-2 text-sm">
+                <span data-user-text className="min-w-0 flex-1 truncate">
                   {book.title}
                 </span>
-                <span className="min-w-0 flex-1">
-                  <ProgressBar total={book.puzzles} solved={book.solved} failed={book.failed} showEmpty decorative />
-                </span>
-                <span className="text-muted-foreground shrink-0 text-sm">
+                <span className="shrink-0">
                   <Figures text={t('{a} of {b}', { a: book.solved, b: book.puzzles })} />
                 </span>
               </span>
             ) : booksIn && !unanswered.has('book') ? (
               <PlaceDetail>{t('Import a tactics book you own from its PDF.')}</PlaceDetail>
             ) : (
-              // Not answered: the bar's empty track holds the line's height.
-              <Progress value={0} aria-hidden />
+              // Not answered: a bar on the detail line's own box.
+              <span className="flex h-5 items-center">
+                <Skeleton className="h-2 w-2/3" />
+              </span>
             )}
           </PlaceCard>
           <PlaceCard icon={BarChart3} title={t('Dashboard')} go={() => navigate('puzzles', 'dashboard')}>
