@@ -1035,3 +1035,12 @@ use.
 - Comments state constraints the code can't show, often with the
   decision's owner ("lanph3re's call") so future refactors know what is
   deliberate.
+- A slow frame is measured, then attributed. The probes (a rAF sampler,
+  a CDP screencast, Event Timing) say when it happened; `CHESS_PROFILE=1
+  npm run build:demo` builds with `react-dom/profiling`
+  (`web/vite.profiling.ts`), and a Chrome Performance recording of that
+  build shows React's Scheduler track (which lane, which phase, and any
+  cascading update) and, inside a `<Profiler>` or with React DevTools
+  installed, the Components track with per-component render and effect
+  times. It is a measurement build, slower and larger than the release,
+  and is never what a user runs.

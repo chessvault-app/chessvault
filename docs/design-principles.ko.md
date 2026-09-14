@@ -916,6 +916,14 @@ Tailwind v4, CSS 변수). 여기서 그것이 뜻하는 것과 뜻하지 않는 
 - 브라우저에서 확인하고(강제 새로고침을 씁니다. 그냥 F5는 낡은 모듈을 줄 수
   있습니다), 테스트를 실행하고, 기능 단위로 커밋합니다. 보관함 데이터 변경은
   코드와 별도의 커밋으로 갑니다.
+- 느린 프레임은 먼저 측정하고, 그다음 원인을 찾습니다. 프로브(rAF 샘플러,
+  CDP 스크린캐스트, Event Timing)는 언제 일어났는지를 말해 주고,
+  `CHESS_PROFILE=1 npm run build:demo`는 `react-dom/profiling`으로 빌드하며
+  (`web/vite.profiling.ts`), 그 빌드를 Chrome Performance로 기록하면
+  React의 Scheduler 트랙(어느 레인, 어느 단계, 연쇄 업데이트 여부)과,
+  `<Profiler>` 안이나 React DevTools가 설치된 경우 컴포넌트별 렌더와
+  효과 시간을 담은 Components 트랙이 보입니다. 측정용 빌드라 릴리스보다
+  느리고 크며, 사용자가 실행하는 빌드는 결코 아닙니다.
 - 주석은 코드가 보여 줄 수 없는 제약을 적고, 종종 그 결정의 주인을 함께
   남겨("lanph3re's call"), 나중의 리팩터가 무엇이 의도된 것인지 알 수
   있게 합니다.

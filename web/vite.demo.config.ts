@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { cpSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { reactCompiler } from './vite.compiler.ts';
+import { profilingAlias } from './vite.profiling.ts';
 import { licenses } from './vite.licenses.ts';
 import { precache } from './vite.precache.ts';
 
@@ -74,6 +75,7 @@ export default defineConfig({
     alias: {
       '@shared': `${repo}shared`,
       '@': `${root}src`,
+      ...profilingAlias(),
       // BEFORE 'node:fs': these are prefix matches, so the shorter key
       // would otherwise swallow this one and resolve the import to
       // `.../fs.ts/promises`, which is not a path.

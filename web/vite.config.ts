@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
 import { reactCompiler } from './vite.compiler.ts';
+import { profilingAlias } from './vite.profiling.ts';
 import { licenses } from './vite.licenses.ts';
 import { precache } from './vite.precache.ts';
 
@@ -84,6 +85,7 @@ export default defineConfig({
     alias: {
       '@shared': `${repo}shared`,
       '@': `${root}src`,
+      ...profilingAlias(),
     },
   },
   server: {
