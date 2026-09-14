@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vite';
+import { reactCompiler } from './vite.compiler.ts';
 import { licenses } from './vite.licenses.ts';
 import { precache } from './vite.precache.ts';
 
@@ -66,7 +67,7 @@ export default defineConfig({
   // a blocking stylesheet means the first thing painted is a styled page
   // rather than an unstyled flash. (vite.launchScreen.ts, which deferred
   // it, went with the launch screen it existed for.)
-  plugins: [react(), tailwindcss(), licenses(), precache(), noChunkCycles()],
+  plugins: [react(), ...reactCompiler(`${root}src`), tailwindcss(), licenses(), precache(), noChunkCycles()],
   // Stated false so it FOLDS. `isDemo()` guards on
   // `typeof __DEMO__ !== 'undefined'`, which is safe when the identifier is
   // absent but cannot be evaluated at build time — so the demo's dynamic

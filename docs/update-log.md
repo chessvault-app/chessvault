@@ -11,6 +11,13 @@ Pages come back as you left them, two of 0.10.0's phone changes are
 taken back, a bottom sheet resting low can be pulled up again, and a
 page opened inside a sheet turns like a page.
 
+- **The reference games search answers a key in half the time.** The
+  React Compiler now builds the games browser, the database search, the
+  puzzle trainer and the opening map, memoising at build time what these
+  pages memoised by hand and what they missed. Measured on the demo with
+  the CPU slowed four times: an input event in the database search took
+  6 ms of work against 13, and 17 ms to its paint against 22. The other
+  pages are built as before until each is checked in turn.
 - **A page comes back as you left it.** Going into a note, a study, a
   game or a book and back landed on the shelf redrawn from a skeleton,
   at the top, with its search and filters cleared. The shelf now stays
