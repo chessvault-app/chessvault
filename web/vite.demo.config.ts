@@ -68,6 +68,12 @@ export default defineConfig({
     // are none, and an undefined `process` would throw at import.
     'process.env': '{}',
     __DEMO__: 'true',
+    // The same artificial-latency switch the app build has (lib/api.ts,
+    // lagMs): CHESS_LAG=1 lets a demo build wait `localStorage.lag` ms
+    // before every request, so a page turn or a loading state can be
+    // measured against a slow link on the one vault that is the same for
+    // everyone. Stated false otherwise, so it folds away.
+    __LAG__: process.env.CHESS_LAG === '1' ? 'true' : 'false',
     __DEMO_VERSION__: JSON.stringify(APP_VERSION),
     __DEMO_BUILD__: JSON.stringify(BUILD_STAMP),
   },
