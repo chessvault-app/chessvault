@@ -160,7 +160,7 @@ function Slot({ children }: { children: ReactNode }) {
       enter={{ 'nav-push': 'vt-page-in', 'nav-pop': 'vt-page-under-in', default: 'none' }}
       exit={{ 'nav-push': 'vt-page-under-out', 'nav-pop': 'vt-page-out', default: 'none' }}
     >
-      <div ref={ref} data-route-slot className="h-full">
+      <div ref={ref} data-route-slot className="h-full bg-background">
         {children}
       </div>
     </ViewTransition>
