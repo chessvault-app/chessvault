@@ -12,6 +12,21 @@ the work.
 
 ## Waiting on a trigger
 
+**The phone's page turn as React's `<ViewTransition>`.** Built and
+measured on the branch `vt-experiment` (2026-09-14): each kept route
+slot as a `<ViewTransition>`, the route committed in a Transition with
+the direction as its type, the same four slides drawn on the slots
+instead of the root. It runs, and a push settles about 200 ms sooner
+on a slowed phone, but two things the hand-rolled transition in
+`lib/router.ts` gets right it does not: React snapshots the incoming
+page at its first commit, before its data has arrived, so the shelf
+slides away under a blank page and the content lands afterwards; and
+the shared board's flight from card to page does not run. The first
+needs data read through Suspense (`use()`) so the snapshot waits for
+it, which is the trigger: the day a page's data loads that way, the
+branch is worth rebasing and measuring again. Until then the router
+keeps `document.startViewTransition` with `flushSync`.
+
 **Absorbing the Databases manager into the games-page browser.** One
 surface for browsing and managing instead of two. Deliberately deferred:
 the current split is an argued position — managing is a place you go,
