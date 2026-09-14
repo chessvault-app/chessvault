@@ -11,6 +11,34 @@ Pages come back as you left them, two of 0.10.0's phone changes are
 taken back, a bottom sheet resting low can be pulled up again, and a
 page opened inside a sheet turns like a page.
 
+- **Two checks guard what only a browser can see.** `check:compiler`
+  runs the React Compiler over every source file and fails on the first
+  function it refuses, since a refusal is silent: the function runs as
+  written, slower, and nothing else notices. It is part of `verify`.
+  `check:page-turn` drives the built demo at phone width, into a study
+  and back, with taps and with hovering clicks, and fails if either turn
+  did not run, ran the wrong way or was skipped; it runs in CI beside the
+  contrast check, on the same build. Both exist because the page turn
+  was silently a cut for a day while every other check passed.
+- **Every popup steps out of a page turn, not only the tooltip.** The
+  Popover, DropdownMenu, ContextMenu and Select roots register their
+  close while open, the router closes them before the turn starts, and
+  a popup closing during a turn plays no exit animation, so its end
+  cannot make React skip the turn. On a phone these are bottom sheets
+  anyway; the change covers the desktop shapes for the day a page turn
+  reaches them.
+- **The hand-written memos are gone.** With the React Compiler
+  memoising every component on what it reads, the app's own
+  `useMemo` and `useCallback` calls were a second copy of the same
+  thing, each with a dependency list to keep honest. 75 of 165 are
+  removed. The rest stay for a measured reason each: the compiler leaves
+  a value uncached when render later calls a method on it (a position,
+  a Map, a Set), so those memos still do work the compiler does not;
+  an effect depends on the callback and the lint rule that guards
+  effect dependencies cannot see the compiler; or the memo deliberately
+  reads storage once. Every removal was checked against the compiler's
+  output, not assumed. Behaviour is unchanged: the tests, the pixel
+  grid and the keystroke and page-turn probes say the same as before.
 - **The phone's page turn is React's, and the board flies home.** The
   push and pop slides were the browser's view transition over the whole
   page; each kept page now animates its own snapshot through React's
@@ -47,7 +75,15 @@ page opened inside a sheet turns like a page.
   6 ms of work against 9, in the notes search 5 against 10, and both
   paint at the 16 ms the probe can resolve. Every component compiles,
   the shadcn registry's files included; the one deliberate opt-out is the
-  route loader, which says why.
+  route loader, which says why. What it costs, and why it is kept: the
+  app's JavaScript grows by 110 kB gzipped over 1,200 (9 percent), the
+  memo cache slots of every compiled component, and the build takes 13 s
+  against 6. The growth sits in the route chunks, which are fetched on
+  first visit and then held by the service worker; the launch path
+  itself (the shell's own chunk) grows by 7 kB gzipped, under 40 ms on a
+  1.6 Mbps link, and the heaviest single chunk (Settings) by 9 kB. A
+  timed launch on a throttled link was tried and is not quotable: the
+  demo ships 18 MB of databases that dwarf any script.
 - **A page comes back as you left it.** Going into a note, a study, a
   game or a book and back landed on the shelf redrawn from a skeleton,
   at the top, with its search and filters cleared. The shelf now stays
