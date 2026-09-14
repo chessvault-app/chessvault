@@ -901,4 +901,23 @@ describe('puzzle book cycles', () => {
     expect(detail.cycles).toEqual([]);
     expect(detail.progress).toEqual({});
   });
+
+  it('the hub’s next puzzle follows the open pass, like the book page’s Continue', async () => {
+    const next = async (): Promise<string> =>
+      ((await (await app.request(`/api/puzzlebooks/${slug}/next`)).json()) as { puzzle: { id: string } })
+        .puzzle.id;
+    // No pass: the first puzzle never won.
+    await post(`/api/puzzlebooks/${slug}/attempt`, { id: 'n1', win: true });
+    expect(await next()).toBe('n2');
+    // A pass opens: it has reached nothing yet, so its next is the first
+    // puzzle, solved before or not.
+    await post(`/api/puzzlebooks/${slug}/cycles`);
+    expect(await next()).toBe('n1');
+    await post(`/api/puzzlebooks/${slug}/attempt`, { id: 'n1', win: false });
+    expect(await next()).toBe('n2');
+    // The last one closes the pass; back to the never-won rule, and n1
+    // was just failed, so it is first again.
+    await post(`/api/puzzlebooks/${slug}/attempt`, { id: 'n2', win: true });
+    expect(await next()).toBe('n1');
+  });
 });

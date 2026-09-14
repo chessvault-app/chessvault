@@ -749,10 +749,11 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
    * one, which is exactly the download those two were split up to keep
    * off the path that merely OPENS a book. A launcher wants one puzzle.
    *
-   * "Next unsolved" is the book's own rule (see BookTrainer): the first
-   * in printed order whose latest attempt was not a win, so a book you
-   * have never touched answers with its first puzzle. A finished book
-   * answers 404 and the hub simply shows no card.
+   * "Next" is the book page's own rule: with a pass open, the first
+   * puzzle in printed order the pass has not reached (its Continue);
+   * otherwise the first whose latest attempt was not a win, so a book
+   * you have never touched answers with its first puzzle. A finished
+   * book answers 404 and the hub simply shows no card.
    *
    * The solution is deliberately NOT included. This is a board to look
    * at and a place to go; shipping the moves would hand over the answer
@@ -781,7 +782,16 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
         },
       });
     }
-    const puzzle = ordered.find((p) => progress[p.id]?.last !== 'win');
+    // With a pass open, "next" is the pass's own next: the first puzzle
+    // it has not reached, which is where the book page's Continue goes.
+    // The hub card followed the never-won rule alone, so once a pass was
+    // running (or a failed puzzle had been walked past) the two pointed
+    // at different positions and the card looked like it kept a progress
+    // of its own. Without a pass, the never-won rule stands.
+    const open = readCycles(slug).find((cy) => cy.finishedAt === undefined);
+    const puzzle =
+      (open && ordered.find((p) => cycleAttempt(attemptsOf(progress[p.id]), open) === null)) ||
+      ordered.find((p) => progress[p.id]?.last !== 'win');
     if (!puzzle) return c.json({ error: 'nothing left unsolved in this book' }, 404);
     return c.json({
       puzzle: {

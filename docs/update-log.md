@@ -18,6 +18,11 @@ The puzzle hub's boards stop changing under you.
   Skip is the one thing that asks past it. The missed-puzzle board holds
   the same way while its puzzle is still in the review queue. It lives in
   the vault, so a phone and a desktop see the same board.
+- **The hub's book card points where the book's Continue does.** With a
+  pass open, the card offered the first puzzle you had never solved
+  while the book page continued the pass, so the two named different
+  positions. The card now follows the open pass, and the never-solved
+  rule only when no pass is running.
 
 ## 0.11.0
 
