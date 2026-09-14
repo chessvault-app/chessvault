@@ -12,6 +12,24 @@ the work.
 
 ## Waiting on a trigger
 
+**The router's one-call patch of `document.startViewTransition`.** The
+page turn is React's `<ViewTransition>`, and React hands back no promise
+for the transition it starts; `routeSettled` and `routeChanging` need one
+(the review strip's toast, the slow-load placeholders), so the router
+intercepts the one call React makes and reads `finished` off it. Two ways
+of doing without the patch were built and measured on the demo at CPU x4
+(2026-09-14), five trips each, interleaved with the patched build: the
+slots' `onEnter`/`onExit` callbacks reading the instance's pseudo-element
+animations, and the router watching `document.getAnimations()` for the
+transition's own. Both ran every turn and both settled correctly, and
+both made the turn itself finish later: a push at 850 to 900 ms against
+665 to 700, a pop at 770 to 805 against 590, on every round, for reasons
+inside React or the animation timeline that were not chased. The patch
+stays because it is the fastest of the three; the trigger is React
+exposing the transition or its promise (a ref on `<ViewTransition>` that
+carries `finished`, or `startTransition` returning one), at which point
+the swap is a few lines and `check:page-turn` proves it.
+
 **Absorbing the Databases manager into the games-page browser.** One
 surface for browsing and managing instead of two. Deliberately deferred:
 the current split is an argued position — managing is a place you go,

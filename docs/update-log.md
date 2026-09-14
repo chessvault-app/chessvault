@@ -14,7 +14,10 @@ page opened inside a sheet turns like a page.
 - **Two checks guard what only a browser can see.** `check:compiler`
   runs the React Compiler over every source file and fails on the first
   function it refuses, since a refusal is silent: the function runs as
-  written, slower, and nothing else notices. It is part of `verify`.
+  written, slower, and nothing else notices. It also reads the compiled
+  output and fails on a position replay, a line walk or a PGN parse
+  the compiler left to run on every render, the case the memo
+  retirement below found by hand. It is part of `verify`.
   `check:page-turn` drives the built demo at phone width, into a study
   and back, with taps and with hovering clicks, and fails if either turn
   did not run, ran the wrong way or was skipped; it runs in CI beside the
