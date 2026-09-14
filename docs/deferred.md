@@ -12,20 +12,6 @@ the work.
 
 ## Waiting on a trigger
 
-**The eight functions the React Compiler refuses.** The compiler is on
-for every file under `web/src` (2026-09-14) and compiles 614 functions.
-Eight it refuses, all in the registry's own files under
-`components/ui` (`dialog`: a suppressed dependency rule, a ref read in
-render, two writes to a context value; `toast`: two JSX expressions it
-will not reorder; `calendar`: two tagged templates), and those files
-stay as the registry wrote them, which is the rule for that folder. A
-refused function runs as written beside compiled neighbours. The route
-factory in `lib/lazyRoute` is the one deliberate `'use no memo'`: a
-component made inside a factory reads the factory's variables as
-module constants to the compiler. The trigger is the registry itself
-compiling clean in a later `npx shadcn add`, at which point nothing
-here needs doing.
-
 **Absorbing the Databases manager into the games-page browser.** One
 surface for browsing and managing instead of two. Deliberately deferred:
 the current split is an argued position — managing is a place you go,

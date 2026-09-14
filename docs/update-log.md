@@ -45,9 +45,9 @@ page opened inside a sheet turns like a page.
   6 ms of work against 13, and 17 ms to its paint against 22. The
   compiler is now on for every page: a key in the studies search took
   6 ms of work against 9, in the notes search 5 against 10, and both
-  paint at the 16 ms the probe can resolve. Every component the app
-  owns compiles; the eight the compiler refuses are the registry's own
-  files, and why is in [deferred.md](deferred.md).
+  paint at the 16 ms the probe can resolve. Every component compiles,
+  the shadcn registry's files included; the one deliberate opt-out is the
+  route loader, which says why.
 - **A page comes back as you left it.** Going into a note, a study, a
   game or a book and back landed on the shelf redrawn from a skeleton,
   at the top, with its search and filters cleared. The shelf now stays

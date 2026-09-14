@@ -832,7 +832,7 @@ granting it; it is the other direction the block still closes.
 The app is a shadcn/ui project (`components.json`: the base-nova style,
 Tailwind v4, CSS variables). What that means here, and what it does not:
 
-- **`web/src/components/ui/` holds the registry's files, owned.** Button,
+- **`web/src/components/ui/` holds the registry's files, ours to keep.** Button,
   Input, InputOTP, Textarea, Label, Field, InputGroup, Checkbox,
   RadioGroup, Slider, Dialog, AlertDialog, DropdownMenu, ContextMenu,
   Select, Popover, Tooltip, Tabs, ToggleGroup, Toggle, Switch, Progress,
@@ -847,9 +847,12 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   phone, dragged away from anywhere on itself; the page/layer distinction
   and the back chevron; the keyboard band; the sole-text-field focus;
   Android Back through CloseWatcher; the coarse-pointer hit areas;
-  `title` as a tooltip. The look is shadcn's; what is added is
-  behaviour, and each file says at the top what it adds and why. Adding
-  a component is `npx shadcn add <name>`; it needs no restyling.
+  `title` as a tooltip. The look is shadcn's; each file says at the top
+  what it adds and why. Adding a component is `npx shadcn add <name>`;
+  it needs no restyling. These files are app code otherwise: they take
+  the same refactors as any other (the React Compiler compiles them
+  too, since 2026-09-14), so re-adding one from the registry is a diff
+  to read against the file in hand, not a rewrite to accept.
 - **"Owned" means behaviour on top, not geometry underneath.** Card is the
   worked example of getting this wrong: its root had been rewritten to
   drop the registry's padding and gap, which reads like a small local

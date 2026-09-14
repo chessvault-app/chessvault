@@ -111,7 +111,8 @@ const DialogLeaveContext = React.createContext<{
   leaving: boolean;
   depart: (then: () => void) => void;
   finish: () => void;
-  pageMode: React.RefObject<boolean>;
+  /** The card says whether it is a page; a setter, for the same reason as the guards. */
+  setPageMode: (page: boolean) => void;
 } | null>(null);
 
 /** Whether the reader has asked for less motion, read when it matters. */
@@ -136,7 +137,10 @@ interface DialogGuards {
       whatever was under the scrim once it is gone. */
   outsideWillClose: () => void;
 }
-const DialogGuardContext = React.createContext<React.RefObject<DialogGuards | null> | null>(null);
+// A setter rather than the ref itself: the card fills it from an effect,
+// and the React Compiler refuses a write to anything a context handed
+// over, ref or not. Calling a function it handed over is fine.
+const DialogGuardContext = React.createContext<((guards: DialogGuards | null) => void) | null>(null);
 
 // `handle` and `render` are omitted where the two primitives brand them
 // differently; nothing in the app uses either.
@@ -170,9 +174,12 @@ function Dialog({
   // (SheetLoweredContext). Reset each time the sheet opens, as the
   // primitive's own default would be.
   const [snapPoint, setSnapPoint] = React.useState(defaultSnapPoint ?? snapPoints?.[0] ?? null);
+  // Keyed on the opening alone; the points are read fresh through the event.
+  const resetSnapPoint = React.useEffectEvent(() => {
+    setSnapPoint(defaultSnapPoint ?? snapPoints?.[0] ?? null);
+  });
   React.useEffect(() => {
-    if (open) setSnapPoint(defaultSnapPoint ?? snapPoints?.[0] ?? null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (open) resetSnapPoint();
   }, [open]);
   const lowered = Boolean(phone && snapPoints && snapPoint !== snapPoints[snapPoints.length - 1]);
   // The sheet's exit, held here. Nearly every window in the app mounts
@@ -186,10 +193,18 @@ function Dialog({
   // refused (kept open=true) gets its sheet back, with the entrance.
   const [leaving, setLeaving] = React.useState(false);
   const onOpenChangeRef = React.useRef(onOpenChange);
-  onOpenChangeRef.current = onOpenChange;
+  React.useLayoutEffect(() => {
+    onOpenChangeRef.current = onOpenChange;
+  });
   // A page holds its close the same way on either shape: it plays its
   // own exit (DialogContent) and reports back through `finish`.
   const pageMode = React.useRef(false);
+  const setPageMode = React.useCallback((page: boolean) => {
+    pageMode.current = page;
+  }, []);
+  const setGuards = React.useCallback((next: DialogGuards | null) => {
+    guards.current = next;
+  }, []);
   // What runs once the held exit has played: the close, or whatever a
   // page's Back was going to do.
   const pending = React.useRef<(() => void) | null>(null);
@@ -210,8 +225,8 @@ function Dialog({
     then?.();
   }, []);
   const leave = React.useMemo(
-    () => ({ leaving, depart, finish, pageMode }),
-    [leaving, depart, finish],
+    () => ({ leaving, depart, finish, setPageMode }),
+    [leaving, depart, finish, setPageMode],
   );
   const handleOpenChangeComplete = (isOpen: boolean): void => {
     onOpenChangeComplete?.(isOpen);
@@ -261,7 +276,7 @@ function Dialog({
       <SheetLoweredContext.Provider value={lowered}>
       <DialogLeaveContext.Provider value={leave}>
       <DialogCloseContext.Provider value={close}>
-        <DialogGuardContext.Provider value={guards}>
+        <DialogGuardContext.Provider value={setGuards}>
           <Root
             open={open === undefined ? undefined : open && !leaving}
             onOpenChange={handleOpenChange}
@@ -353,7 +368,9 @@ function DialogOverlay({
  */
 function useCloseWatcher(onClose: () => void, active: boolean): void {
   const close = React.useRef(onClose);
-  close.current = onClose;
+  React.useLayoutEffect(() => {
+    close.current = onClose;
+  });
   React.useEffect(() => {
     if (!active || !window.CloseWatcher) return;
     const watcher = new window.CloseWatcher();
@@ -469,7 +486,7 @@ function DialogContent({
   ...props
 }: DialogContentProps) {
   const close = React.useContext(DialogCloseContext);
-  const guards = React.useContext(DialogGuardContext);
+  const setGuards = React.useContext(DialogGuardContext);
   const phone = React.useContext(SheetContext);
   const lowered = React.useContext(SheetLoweredContext);
   const small = size === 'sm';
@@ -494,9 +511,11 @@ function DialogContent({
   // a handle that changed with it would re-run every child's cover effect
   // and rebuild its ResizeObserver each render.
   const closeRef = React.useRef(close);
-  closeRef.current = close;
   const parentRef = React.useRef(coverParent);
-  parentRef.current = coverParent;
+  React.useLayoutEffect(() => {
+    closeRef.current = close;
+    parentRef.current = coverParent;
+  });
   const dismissAll = React.useCallback(() => {
     closeRef.current();
     parentRef.current?.dismissAll();
@@ -530,7 +549,10 @@ function DialogContent({
   // drawn inside that window's card (see `stack` below), not as a card
   // of its own, and the Dialog holds its close for it (pageMode).
   const page = !small && !hidden && Boolean(coverParent);
-  if (leave) leave.pageMode.current = page;
+  // Told before paint, so a close in the same commit already knows.
+  React.useLayoutEffect(() => {
+    leave?.setPageMode(page);
+  });
   const shut = hidden;
   // A nested page that names no destination goes back to the window it
   // covered — closing a page IS going back. A page's own Back rides the
@@ -548,7 +570,9 @@ function DialogContent({
   // (`route`, in the guards below), which is the same thing.
   const request = small ? (onBack ?? close) : page ? dismissAll : close;
   const requestRef = React.useRef(request);
-  requestRef.current = request;
+  React.useLayoutEffect(() => {
+    requestRef.current = request;
+  });
   const route = React.useCallback(() => {
     const top = pageRequests.current[pageRequests.current.length - 1];
     (top ?? requestRef.current)();
@@ -599,8 +623,8 @@ function DialogContent({
 
   // The dismissal routing the Root's onOpenChange consults (see the top).
   React.useEffect(() => {
-    if (!guards) return;
-    guards.current = {
+    if (!setGuards) return;
+    setGuards({
       // A shut window ignores Escape outright; CloseWatcher, where it
       // exists, hears the same un-defaulted keydown and answers instead.
       escape: () => {
@@ -627,9 +651,9 @@ function DialogContent({
         return layer !== card.current?.closest('[data-slot=dialog-overlay]');
       },
       outsideWillClose: () => suppressNextClick(),
-    };
+    });
     return () => {
-      guards.current = null;
+      setGuards(null);
     };
   });
 

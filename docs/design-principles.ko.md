@@ -750,7 +750,7 @@ chessground는 한 번의 ResizeObserver 콜백 안에서 여기에 크기를 �
 Tailwind v4, CSS 변수). 여기서 그것이 뜻하는 것과 뜻하지 않는 것:
 
 - **`web/src/components/ui/`에는 레지스트리의 파일이 들어 있고, 우리가
-  소유합니다.** Button, Input, InputOTP, Textarea, Label, Field, InputGroup,
+  맡습니다.** Button, Input, InputOTP, Textarea, Label, Field, InputGroup,
   Checkbox, RadioGroup, Slider, Dialog, AlertDialog, DropdownMenu,
   ContextMenu, Select, Popover, Tooltip, Tabs, ToggleGroup, Toggle, Switch,
   Progress, Spinner, Skeleton, Empty, Card, Badge, Separator, Calendar,
@@ -765,9 +765,12 @@ Tailwind v4, CSS 변수). 여기서 그것이 뜻하는 것과 뜻하지 않는 
   자기 몸 어디를 잡아도 끌어 내릴 수 있다는 것, 페이지와 층의 구분과 뒤로
   가기 꺾쇠, 키보드 띠, 글자 입력란이 하나뿐일 때의 포커스, CloseWatcher를
   통한 Android 뒤로 가기, 굵은 포인터의 터치 영역, 툴팁으로 보이는
-  `title`. 생김새는 shadcn의 것이고, 더한 것은 동작이며, 각 파일은 맨
-  위에 무엇을 왜 더했는지 적어 둡니다. 컴포넌트를 더하는 일은 `npx shadcn
-  add <name>`이고, 다시 꾸밀 필요가 없습니다.
+  `title`. 생김새는 shadcn의 것이고, 각 파일은 맨 위에 무엇을 왜
+  더했는지 적어 둡니다. 컴포넌트를 더하는 일은 `npx shadcn add <name>`이고,
+  다시 꾸밀 필요가 없습니다. 그 밖에는 이 파일들도 앱 코드입니다. 다른
+  파일과 같은 리팩터를 받고(2026-09-14부터 React 컴파일러도 이 파일들을
+  컴파일합니다), 레지스트리에서 다시 받는 일은 손에 있는 파일과 대조해
+  읽는 diff이지 받아들이는 덮어쓰기가 아닙니다.
 - **"소유한다"는 것은 위에 동작을 얹는다는 뜻이지, 밑의 기하를 바꾼다는
   뜻이 아닙니다.** Card가 이것을 잘못한 본보기입니다. 그 뿌리에서
   레지스트리의 여백과 간격을 걷어냈는데, 그것은 작은 국소적 결정처럼

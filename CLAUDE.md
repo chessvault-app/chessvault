@@ -110,14 +110,18 @@ number stays only when it changes the decision (a 300 MB download does).
 
 ## UI components
 
-**The component layer is shadcn/ui, and the registry files are owned.**
+**The component layer is shadcn/ui, and the registry files are ours.**
 `web/src/components/ui/` holds the files `npx shadcn add` writes (Base UI,
 `cva`, `data-slot`), in the registry's own face (nova) and carrying the
 app's measured behaviour on top — the phone sheet, the page/layer chevron,
 the keyboard band, the sole-field focus, Android Back, the coarse-pointer
 hit areas, `title` as a tooltip. Add a primitive with `npx shadcn add
-<name>`; keep its look, add only behaviour, with two standing exceptions,
-both edges. The first: where the tonal rule ("The component layer" in
+<name>` and keep its look. The older rule, "add only behaviour, never
+restructure", is retired (lanph3re, 2026-09-14): these files are app code
+and take the same refactors every other file does, the React Compiler's
+shapes included, so `npx shadcn add` over an existing file is a diff to
+read, never a rewrite to accept. What stays is the look, with two standing
+exceptions, both edges. The first: where the tonal rule ("The component layer" in
 `docs/design-principles.md`) and a registry stroke disagree, the rule wins.
 A surface whose fill already separates it draws the card-ring colour and
 never the bare border colour, and *how* it draws it follows the box, not

@@ -166,13 +166,15 @@ function ToastAction({
   // action is a fill (iOS's gray button, Material's filled tonal), and
   // strokes belong to fields. The band under the move list draws the
   // same button (engine/ReviewStrip).
-  render = <Button variant="secondary" size="sm" />,
+  render,
   ...props
 }: ToastPrimitive.Action.Props) {
+  // The default in the body, not the parameter list: the React Compiler
+  // will not reorder a JSX default.
   return (
     <ToastPrimitive.Action
       data-slot="toast-action"
-      render={render}
+      render={render ?? <Button variant="secondary" size="sm" />}
       className={cn("shrink-0", className)}
       {...props}
     />
@@ -182,14 +184,14 @@ function ToastAction({
 function ToastClose({
   className,
   children,
-  render = <Button variant="ghost" size="icon-sm" />,
+  render,
   ...props
 }: ToastPrimitive.Close.Props) {
   return (
     <ToastPrimitive.Close
       data-slot="toast-close"
       aria-label={t('Close')}
-      render={render}
+      render={render ?? <Button variant="ghost" size="icon-sm" />}
       className={cn(
         "relative shrink-0 text-muted-foreground after:absolute after:-inset-2 after:content-[''] hover:text-foreground",
         className
