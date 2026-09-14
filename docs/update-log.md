@@ -7,10 +7,19 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-Two of 0.10.0's phone changes are taken back, a bottom sheet resting
-low can be pulled up again, and a page opened inside a sheet turns like
-a page.
+Pages come back as you left them, two of 0.10.0's phone changes are
+taken back, a bottom sheet resting low can be pulled up again, and a
+page opened inside a sheet turns like a page.
 
+- **A page comes back as you left it.** Going into a note, a study, a
+  game or a book and back landed on the shelf redrawn from a skeleton,
+  at the top, with its search and filters cleared. The shelf now stays
+  where it was, rows, scroll and filters included, and so does a section
+  when you switch tabs: the last three sections stay live while another
+  is open, and a tab returns to the page its section was on. A second
+  tap on the current tab goes up to the section's root, and from the
+  root to the top of the page as before. The board, the editor and the
+  workspace are not kept.
 - **The quick search lists the pages in the sidebar's order, and
   reaches the endgame drills.** Its “Go to” group followed Home's
   launcher row, so the same pages stood in two orders on one screen,

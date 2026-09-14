@@ -577,6 +577,36 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   contentful paint went from 3.1 s to 4.5 s. Draw the app's own frame on
   time; fill it as soon as there is something to fill it with.
 
+## Kept pages
+
+A page comes back as it was left. The last three sections a reader
+visited stay mounted while another is open, and a section's list stays
+mounted under the document opened from it, in React's `<Activity>`
+(`lib/keep-alive`): hidden with `display: none`, state and DOM intact,
+effects paused. Back from a note lands on the shelf at the card it was
+scrolled to, with the search field and filters as they were and the rows
+already drawn; a tab returns its section to the page it was on, and a
+second tap on it goes up to the section's root. Nothing is refetched
+before the first paint; the list's load effect runs again on show and
+revalidates behind the rows.
+
+What is kept is a budget, not everything: three sections, the least
+recently shown evicted first, and never the board, the workspace or the
+editor, which hold their state in stores or a snapshot of their own and
+are the heavy trees. Leaves (a note, a study, a book, a trainer) are
+never kept; keyed by id, two documents are two mounts. Measured on the
+demo, 2026-09-14, after seven sections with three kept: 12.7 MB of heap
+against 12.0 on a phone, 16.6 against 13.8 on a desktop.
+
+Two rules for a page that may be kept. Its load effect must revalidate
+without blanking, since effects run again on every show, not only on
+mount (`NoteList.refresh` keeps `loaded` true through a refetch). And
+anything that must not survive the hide, an open menu or a selection
+mode, closes in a layout-effect cleanup, which runs as the page is
+hidden. The slot itself puts every scroller the reader moved back where
+it was, because Chromium kept a plain div's position through the hide
+but dropped the games list's; the measurement is in `lib/keep-alive`.
+
 ## Dialog policy
 
 One dialog per concept, shared everywhere. "Load position" (FEN, PGN,
