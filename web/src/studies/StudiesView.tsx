@@ -1,5 +1,5 @@
 import { Bookmark, CloudDownload, SearchX, FileText, FileUp, Folder as FolderIcon, FolderInput, Library, Pencil, Plus, Trash2, X } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { KeepAlive } from '@/lib/keep-alive';
 import { cn } from '@/lib/utils';
@@ -162,7 +162,16 @@ function StudyList() {
     void refresh();
   }, [refresh]);
 
-  const needle = query.trim().toLowerCase();
+  // The shelf follows the field a beat behind (useDeferredValue), the
+  // notes shelf's rule: the key paints first and the cards catch up, and
+  // a key that lands mid-redraw restarts it rather than queueing.
+  const needle = useDeferredValue(query).trim().toLowerCase();
+  // What the list is handed is named here, at the top level, rather than
+  // written on the element: the element sits in a branch the compiler
+  // re-creates on every render, so a filter or a lambda written there was
+  // a new prop each time and every card redrew on every keystroke
+  // (measured: 9 card renders per key). Declared here, each is cached on
+  // its own inputs and the cards keep their elements.
   const visible = studies.filter(
     (s) =>
       (!markedOnly || markedIds.has(s.id)) && (!needle || s.id.toLowerCase().includes(needle)),
@@ -171,6 +180,9 @@ function StudyList() {
       is built from, and the only reason an empty list can be blamed on
       something the reader can undo. */
   const filtering = markedOnly || needle !== '';
+  const shownStudies = visible.filter((st) => !hidden.has(st.id));
+  const shownFolders = needle ? [] : folders;
+  const toggleMarkById = (id: string): void => void toggleMark(id);
 
   return (
     // Wide tier: two columns of cards on a desktop, so the shelf shows
@@ -289,10 +301,10 @@ function StudyList() {
         )
       ) : (
         <GroupedStudies
-          studies={visible.filter((st) => !hidden.has(st.id))}
-          allFolders={needle ? [] : folders}
+          studies={shownStudies}
+          allFolders={shownFolders}
           markedIds={markedIds}
-          onToggleMark={(id) => void toggleMark(id)}
+          onToggleMark={toggleMarkById}
           sort={view.sort}
           dir={view.dir}
           layout={view.layout}

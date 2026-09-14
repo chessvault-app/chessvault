@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { toast } from '@/components/ui/toast';
 import { announce } from '@/lib/announce';
 import { t } from '@/lib/i18n';
@@ -141,5 +141,10 @@ export function useUndoable(): {
     [offer],
   );
 
-  return { remove, offer };
+  // One object for the hook's life: a caller's handler built from it
+  // (the studies shelf's dropStudy) keeps its identity, and the cards
+  // that receive that handler are not redrawn on every keystroke of the
+  // search field above them (measured: every StudyCard re-rendered per
+  // key while this was a fresh literal each render).
+  return useMemo(() => ({ remove, offer }), [remove, offer]);
 }

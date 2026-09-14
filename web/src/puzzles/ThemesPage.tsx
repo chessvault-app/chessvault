@@ -1,5 +1,5 @@
 import { Database, Puzzle, RotateCcw } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -282,15 +282,21 @@ export function ThemesPage() {
   // The page's only job is finding one theme in ~70 cards; a filter beats
   // scanning a wall. See themeMatches for what a query is read against.
   const [query, setQuery] = useState('');
+  // The cards follow the field a beat behind (useDeferredValue), the
+  // shelves' rule: the key paints first and the grid catches up. What
+  // is matched, counted and offered to Enter is the deferred value, so
+  // the three agree with the cards on screen; the field's own state
+  // (`searching`) is the live one.
+  const shown = useDeferredValue(query);
   const searching = query.trim() !== '';
 
   const byName = new Map((themes ?? []).map((t) => [t.theme, t.count]));
   const groups = GROUPS.map((group) => ({
     ...group,
-    present: group.themes.filter((th) => byName.has(th) && themeMatches(th, group.title, query)),
+    present: group.themes.filter((th) => byName.has(th) && themeMatches(th, group.title, shown)),
   })).filter((g) => g.present.length > 0);
   const leftovers = (themes ?? []).filter(
-    (t) => !KNOWN.has(t.theme) && themeMatches(t.theme, 'More', query),
+    (t) => !KNOWN.has(t.theme) && themeMatches(t.theme, 'More', shown),
   );
   const matched = groups.reduce((n, g) => n + g.present.length, 0) + leftovers.length;
   // Enter on a search that has come down to one card opens it.

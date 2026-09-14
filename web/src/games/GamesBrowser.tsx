@@ -1,6 +1,7 @@
 import { Bookmark, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import {
   useCallback,
+  useDeferredValue,
   useEffect,
   useEffectEvent,
   useLayoutEffect,
@@ -224,6 +225,12 @@ export function GamesBrowser({
   const [games, setGames] = useState<GameSummary[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState('');
+  // The box keeps the live query; the list is handed a deferred copy
+  // (useDeferredValue), so a key paints in the box first and the rows
+  // catch up in a render of their own that the next key can interrupt.
+  // The warning box beside the field reads the live one, since it is
+  // about what was typed.
+  const shownQuery = useDeferredValue(query);
   const [error, setError] = useState<string | null>(null);
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [markedOnly, setMarkedOnly] = useState(false);
@@ -322,6 +329,12 @@ export function GamesBrowser({
       the objects after a rename or a reload); the database pane hands
       a packaged selection of its own. Switching tabs clears both. */
   const [colSelKey, setColSelKey] = useState<string | null>(null);
+  // Named at the top level rather than written inline on the element:
+  // the compiler caches a function declared here, and the element sits
+  // in a branch it re-creates on every render, so an inline lambda was a
+  // new prop each time and every table row redrew on every keystroke
+  // (measured: 22 row renders per key).
+  const selectCollectionGame = (g: GameSummary | null): void => setColSelKey(g ? gameKey(g) : null);
   const [dbSel, setDbSel] = useState<DetailsSelection | null>(null);
   const [archSel, setArchSel] = useState<DetailsSelection | null>(null);
   /** The pane's own width — see MERGED_MIN_PX and detailsReservePx. */
@@ -768,7 +781,7 @@ export function GamesBrowser({
             loaded={loaded}
             bookmarks={bookmarks}
             hidden={hidden}
-            query={query}
+            query={shownQuery}
             markedOnly={markedOnly}
             renamingKey={renamingKey}
             onStartRename={setRenamingKey}
@@ -796,7 +809,7 @@ export function GamesBrowser({
                 filters={colConstraints}
               />
             }
-            onSelect={(g) => setColSelKey(g ? gameKey(g) : null)}
+            onSelect={selectCollectionGame}
             selectedKey={colSelKey}
             onFilterConstraints={setColConstraints}
           />

@@ -9,7 +9,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { memo, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { memo, useDeferredValue, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, useTransition, type ReactNode } from 'react';
 
 import { sanitizeSegment } from '@shared/vaultNames';
 import {
@@ -204,6 +204,73 @@ const CollectionRow = memo(function CollectionRow({
 });
 
 /**
+ * One table row, memoised on primitives the way CollectionRow is: the
+ * row's own closures and its ⋯ menu are built here from stable handlers,
+ * so a keystroke in the search box above (which re-renders the list
+ * twice, once for the box and once for the rows it narrows) redraws no
+ * row whose facts did not change. Built inline in the list's map, every
+ * row took a fresh lambda and a fresh menu array per render and all of
+ * them redrew on every key (measured: 22 row renders per key at 11 rows).
+ */
+const CollectionTableRow = memo(function CollectionTableRow({
+  game,
+  withNotation,
+  standing,
+  selected,
+  tabStop,
+  bookmarked,
+  onSelect,
+  onOpen,
+  onToggleBookmark,
+  onStartRename,
+  onDrop,
+}: {
+  game: GameSummary;
+  withNotation: boolean;
+  standing?: ReactNode;
+  selected: boolean;
+  tabStop: boolean;
+  bookmarked: boolean;
+  onSelect?: (game: GameSummary) => void;
+  onOpen: (game: GameSummary) => void;
+  onToggleBookmark: (game: GameSummary) => void;
+  onStartRename: (key: string) => void;
+  onDrop: (game: GameSummary) => void;
+}) {
+  const link = safeLink(game.link);
+  return (
+    <GameTableRow
+      game={game}
+      withNotation={withNotation}
+      standing={standing}
+      selected={selected}
+      tabStop={tabStop}
+      onSelect={() => onSelect?.(game)}
+      onOpen={() => onOpen(game)}
+      menu={[
+        {
+          label: bookmarked ? 'Remove bookmark' : 'Bookmark',
+          icon: Bookmark,
+          onSelect: () => onToggleBookmark(game),
+        },
+        { label: 'Rename', icon: Pencil, onSelect: () => onStartRename(gameKey(game)) },
+        ...(link
+          ? [
+              {
+                label: 'View online',
+                icon: ExternalLink,
+                onSelect: () => window.open(link, '_blank', 'noreferrer'),
+              },
+            ]
+          : []),
+        { label: 'Remove', icon: Trash2, danger: true, onSelect: () => onDrop(game) },
+      ]}
+      bookmarked={bookmarked}
+    />
+  );
+});
+
+/**
  * A rename in the open-game view changes the document's file name; when
  * it no longer matches the auto "White vs Black date" pattern, that name
  * IS the title the user chose — lead with it.
@@ -310,6 +377,16 @@ export function CollectionList({
   // The same sentence the elite browser answers, filtered client-side —
   // a few dozen games are already in the page (see matchesStructured).
   const [structured, setStructured] = useState<StructuredFilters>(EMPTY_STRUCTURED_FILTERS);
+  // A filter press is a Transition (useTransition): the rows it narrows
+  // are redrawn off the press's own task, so the control answers at once
+  // and a second press interrupts the first redraw instead of waiting
+  // behind it. `filterPending` dims the rows through the shell for the
+  // beat between, the way a fresh search does.
+  const [filterPending, startTransition] = useTransition();
+  const inTransition =
+    <T,>(set: (v: T) => void) =>
+    (v: T): void =>
+      startTransition(() => set(v));
   const [editingFilters, setEditingFilters] = useState(false);
   // Selecting several: the archive browser's mode and pieces
   // (./selection), with this list's verb. Escape leaves it.
@@ -358,7 +435,13 @@ export function CollectionList({
   // The shared query language: recognised qualifiers become terms the
   // rows answer in the page (matchesSearchTerms is the parser's own
   // twin of the server's SQL); the remainder is the plain needle.
-  const parsedQuery = useMemo(() => parseSearchQuery(query), [query]);
+  // The rows follow the box a beat behind (useDeferredValue), the notes
+  // shelf's rule: the key paints first and the rows catch up, and a key
+  // that lands mid-redraw restarts it rather than queueing. The host's
+  // own warning box reads the live query; the rows, the count and the
+  // empty states below read this one, so they agree with each other.
+  const shownQuery = useDeferredValue(query);
+  const parsedQuery = useMemo(() => parseSearchQuery(shownQuery), [shownQuery]);
   const needle = parsedQuery.text.trim().toLowerCase();
   // The order, from the table's headings. Null is the collection's own
   // (newest first, as the server lists it); a choice is this device's
@@ -406,7 +489,7 @@ export function CollectionList({
       reason an empty list can be blamed on something they can undo.
       The whole query counts, not just its plain-text remainder: a box
       holding only `eco:B90` is still narrowing. */
-  const filtering = filtersOn || markedOnly || query.trim() !== '';
+  const filtering = filtersOn || markedOnly || shownQuery.trim() !== '';
   const clearFilters = (): void => {
     setOwnFilter('any');
     setResultFilter('any');
@@ -417,27 +500,6 @@ export function CollectionList({
   /** The card menu's verbs, re-spoken for the table's right-click — the
       table row has no tray and no ⋯, so the pointer menu is the row's
       whole verb surface (the details panel repeats the big ones). */
-  const rowMenu = (game: GameSummary) => {
-    const link = safeLink(game.link);
-    return [
-      {
-        label: bookmarks.has(gameKey(game)) ? 'Remove bookmark' : 'Bookmark',
-        icon: Bookmark,
-        onSelect: () => onToggleBookmark(game),
-      },
-      { label: 'Rename', icon: Pencil, onSelect: () => onStartRename(gameKey(game)) },
-      ...(link
-        ? [
-            {
-              label: 'View online',
-              icon: ExternalLink,
-              onSelect: () => window.open(link, '_blank', 'noreferrer'),
-            },
-          ]
-        : []),
-      { label: 'Remove', icon: Trash2, danger: true, onSelect: () => onDrop(game) },
-    ];
-  };
   // In table mode GameRow is not there to host the rename sheet, so the
   // list renders the one being renamed itself.
   const renamingGame =
@@ -533,17 +595,17 @@ export function CollectionList({
       <>
         <OwnershipSelect
           value={ownFilter}
-          onChange={setOwnFilter}
+          onChange={inTransition(setOwnFilter)}
           className={cn(QUICK_SELECT, merged && 'flex-none')}
         />
         <ResultSelect
           value={resultFilter}
-          onChange={setResultFilter}
+          onChange={inTransition(setResultFilter)}
           className={cn(QUICK_SELECT, merged && 'flex-none')}
         />
         <NotesSelect
           value={notesFilter}
-          onChange={setNotesFilter}
+          onChange={inTransition(setNotesFilter)}
           className={cn(QUICK_SELECT, merged && 'flex-none')}
         />
         <MoreFiltersButton
@@ -585,11 +647,14 @@ export function CollectionList({
             }
             onClear={() => setQuickDraft({ own: 'any', result: 'any', notes: 'any' })}
             onApply={(next) => {
+              // The window closes at once; the rows follow in a Transition.
               setEditingFilters(false);
-              setStructured(next);
-              setOwnFilter(quickDraft.own);
-              setResultFilter(quickDraft.result);
-              setNotesFilter(quickDraft.notes);
+              startTransition(() => {
+                setStructured(next);
+                setOwnFilter(quickDraft.own);
+                setResultFilter(quickDraft.result);
+                setNotesFilter(quickDraft.notes);
+              });
             }}
             onClose={() => setEditingFilters(false)}
           />
@@ -749,22 +814,25 @@ export function CollectionList({
       // table density, where no filter band will come.
       filtersLoading={!loaded && !filtersInRow}
       listLoading={!loaded}
+      listBusy={filterPending}
       filters={filtersInRow ? undefined : filterControls}
       list={
         loaded && visible.length > 0
           ? visible.map((game) =>
               table ? (
-                <GameTableRow
+                <CollectionTableRow
                   key={gameKey(game)}
                   game={game}
                   withNotation={!besideDetails}
                   standing={selecting ? rowCheckbox(game) : undefined}
                   selected={selectedKey === gameKey(game)}
                   tabStop={tabStopKey === gameKey(game)}
-                  onSelect={() => onSelect?.(game)}
-                  onOpen={() => onOpen(game)}
-                  menu={rowMenu(game)}
                   bookmarked={bookmarks.has(gameKey(game))}
+                  onSelect={onSelect}
+                  onOpen={onOpen}
+                  onToggleBookmark={onToggleBookmark}
+                  onStartRename={onStartRename}
+                  onDrop={onDrop}
                 />
               ) : (
                 <CollectionRow

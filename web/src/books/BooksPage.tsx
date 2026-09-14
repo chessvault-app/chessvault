@@ -1,5 +1,5 @@
 import { BookMarked, ScanSearch, BookOpen, BookText, Bookmark, FileUp, Folder as FolderIcon, FolderInput, Pencil, SearchX, Trash2, Upload, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useDeferredValue, useEffect, useState } from 'react';
 
 import { BookCoverCard } from '@/components/book-cover-card';
 import { EmptyState } from '@/components/empty-state';
@@ -171,7 +171,9 @@ export function BooksPage() {
     );
   };
 
-  const needle = query.trim().toLowerCase();
+  // The shelf follows the field a beat behind (useDeferredValue), the
+  // notes shelf's rule: the key paints first and the cards catch up.
+  const needle = useDeferredValue(query).trim().toLowerCase();
   const flip = view.dir === 'desc' ? -1 : 1;
   const visible = (books ?? [])
     .filter(
