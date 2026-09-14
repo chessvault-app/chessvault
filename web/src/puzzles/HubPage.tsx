@@ -276,7 +276,7 @@ function PlaceCard({
         <Icon className="size-5" />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="text-foreground text-sm font-medium">{title}</span>
+        <span className="text-foreground text-base font-medium">{title}</span>
         {children}
       </span>
       <ChevronRight className="text-muted-foreground size-4 shrink-0" />
@@ -286,7 +286,7 @@ function PlaceCard({
 
 /** The detail line's plain shape: one muted sentence, kept to one line. */
 function PlaceDetail({ children }: { children: ReactNode }) {
-  return <span className="text-muted-foreground truncate text-xs">{children}</span>;
+  return <span className="text-muted-foreground truncate text-sm">{children}</span>;
 }
 
 /**
@@ -302,12 +302,12 @@ function HubSkeletonPlace() {
     <div className="bg-card ring-card-ring flex w-full shrink-0 items-center gap-3 rounded-xl ring-1 px-3 py-2.5">
       <Skeleton className="size-10 shrink-0 rounded-md" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {/* The title's text-sm line box (20px) and the detail's text-xs
-            (16px), so the row is the height the real one will be. */}
-        <div className="flex h-5 items-center">
+        {/* The title's text-base line box (24px) and the detail's text-sm
+            (20px), so the row is the height the real one will be. */}
+        <div className="flex h-6 items-center">
           <Skeleton className="h-2.5 w-24" />
         </div>
-        <div className="flex h-4 items-center">
+        <div className="flex h-5 items-center">
           <Skeleton className="h-2 w-2/3" />
         </div>
       </div>
@@ -712,13 +712,13 @@ function Hub() {
               // import your first book: an untouched book is still the
               // thing you were about to start, and its bar is at nought.
               <span className="flex items-center gap-2">
-                <span data-user-text className="text-muted-foreground truncate text-xs">
+                <span data-user-text className="text-muted-foreground truncate text-sm">
                   {book.title}
                 </span>
                 <span className="min-w-0 flex-1">
                   <ProgressBar total={book.puzzles} solved={book.solved} failed={book.failed} showEmpty decorative />
                 </span>
-                <span className="text-muted-foreground shrink-0 text-xs">
+                <span className="text-muted-foreground shrink-0 text-sm">
                   <Figures text={t('{a} of {b}', { a: book.solved, b: book.puzzles })} />
                 </span>
               </span>
