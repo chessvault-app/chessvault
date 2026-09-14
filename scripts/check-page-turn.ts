@@ -91,6 +91,11 @@ async function trip(page: Page, press: 'tap' | 'click'): Promise<Turn[]> {
   return page.evaluate(() => window.__turns);
 }
 
+/** Whether the router still thinks a turn is in flight (data-nav on the root). */
+function stillTurning(page: Page): Promise<boolean> {
+  return page.evaluate(() => document.documentElement.dataset.nav !== undefined);
+}
+
 async function main(): Promise<void> {
   if (!existsSync(join(DEMO, 'index.html'))) {
     console.error(`no demo build at ${DEMO}; run npm run build:demo first`);
@@ -134,6 +139,11 @@ async function main(): Promise<void> {
       });
       const page = await ctx.newPage();
       const seen = await trip(page, press);
+      // The router must also know the turn has ENDED: routeSettled and
+      // routeChanging hang on it, and so does the toast that waits for a
+      // page to finish arriving. A root still carrying data-nav 900 ms
+      // after the pop is a turn the router never heard finish.
+      const turning = await stillTurning(page);
       await ctx.close();
       const label = `${press} trip ${run + 1}`;
       const [push, pop] = seen;
@@ -144,6 +154,7 @@ async function main(): Promise<void> {
       else if (pop.nav !== 'pop') problems.push(`${label}: pop ran with direction "${pop.nav ?? '-'}"`);
       else if (pop.finished !== 'done') problems.push(`${label}: the pop transition was ${pop.finished ?? 'still pending'}`);
       if (seen.length > 2) problems.push(`${label}: ${seen.length} transitions for two page changes`);
+      if (turning) problems.push(`${label}: the router still reports a turn in flight 900 ms after the pop`);
       turns += seen.length;
     }
   }
