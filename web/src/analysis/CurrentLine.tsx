@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, type ReactNode } from 'react';
+import { memo, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { blackToMoveAtRoot, getNode, mainlineFrom, moveNumberLabel } from '@shared/tree';
 import type { MoveNode, NodeId } from '@shared/types';
 import { useAnalysis } from '@/store/analysis';
@@ -127,7 +127,9 @@ export const CurrentLine = memo(function CurrentLine({ className }: { className?
     else el.scrollTop = 0;
   }, [cursorId]);
 
-  const chain = mainlineFrom(tree, tree.rootId);
+  // A hand memo on purpose: the compiler leaves a value uncached when
+  // render later indexes into it, and this walk is the whole game long.
+  const chain = useMemo(() => mainlineFrom(tree, tree.rootId), [tree]);
   if (chain.length === 0) return null;
   const out: ReactNode[] = [];
   let forced = false;
