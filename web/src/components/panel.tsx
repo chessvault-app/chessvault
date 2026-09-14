@@ -241,9 +241,11 @@ interface PanelHeaderProps {
    * rows under most panels do. 'body' stays on text-sm at every width:
    * for a header whose title is not a line the reader chooses by, such
    * as the moves panel's opening name over a moves table that has its
-   * own type (lanph3re's call, 2026-09-15).
+   * own type (lanph3re's call, 2026-09-15). 'caption' is a rung under
+   * that, text-xs at every width: the game page's opening name, which
+   * names the line the cursor is on and is read once, not scanned.
    */
-  titleSize?: 'row' | 'body';
+  titleSize?: 'row' | 'body' | 'caption';
 }
 
 export function PanelHeader({
@@ -292,7 +294,13 @@ export function PanelHeader({
           measured 14 over 16 after the phone row lift. As a variant and
           not the bare class, since CardTitle's own text-base is emitted
           after .type-row and would win the cascade. */}
-      <CardTitle className={cn('min-w-0 flex-1 truncate text-sm', titleSize === 'row' && 'max-md:type-row')}>
+      <CardTitle
+        className={cn(
+          'min-w-0 flex-1 truncate',
+          titleSize === 'caption' ? 'text-xs' : 'text-sm',
+          titleSize === 'row' && 'max-md:type-row',
+        )}
+      >
         {typeof title === 'string' ? t(title) : title}
       </CardTitle>
       {/* The actions take exactly their own width and the title takes the

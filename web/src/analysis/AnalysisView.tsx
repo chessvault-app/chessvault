@@ -247,7 +247,8 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             title={<LineTitle />}
             // The opening name is a caption over the moves, not a line to
             // choose by; it keeps the desktop size on a phone, as do the
-            // controls beside it (lanph3re, 2026-09-15).
+            // controls beside it (lanph3re, 2026-09-15). The game page's
+            // copy of this header goes a rung further (StudyView).
             titleSize="body"
             actions={
               <>
@@ -555,10 +556,15 @@ export function MoveActions({
 export function MovesOverflow({
   allowReset = true,
   allowClear = false,
+  allowDelete = true,
   ownReview = false,
   onLoadPosition,
   extra = [],
 }: {
+  /** The phone's delete-moves row. A page that shows the bin only while
+      editing (StudyView) passes its editing flag, so the row and the bin
+      appear and go together. */
+  allowDelete?: boolean;
   allowReset?: boolean;
   /**
    * Offer "Clear all moves" — see useClearMoves. Opt-in: a panel over a
@@ -657,7 +663,7 @@ export function MovesOverflow({
     // The header's bin, as a row on a phone: first among the header's
     // controls it read as "delete the game", so it moves in here, dimmed
     // at the root where there is nothing to delete (lanph3re, 2026-09-15).
-    ...(phone
+    ...(phone && allowDelete
       ? [
           {
             label: 'Delete this move and everything after it',

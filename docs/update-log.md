@@ -60,6 +60,10 @@ The puzzle hub's boards stop changing under you.
   stay at 14 where the lists went to 16. The delete-moves bin, first in
   that header, read as "delete the game"; on a phone it is a row in the
   ⋯ menu, dimmed at the starting position.
+- **The game page's opening name is a caption.** The line over the
+  moves table drops a rung to 12px at every width, and the phone's
+  "Delete this move and everything after it" row in ⋯ appears only
+  while editing, like the bin it replaced.
 
 ## 0.11.0
 

@@ -425,6 +425,11 @@ export function StudyView({
             // is the useful thing to see while reading it — the study's own
             // title is already in the header above.
             title={movesTitle}
+            // A game's title is the line's opening name, read once over a
+            // moves table with type of its own, so it sits a rung under body
+            // at every width (lanph3re, 2026-09-15). A chapter's name stays
+            // a row title.
+            titleSize={kind === 'game' ? 'caption' : 'row'}
             actions={
               <>
                 <SidelinesToggle />
@@ -455,6 +460,8 @@ export function StudyView({
                 <MovesOverflow
                   allowReset={false}
                   allowClear={editing}
+                  // The delete-moves row, like the bin above it, is an editing tool.
+                  allowDelete={editing}
                   onLoadPosition={() => setLoadOpen(true)}
                 />
               </>
