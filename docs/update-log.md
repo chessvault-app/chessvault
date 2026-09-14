@@ -39,6 +39,11 @@ The puzzle hub's boards stop changing under you.
   iOS and Material put on a phone (16 or 17 over 14 or 15). On a phone
   they are now 16 over 14; a desktop keeps 14 over 12, which is that
   platform's own convention.
+- **The same phone lift reaches the rest of the lists.** The shelf
+  cards' meta line on Studies and Notes, their folder headings, the
+  Puzzle themes tiles and their section headings, the dashboard's
+  difficulty bands, More's group headings and the licence list all step
+  up a rung under the phone width like the home rows did.
 
 ## 0.11.0
 

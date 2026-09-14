@@ -462,7 +462,7 @@ export function ThemesPage() {
 function ThemeGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="text-muted-foreground mb-2 text-sm font-medium">
+      <h2 className="text-muted-foreground mb-2 type-row font-medium">
         {title}
       </h2>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">{children}</div>
@@ -508,10 +508,10 @@ function ThemeCard({
         )}
       />
       <span className="min-w-0 flex-1">
-        <span className={cn('block truncate text-sm font-medium', highlight ? 'text-primary' : 'text-foreground')}>
+        <span className={cn('block truncate type-row font-medium', highlight ? 'text-primary' : 'text-foreground')}>
           {label}
         </span>
-        <span className="text-muted-foreground block font-mono text-xs">
+        <span className="text-muted-foreground block font-mono type-row-sub">
           {pending ? (
             // A zero that becomes six million is a number the page stated
             // and then took back; the placeholder says nothing instead.

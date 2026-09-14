@@ -230,7 +230,7 @@ export function ShelfCard({
                 is a reminder of what is inside, and the second line was
                 21px on every card of the shelf for a clause that the open
                 note shows whole. */}
-            <p className="text-muted-foreground text-xs leading-4">
+            <p className="text-muted-foreground type-row-sub">
               {marked && (
                 <Bookmark
                   className="text-primary mr-1 inline size-3 -translate-y-px fill-current"

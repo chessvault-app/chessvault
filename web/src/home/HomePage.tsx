@@ -359,7 +359,7 @@ function PlaceholderRow({
   icon?: boolean;
 }) {
   return (
-    <div className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-row last:border-b-0 pointer-coarse:min-h-11">
+    <div className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) type-row last:border-b-0 pointer-coarse:min-h-11">
       {icon && <Skeleton className="size-3.5 shrink-0 rounded-sm" />}
       <span className="relative min-w-0 flex-1 font-medium">
         <span className="invisible">&nbsp;</span>
@@ -407,13 +407,13 @@ function PlaceholderChecklist() {
   return (
     <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
       <div className="border-border flex items-center border-b px-3 pb-1.5 pt-2">
-        <p className="text-muted-foreground flex-1 text-row font-medium">{t('Set up your vault')}</p>
+        <p className="text-muted-foreground flex-1 type-row font-medium">{t('Set up your vault')}</p>
         <span aria-hidden className="-my-1 -mr-1.5 size-7 shrink-0 pointer-coarse:size-9" />
       </div>
       {CHECKLIST_LABELS.map((label) => (
         <div
           key={label}
-          className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-row last:border-b-0 pointer-coarse:min-h-11"
+          className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) type-row last:border-b-0 pointer-coarse:min-h-11"
         >
           <span aria-hidden className="size-3.5 shrink-0" />
           <span className="text-foreground min-w-0 flex-1">{t(label)}</span>
@@ -458,14 +458,14 @@ function PlaceholderPanel({
 }) {
   return (
     <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
-      <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-row font-medium">
+      <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 type-row font-medium">
         {title}
       </h2>
       {Array.from({ length: rows }, (_, i) =>
         books ? (
           <div
             key={i}
-            className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-row last:border-b-0 pointer-coarse:min-h-11"
+            className="border-border flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) type-row last:border-b-0 pointer-coarse:min-h-11"
           >
             <Skeleton className="h-10 w-7 shrink-0 rounded-sm" />
             <span className="flex min-w-0 flex-1 flex-col gap-1">
@@ -512,11 +512,11 @@ function RecentGamesCard({
   return (
     <div className={cn('bg-card overflow-hidden rounded-xl ring-1 ring-card-ring', className)}>
       <div className="border-border flex items-baseline border-b px-3 pb-1.5 pt-2">
-        <h2 className="text-muted-foreground flex-1 text-row font-medium">{t('Recent games')}</h2>
+        <h2 className="text-muted-foreground flex-1 type-row font-medium">{t('Recent games')}</h2>
         {/* The collection's size, where a tile used to carry it, with
             its noun: a bare "30" beside a list of three read as a badge
             count. */}
-        <span className="text-muted-foreground text-row-sub">
+        <span className="text-muted-foreground type-row-sub">
           <Figures text={t('{n} games', { n: compact.format(total) })} />
         </span>
       </div>
@@ -525,7 +525,7 @@ function RecentGamesCard({
           key={`${g.file}#${g.index}`}
           divided
           onClick={() => navigate('games', encodeURIComponent(collectionDocId(g)))}
-          className="text-row"
+          className="type-row"
         >
           {/* The pairing and the date below are the game's own record and
               select on a long press; the result badge is a chip and the
@@ -544,7 +544,7 @@ function RecentGamesCard({
               screen. */}
           <span
             data-user-text
-            className="text-muted-foreground shrink-0 font-mono text-row-sub tabular-nums"
+            className="text-muted-foreground shrink-0 font-mono type-row-sub tabular-nums"
           >
             {g.date.replaceAll('.', '-')}
           </span>
@@ -1132,7 +1132,7 @@ export function HomePage() {
               !shownOnDesktop(reserved) && 'md:hidden',
             )}
           >
-            <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-row font-medium">
+            <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 type-row font-medium">
               {t('Continue')}
             </h2>
             {reserved.board && (
@@ -1163,7 +1163,7 @@ export function HomePage() {
               <div
                 key={i}
                 className={cn(
-                  'border-border flex w-full items-center gap-2.5 border-b px-3 text-row last:border-b-0',
+                  'border-border flex w-full items-center gap-2.5 border-b px-3 type-row last:border-b-0',
                   // ListRow's own rhythm, read from the density token
                   // rather than written as the py-2 it resolves to at the
                   // comfortable rung. A compact vault draws these rows
@@ -1210,7 +1210,7 @@ export function HomePage() {
               !shownOnDesktop(shape) && 'md:hidden',
             )}
           >
-            <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-row font-medium">
+            <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 type-row font-medium">
               {t('Continue')}
             </h2>
             {/* The one place on this page that shows chess.
@@ -1282,7 +1282,7 @@ export function HomePage() {
                 key={label + detail}
                 divided
                 onClick={go}
-                className={cn('text-row', phoneOnly && 'md:hidden')}
+                className={cn('type-row', phoneOnly && 'md:hidden')}
               >
                 <Icon className="text-muted-foreground size-3.5 shrink-0" />
                 <span
@@ -1291,7 +1291,7 @@ export function HomePage() {
                 >
                   <span className="min-w-0 truncate">{label}</span>
                   {tail && (
-                    <span className="text-muted-foreground shrink-0 font-mono text-row-sub font-normal tabular-nums">
+                    <span className="text-muted-foreground shrink-0 font-mono type-row-sub font-normal tabular-nums">
                       {tail}
                     </span>
                   )}
@@ -1357,7 +1357,7 @@ export function HomePage() {
               {/* An h2 like Continue's: this was a <p>, so a reader
                   jumping by heading found one section on a page of
                   four. */}
-              <h2 className="text-muted-foreground flex-1 text-row font-medium">
+              <h2 className="text-muted-foreground flex-1 type-row font-medium">
                 {t('Set up your vault')}
               </h2>
               <Button
@@ -1390,7 +1390,7 @@ export function HomePage() {
                   // the card; the disabled button's opacity-60 on top of
                   // it composited to 2.7:1 (measured), and the tick and
                   // "Done" already carry the state.
-                  className="border-border text-muted-foreground flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) text-row last:border-b-0 pointer-coarse:min-h-11"
+                  className="border-border text-muted-foreground flex w-full items-center gap-2.5 border-b px-3 py-(--row-py) type-row last:border-b-0 pointer-coarse:min-h-11"
                 >
                   <Check aria-hidden className="size-3.5 shrink-0" />
                   <span className="min-w-0 flex-1">
@@ -1399,7 +1399,7 @@ export function HomePage() {
                   </span>
                 </div>
               ) : (
-                <ListRow key={step.label} divided onClick={step.go} className="text-row">
+                <ListRow key={step.label} divided onClick={step.go} className="type-row">
                   {/* A pending step carries no marker at all; the row's
                       own chevron already says it is a way in, and the
                       spacer keeps the labels in one column. */}
@@ -1419,7 +1419,7 @@ export function HomePage() {
           {/* One caption, two rooms: below md it heads the launcher grid,
               from md the dashboard panels. The customise button is the
               same on both — the sheet's card switches apply everywhere. */}
-          <h2 className="text-muted-foreground flex-1 text-row font-medium">
+          <h2 className="text-muted-foreground flex-1 type-row font-medium">
             <span className="md:hidden">{t('Shortcuts')}</span>
             <span className="max-md:hidden">{t('Overview')}</span>
           </h2>
@@ -1588,14 +1588,14 @@ export function HomePage() {
           <div className="grid gap-3 max-md:hidden lg:grid-cols-2">
             {show('training') && showTraining && (
               <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
-                <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-row font-medium">
+                <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 type-row font-medium">
                   {t('Training')}
                 </h2>
                 {/* Today's count is skipped when the history endpoint did
                     not answer: a nought that is really an error would say
                     you have not trained when you may well have. */}
                 {showSolvedToday && (
-                  <ListRow divided onClick={() => navigate('puzzles')} className="text-row">
+                  <ListRow divided onClick={() => navigate('puzzles')} className="type-row">
                     <Puzzle className="text-muted-foreground size-3.5 shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
                       {/* Non-null by showSolvedToday, which is the
@@ -1606,7 +1606,7 @@ export function HomePage() {
                   </ListRow>
                 )}
                 {showDue && (
-                  <ListRow divided onClick={() => navigate('puzzles')} className="text-row">
+                  <ListRow divided onClick={() => navigate('puzzles')} className="type-row">
                     <RotateCcw className="text-muted-foreground size-3.5 shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
                       {data.due > 0
@@ -1625,7 +1625,7 @@ export function HomePage() {
                     look. It carries the repertoire's own glyph so the
                     row says which trainer it is sending you to. */}
                 {showRepertoireDue && (
-                  <ListRow divided onClick={() => navigate('repertoire')} className="text-row">
+                  <ListRow divided onClick={() => navigate('repertoire')} className="type-row">
                     <Layers className="text-muted-foreground size-3.5 shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
                       {data.repertoire.due > 0
@@ -1646,7 +1646,7 @@ export function HomePage() {
 
             {show('books') && data.books.length > 0 && (
               <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
-                <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-row font-medium">
+                <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 type-row font-medium">
                   {t('Puzzle books')}
                 </h2>
                 {/* The puzzles hub's book row, so a book reads the same on
@@ -1657,7 +1657,7 @@ export function HomePage() {
                     key={b.slug}
                     divided
                     onClick={() => navigate('puzzles', 'books', b.slug)}
-                    className="text-row"
+                    className="type-row"
                   >
                     {b.cover ? (
                       <img
@@ -1671,10 +1671,10 @@ export function HomePage() {
                       </span>
                     )}
                     <span className="flex min-w-0 flex-1 flex-col gap-1">
-                      <span className="text-foreground truncate text-row font-medium">{b.title}</span>
+                      <span className="text-foreground truncate type-row font-medium">{b.title}</span>
                       <ProgressBar total={b.puzzles} solved={b.solved} failed={b.failed} showEmpty decorative />
                     </span>
-                    <span className="text-muted-foreground shrink-0 text-row-sub">
+                    <span className="text-muted-foreground shrink-0 type-row-sub">
                       <Figures text={t('{a} of {b}', { a: b.solved, b: b.puzzles })} />
                     </span>
                     <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />
@@ -1685,7 +1685,7 @@ export function HomePage() {
 
             {show('work') && data.recentDocs.length > 0 && (
               <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
-                <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 text-row font-medium">
+                <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 type-row font-medium">
                   {t('Recent work')}
                 </h2>
                 {data.recentDocs.map((d) => (
@@ -1695,7 +1695,7 @@ export function HomePage() {
                     onClick={() =>
                       navigate(d.kind === 'study' ? 'studies' : 'notes', encodeURIComponent(d.id))
                     }
-                    className="text-row"
+                    className="type-row"
                   >
                     {d.kind === 'study' ? (
                       <Library className="text-muted-foreground size-3.5 shrink-0" />
@@ -1705,7 +1705,7 @@ export function HomePage() {
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
                       {baseName(d.id)}
                     </span>
-                    <span className="text-muted-foreground shrink-0 text-row-sub">
+                    <span className="text-muted-foreground shrink-0 type-row-sub">
                       {formatAgo(d.updatedAt)}
                     </span>
                     <ChevronRight className="text-muted-foreground size-3.5 shrink-0" />

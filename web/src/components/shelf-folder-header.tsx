@@ -63,7 +63,7 @@ export function ShelfFolderHeader({
         <button
           type="button"
           onDoubleClick={() => setRenaming(true)}
-          className="text-muted-foreground text-sm font-medium"
+          className="text-muted-foreground type-row font-medium"
         >
           {folder}
         </button>

@@ -317,7 +317,7 @@ function Row({ entry, open, onToggle }: { entry: Entry; open: boolean; onToggle:
         aria-controls={open ? panelId : undefined}
         // The full muted fill, the ghost variant's hover, not a wash of it:
         // half of the ground rung over the page measured 1.04:1.
-        className="hover:bg-muted flex min-h-9 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors duration-100"
+        className="hover:bg-muted flex min-h-9 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left type-row transition-colors duration-100"
       >
         <ChevronRight
           className={cn(
@@ -341,10 +341,10 @@ function Row({ entry, open, onToggle }: { entry: Entry; open: boolean; onToggle:
             )}
           </span>
           {entry.version && (
-            <span className="text-muted-foreground shrink-0 font-mono text-xs">{entry.version}</span>
+            <span className="text-muted-foreground shrink-0 font-mono type-row-sub">{entry.version}</span>
           )}
           <TitleTip title={entry.license}>
-            <span className="text-muted-foreground border-border max-w-full shrink-0 truncate rounded-full border px-2 py-px text-xs whitespace-nowrap">
+            <span className="text-muted-foreground border-border max-w-full shrink-0 truncate rounded-full border px-2 py-px type-row-sub whitespace-nowrap">
               {entry.license}
             </span>
           </TitleTip>

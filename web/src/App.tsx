@@ -1116,7 +1116,7 @@ function MorePage() {
       <PageHeader title={t('More')} />
       {MORE_GROUPS.map(({ heading, items }) => (
         <div key={heading} className="flex flex-col gap-2">
-          <h2 className="text-muted-foreground text-sm font-medium">{t(heading)}</h2>
+          <h2 className="text-muted-foreground type-row font-medium">{t(heading)}</h2>
           {items.map(({ section, param, label, icon: Icon, blurb }) => (
             <button
               key={label}

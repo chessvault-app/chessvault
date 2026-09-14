@@ -150,13 +150,13 @@ usage moved up a rung instead:
 | captions | `text-xs` | 12px |
 | a small control's label (the registry's) | `text-[0.8rem]` | 12.8px |
 | body, list rows, panel text | `text-sm` | 14px |
-| a list row and the panel heading over it | `text-row` | 14px; 16 on a phone |
-| the tail beside a row's text (a date, a count) | `text-row-sub` | 12px; 14 on a phone |
+| a list row and the panel heading over it | `type-row` | 14px; 16 on a phone |
+| the tail beside a row's text (a date, a count) | `type-row-sub` | 12px; 14 on a phone |
 | titles, setting rows | `text-base` | 16px |
 | page titles (`PageHeader`, desktop) | `text-xl` | 20px |
 | the one display figure, and a phone's page title | `text-2xl` | 24px |
 
-The two `text-row` rungs are the same class at both widths and a
+The two `type-row` rungs are the same class at both widths and a
 different size: a list row's line is 16 or 17 on both phone platforms
 (iOS Body, Material Body Large) with its supporting line at 14 or 15,
 and the app's rows sat one rung under each on every screen. Desktop

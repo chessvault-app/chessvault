@@ -1516,11 +1516,13 @@
    `text-sm max-md:text-base` at thirty sites, which is a tier nobody had
    named, the shape this file forbids for the 10px rung below.
 
-   Registered as utilities so the rows keep Tailwind's vocabulary and
-   twMerge sees a font-size class, and with the size's own line height,
-   as text-sm and text-xs set it. The breakpoint is md, the phone width
-   every page layout turns on. */
-@utility text-row {
+   Registered as utilities so the rows keep Tailwind's vocabulary, with
+   the size's own line height, as text-sm and text-xs set it. NOT named
+   `text-row`: twMerge reads any unknown `text-*` as a text colour, so in
+   a cn() that also names a colour the size class was silently dropped
+   (measured: the theme tiles' labels inherited 16px on a desktop). The
+   breakpoint is md, the phone width every page layout turns on. */
+@utility type-row {
   font-size: var(--text-sm);
   line-height: var(--tw-leading, var(--text-sm--line-height));
   @media (width < 48rem) {
@@ -1528,7 +1530,7 @@
     line-height: var(--tw-leading, var(--text-base--line-height));
   }
 }
-@utility text-row-sub {
+@utility type-row-sub {
   font-size: var(--text-xs);
   line-height: var(--tw-leading, var(--text-xs--line-height));
   @media (width < 48rem) {
