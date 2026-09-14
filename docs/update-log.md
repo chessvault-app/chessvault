@@ -11,6 +11,18 @@ Pages come back as you left them, two of 0.10.0's phone changes are
 taken back, a bottom sheet resting low can be pulled up again, and a
 page opened inside a sheet turns like a page.
 
+- **A filter press and a search key answer at once; the rows follow.**
+  Choosing a result, ownership or notes filter on the Games collection
+  redrew the whole table inside the press, and a key in a shelf's search
+  box redrew every card inside the keystroke. The press is now a
+  Transition and the search boxes hand their lists a deferred value, so
+  the control paints first and the rows catch up in a render the next
+  press or key can interrupt; the rows dim for the beat between. Measured
+  on the demo with the CPU slowed four times: a filter press painted in
+  72 ms against 152 and 48 against 184; a key in the collection search
+  painted in 20 ms against 36 and in the studies search in 18 against
+  37, and most keys now paint too fast to be reported at all. Applies to
+  the Games collection, Studies, Notes, Books and the puzzle themes.
 - **The reference games search answers a key in half the time.** The
   React Compiler now builds the games browser, the database search, the
   puzzle trainer and the opening map, memoising at build time what these
