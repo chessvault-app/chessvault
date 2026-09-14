@@ -1,6 +1,8 @@
-import type { ReactElement } from 'react';
+import { useEffect, useState, type ReactElement } from 'react';
 
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { registerOpenPopup } from '@/lib/popups';
+import { routeChanging } from '@/lib/router';
 
 /**
  * A `title` shown the way Button shows one, for a control that cannot be
@@ -55,18 +57,51 @@ export function TitleTip({
   side?: 'top' | 'bottom' | 'left' | 'right';
   children: ReactElement;
 }) {
+  // Controlled, so the tip can be closed from outside: while it is open
+  // its closer is registered (lib/popups), and the router closes every
+  // open popup before a page turn, or Base UI's own close, which runs
+  // through flushSync, would make React skip the transition.
+  // A close the router asks for unmounts the tip at once, without its
+  // exit animation: Base UI flushes synchronously when that animation
+  // ends, and an end that lands inside the page turn is the very flush
+  // that skips it. A close by hover keeps the fade.
+  const [open, setOpen] = useState(false);
+  const [instant, setInstant] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    return registerOpenPopup(() => {
+      setInstant(true);
+      setOpen(false);
+    });
+  }, [open]);
   if (title === undefined) return children;
   return (
-    <Tooltip>
+    <Tooltip
+      open={open}
+      onOpenChange={(next, details) => {
+        // Nothing opens or closes by hover while a page is turning: Base
+        // UI flushes a hover-driven change synchronously, and that flush
+        // is what makes React skip the transition. Cancelled here, before
+        // the store reaches its flush.
+        if (routeChanging()) {
+          details.cancel();
+          return;
+        }
+        if (next) setInstant(false);
+        setOpen(next);
+      }}
+    >
       <TooltipTrigger render={children} />
       {/* A newline in a title is a line break, which is what the browser's
           bubble did with one. Two of these carry a fact and its footnote
           on separate lines (the puzzle tiles); everywhere else the class
           costs nothing, since it only collapses runs of spaces the way
           `normal` already does. */}
-      <TooltipContent className="whitespace-pre-line" side={side}>
-        {title}
-      </TooltipContent>
+      {!instant && (
+        <TooltipContent className="whitespace-pre-line" side={side}>
+          {title}
+        </TooltipContent>
+      )}
     </Tooltip>
   );
 }

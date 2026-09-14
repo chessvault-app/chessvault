@@ -1,4 +1,6 @@
 import { addTransitionType, startTransition, useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
+import { closePopups } from './popups';
 import { confirmLeave, leaveIsBlocked } from './leaveGuard';
 import { prefersReducedMotion } from './motion';
 import { armReturnFlight, disarmSharedBoard } from './shared-board';
@@ -190,6 +192,9 @@ function swapRouteNow(commit: () => void, nav: Nav): void {
   // A pop flies the page's board back into the thumbnail it came from,
   // when that thumbnail is still there (lib/shared-board).
   if (nav === 'pop') armReturnFlight();
+  // Any open tooltip closes now, in a flush of its own, before the
+  // transition exists for its close to skip (lib/popups).
+  flushSync(closePopups);
   startTransition(() => {
     addTransitionType(`nav-${nav}`);
     commit();

@@ -3,6 +3,8 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
 
 import { cn } from '@/lib/utils';
+import { registerOpenPopup } from '@/lib/popups';
+import { routeChanging } from '@/lib/router';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
@@ -144,6 +146,22 @@ function Button({
   title,
   ...props
 }: ButtonProps) {
+  // The app's behaviour on the registry's tooltip: controlled, and
+  // registered while open (lib/popups), so the router can close it before
+  // a page turn. Base UI's own close runs through flushSync, and a
+  // flushSync while React holds a view transition pending makes React
+  // skip the transition; a hovered back chevron turned a pop into a cut.
+  // A close the router asks for unmounts the tip at once, without its
+  // exit animation, whose end Base UI flushes synchronously.
+  const [tipOpen, setTipOpen] = React.useState(false);
+  const [tipInstant, setTipInstant] = React.useState(false);
+  React.useEffect(() => {
+    if (!tipOpen) return;
+    return registerOpenPopup(() => {
+      setTipInstant(true);
+      setTipOpen(false);
+    });
+  }, [tipOpen]);
   const button = (
     <ButtonPrimitive
       data-slot="button"
@@ -173,9 +191,20 @@ function Button({
   // worst of both.
   if (title === undefined) return button;
   return (
-    <Tooltip>
+    <Tooltip
+      open={tipOpen}
+      onOpenChange={(next, details) => {
+        // No hover-driven change while a page turns (see TitleTip).
+        if (routeChanging()) {
+          details.cancel();
+          return;
+        }
+        if (next) setTipInstant(false);
+        setTipOpen(next);
+      }}
+    >
       <TooltipTrigger render={button} />
-      <TooltipContent>{title}</TooltipContent>
+      {!tipInstant && <TooltipContent>{title}</TooltipContent>}
     </Tooltip>
   );
 }
