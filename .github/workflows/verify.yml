@@ -82,6 +82,12 @@ jobs:
 
       - run: npm run check:contrast
 
+      # The same build, one more question only a browser can answer: does
+      # the phone's page turn still run, in both directions, with a
+      # hovering pointer too (scripts/check-page-turn.ts says what broke
+      # it twice without any other check noticing).
+      - run: npm run check:page-turn
+
   native:
     runs-on: ubuntu-latest
     steps:

@@ -52,6 +52,7 @@
     "desktop:package:linux": "node desktop/build-server.mjs && npm run build && electron-builder --linux AppImage deb",
     "fuzz:parity": "tsx scripts/fuzz-parity.ts",
     "check:contrast": "tsx scripts/check-contrast.ts",
+    "check:page-turn": "tsx scripts/check-page-turn.ts",
     "shots:grid": "tsx scripts/shot-grid.ts"
   },
   "dependencies": {
