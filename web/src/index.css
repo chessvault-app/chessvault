@@ -2585,29 +2585,56 @@ cg-board square.check {
    Measured on the demo in phone-emulated Chromium, opening a game from a
    games row: the transition finished 366ms after the tap before this,
    and the board and the toast could only appear after it. */
+/* EXPERIMENT (vt-experiment branch): with the pages on snapshots of
+   their own (below), the root's image holds only the shell around them
+   and moves not at all; the root rules that slid the whole page for a
+   push and a pop are gone from this branch (see main's index.css). */
 :root[data-nav='push']::view-transition-group(root),
-:root[data-nav='pop']::view-transition-group(root) {
-  animation-duration: var(--pane-turn);
-}
+:root[data-nav='pop']::view-transition-group(root),
 :root[data-nav='push']::view-transition-old(root),
-:root[data-nav='push']::view-transition-new(root),
 :root[data-nav='pop']::view-transition-old(root),
+:root[data-nav='push']::view-transition-new(root),
 :root[data-nav='pop']::view-transition-new(root) {
+  animation: none;
+}
+/* EXPERIMENT (vt-experiment branch): the same four animations on the
+   route slots' own snapshots, named by React's <ViewTransition> classes
+   (lib/keep-alive) rather than on the root. The root then has nothing
+   of the page left in it and takes no animation, or its 250ms default
+   cross-fade would hold the live page back the way it once did. */
+::view-transition-group(.vt-page-in),
+::view-transition-group(.vt-page-out),
+::view-transition-group(.vt-page-under-in),
+::view-transition-group(.vt-page-under-out) {
+  animation-duration: var(--pane-turn);
+  animation-timing-function: var(--pane-turn-ease);
+}
+::view-transition-old(.vt-page-in),
+::view-transition-new(.vt-page-in),
+::view-transition-old(.vt-page-out),
+::view-transition-new(.vt-page-out),
+::view-transition-old(.vt-page-under-in),
+::view-transition-new(.vt-page-under-in),
+::view-transition-old(.vt-page-under-out),
+::view-transition-new(.vt-page-under-out) {
+  /* The UA's default cross-fade blends with plus-lighter; the slides
+     need normal blending or the two pages add up where they overlap. */
   mix-blend-mode: normal;
 }
-:root[data-nav='push']::view-transition-old(root) {
-  animation: vt-under-out var(--pane-turn) var(--pane-turn-ease) both;
-}
-:root[data-nav='push']::view-transition-new(root) {
+::view-transition-new(.vt-page-in) {
   animation: vt-slide-in var(--pane-turn) var(--pane-turn-ease) both;
 }
-:root[data-nav='pop']::view-transition-old(root) {
+::view-transition-old(.vt-page-under-out) {
+  animation: vt-under-out var(--pane-turn) var(--pane-turn-ease) both;
+}
+::view-transition-old(.vt-page-out) {
   animation: vt-slide-out var(--pane-turn) var(--pane-turn-ease-out) both;
-  /* The leaving page is on top: the UA paints the new image over the
-     old, which is right for a push and backwards for a pop. */
+}
+::view-transition-group(.vt-page-out) {
+  /* The leaving page is on top of the one returning under it. */
   z-index: 1;
 }
-:root[data-nav='pop']::view-transition-new(root) {
+::view-transition-new(.vt-page-under-in) {
   animation: vt-under-in var(--pane-turn) var(--pane-turn-ease) both;
 }
 @keyframes vt-slide-in {

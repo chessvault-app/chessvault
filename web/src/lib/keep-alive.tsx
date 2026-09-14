@@ -1,4 +1,4 @@
-import { Activity, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { Activity, ViewTransition, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { parse, type Section } from './router';
 
 /**
@@ -146,10 +146,24 @@ function Slot({ children }: { children: ReactNode }) {
       saved.current = list;
     };
   }, []);
+  // EXPERIMENT (vt-experiment branch): the page change as React's own
+  // <ViewTransition>. A route change the router commits inside
+  // startTransition with a `nav-push` or `nav-pop` type (lib/router)
+  // makes this slot's show an enter and the other's hide an exit, each
+  // on its own snapshot rather than the root's, with the classes below
+  // naming the animation index.css draws for that direction. A change
+  // outside a transition (a tab, a desktop, reduced motion) animates
+  // nothing, which is the cut those already are.
   return (
-    <div ref={ref} data-route-slot className="h-full">
-      {children}
-    </div>
+    <ViewTransition
+      default="none"
+      enter={{ 'nav-push': 'vt-page-in', 'nav-pop': 'vt-page-under-in', default: 'none' }}
+      exit={{ 'nav-push': 'vt-page-under-out', 'nav-pop': 'vt-page-out', default: 'none' }}
+    >
+      <div ref={ref} data-route-slot className="h-full">
+        {children}
+      </div>
+    </ViewTransition>
   );
 }
 

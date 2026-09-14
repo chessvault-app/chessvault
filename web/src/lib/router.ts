@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { flushSync } from 'react-dom';
+import { addTransitionType, startTransition, useEffect, useState } from 'react';
 import { confirmLeave, leaveIsBlocked } from './leaveGuard';
 import { prefersReducedMotion } from './motion';
 import { disarmSharedBoard } from './shared-board';
@@ -176,25 +175,65 @@ function swapRoute(commit: () => void, appDriven: boolean, nav: Nav, to: string)
 let waitToken: object | null = null;
 
 function swapRouteNow(commit: () => void, nav: Nav): void {
-  // The direction, for the stylesheet: a push slides the new page in
-  // over the old, a pop slides the old one back out. Stamped on the
-  // root before the snapshot so the first frame
-  // is already the right animation, and cleared once it has played.
+  // EXPERIMENT (vt-experiment branch): the route commits inside a React
+  // Transition carrying the direction as a transition type, and the
+  // route slots' <ViewTransition>s (lib/keep-alive) animate their own
+  // enter and exit from it; React starts the browser's transition
+  // itself. The root keeps `data-nav` for the toasts' and the shared
+  // board's rules, which still hang on it.
   document.documentElement.dataset.nav = nav;
-  const transition = document.startViewTransition(() => {
-    flushSync(commit);
+  // React hands back no promise for the transition it starts, and two
+  // callers need one (routeSettled: the review strip's toast, and the
+  // slow-load placeholders through routeChanging). Caught on its way
+  // through document.startViewTransition, for this one call.
+  const started = captureNextViewTransition();
+  startTransition(() => {
+    addTransitionType(`nav-${nav}`);
+    commit();
   });
   // `finished` rejects when a transition is skipped (another starts, the
   // tab hides); either way the route has settled, and a board flight the
   // tap armed has flown.
-  const settled = transition.finished.catch(() => undefined).then(() => {
-    disarmSharedBoard();
-    if (inFlight === settled) {
-      inFlight = null;
-      delete document.documentElement.dataset.nav;
-    }
-  });
+  const settled = started
+    .then((t) => t?.finished)
+    .catch(() => undefined)
+    .then(() => {
+      disarmSharedBoard();
+      if (inFlight === settled) {
+        inFlight = null;
+        delete document.documentElement.dataset.nav;
+      }
+    });
   inFlight = settled;
+}
+
+/**
+ * The next View Transition the document starts, or null if none starts
+ * within a frame or two (React found nothing to animate).
+ */
+function captureNextViewTransition(): Promise<ViewTransition | null> {
+  const original = document.startViewTransition;
+  return new Promise((resolve) => {
+    const restore = (): void => {
+      if (document.startViewTransition === patched) document.startViewTransition = original;
+    };
+    const patched = function (this: Document, ...args: Parameters<Document['startViewTransition']>) {
+      restore();
+      const t = original.apply(this, args);
+      resolve(t);
+      return t;
+    } as Document['startViewTransition'];
+    document.startViewTransition = patched;
+    // Not started within a second: nothing animated (React found no
+    // <ViewTransition> to move), and the route has still committed. A
+    // second rather than a frame or two, because React starts the
+    // transition after the new page has rendered, which on a slow phone
+    // opening a heavy page is several frames after the tap.
+    setTimeout(() => {
+      restore();
+      resolve(null);
+    }, 1000);
+  });
 }
 
 /**
