@@ -43,8 +43,15 @@ pop run; any other Base UI popup closing within a page turn of a
 navigation would still skip it, and no shelf menu item navigates today,
 so that case is untested. Main's transition is immune to all of it. The
 trigger is the patch falling away, or a page's data read through
-Suspense, which would remove its reason to exist. Until then the router
-keeps `document.startViewTransition` with `flushSync`.
+Suspense, which would remove its reason to exist. A Suspense pilot on
+the study page was weighed for that (2026-09-14) and not built: the
+page opens its document through the study store, which owns the save
+buffer, the leave guard and the chapter jump, so reading the document
+with `use()` would be a redesign of that store rather than a boundary
+around a fetch, and the reason the routes left Suspense stands (its
+300 ms fallback throttle, `lib/lazyRoute` says why). The branch stays a
+branch. Until then the
+router keeps `document.startViewTransition` with `flushSync`.
 
 **The last 76 functions the React Compiler refuses.** The compiler is
 on for every file under `web/src` (2026-09-14) and compiles 563
