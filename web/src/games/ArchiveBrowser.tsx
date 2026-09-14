@@ -21,7 +21,7 @@ import { forgetMyGames } from '@/openingmap/useGaps';
 import { t } from '@/lib/i18n';
 import { GameRow, collectionKey, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
-import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
+import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav, type TableNav } from './GameTable';
 import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { loadGamePgn } from './CollectionList';
@@ -788,7 +788,8 @@ export function ArchiveBrowser({
   // 281-game month; after: the two rows whose props changed).
   // ↑/↓/Enter/Escape drive the table selection over the visible rows —
   // the same contract as the databases and collection tabs.
-  const tableNav = useTableNav(table && onSelect !== undefined);
+  const tableNav = useRef<TableNav | null>(null);
+  useTableNav(table && onSelect !== undefined, tableNav);
   const navRows = visibleMonthGames.slice(0, MAX_ROWS);
   tableNav.current = {
     move: (delta, from) => {

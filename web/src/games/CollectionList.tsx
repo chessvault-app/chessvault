@@ -9,7 +9,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import { memo, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 
 import { sanitizeSegment } from '@shared/vaultNames';
 import {
@@ -58,6 +58,7 @@ import {
   useTableNav,
   type GameSort,
   type GameSortKey,
+  type TableNav,
 } from './GameTable';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { PromptDialog } from '@/components/prompt-dialog';
@@ -439,7 +440,8 @@ export function CollectionList({
     table && renamingKey ? (games.find((g) => gameKey(g) === renamingKey) ?? null) : null;
 
   // ↑/↓/Enter/Escape drive the table selection over the filtered rows.
-  const tableNav = useTableNav(table && onSelect !== undefined);
+  const tableNav = useRef<TableNav | null>(null);
+  useTableNav(table && onSelect !== undefined, tableNav);
   const tableVars = useGameTableVars(selecting, !besideDetails);
   tableNav.current = {
     move: (delta, from) => {

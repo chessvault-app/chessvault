@@ -939,6 +939,42 @@ function PickRow({
 }
 
 /** The selected node: its position, its editable facts, its actions. */
+/**
+ * Write a study that opens on a line, named `wanted`, and answer its id.
+ *
+ * A name already taken gets a number rather than an error: a whole
+ * family of nodes shares one catalogue name, so the second study from
+ * the Sicilian is the common case, not the odd one. Twenty tries, then
+ * the conflict is thrown as the route would have thrown it.
+ *
+ * A function of its own rather than the panel's handler body, because
+ * it throws inside a try and the React Compiler cannot lower that in a
+ * component yet; here it is plain code.
+ */
+async function makeLineStudy(path: string[], wanted: string): Promise<string> {
+  let tree = createTree();
+  let tip = tree.rootId;
+  for (const san of path) {
+    const added = addSan(tree, tip, san);
+    if (!added) break;
+    tree = added.tree;
+    tip = added.nodeId;
+  }
+  const pgn = treeToPgn(tree, { Event: t('Opening map') });
+  for (let n = 1; n <= 20; n += 1) {
+    try {
+      const made = await api<{ id: string }>('/api/studies', {
+        method: 'POST',
+        json: { name: n === 1 ? wanted : `${wanted} ${n}`, pgn },
+      });
+      return made.id;
+    } catch (error) {
+      if (!(error instanceof ApiError) || error.status !== 409) throw error;
+    }
+  }
+  throw new ApiError(409, t('a study with that name exists'));
+}
+
 function NodePanel({
   map,
   resolved,
@@ -1013,48 +1049,22 @@ function NodePanel({
     if (!facts.fen) return;
     setMaking(true);
     setMakeError(null);
+    /**
+     * The name is one this vault can hold, not one the catalogue
+     * happens to use. "C60 Ruy Lopez: Morphy Defence" has a colon in
+     * it, which a filename may not, and the route answered with the
+     * rule rather than the study — a button that fails on most of the
+     * openings there are. `sanitizeSegment` is the same pass every
+     * imported Lichess title goes through.
+     */
+    const wanted = sanitizeSegment(node.name ?? lineName ?? title, t('Untitled study'));
     try {
-      let tree = createTree();
-      let tip = tree.rootId;
-      for (const san of facts.path) {
-        const added = addSan(tree, tip, san);
-        if (!added) break;
-        tree = added.tree;
-        tip = added.nodeId;
-      }
-      const pgn = treeToPgn(tree, { Event: t('Opening map') });
-      /**
-       * The name is one this vault can hold, not one the catalogue
-       * happens to use. "C60 Ruy Lopez: Morphy Defence" has a colon in
-       * it, which a filename may not, and the route answered with the
-       * rule rather than the study — a button that fails on most of the
-       * openings there are. `sanitizeSegment` is the same pass every
-       * imported Lichess title goes through.
-       *
-       * And a name already taken gets a number rather than an error: a
-       * whole family of nodes shares one catalogue name, so the second
-       * study from the Sicilian is the common case, not the odd one.
-       */
-      const wanted = sanitizeSegment(node.name ?? lineName ?? title, t('Untitled study'));
-      let id: string | null = null;
-      for (let n = 1; n <= 20 && id === null; n += 1) {
-        try {
-          const made = await api<{ id: string }>('/api/studies', {
-            method: 'POST',
-            json: { name: n === 1 ? wanted : `${wanted} ${n}`, pgn },
-          });
-          id = made.id;
-        } catch (error) {
-          if (!(error instanceof ApiError) || error.status !== 409) throw error;
-        }
-      }
-      if (id === null) throw new ApiError(409, t('a study with that name exists'));
+      const id = await makeLineStudy(facts.path, wanted);
       apply((d) => addTag(d, map.id, node.id, { kind: 'study', id }));
     } catch (error) {
       setMakeError(apiErrorMessage(error));
-    } finally {
-      setMaking(false);
     }
+    setMaking(false);
   };
 
   // Continuations the studies prepare that the map does not chart yet:

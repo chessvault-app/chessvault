@@ -2,6 +2,8 @@ import { Bookmark, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import {
   useCallback,
   useEffect,
+  useEffectEvent,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -266,7 +268,13 @@ export function GamesBrowser({
     [games],
   );
   const [importing, setImporting] = useState(false);
-  if (importRef) importRef.current = () => setImporting(true);
+  // The host's handles are filled from a layout effect, not during
+  // render: a ref written in render is what the React Compiler, which
+  // memoises this file, refuses, and the host only ever calls these from
+  // its own event handlers, after the commit.
+  useLayoutEffect(() => {
+    if (importRef) importRef.current = () => setImporting(true);
+  }, [importRef]);
   /** Which tab the pane is showing. A handed-over position lands on
       Databases whatever was held — that is what it is for, and with
       the tabs at every width the phone consumes the handoff the same
@@ -299,16 +307,16 @@ export function GamesBrowser({
       empty state, which is the honest thing to show and self-heals on
       the next load, whereas correcting it would replace real rows with
       an empty state, the same flicker in its worst direction. */
-  const guessedTab = useRef(false);
-  const [tab, setTabState] = useState<MainTab>(() => {
-    if (positionHuntPending()) return 'databases';
-    if (heldTab) return heldTab;
+  const [opening] = useState((): { tab: MainTab; guessed: boolean } => {
+    if (positionHuntPending()) return { tab: 'databases', guessed: false };
+    if (heldTab) return { tab: heldTab, guessed: false };
     const cached = cachedCollection();
-    if (cached) return cached.length > 0 ? 'collection' : 'databases';
+    if (cached) return { tab: cached.length > 0 ? 'collection' : 'databases', guessed: false };
     // Remembered, not known: the correction stays armed either way.
-    guessedTab.current = true;
-    return collectionWasNonEmpty() ? 'collection' : 'databases';
+    return { tab: collectionWasNonEmpty() ? 'collection' : 'databases', guessed: true };
   });
+  const guessedTab = useRef(opening.guessed);
+  const [tab, setTabState] = useState<MainTab>(opening.tab);
   /** The emitted selection's subject, per tab: the collection remembers
       a KEY and re-resolves it against the live array (load() replaces
       the objects after a rename or a reload); the database pane hands
@@ -328,11 +336,14 @@ export function GamesBrowser({
   // width less the reserve, which are equal once the observer has
   // caught up. Its one cost: widening the window while a game is
   // selected does not merge the toolbar until the selection is dropped.
-  const freeW = useRef(0);
-  if (!besideDetails) freeW.current = paneW;
+  // Held in state and adjusted during render (React's own pattern for a
+  // value that follows a prop), rather than in a ref written in render,
+  // which the React Compiler refuses.
+  const [freeW, setFreeW] = useState(paneW);
+  if (!besideDetails && freeW !== paneW) setFreeW(paneW);
   const decisiveW = besideDetails
     ? detailsReservePx > 0
-      ? Math.min(paneW, freeW.current - detailsReservePx)
+      ? Math.min(paneW, freeW - detailsReservePx)
       : paneW
     : paneW - detailsReservePx;
   const merged = table && decisiveW >= MERGED_MIN_PX;
@@ -345,7 +356,9 @@ export function GamesBrowser({
     setDbSel(null);
     setArchSel(null);
   };
-  if (clearRef) clearRef.current = clearSelection;
+  useLayoutEffect(() => {
+    if (clearRef) clearRef.current = clearSelection;
+  });
   const setTab = (next: MainTab): void => {
     heldTab = next;
     setTabState(next);
@@ -490,9 +503,13 @@ export function GamesBrowser({
   // The rows memoise on primitives — see CollectionRow. These forward
   // through a ref to the LATEST handlers, so their identity never changes
   // while their closures stay fresh (a bookmark toggle used to re-render
-  // every row in the list; now it re-renders the one that changed).
+  // every row in the list; now it re-renders the one that changed). The
+  // ref is written from a layout effect, before any row can be pressed,
+  // and never during render.
   const rowHandlers = useRef({ dropGame, toggleBookmark, renameGame, openGame });
-  rowHandlers.current = { dropGame, toggleBookmark, renameGame, openGame };
+  useLayoutEffect(() => {
+    rowHandlers.current = { dropGame, toggleBookmark, renameGame, openGame };
+  });
   const rowOpen = useCallback((g: GameSummary) => rowHandlers.current.openGame(g), []);
   const rowDrop = useCallback((g: GameSummary) => rowHandlers.current.dropGame(g), []);
   const rowBookmark = useCallback(
@@ -623,15 +640,14 @@ export function GamesBrowser({
   // The selection reaches the host as an EVENT, re-fired when what it
   // describes changes (the resolved game object after a reload, a
   // bookmark's fill). Built fresh every render — the verbs must close
-  // over live state — and emitted through refs so the effect deps can
-  // name the selection's IDENTITY rather than its ever-new object.
-  const onSelectRef = useRef(onSelect);
-  onSelectRef.current = onSelect;
-  const selRef = useRef(selection);
-  selRef.current = selection;
+  // over live state — so it is emitted through an Effect Event, which
+  // reads the current selection without being a dependency, and the
+  // effect's list names the selection's IDENTITY rather than its
+  // ever-new object. (Two refs written during render did the same job;
+  // the React Compiler refuses a component that writes refs in render.)
+  const emitSelection = useEffectEvent(() => onSelect?.(selection));
   useEffect(() => {
-    onSelectRef.current?.(selRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- identity, not object: see above
+    emitSelection();
   }, [tab, colSelGame, dbSel, archSel, bookmarks]);
 
   return (
@@ -889,11 +905,18 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
 
     setBusy(true);
     setFailure(null);
+    // The failure is caught rather than let through to a `finally`: a
+    // network blip here used to leave the import button disabled for
+    // good, with the typed game unsendable. (Not a try/finally, which the
+    // React Compiler cannot lower yet; the busy flag is cleared on both
+    // paths below.)
+    let answer: { imported?: number; duplicates?: number; unreadable?: number } | null = null;
     try {
-      const answer = await api<{ imported?: number; duplicates?: number; unreadable?: number }>(
-        '/api/games/collect-pgn',
-        { method: 'POST', json: { pgn: text } },
-      );
+      answer = await api('/api/games/collect-pgn', { method: 'POST', json: { pgn: text } });
+    } catch (error) {
+      setFailure(t(apiErrorMessage(error)));
+    }
+    if (answer) {
       // One game closing the sheet is its own report; several say what
       // became of each, since the list alone cannot show what was skipped.
       if (gameCount > 1) {
@@ -908,13 +931,8 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
         });
       }
       onDone();
-    } catch (error) {
-      // Including the thrown case: a network blip here used to leave the
-      // import button disabled for good, with the typed game unsendable.
-      setFailure(t(apiErrorMessage(error)));
-    } finally {
-      setBusy(false);
     }
+    setBusy(false);
   };
 
   return (

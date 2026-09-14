@@ -12,7 +12,7 @@ import {
   Settings2,
   X,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Color } from 'chessops/types';
 import { roleToChar } from 'chessops/util';
 import type { DrawShape } from '@lichess-org/chessground/draw';
@@ -200,9 +200,14 @@ function Trainer({
   const [difficulty, setDifficulty] = useState<DifficultyId>(storedDifficulty);
   // Stacked: the difficulty row hides behind the Puzzle panel's gear.
   const [showDifficulty, setShowDifficulty] = useState(false);
-  // The shared gate (board/usePromotion): the apply callback closes over
-  // applyUserMove from the same render the picker's choice arrives in.
-  const promotion = usePromotion((orig, dest, role) => applyUserMove(orig + dest + roleToChar(role)));
+  // The shared gate (board/usePromotion): the apply callback reaches
+  // applyUserMove through a ref filled after each render (below, once
+  // applyUserMove exists), so the picker's choice, which arrives as an
+  // event after the commit, plays through the latest one. A direct
+  // reference would read the function before its declaration, which the
+  // React Compiler, which memoises this file, refuses.
+  const applyRef = useRef<(uci: string) => void>(() => {});
+  const promotion = usePromotion((orig, dest, role) => applyRef.current(orig + dest + roleToChar(role)));
   // Reviewing an earlier ply of the line (null = live), via the panel's
   // toolbar; any machine progress snaps back to live.
   const [review, setReview] = useState<number | null>(null);
@@ -262,15 +267,20 @@ function Trainer({
   const refreshMeta = useCallback(async () => {
     // Meta is decoration around the trainer (counts, the setup gate); if
     // the server is away, loadNext will say so where it can be acted on.
-    try {
-      const next = await api<Meta>('/api/puzzles/meta');
+    // Nothing conditional inside the try (the React Compiler cannot
+    // lower that yet); the storage write has a try of its own, since a
+    // browser that refuses storage must not look like a server outage.
+    const next = await api<Meta>('/api/puzzles/meta').catch(() => null);
+    if (next) {
       setMeta(next);
-      localStorage.setItem(DB_READY_KEY, next.ready ? '1' : '0');
-    } catch {
-      /* the puzzle fetch reports the outage, with a retry */
-    } finally {
-      setMetaAnswered(true);
+      const ready = next.ready ? '1' : '0';
+      try {
+        localStorage.setItem(DB_READY_KEY, ready);
+      } catch {
+        /* not remembered; the next visit asks the server as this one did */
+      }
     }
+    setMetaAnswered(true);
   }, []);
 
   const report = useCallback(
@@ -300,8 +310,13 @@ function Trainer({
    * or handed over by the hub — and both must set up identically. `seq`
    * is the caller's sequence number: a load that has been superseded
    * while it was away must not write to state (see loadNext).
+   *
+   * Plain functions, `show` and `loadNext` both: they were useCallbacks
+   * whose dependency lists were suppressed, and the React Compiler,
+   * which memoises this file, refuses a component that suppresses the
+   * rule. Their identity is the compiler's business now.
    */
-  const show = useCallback((next: ApiPuzzle, seq: number) => {
+  const show = (next: ApiPuzzle, seq: number): void => {
     if (seq !== loadSeq.current) return;
     setPuzzle(next);
     setPlies(0);
@@ -316,83 +331,81 @@ function Trainer({
       setView(positionAt(next, 1));
       setPhase('solving');
     });
-    // `after` is a stable closure over refs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  };
 
-  const loadNext = useCallback(
-    async (selectedTheme: string, selectedDifficulty: DifficultyId) => {
-      // Clearing the timers does not clear a fetch already in flight: two
-      // quick Skips used to leave load A's continuation running after load
-      // B took over, so A's puzzle landed in state — or A's 700 ms setup
-      // timer positioned the board on A while `puzzle` was B, and a
-      // correct move was then graded (and reported) against the wrong
-      // puzzle. Whoever holds the latest sequence number owns the state.
-      const seq = ++loadSeq.current;
-      timers.current.forEach(clearTimeout);
-      timers.current = [];
-      setPhase('loading');
-      setPuzzle(null);
-      setFailed(false);
-      setRevealed(false);
-      setHint(0);
+  const loadNext = async (selectedTheme: string, selectedDifficulty: DifficultyId): Promise<void> => {
+    // Clearing the timers does not clear a fetch already in flight: two
+    // quick Skips used to leave load A's continuation running after load
+    // B took over, so A's puzzle landed in state — or A's 700 ms setup
+    // timer positioned the board on A while `puzzle` was B, and a
+    // correct move was then graded (and reported) against the wrong
+    // puzzle. Whoever holds the latest sequence number owns the state.
+    loadSeq.current += 1;
+    const seq = loadSeq.current;
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setPhase('loading');
+    setPuzzle(null);
+    setFailed(false);
+    setRevealed(false);
+    setHint(0);
     setHelped(false);
-      setHelped(false);
-      setError(null);
-      promotion.cancel();
-      reported.current = false;
+    setError(null);
+    promotion.cancel();
+    reported.current = false;
 
-      // The hub may have drawn this puzzle already and be showing it on a
-      // board. Take that one rather than drawing again, or the position
-      // somebody just pressed would be replaced by a different one.
-      // consume() clears, so this only ever applies to the first load —
-      // Skip and Next go to the server like always.
-      if (mode !== 'single') {
-        const handed = consumePendingPuzzle(mode);
-        if (handed) {
-          show(handed, seq);
-          return;
-        }
-      }
-
-      const url =
-        mode === 'single'
-          ? `/api/puzzles/by-id/${encodeURIComponent(puzzleId ?? '')}`
-          : mode === 'failed'
-            ? '/api/puzzles/next?mode=failed'
-            : `/api/puzzles/next${difficultyQuery(selectedDifficulty, selectedTheme)}`;
-      // A request that FAILS — server down, network gone, an error
-      // status — used to fall straight through this function, leaving
-      // the phase on 'loading' and the board on a spinner that nothing
-      // would ever stop. An error is a state the trainer must be able to
-      // be in. api() folds the network and status cases into one throw,
-      // carrying the same wording each branch used to build by hand —
-      // and only the sequence holder may write it.
-      let next: ApiPuzzle;
-      try {
-        ({ puzzle: next } = await api<{ puzzle: ApiPuzzle }>(url));
-      } catch (e) {
-        if (seq !== loadSeq.current) return;
-        setError(apiErrorMessage(e));
+    // The hub may have drawn this puzzle already and be showing it on a
+    // board. Take that one rather than drawing again, or the position
+    // somebody just pressed would be replaced by a different one.
+    // consume() clears, so this only ever applies to the first load —
+    // Skip and Next go to the server like always.
+    if (mode !== 'single') {
+      const handed = consumePendingPuzzle(mode);
+      if (handed) {
+        show(handed, seq);
         return;
       }
+    }
+
+    const url =
+      mode === 'single'
+        ? `/api/puzzles/by-id/${encodeURIComponent(puzzleId ?? '')}`
+        : mode === 'failed'
+          ? '/api/puzzles/next?mode=failed'
+          : `/api/puzzles/next${difficultyQuery(selectedDifficulty, selectedTheme)}`;
+    // A request that FAILS — server down, network gone, an error
+    // status — used to fall straight through this function, leaving
+    // the phase on 'loading' and the board on a spinner that nothing
+    // would ever stop. An error is a state the trainer must be able to
+    // be in. api() folds the network and status cases into one throw,
+    // carrying the same wording each branch used to build by hand —
+    // and only the sequence holder may write it.
+    let next: ApiPuzzle;
+    try {
+      ({ puzzle: next } = await api<{ puzzle: ApiPuzzle }>(url));
+    } catch (e) {
       if (seq !== loadSeq.current) return;
-      show(next, seq);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mode, puzzleId],
-  );
+      setError(apiErrorMessage(e));
+      return;
+    }
+    if (seq !== loadSeq.current) return;
+    show(next, seq);
+  };
 
   // One boot per real mount: StrictMode replays effects, and without the
   // guard the page fetched (and briefly showed) two different puzzles.
+  // An Effect Event, so the boot reads the mount's theme and difficulty
+  // without them being dependencies that would boot again.
   const booted = useRef(false);
-  useEffect(() => {
-    if (booted.current) return;
-    booted.current = true;
+  const boot = useEffectEvent(() => {
     void refreshMeta();
     if (mode === 'fresh') void refreshToday();
     void loadNext(theme, difficulty);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    if (booted.current) return;
+    booted.current = true;
+    boot();
   }, []);
 
   const pickDifficulty = (id: DifficultyId): void => {
@@ -420,12 +433,14 @@ function Trainer({
 
   // The verdicts are drawn over the board and printed in the panel; a
   // screen reader saw neither. Announced at the two moments that matter.
-  useEffect(() => {
+  const announcePhase = useEffectEvent(() => {
     if (phase === 'wrong') announce(t('Wrong move. The board rolls back.'));
     else if (phase === 'done') {
       announce(t(verdictText(revealed, failed, helped)));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    announcePhase();
   }, [phase]);
 
   const goToPly = (target: number): void => {
@@ -489,6 +504,9 @@ function Trainer({
       setPhase('solving');
     });
   };
+  useLayoutEffect(() => {
+    applyRef.current = applyUserMove;
+  });
 
   const onMove = (orig: string, dest: string): void => {
     if (!puzzle || !view || phase !== 'solving' || reviewing) return;
@@ -503,20 +521,21 @@ function Trainer({
     setRevealed(true);
     void report(puzzle.id, false);
     const moves = puzzle.moves.split(' ');
-    let at = plies;
     setPhase('opponent');
-    const step = (): void => {
-      at++;
+    // The ply travels as an argument rather than a counter the closure
+    // bumps: the React Compiler cannot lower `++` on a captured variable.
+    const step = (from: number): void => {
+      const at = from + 1;
       setPlies(at);
       setView(positionAt(puzzle, at));
-      if (at < moves.length) after(650, step);
+      if (at < moves.length) after(650, () => step(at));
       // One animation's grace before `done`, which is what swaps this board
       // for the analysis one — and a swap mounts a fresh chessground at the
       // final position, so the last move of the line arrived without ever
       // being played. Every move but the last one animated (lanph3re).
       else after(boardAnimMs(), () => setPhase('done'));
     };
-    step();
+    step(plies);
   };
 
   /**
@@ -541,7 +560,8 @@ function Trainer({
     setHint(0);
     setError(null);
     promotion.cancel();
-    show(puzzle, ++loadSeq.current);
+    loadSeq.current += 1;
+    show(puzzle, loadSeq.current);
   };
 
   // In-place analysis (lanph3re's call: no jump to the Analysis tab): the final

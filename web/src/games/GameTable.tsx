@@ -4,8 +4,8 @@ import {
   useRef,
   useSyncExternalStore,
   type CSSProperties,
-  type MutableRefObject,
   type ReactNode,
+  type RefObject,
 } from 'react';
 
 import { cn } from '@/lib/utils';
@@ -207,9 +207,14 @@ export interface TableNav {
  * the ring, the selection and what Enter opens are one row. Keys aimed
  * at a field, another control, or an open window pass by untouched;
  * ←/→ stay with the details panel's board (GameDetails).
+ *
+ * The caller owns the ref and fills it with its verbs (from a layout
+ * effect, so the fill is never a write during render). It used to be
+ * made here and handed back, which read the same but left the React
+ * Compiler, which memoises the callers, unable to tell a ref from any
+ * other value a hook returns, and it refused the write.
  */
-export function useTableNav(enabled: boolean): MutableRefObject<TableNav | null> {
-  const nav = useRef<TableNav | null>(null);
+export function useTableNav(enabled: boolean, nav: RefObject<TableNav | null>): void {
   useEffect(() => {
     if (!enabled) return;
     const onKey = (e: KeyboardEvent): void => {
@@ -241,8 +246,7 @@ export function useTableNav(enabled: boolean): MutableRefObject<TableNav | null>
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [enabled]);
-  return nav;
+  }, [enabled, nav]);
 }
 
 /** A column a list can be ordered by: every column but the pinned one. */

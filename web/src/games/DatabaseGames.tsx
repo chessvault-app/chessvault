@@ -1,5 +1,5 @@
 ﻿import { CornerDownLeft, Database, Grid3x3, Info, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
-import { Suspense, lazy, memo, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Suspense, lazy, memo, useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
 import { getNode, mainlineFrom } from '@shared/tree';
@@ -55,7 +55,7 @@ const EditorView = lazy(() =>
   import('@/editor/EditorView').then((m) => ({ default: m.EditorView })),
 );
 import { GamePreview, GameRow, collectionKey, gameKey, type GameSummary, type Preview } from './shared';
-import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav } from './GameTable';
+import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav, type TableNav } from './GameTable';
 import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
 import { dialogOpen } from '@/hooks/dialog-focus';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
@@ -359,14 +359,7 @@ export function DatabaseGames({
   // until this mount's answers are in, so a returning tab lays the row
   // out once; the first visit ever still shifts, by the tail's width.
   const tailRef = useRef<HTMLSpanElement>(null);
-  const [tailReserve] = useState(() => {
-    try {
-      const v = Number(localStorage.getItem(TAIL_KEY));
-      return Number.isFinite(v) && v > 0 ? v : 0;
-    } catch {
-      return 0;
-    }
-  });
+  const [tailReserve] = useState(storedTailWidth);
   const tailSettled = meta !== null && !(loading && fresh && rows.length === 0);
   useEffect(() => {
     if (!tailSettled || !tailRef.current) return;
@@ -416,16 +409,24 @@ export function DatabaseGames({
   // `query` rides along for the hunt path: the box narrows a hunt the
   // way the filters do, so the hunt request must read the box's CURRENT
   // text from wherever the press happens.
+  // Filled from a layout effect, before any press can read it, rather
+  // than during render: a ref written in render is what the React
+  // Compiler, which memoises this file, refuses.
   const filterRef = useRef({ resultFilter, minElo, structured, query });
-  filterRef.current = { resultFilter, minElo, structured, query };
+  useLayoutEffect(() => {
+    filterRef.current = { resultFilter, minElo, structured, query };
+  });
 
   // Read through a ref where reset points live inside stable callbacks —
   // the selection must clear when the rows it described go away.
   const onSelectRef = useRef(onSelect);
-  onSelectRef.current = onSelect;
+  useLayoutEffect(() => {
+    onSelectRef.current = onSelect;
+  });
   // ↑/↓/Enter/Escape drive the table selection; the ref is filled below
   // the early returns, once the rows on screen are known.
-  const tableNav = useTableNav(table);
+  const tableNav = useRef<TableNav | null>(null);
+  useTableNav(table, tableNav);
   // Selecting several to add, the archive's mode and pieces
   // (games/selection). "All" is the games not yet in the collection, the
   // archive's reading: a row already kept can still be ticked by hand,
@@ -478,18 +479,18 @@ export function DatabaseGames({
     searchedQ.current = q;
     setLoading(true);
     setFresh(cursor === null);
-    try {
-      const params = new URLSearchParams({ q });
-      if (cursor !== null) params.set('cursor', String(cursor));
-      if (db) params.set('db', db);
-      applyFilters(params);
-      const data = await api<{
-        total: number | null;
-        capped?: boolean;
-        nextCursor: number | null;
-        rows: RefGame[];
-      }>(`/api/refgames/search?${params.toString()}`);
-      if (seq !== searchSeq.current) return;
+    const params = new URLSearchParams({ q });
+    if (cursor !== null) params.set('cursor', String(cursor));
+    if (db) params.set('db', db);
+    applyFilters(params);
+    type Page = { total: number | null; capped?: boolean; nextCursor: number | null; rows: RefGame[] };
+    // A failure is null rather than a catch: on it the rows keep their
+    // last answer and the spinner below stops. (No try here: the React
+    // Compiler cannot lower a conditional inside one yet.)
+    const data = await api<Page>(`/api/refgames/search?${params.toString()}`).catch((): Page | null => null);
+    // Superseded: whoever holds the latest number owns the state.
+    if (seq !== searchSeq.current) return;
+    if (data) {
       // Only the first page of a search carries a total — counting matches
       // means scanning, and every later page would count the same thing.
       if (data.total !== null) {
@@ -498,11 +499,8 @@ export function DatabaseGames({
       }
       setNextCursor(data.nextCursor);
       setRows((prev) => (cursor === null ? data.rows : [...prev, ...data.rows]));
-    } catch {
-      /* the rows keep their last answer; the spinner below stops */
-    } finally {
-      if (seq === searchSeq.current) setLoading(false);
     }
+    setLoading(false);
   }, [applyFilters]);
 
   /**
@@ -625,7 +623,10 @@ export function DatabaseGames({
   // prefilled and the database moves to the explorer's own, and the
   // effect AFTER the reconcile below fires the hunt itself.
   const autoHunt = useRef<{ fen: string; db: string } | null>(null);
-  useEffect(() => {
+  // An Effect Event: what the mount does, reading whatever is current
+  // without being a dependency, which is what the suppressed dependency
+  // list said by hand and what the React Compiler will not compile past.
+  const consumeHandoff = useEffectEvent(() => {
     const handed = consumePendingHunt();
     if (!handed) return;
     autoHunt.current = handed;
@@ -633,7 +634,9 @@ export function DatabaseGames({
     setHuntKind('position');
     setHuntFen(handed.fen);
     setCurDb(handed.db);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    consumeHandoff();
   }, []);
 
   // fenOverride: the setup board hands its position and runs in one
@@ -665,60 +668,69 @@ export function DatabaseGames({
     // with.
     let got = 0;
     let exhaustive = true;
-    try {
-      const params = new URLSearchParams();
-      if (curDb) params.set('db', curDb);
-      applyFilters(params);
-      // The box narrows the hunt too — the server parses the same
-      // query language and folds the terms into the scan's WHERE.
-      const boxQ = filterRef.current.query.trim();
-      if (boxQ) params.set('q', boxQ);
-      if (huntKind === 'position') {
-        params.set('fen', (fenOverride ?? huntFen).trim());
-        if (rung !== 'exact') params.set('match', rung);
-      } else if (structureEntry) {
-        // A named structure is a pawn sketch on the structure rung —
-        // the editor handoff's own shape, with the sketch as data.
-        params.set('fen', structureEntry.fen);
-        params.set('match', 'structure');
-      } else if (motifEntry) {
-        // The knobs a motif does not have are sent at their neutral
-        // values, which is what the server would default them to.
-        params.set(
-          'motif',
-          JSON.stringify({
-            id: motifEntry.id,
-            side: motifEntry.side ? motifSide : 'either',
-            stable: motifEntry.held ? motifHeld : 1,
-          }),
-        );
-      } else {
-        params.set('material', JSON.stringify({ ...material, stable: heldPlies }));
-      }
-      type Frame =
-        | ({ type: 'game'; ply: number } & RefGame)
-        | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
-      const ended = await apiStream<Frame>(
-        `/api/refgames/deep-search?${params.toString()}`,
-        (frame) => {
-          if (frame.type === 'game') {
-            const { type: _type, ply: _ply, ...game } = frame;
-            setHuntRows((prev) => [...(prev ?? []), game]);
-            got += 1;
-          } else {
-            setHuntProgress({ scanned: frame.scanned, total: frame.total });
-            if (frame.type === 'done') {
-              sawDone = true;
-              exhaustive = frame.exhaustive !== false;
-              setHuntExhaustive(exhaustive);
-            }
-          }
-        },
-        () => huntSeq.current === mine,
+    // The request is built, and its frames handled, outside the try: the
+    // React Compiler cannot lower a conditional inside a try or a catch
+    // yet, so the try holds the one call that can throw and nothing else,
+    // and what the failure means is read after it.
+    const params = new URLSearchParams();
+    if (curDb) params.set('db', curDb);
+    applyFilters(params);
+    // The box narrows the hunt too — the server parses the same
+    // query language and folds the terms into the scan's WHERE.
+    const boxQ = filterRef.current.query.trim();
+    if (boxQ) params.set('q', boxQ);
+    if (huntKind === 'position') {
+      params.set('fen', (fenOverride ?? huntFen).trim());
+      if (rung !== 'exact') params.set('match', rung);
+    } else if (structureEntry) {
+      // A named structure is a pawn sketch on the structure rung —
+      // the editor handoff's own shape, with the sketch as data.
+      params.set('fen', structureEntry.fen);
+      params.set('match', 'structure');
+    } else if (motifEntry) {
+      // The knobs a motif does not have are sent at their neutral
+      // values, which is what the server would default them to.
+      params.set(
+        'motif',
+        JSON.stringify({
+          id: motifEntry.id,
+          side: motifEntry.side ? motifSide : 'either',
+          stable: motifEntry.held ? motifHeld : 1,
+        }),
       );
-      if (!ended) return;
+    } else {
+      params.set('material', JSON.stringify({ ...material, stable: heldPlies }));
+    }
+    type Frame =
+      | ({ type: 'game'; ply: number } & RefGame)
+      | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
+    const onFrame = (frame: Frame): void => {
+      if (frame.type === 'game') {
+        const { type: _type, ply: _ply, ...game } = frame;
+        setHuntRows((prev) => [...(prev ?? []), game]);
+        got += 1;
+      } else {
+        setHuntProgress({ scanned: frame.scanned, total: frame.total });
+        if (frame.type === 'done') {
+          sawDone = true;
+          exhaustive = frame.exhaustive !== false;
+          setHuntExhaustive(exhaustive);
+        }
+      }
+    };
+    const live = (): boolean => huntSeq.current === mine;
+    const url = `/api/refgames/deep-search?${params.toString()}`;
+    let ended = false;
+    let threw = false;
+    let error: unknown = null;
+    try {
+      ended = await apiStream<Frame>(url, onFrame, live);
     } catch (e) {
-      if (e instanceof ApiError && e.status === 400) {
+      threw = true;
+      error = e;
+    }
+    if (threw) {
+      if (error instanceof ApiError && error.status === 400) {
         // The one refusal a user can cause from here is a FEN that is
         // not a position; say that instead of a generic failure.
         if (huntSeq.current === mine) {
@@ -729,6 +741,8 @@ export function DatabaseGames({
         return;
       }
       // offline, or the route refused — failed, not empty
+    } else if (!ended) {
+      return;
     }
     if (huntSeq.current === mine) {
       setHunting(false);
@@ -872,14 +886,16 @@ export function DatabaseGames({
   // A filter press re-asks from the top, with the query still in the box
   // — or re-runs the hunt, whose results the filters narrow identically.
   const filtersLive = useRef(false);
+  const reask = useEffectEvent(() => {
+    if (huntRows !== null) void runHunt();
+    else void search(query, null, curDb);
+  });
   useEffect(() => {
     if (!filtersLive.current) {
       filtersLive.current = true;
       return;
     }
-    if (huntRows !== null) void runHunt();
-    else void search(query, null, curDb);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    reask();
   }, [resultFilter, minElo, structured]);
 
   // Infinite scroll: a sentinel row near the list's end pulls the next
@@ -940,13 +956,14 @@ export function DatabaseGames({
     } catch {
       return false;
     }
-    try {
-      await api('/api/games/collect-pgn', { method: 'POST', json: { pgn } });
-      forgetCollection();
-    } catch (failure) {
-      // 409 = already there; either way this game is now in the collection.
-      if (!(failure instanceof ApiError && failure.status === 409)) return false;
-    }
+    // 409 = already there; either way this game is now in the collection.
+    // Read after the try rather than in its catch (the React Compiler
+    // cannot lower a conditional there yet).
+    const failure = await api('/api/games/collect-pgn', { method: 'POST', json: { pgn } })
+      .then(() => null)
+      .catch((e: unknown) => e ?? new Error('collect failed'));
+    if (failure === null) forgetCollection();
+    else if (!(failure instanceof ApiError && failure.status === 409)) return false;
     setAdded((prev) => new Set(prev).add(refGameKey(game.id)));
     return true;
   };
@@ -970,14 +987,9 @@ export function DatabaseGames({
       } catch {
         return null; // a preview is a glance — nothing to report if it cannot load
       }
-      try {
-        const first = pgnToChapters(pgn)[0];
-        if (!first) return null;
-        const lastId = mainlineFrom(first.tree, first.tree.rootId).at(-1) ?? first.tree.rootId;
-        fen = getNode(first.tree, lastId).fen;
-      } catch {
-        return null;
-      }
+      const last = lastMainlineFen(pgn);
+      if (last === null) return null;
+      fen = last;
       fenCache.current.set(key, fen);
     }
     return { fen, orientation: 'white' };
@@ -986,54 +998,12 @@ export function DatabaseGames({
   // A pinned preview must not outlive its game list: the rows it
   // described are gone once the database changes.
   useEffect(() => {
-    hidePreview();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setPreview(null);
   }, [curDb]);
 
-  /**
-   * A reference row in the shared row's shape. No link, no side of yours,
-   * no annotations, no final position in hand (loadPreview fetches it) —
-   * and an opening only when the ECO is known, which is what the shared
-   * detail line keys on.
-   */
-  const toSummary = (g: RefGame): GameSummary => ({
-    file: `ref/${curDb ?? ''}`,
-    index: g.id,
-    white: g.white,
-    black: g.black,
-    whiteElo: g.white_elo,
-    blackElo: g.black_elo,
-    result: g.result,
-    date: g.date ?? '',
-    timeControl: null,
-    eco: g.eco,
-    link: null,
-    event: g.event,
-    round: null,
-    plyCount: g.plyCount,
-    sanPrefix: g.sanPrefix,
-    opening: g.eco && g.opening ? { eco: g.eco, name: g.opening } : null,
-    finalFen: null,
-    userSide: null,
-    annotated: false,
-  });
-  // One summary per row object, so the memoised rows see the same prop
-  // across renders. Keyed on the RefGame object (a search replaces the
-  // array, and with it the objects) and thrown away when the database
-  // changes, which is the only other input toSummary reads.
-  const summaries = useRef<{ db: string | null; map: WeakMap<RefGame, GameSummary> }>({
-    db: curDb,
-    map: new WeakMap(),
-  });
-  if (summaries.current.db !== curDb) summaries.current = { db: curDb, map: new WeakMap() };
-  const summaryOf = (g: RefGame): GameSummary => {
-    let s = summaries.current.map.get(g);
-    if (!s) {
-      s = toSummary(g);
-      summaries.current.map.set(g, s);
-    }
-    return s;
-  };
+  /** The row in the shared row's shape, one object per row (refSummary). */
+  const toSummary = (g: RefGame): GameSummary => refSummary(g, curDb);
+  const summaryOf = toSummary;
 
   /** The row, packaged for the details view: everything it needs to
       show and act on this game without knowing what a database is. */
@@ -1061,8 +1031,12 @@ export function DatabaseGames({
   // keep one identity for the component's life. Each forwards through a
   // ref to the LATEST handler — stable outside, fresh closure inside — the
   // same idiom ArchiveBrowser and GamesBrowser use.
+  // Written from a layout effect, before a row can be pressed, never in
+  // render (the React Compiler refuses a ref written in render).
   const rowHandlers = useRef({ openGame, collect, selectRow, loadFinalFen });
-  rowHandlers.current = { openGame, collect, selectRow, loadFinalFen };
+  useLayoutEffect(() => {
+    rowHandlers.current = { openGame, collect, selectRow, loadFinalFen };
+  });
   const rowOpen = useCallback((g: RefGame) => void rowHandlers.current.openGame(g), []);
   const rowCollect = useCallback((g: RefGame) => void rowHandlers.current.collect(g), []);
   const rowSelect = useCallback((g: RefGame) => rowHandlers.current.selectRow(g), []);
@@ -1071,6 +1045,42 @@ export function DatabaseGames({
   // The ⋯ → Game details sheet: the details panel's content where the
   // rows are cards and no panel stands beside them.
   const [details, setDetails] = useState<RefGame | null>(null);
+
+  // The keyboard's table navigation, over the rows the table shows: the
+  // hunt's while one is open, else the search's. Filled from a layout
+  // effect, and up here rather than beside the rows it serves, because
+  // a hook may not follow the early returns below and a ref written in
+  // render is what the React Compiler refuses.
+  const navRows = huntRows ?? rows;
+  useLayoutEffect(() => {
+    tableNav.current = {
+      // A row's button carries the SUMMARY's key (GameTableRow), which is
+      // not the selection's refGameKey; both are resolved here.
+      move: (delta, from) => {
+        const at =
+          from !== undefined
+            ? navRows.findIndex((g) => gameKey(summaryOf(g)) === from)
+            : navRows.findIndex((g) => refGameKey(g.id) === selectedKey);
+        const next =
+          navRows[
+            at < 0
+              ? delta > 0
+                ? 0
+                : navRows.length - 1
+              : Math.min(navRows.length - 1, Math.max(0, at + delta))
+          ];
+        if (next) selectRow(next);
+      },
+      open: (key) => {
+        const g =
+          key !== undefined
+            ? navRows.find((g) => gameKey(summaryOf(g)) === key)
+            : navRows.find((g) => refGameKey(g.id) === selectedKey);
+        if (g) void openGame(g);
+      },
+      clear: () => onSelect?.(null),
+    };
+  });
 
   if (!meta && metaError) {
     // The pane never learned what it holds, so there is nothing truthful
@@ -1241,34 +1251,6 @@ export function DatabaseGames({
   // re-implemented and half of which it had drifted on. Deliberately no
   // swipe, bookmark, rename or context menu: a reference row is
   // immutable, and Add is its keep verb.
-  const navRows = inHunt ? (huntRows ?? []) : rows;
-  tableNav.current = {
-    // A row's button carries the SUMMARY's key (GameTableRow), which is
-    // not the selection's refGameKey; both are resolved here.
-    move: (delta, from) => {
-      const at =
-        from !== undefined
-          ? navRows.findIndex((g) => gameKey(summaryOf(g)) === from)
-          : navRows.findIndex((g) => refGameKey(g.id) === selectedKey);
-      const next =
-        navRows[
-          at < 0
-            ? delta > 0
-              ? 0
-              : navRows.length - 1
-            : Math.min(navRows.length - 1, Math.max(0, at + delta))
-        ];
-      if (next) selectRow(next);
-    },
-    open: (key) => {
-      const g =
-        key !== undefined
-          ? navRows.find((g) => gameKey(summaryOf(g)) === key)
-          : navRows.find((g) => refGameKey(g.id) === selectedKey);
-      if (g) void openGame(g);
-    },
-    clear: () => onSelect?.(null),
-  };
   // The table's one Tab stop: the selected row while it is on screen,
   // else the first (GameTableRow's tabStop).
   const tabStopKey = navRows.some((g) => refGameKey(g.id) === selectedKey)
@@ -1835,4 +1817,72 @@ export function DatabaseGames({
     <GamePreview preview={preview} onClose={hidePreview} />
     </>
   );
+}
+
+/**
+ * A reference row in the shared row's shape. No link, no side of yours,
+ * no annotations, no final position in hand (loadPreview fetches it),
+ * and an opening only when the ECO is known, which is what the shared
+ * detail line keys on.
+ *
+ * One summary per row object, so the memoised rows see the same prop
+ * across renders: a weak map on the RefGame (a search replaces the
+ * array, and with it the objects), remade for a row when the database,
+ * the only other input, is not the one its summary was built for. At
+ * module level rather than in a ref read during render, which the React
+ * Compiler, which memoises the page, refuses.
+ */
+const REF_SUMMARIES = new WeakMap<RefGame, { db: string | null; summary: GameSummary }>();
+function refSummary(g: RefGame, db: string | null): GameSummary {
+  const hit = REF_SUMMARIES.get(g);
+  if (hit && hit.db === db) return hit.summary;
+  const summary: GameSummary = {
+    file: `ref/${db ?? ''}`,
+    index: g.id,
+    white: g.white,
+    black: g.black,
+    whiteElo: g.white_elo,
+    blackElo: g.black_elo,
+    result: g.result,
+    date: g.date ?? '',
+    timeControl: null,
+    eco: g.eco,
+    link: null,
+    event: g.event,
+    round: null,
+    plyCount: g.plyCount,
+    sanPrefix: g.sanPrefix,
+    opening: g.eco && g.opening ? { eco: g.eco, name: g.opening } : null,
+    finalFen: null,
+    userSide: null,
+    annotated: false,
+  };
+  REF_SUMMARIES.set(g, { db, summary });
+  return summary;
+}
+
+/** The tail's remembered width on this device, or 0 (see tailReserve).
+    A function of its own so its try/catch stays out of the component,
+    which the React Compiler memoises and cannot lower a conditional
+    inside a try for. */
+function storedTailWidth(): number {
+  try {
+    const v = Number(localStorage.getItem(TAIL_KEY));
+    return Number.isFinite(v) && v > 0 ? v : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** The FEN at the end of a PGN's first game's main line, or null when
+    the PGN cannot be read. Outside the component for the reason above. */
+function lastMainlineFen(pgn: string): string | null {
+  try {
+    const first = pgnToChapters(pgn)[0];
+    if (!first) return null;
+    const lastId = mainlineFrom(first.tree, first.tree.rootId).at(-1) ?? first.tree.rootId;
+    return getNode(first.tree, lastId).fen;
+  } catch {
+    return null;
+  }
 }

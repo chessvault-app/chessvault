@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { moveNumberLabel } from '@shared/tree';
 import { useCanvasInset } from '@/components/canvas-shell';
 import { useMediaQuery } from '@/lib/media';
@@ -302,7 +302,14 @@ export function MapCanvas({
   const settledRef = useRef<{ mapId: string; pos: Map<string, { x: number; y: number }> } | null>(
     null,
   );
-  useEffect(() => {
+  //
+  // An Effect Event, run from an effect keyed on the map's root: it reads
+  // the graph and the settled positions as they are at that moment
+  // without them being dependencies, which is what the suppressed
+  // dependency list said by hand. The React Compiler, which memoises this
+  // file, refuses a component that suppresses the rule; every effect
+  // below with a deliberately short list is written this way.
+  const stageOverture = useEffectEvent((): (() => void) | undefined => {
     const before = settledRef.current;
     const finals = new Map(graph.nodes.map((n) => [n.id, { x: n.x, y: n.y }]));
     settledRef.current = { mapId: map.id, pos: finals };
@@ -330,8 +337,8 @@ export function MapCanvas({
     return () => {
       overture.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map.root]);
+  });
+  useEffect(() => stageOverture(), [map.root]);
 
   /**
    * The settled map still breathes: every dot wanders a few units around
@@ -367,7 +374,9 @@ export function MapCanvas({
   /** The loop reads the base through a ref, so it sees what the last
       render committed without being torn down per render. */
   const liveRef = useRef(live);
-  liveRef.current = live;
+  useLayoutEffect(() => {
+    liveRef.current = live;
+  }, [live]);
   const sim = useRef<LiveSim | null>(null);
   // A layout effect, like the fit below and for the same reason: the
   // setLive here re-renders the tree off the dragged desk, and that
@@ -412,7 +421,7 @@ export function MapCanvas({
    * motion — the drag's reduced behaviour moves one dot through React
    * state, which is exactly as much motion as that setting asks for.
    */
-  useEffect(() => {
+  const animate = useEffectEvent((): (() => void) | undefined => {
     if (prefersReducedMotion()) return;
     let frame = 0;
     // Set on the frame that has nothing left to animate, so the loop can
@@ -530,8 +539,8 @@ export function MapCanvas({
       cancelAnimationFrame(frame);
       pos.clear();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graph, phases]);
+  });
+  useEffect(() => animate(), [graph, phases]);
 
   /**
    * A drag pulls the web instead of sliding one bead: the held dot goes
@@ -649,7 +658,7 @@ export function MapCanvas({
   const [sized, setSized] = useState(0);
   /** Bumped by the 0 key: the same fit Align asks for, from the keyboard. */
   const [refit, setRefit] = useState(0);
-  useLayoutEffect(() => {
+  const fit = useEffectEvent((): (() => void) | undefined => {
     const el = host.current;
     if (!el) return;
     const box = el.getBoundingClientRect();
@@ -706,8 +715,8 @@ export function MapCanvas({
      */
     void asked;
     commitView(fitView(box, { minX, minY, maxX, maxY }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeCount, map.id, arrangement, align, refit, sized]);
+  });
+  useLayoutEffect(() => fit(), [nodeCount, map.id, arrangement, align, refit, sized]);
 
   /**
    * Every pointer on the surface, wherever it landed — including on a
@@ -791,7 +800,10 @@ export function MapCanvas({
    */
   const hostBox = useRef<DOMRect | null>(null);
   const wheelFrame = useRef(0);
-  const hostRect = (): DOMRect => (hostBox.current ??= host.current!.getBoundingClientRect());
+  const hostRect = (): DOMRect => {
+    if (!hostBox.current) hostBox.current = host.current!.getBoundingClientRect();
+    return hostBox.current;
+  };
 
   const onPointerDown = (e: React.PointerEvent): void => {
     // A hand on the map outranks the map moving itself. The dots do not
@@ -859,6 +871,10 @@ export function MapCanvas({
    * is on one, so the dot being read stays where it is, and otherwise on
    * the middle of the free area.
    */
+  /** The strip's width over the canvas, measured by the shell (see the
+      reveal effect below, which explains it); read here first, by the
+      zoom's anchor, so it is declared before either use. */
+  const inset = useCanvasInset();
   const focusedId = (): string | null => {
     const a = document.activeElement;
     if (!a || !host.current?.contains(a)) return null;
@@ -884,11 +900,13 @@ export function MapCanvas({
     commitView({ ...v, x: v.x + dx, y: v.y + dy });
   };
   const zoomSeen = useRef(zoom?.seq ?? 0);
-  useEffect(() => {
+  const applyZoom = useEffectEvent(() => {
     if (!zoom || zoom.seq === zoomSeen.current) return;
     zoomSeen.current = zoom.seq;
     zoomBy(zoom.step > 0 ? ZOOM_STEP : 1 / ZOOM_STEP);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    applyZoom();
   }, [zoom]);
   const onKeyDown = (e: React.KeyboardEvent): void => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -1011,13 +1029,13 @@ export function MapCanvas({
    * The shell measures the strip (see `useCanvasInset`), which is how a
    * phone gets no slide for a tap — its details are a sheet over
    * everything, and there is nowhere uncovered to slide to. A keyboard
-   * on a phone still gets the four-edge reveal.
+   * on a phone still gets the four-edge reveal. (`inset` is measured
+   * above, beside the zoom, which anchors on the same free area.)
    */
-  const inset = useCanvasInset();
   /** Set by the tree's arrow keys just before they select: the reveal
       below reads and clears it. */
   const selectedByKey = useRef(false);
-  useEffect(() => {
+  const reveal = useEffectEvent(() => {
     const byKey = selectedByKey.current;
     selectedByKey.current = false;
     if (!selectedId || (inset <= 0 && !byKey)) return;
@@ -1042,7 +1060,9 @@ export function MapCanvas({
     // not the map moving underneath one. A pan, a zoom or a dragged dot
     // is the reader's own arrangement and is left exactly where they put
     // it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  });
+  useEffect(() => {
+    reveal();
   }, [selectedId, inset]);
 
   // Labels and badges keep their SCREEN size — dividing by the zoom is
