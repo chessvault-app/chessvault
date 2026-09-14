@@ -1255,8 +1255,11 @@ export function MapCanvas({
               <circle
                 key={`halo-${id}`}
                 ref={(el) => {
-                  if (el) haloEls.current.set(id, el);
-                  else haloEls.current.delete(id);
+                  if (!el) return;
+                  haloEls.current.set(id, el);
+                  return () => {
+                    haloEls.current.delete(id);
+                  };
                 }}
                 cx={x}
                 cy={y}
@@ -1276,8 +1279,11 @@ export function MapCanvas({
               <line
                 key={key}
                 ref={(el) => {
-                  if (el) edgeEls.current.set(key, { el, from, to });
-                  else edgeEls.current.delete(key);
+                  if (!el) return;
+                  edgeEls.current.set(key, { el, from, to });
+                  return () => {
+                    edgeEls.current.delete(key);
+                  };
                 }}
                 x1={a.x}
                 y1={a.y}
@@ -1328,8 +1334,11 @@ export function MapCanvas({
               <g
                 key={id}
                 ref={(el) => {
-                  if (el) nodeEls.current.set(id, el);
-                  else nodeEls.current.delete(id);
+                  if (!el) return;
+                  nodeEls.current.set(id, el);
+                  return () => {
+                    nodeEls.current.delete(id);
+                  };
                 }}
                 // Everything the dot wears is drawn around (0,0) and the
                 // group carries the position, so the animation loop moves
