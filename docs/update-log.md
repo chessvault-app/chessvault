@@ -5,6 +5,20 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+The puzzle hub's boards stop changing under you.
+
+- **The next puzzle stays the next puzzle until you attempt it.** The
+  hub drew a fresh one on every visit, so the board it showed was a
+  different position each time you came back, and the position you had
+  looked at was never the one you got. The server now keeps the puzzle
+  it last offered for a given question (the hub's, the theme trainer's,
+  each difficulty's) until that puzzle is attempted, and the trainer's
+  Skip is the one thing that asks past it. The missed-puzzle board holds
+  the same way while its puzzle is still in the review queue. It lives in
+  the vault, so a phone and a desktop see the same board.
+
 ## 0.11.0
 
 Pages come back as you left them: a shelf keeps its rows, scroll and

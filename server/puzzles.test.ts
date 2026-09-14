@@ -375,12 +375,17 @@ describe('puzzles api (rating_counts fast path)', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
+  // Each ask skips the last answer: a question asked twice is answered
+  // with the same puzzle until it is attempted or skipped, and this is
+  // about what the PICKER can reach, not about what stands.
   const drawMany = async (query: string, n = 60): Promise<Set<string>> => {
     const seen = new Set<string>();
+    let last = '';
     for (let i = 0; i < n; i++) {
-      const res = await app.request(`/api/puzzles/next${query}`);
+      const res = await app.request(`/api/puzzles/next${query}${last && `&skip=${last}`}`);
       expect(res.status).toBe(200);
-      seen.add((await res.json()).puzzle.id);
+      last = (await res.json()).puzzle.id;
+      seen.add(last);
     }
     return seen;
   };
@@ -707,5 +712,126 @@ describe('puzzles api (weakest theme)', () => {
     }
     log('aaa', true, 6);
     expect(await weak()).toBeNull();
+  });
+});
+
+describe('puzzles api (standing offer)', () => {
+  let dir: string;
+  let app: Hono;
+  let puzzles: ReturnType<typeof puzzlesApi>;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'puzzles-offer-'));
+    const dbPath = join(dir, 'puzzles.sqlite');
+    const db = new Database(dbPath);
+    // Twelve puzzles in one window: a random draw that changed between
+    // two asks would show up here about eleven times in twelve.
+    const rows = Array.from({ length: 12 }, (_, i) =>
+      `('p${i}', '8/8/8/8/8/8/8/K6k w - - 0 1', 'a1a2 h1h2', ${1500 + i}, 80, 90, 10, 'fork', NULL, NULL)`,
+    ).join(',\n');
+    db.exec(`
+      CREATE TABLE puzzles (
+        id TEXT PRIMARY KEY, fen TEXT NOT NULL, moves TEXT NOT NULL,
+        rating INTEGER NOT NULL, rd INTEGER NOT NULL, popularity INTEGER NOT NULL,
+        plays INTEGER NOT NULL, themes TEXT NOT NULL, game_url TEXT, opening_tags TEXT
+      );
+      CREATE TABLE themes (theme TEXT NOT NULL, rating INTEGER NOT NULL, id TEXT NOT NULL);
+      CREATE TABLE meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+      INSERT INTO meta VALUES ('puzzles', '12');
+      INSERT INTO puzzles VALUES ${rows};
+    `);
+    db.close();
+    puzzles = puzzlesApi(dbPath, join(dir, 'state'));
+    app = new Hono().route('/api', puzzles);
+  });
+
+  afterEach(() => {
+    puzzles.closeDb();
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  const next = async (query = ''): Promise<string> => {
+    const res = await app.request(`/api/puzzles/next${query}`);
+    expect(res.status).toBe(200);
+    return ((await res.json()) as { puzzle: { id: string } }).puzzle.id;
+  };
+  const attempt = (id: string, win: boolean, counted?: boolean): Promise<Response> | Response =>
+    app.request('/api/puzzles/attempt', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(counted === undefined ? { id, win } : { id, win, counted }),
+    });
+
+  it('answers the same question with the same puzzle until it is attempted', async () => {
+    // The hub draws on every visit and shows the result on a board; the
+    // board must not change between two visits with nothing solved.
+    const first = await next();
+    for (let i = 0; i < 6; i++) expect(await next()).toBe(first);
+    await attempt(first, true);
+    const second = await next();
+    expect(second).not.toBe(first);
+    expect(await next()).toBe(second);
+  });
+
+  it('keeps one offer per question, so the theme trainer does not redraw the hub', async () => {
+    const hub = await next();
+    const easy = await next('?max=1505');
+    const adaptive = await next('?adaptive=1');
+    expect(await next('?max=1505')).toBe(easy);
+    expect(await next('?adaptive=1')).toBe(adaptive);
+    expect(await next()).toBe(hub);
+  });
+
+  it('asks past a skipped puzzle and then stands on the new one', async () => {
+    const first = await next();
+    const after = await next(`?skip=${first}`);
+    expect(after).not.toBe(first);
+    expect(await next()).toBe(after);
+    // The skipped puzzle is not attempted, so a later draw may still
+    // reach it; it just is not the standing offer any more.
+    expect(await next(`?skip=${after}`)).not.toBe(after);
+  });
+
+  it('is answered by an attempt made after the offer, not by one before it', async () => {
+    // Every puzzle attempted: the pool falls back to repeats, and a
+    // repeat offered now is answered by the NEXT attempt, not the old one.
+    for (let i = 0; i < 12; i++) await attempt(`p${i}`, true);
+    const offered = await next();
+    expect(await next()).toBe(offered);
+    await attempt(offered, false);
+    // Answered; the draw is free again (and may land on the same id by
+    // chance among twelve, so only the standing is asserted).
+    const state = JSON.parse(readFileSync(join(dir, 'state', 'state.json'), 'utf-8')) as {
+      offered: Record<string, { id: string; at: string }>;
+    };
+    const again = await next();
+    const after = JSON.parse(readFileSync(join(dir, 'state', 'state.json'), 'utf-8')) as {
+      offered: Record<string, { id: string; at: string }>;
+    };
+    const key = Object.keys(state.offered)[0]!;
+    expect(after.offered[key]!.id).toBe(again);
+    expect(after.offered[key]!.at > state.offered[key]!.at).toBe(true);
+  });
+
+  it('holds the review offer while it is still in the queue', async () => {
+    // Two failed puzzles: the fallback pool is random between them.
+    await attempt('p0', false);
+    await attempt('p1', false);
+    const first = await next('?mode=failed');
+    for (let i = 0; i < 6; i++) expect(await next('?mode=failed')).toBe(first);
+    // Solving it in review retires it from the pool: the other one is left.
+    await attempt(first, true, false);
+    const other = first === 'p0' ? 'p1' : 'p0';
+    expect(await next('?mode=failed')).toBe(other);
+  });
+
+  it('survives a state file written before offers existed', async () => {
+    mkdirSync(join(dir, 'state'), { recursive: true });
+    writeFileSync(join(dir, 'state', 'state.json'), JSON.stringify({ attempts: 3, wins: 2, streak: 1, offered: 'junk' }));
+    const first = await next();
+    expect(await next()).toBe(first);
+    // The counters were kept; only the unreadable offers were dropped.
+    const state = JSON.parse(readFileSync(join(dir, 'state', 'state.json'), 'utf-8')) as { attempts: number };
+    expect(state.attempts).toBe(3);
   });
 });

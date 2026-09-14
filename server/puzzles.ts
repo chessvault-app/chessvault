@@ -130,7 +130,61 @@ interface UserState {
   skill?: number;
   /** Counted attempts folded into `skill` — sets the K step. */
   skillAttempts?: number;
+  /**
+   * The puzzle each question was last answered with, while it stands
+   * unanswered: the fresh draw is random, and the hub shows its result
+   * on a board, so every visit to the hub used to show a different
+   * "next puzzle" — a position offered, looked at, and quietly replaced
+   * before it was ever attempted. An offer now stands until the puzzle
+   * is attempted (or the trainer's Skip asks past it), and both the hub
+   * and the trainer see the same one.
+   *
+   * Keyed by the question (see offerKey): the theme trainer and the hub
+   * ask different questions, and one must not redraw the other's. The
+   * value records WHEN it was offered so an attempt logged before the
+   * offer (a repeat from an exhausted pool, a review) does not read as
+   * answering it. Vault state like everything else in this file, so a
+   * phone and a desktop see the same board.
+   */
+  offered?: Record<string, Offer>;
 }
+
+interface Offer {
+  id: string;
+  /** When it was offered, ISO; an attempt at or after this answers it. */
+  at: string;
+}
+
+/** The most standing offers kept; older ones fall off the end. */
+const MAX_OFFERS = 16;
+
+/**
+ * One key per distinct question `/puzzles/next` can be asked. The
+ * adaptive window is NOT in it: that moves with the skill estimate after
+ * every counted attempt, and an offer that lapsed with it would be one
+ * that never survived the attempt before it.
+ */
+const offerKey = (
+  mode: 'fresh' | 'failed',
+  theme: string | null,
+  adaptive: boolean,
+  min: number,
+  max: number,
+): string =>
+  mode === 'failed' ? 'failed' : JSON.stringify([theme, adaptive, min, max]);
+
+const isOffer = (v: unknown): v is Offer =>
+  typeof v === 'object' &&
+  v !== null &&
+  typeof (v as Offer).id === 'string' &&
+  typeof (v as Offer).at === 'string';
+
+const readOffers = (v: unknown): Record<string, Offer> | undefined => {
+  if (typeof v !== 'object' || v === null) return undefined;
+  const out: Record<string, Offer> = {};
+  for (const [k, o] of Object.entries(v)) if (isOffer(o)) out[k] = o;
+  return Object.keys(out).length > 0 ? out : undefined;
+};
 
 const DEFAULT_STATE: UserState = { attempts: 0, wins: 0, streak: 0 };
 
@@ -381,6 +435,7 @@ export function puzzlesApi(
         streak: raw.streak ?? 0,
         ...(typeof raw.skill === 'number' && { skill: raw.skill }),
         ...(typeof raw.skillAttempts === 'number' && { skillAttempts: raw.skillAttempts }),
+        ...(readOffers(raw.offered) && { offered: readOffers(raw.offered) }),
       };
     } catch {
       return { ...DEFAULT_STATE };
@@ -420,8 +475,44 @@ export function puzzlesApi(
       });
   };
 
-  /** Every puzzle ever attempted — fresh training never repeats one. */
-  const attemptedIds = (): Set<string> => new Set(historyEntries().map((e) => e.id));
+  /** Whether an offer has been taken up: an attempt at it since it was made. */
+  const answered = (offer: Offer, entries: Attempt[]): boolean =>
+    entries.some((e) => e.id === offer.id && typeof e.at === 'string' && e.at >= offer.at);
+
+  /**
+   * The offer standing for `key`, if it is still open and not the one
+   * the caller is asking past (`?skip=`); null means draw afresh.
+   */
+  const standingOffer = (
+    state: UserState,
+    key: string,
+    entries: Attempt[],
+    skip: string | null,
+  ): string | null => {
+    const offer = state.offered?.[key];
+    if (!offer || offer.id === skip || answered(offer, entries)) return null;
+    return offer.id;
+  };
+
+  /**
+   * Record the puzzle just drawn for `key`, dropping offers that have
+   * been answered and the oldest past MAX_OFFERS. A write per draw, but
+   * a draw is a page open, and the file is a few hundred bytes.
+   */
+  const remember = (state: UserState, key: string, id: string, entries: Attempt[]): void => {
+    const kept = Object.entries(state.offered ?? {}).filter(
+      ([k, o]) => k !== key && !answered(o, entries),
+    );
+    kept.push([key, { id, at: new Date().toISOString() }]);
+    writeState({ ...state, offered: Object.fromEntries(kept.slice(-MAX_OFFERS)) });
+  };
+
+  const puzzleById = (db: Database.Database, id: string): PuzzleRow | undefined =>
+    db
+      .prepare(
+        'SELECT id, fen, moves, rating, popularity, plays, themes, game_url, opening_tags FROM puzzles WHERE id = ?',
+      )
+      .get(id) as PuzzleRow | undefined;
 
   /**
    * The theme this vault is worst at, or null when there is nothing
@@ -760,10 +851,15 @@ export function puzzlesApi(
       );
     }
 
+    // One read of the history log serves the queue, the pool, the last id
+    // and the standing offer.
+    const entries = historyEntries();
+    // The trainer's Skip: the puzzle being asked past, which the standing
+    // offer may not be and the draw must not land on.
+    const skip = c.req.query('skip') || null;
+
     // Review mode: due puzzles first, then the plain failed pool.
     if (c.req.query('mode') === 'failed') {
-      // One read of the history log serves the queue, the pool and the last id.
-      const entries = historyEntries();
       const lastId = entries.at(-1)?.id ?? null;
       const now = new Date().toISOString();
       // The ladder decides what a session should look at again: everything
@@ -775,51 +871,79 @@ export function puzzlesApi(
         .filter((q) => q.due <= now)
         .map((q) => q.id);
       const dueCandidates = due.length > 1 ? due.filter((id) => id !== lastId) : due;
-      let id = dueCandidates[0];
+      const pool = failedPool(entries);
+      // The puzzle this queue last offered stands while it is still in
+      // the queue (see UserState.offered); the fallback below is random,
+      // and the hub's "Missed puzzle" board changed with every visit.
+      const state = readState();
+      const key = offerKey('failed', null, false, 0, 0);
+      const standing = standingOffer(state, key, entries, skip);
+      if (standing && (due.includes(standing) || pool.includes(standing))) {
+        const puzzle = puzzleById(db, standing);
+        if (puzzle) return c.json({ puzzle });
+      }
+      let id = dueCandidates.find((d) => d !== skip);
       if (id === undefined) {
-        const pool = failedPool(entries);
-        const candidates = pool.length > 1 ? pool.filter((p) => p !== lastId) : pool;
+        let candidates = pool.filter((p) => p !== skip && (pool.length <= 1 || p !== lastId));
+        // Skipping the only puzzle there is: a repeat beats a dead end,
+        // as everywhere else in this file.
+        if (candidates.length === 0) candidates = dueCandidates.length > 0 ? dueCandidates : pool;
         if (candidates.length === 0) {
           return c.json({ error: 'No failed puzzles to review. Nothing to fix.' }, 404);
         }
         id = candidates[Math.floor(Math.random() * candidates.length)]!;
       }
-      const puzzle = db
-        .prepare(
-          'SELECT id, fen, moves, rating, popularity, plays, themes, game_url, opening_tags FROM puzzles WHERE id = ?',
-        )
-        .get(id) as PuzzleRow | undefined;
+      const puzzle = puzzleById(db, id);
       if (!puzzle) return c.json({ error: `unknown puzzle: ${id}` }, 404);
+      remember(state, key, puzzle.id, entries);
       return c.json({ puzzle });
     }
 
     const theme = c.req.query('theme') || null;
+    const adaptive = Boolean(c.req.query('adaptive'));
+    const min = ratingBound(c.req.query('min'), 0);
+    const max = ratingBound(c.req.query('max'), 9999);
+    const attempted = new Set(entries.map((e) => e.id));
+    // Seeded here for the adaptive branch below; the plain one reads the
+    // same state and never needs the estimate.
+    const state = adaptive ? ensureSkill(readState()) : readState();
+    const key = offerKey('fresh', theme, adaptive, min, max);
+
+    // The same question answered the same way until the answer is
+    // attempted (see UserState.offered). A skipped puzzle is neither
+    // the offer nor a draw: it is excluded like an attempted one.
+    const standing = standingOffer(state, key, entries, skip);
+    if (standing) {
+      const puzzle = puzzleById(db, standing);
+      if (puzzle) return c.json({ puzzle });
+    }
+    if (skip) attempted.add(skip);
+    const offer = (puzzle: PuzzleRow): Response => {
+      remember(state, key, puzzle.id, entries);
+      return c.json({ puzzle });
+    };
 
     // Adaptive: a window around the skill estimate, aimed slightly above
     // it — training lives at the edge of what is comfortable. The centre
     // is quantised so the bucket cache re-uses entries instead of growing
     // one per Elo point, and the window widens if the pool (a rare theme,
     // an extreme estimate) comes up empty.
-    if (c.req.query('adaptive')) {
-      const { skill } = ensureSkill(readState());
-      const centre = Math.round(skill / 50) * 50;
-      const attempted = attemptedIds();
+    if (adaptive) {
+      const centre = Math.round(state.skill! / 50) * 50;
       for (const spread of [
         [centre - 100, centre + 200],
         [centre - 300, centre + 400],
         [0, 9999],
       ] as const) {
         const puzzle = pickPuzzle(db, spread[0], spread[1], theme, attempted);
-        if (puzzle) return c.json({ puzzle });
+        if (puzzle) return offer(puzzle);
       }
       return c.json({ error: 'No puzzle matches that filter.' }, 404);
     }
 
-    const min = ratingBound(c.req.query('min'), 0);
-    const max = ratingBound(c.req.query('max'), 9999);
-    const puzzle = pickPuzzle(db, min, max, theme, attemptedIds());
+    const puzzle = pickPuzzle(db, min, max, theme, attempted);
     if (!puzzle) return c.json({ error: 'No puzzle matches that filter.' }, 404);
-    return c.json({ puzzle });
+    return offer(puzzle);
   });
 
   // A specific puzzle, for targeted replays from the dashboard.
@@ -854,8 +978,11 @@ export function puzzlesApi(
     // Seeded BEFORE this attempt is appended, so the replay and the live
     // update never fold the same attempt twice.
     const state = counted ? ensureSkill(readState()) : readState();
+    // Spread first: the standing offers ride along (see UserState.offered),
+    // and this attempt is what answers one of them.
     const next: UserState = counted
       ? {
+          ...state,
           attempts: state.attempts + 1,
           wins: state.wins + (body.win ? 1 : 0),
           streak: body.win ? state.streak + 1 : 0,

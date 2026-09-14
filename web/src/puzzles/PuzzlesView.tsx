@@ -330,7 +330,18 @@ function Trainer({
     });
   };
 
-  const loadNext = async (selectedTheme: string, selectedDifficulty: DifficultyId): Promise<void> => {
+  /**
+   * `skip` is the puzzle being asked past. The server keeps the puzzle it
+   * last offered for a question until that puzzle is attempted, so the
+   * hub's board and the trainer agree; Skip is the one case where the
+   * same question wants a different answer, and it says which one not
+   * to repeat.
+   */
+  const loadNext = async (
+    selectedTheme: string,
+    selectedDifficulty: DifficultyId,
+    skip?: string,
+  ): Promise<void> => {
     // Clearing the timers does not clear a fetch already in flight: two
     // quick Skips used to leave load A's continuation running after load
     // B took over, so A's puzzle landed in state — or A's 700 ms setup
@@ -364,12 +375,12 @@ function Trainer({
       }
     }
 
+    const query = mode === 'failed' ? '?mode=failed' : difficultyQuery(selectedDifficulty, selectedTheme);
+    const skipQuery = skip ? `${query ? '&' : '?'}skip=${encodeURIComponent(skip)}` : '';
     const url =
       mode === 'single'
         ? `/api/puzzles/by-id/${encodeURIComponent(puzzleId ?? '')}`
-        : mode === 'failed'
-          ? '/api/puzzles/next?mode=failed'
-          : `/api/puzzles/next${difficultyQuery(selectedDifficulty, selectedTheme)}`;
+        : `/api/puzzles/next${query}${skipQuery}`;
     // A request that FAILS — server down, network gone, an error
     // status — used to fall straight through this function, leaving
     // the phase on 'loading' and the board on a spinner that nothing
@@ -1018,7 +1029,7 @@ function Trainer({
                 // Solution and Skip are adjacent, irreversible and one tap
                 // each, so they get 44px rather than the 36px floor.
                 className="me-auto pointer-coarse:h-11"
-                onClick={() => void loadNext(theme, difficulty)}
+                onClick={() => void loadNext(theme, difficulty, puzzle?.id)}
               >
                 <X className="size-3.5" data-icon="inline-start" />
                 {t('Skip')}
