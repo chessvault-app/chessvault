@@ -34,6 +34,7 @@ export function AnalysisMovesPanel({
       {engine && <EngineBlock />}
       <PanelHeader
         title={t('Moves')}
+        titleSize="body"
         actions={
           <>
             <SidelinesToggle />

@@ -54,6 +54,12 @@ The puzzle hub's boards stop changing under you.
   More, the filters) draw a 20px glyph in their button. Form labels
   in Settings and every dialog take the row size, 16. A desktop keeps
   every one of these as it was.
+- **The moves panel's header keeps its desktop sizes on a phone, and
+  the bin moves under ⋯.** The opening name over the moves is a
+  caption, not a line to choose by, so it and the controls beside it
+  stay at 14 where the lists went to 16. The delete-moves bin, first in
+  that header, read as "delete the game"; on a phone it is a row in the
+  ⋯ menu, dimmed at the starting position.
 
 ## 0.11.0
 

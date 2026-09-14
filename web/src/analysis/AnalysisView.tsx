@@ -245,6 +245,10 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             // it is the one thing up here that follows the cursor (see
             // LineTitle for what subscribing the page to it cost).
             title={<LineTitle />}
+            // The opening name is a caption over the moves, not a line to
+            // choose by; it keeps the desktop size on a phone, as do the
+            // controls beside it (lanph3re, 2026-09-15).
+            titleSize="body"
             actions={
               <>
                 <SidelinesToggle />
@@ -481,6 +485,9 @@ export function MoveActions({
           deleteNode(cursorId);
         }}
         title={t('Delete this move and everything after it')}
+        // Under ⋯ on a phone: first in the header, the bin read as
+        // "delete the game" (lanph3re's report, 2026-09-15).
+        className="max-md:hidden"
       >
         <Trash2 className="glyph" />
       </Button>
@@ -580,6 +587,8 @@ export function MovesOverflow({
   const tree = useAnalysis((s) => s.tree);
   const cursorId = useAnalysis((s) => s.cursorId);
   const promoteNode = useAnalysis((s) => s.promoteNode);
+  const deleteNode = useAnalysis((s) => s.deleteNode);
+  const atRoot = getNode(tree, cursorId).parentId === null;
   const reset = useAnalysis((s) => s.reset);
   const clearMoves = useClearMoves(allowClear, allowReset);
   const { capture } = useTreeUndo();
@@ -645,6 +654,23 @@ export function MovesOverflow({
     // spares a loaded position. Undoable, like every other clear here.
     // Phone only, like the loader row: MoveActions' own buttons are
     // max-md:hidden, so on a desktop these rows were their duplicates.
+    // The header's bin, as a row on a phone: first among the header's
+    // controls it read as "delete the game", so it moves in here, dimmed
+    // at the root where there is nothing to delete (lanph3re, 2026-09-15).
+    ...(phone
+      ? [
+          {
+            label: 'Delete this move and everything after it',
+            icon: Trash2,
+            danger: true,
+            disabled: atRoot,
+            onSelect: () => {
+              capture(getNode(tree, cursorId).san ?? '');
+              deleteNode(cursorId);
+            },
+          },
+        ]
+      : []),
     ...(phone && clearMoves.offered
       ? [
           {
@@ -686,6 +712,9 @@ export function MovesOverflow({
           // since the row that used to hold them went away.
           title={t('More')}
           active={open}
+          // The moves header's controls keep the desktop glyph on a phone,
+          // with the title beside them (PanelHeader titleSize="body").
+          className="max-md:[&_svg]:size-3.5"
         >
           <MoreHorizontal className="glyph" />
         </Button>
