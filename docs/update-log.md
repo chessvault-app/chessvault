@@ -11,6 +11,20 @@ Pages come back as you left them, two of 0.10.0's phone changes are
 taken back, a bottom sheet resting low can be pulled up again, and a
 page opened inside a sheet turns like a page.
 
+- **The phone's page turn is React's, and the board flies home.** The
+  push and pop slides were the browser's view transition over the whole
+  page; each kept page now animates its own snapshot through React's
+  `<ViewTransition>`, with the route committed in a Transition that
+  carries the direction. Same slides, same timing (measured with the
+  demo's API slowed 300 ms and the CPU four times, the two settle within
+  10 ms of each other), and one thing the old turn never did: going back
+  from a game or a study flies the board into the thumbnail it came
+  from, 360 px at the page to 64 px at the card. Tooltips close before
+  the turn starts and ignore the pointer while it plays, because a
+  tooltip changing mid-turn made React skip it. Found on the way: with
+  the React Compiler on, the router read the old address after it had
+  already moved, so every pop had turned into a cut; it reads the
+  direction first now.
 - **A filter press and a search key answer at once; the rows follow.**
   Choosing a result, ownership or notes filter on the Games collection
   redrew the whole table inside the press, and a key in a shelf's search

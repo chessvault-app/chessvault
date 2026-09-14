@@ -42,6 +42,12 @@ export function reactCompiler(srcRoot: string): PluginOption[] {
   if (process.env.CHESS_COMPILER === '0') return [];
   const src = norm(srcRoot).replace(/\/?$/, '/');
   const log = process.env.CHESS_COMPILER_LOG === '1';
+  // CHESS_COMPILER_SKIP=lib/keep-alive,components/ui/button leaves the
+  // named files (path fragments under web/src, comma-separated) to React
+  // as written: the bisect switch for a behaviour that differs between
+  // the compiled and the plain build, which is how the tooltip's part in
+  // a skipped page turn was found (2026-09-14).
+  const skip = (process.env.CHESS_COMPILER_SKIP ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   const tally = new Map<string, { ok: number; skip: string[]; fail: string[] }>();
   const preset = reactCompilerPreset({
     compilationMode: 'infer',
@@ -49,7 +55,8 @@ export function reactCompiler(srcRoot: string): PluginOption[] {
     // browser, not components; the compiler has nothing to do there.
     sources: (filename: string) => {
       const f = norm(filename);
-      return f.startsWith(src) && !f.startsWith(`${src}demo/`);
+      if (!f.startsWith(src) || f.startsWith(`${src}demo/`)) return false;
+      return !skip.some((fragment) => f.slice(src.length).includes(fragment));
     },
     logger: log
       ? {

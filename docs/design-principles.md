@@ -779,6 +779,23 @@ routes' depth, so a chevron that `navigate`s to its list still plays as
 a step up. A browser-driven history move (the iPhone edge swipe) plays
 no transition, because Safari has already played its own.
 
+The turn is React's `<ViewTransition>` on each kept route slot
+(`lib/keep-alive`), not the browser's on the root (2026-09-14): the
+router commits the route inside a Transition typed `nav-push` or
+`nav-pop`, each slot animates its own snapshot, and a pop flies the
+page's board back into the thumbnail it came from when that thumbnail
+is still there (`lib/shared-board`; 360 px at the page to 64 px at the
+card, which the root transition never did). Two things hold it up.
+React hands back no promise for the transition it starts, so the router
+catches the one call to `document.startViewTransition` to answer
+`routeSettled`. And React skips a pending view transition when anything
+calls `flushSync`, which Base UI does on a hover-driven popup change and
+at the end of a popup's exit animation: the tooltips are controlled
+(`lib/popups`), closed by the router with no exit before the turn
+starts and deaf to hover while it plays. Any other Base UI popup closing
+inside a page turn would still cut it; no shelf menu item navigates
+today, so that case is untested.
+
 A **sheet** slides from the bottom edge and does not fade; only the
 scrim fades. The one sheet that raises the keyboard as it opens does
 not slide, because its height changes under it while the keyboard rises

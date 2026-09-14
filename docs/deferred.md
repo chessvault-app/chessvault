@@ -12,47 +12,6 @@ the work.
 
 ## Waiting on a trigger
 
-**The phone's page turn as React's `<ViewTransition>`.** Built and
-measured on the branch `vt-experiment` (2026-09-14): each kept route
-slot as a `<ViewTransition>`, the route committed in a Transition with
-the direction as its type, the same four slides drawn on the slots
-instead of the root. Measured with the demo's API slowed by 300 ms
-(`CHESS_LAG=1`) and the CPU four times, the two are the same page turn:
-both slide the incoming page's placeholder in over the darkened shelf
-and land its content afterwards, both settle within 10 ms of each
-other, both keep every frame they keep. (Measured against the
-unslowed demo the branch looked worse, because the demo answers in the
-render's own task and the root snapshot caught the whole page while
-React's per-slot snapshot caught its first commit; that was the demo,
-not the design.) The board's return flight, which looked lost on the
-branch, was never there on main: sampling the board group through a pop
-shows main's sitting at 64 px in the card's place throughout, the
-thumbnail merely reappearing, while the branch, which now arms the
-flight on purpose (`armReturnFlight` in `lib/shared-board`), morphs it
-from 360 px at the page to 64 px at the card. What keeps it a branch is
-now two things. The router pays for `routeSettled()` with a one-call
-patch of `document.startViewTransition`, since React hands back no
-promise. And React skips its view transition whenever anything calls
-`flushSync` while the transition is pending, which Base UI does at two
-moments: a hover-driven open or close of a popup, and the end of a
-popup's exit animation. A pointer resting on the back chevron turned
-every pop into a cut. The branch handles the tooltips (`lib/popups`: the
-router closes them, with no exit animation, before it starts, and they
-refuse hover changes while a page is turning), which made the hovering
-pop run; any other Base UI popup closing within a page turn of a
-navigation would still skip it, and no shelf menu item navigates today,
-so that case is untested. Main's transition is immune to all of it. The
-trigger is the patch falling away, or a page's data read through
-Suspense, which would remove its reason to exist. A Suspense pilot on
-the study page was weighed for that (2026-09-14) and not built: the
-page opens its document through the study store, which owns the save
-buffer, the leave guard and the chapter jump, so reading the document
-with `use()` would be a redesign of that store rather than a boundary
-around a fetch, and the reason the routes left Suspense stands (its
-300 ms fallback throttle, `lib/lazyRoute` says why). The branch stays a
-branch. Until then the
-router keeps `document.startViewTransition` with `flushSync`.
-
 **The eight functions the React Compiler refuses.** The compiler is on
 for every file under `web/src` (2026-09-14) and compiles 614 functions.
 Eight it refuses, all in the registry's own files under
