@@ -77,6 +77,11 @@ The puzzle hub's boards stop changing under you.
   with 14px column headers, and the notes under them (the accuracy
   line, the chart legends and captions) are 14, where they were 14 and
   12. A desktop keeps the table at 14 over 12.
+- **The controls step up on a phone with everything else.** Buttons,
+  toggles, tabs, select fields, the search field's addons, badges and
+  toast titles are one rung larger under the phone width: 16 where they
+  were 14, 14 where they were 12 or 12.8. No text of one role is left at
+  a different size because of the file it lives in.
 
 ## 0.11.0
 

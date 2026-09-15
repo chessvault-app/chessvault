@@ -447,10 +447,14 @@ carried by `type-row` and `type-row-sub`, never by `max-md:text-*` at a
 call site, and the rungs are named `type-*` and not `text-*` because
 twMerge reads an unknown `text-*` as a colour and drops it beside a real
 one (measured: the theme tiles' labels inherited 16px at every width).
-Exempt on purpose: data tables (Insights stays at Body with Label
-headers, Material's own table sizes), and anything on the Fitted-Glyph
-list. Form labels are the registry's Label at 14 and are a separate
-decision.
+It applies to every text of its role wherever it is rendered, registry
+file or app code: the Button, Toggle, Tabs, Select and InputGroup
+controls, the Badge, the Command palette, the form Label, and the
+Insights tables all step up with the rows (lanph3re, 2026-09-15: "ignore
+the registry rule, apply font sizes consistently"). Body copy, a
+paragraph read as prose, stays at Body; a caption stays at Label. The
+only things that do not move are on the Fitted-Glyph list, plus a move
+list's number column, which is a column and not a line.
 
 **The Phone Glyph Rule.** Icons take the type rungs' bargain. The row
 glyph (a chevron, a row's leading icon, the icon in a small button) is
@@ -651,6 +655,9 @@ hit areas, `title` as a tooltip. Composites live in
 - **States:** `focus-visible:ring-3 ring-ring` with the border taking
   the ring colour; a 1px downward translate on press, suppressed for
   anything with a popup; 50% opacity and no pointer events when disabled.
+- **Type under `md`:** one rung up, like the rows: default 16, sm and
+  xs 14 (`type-row` / `type-row-sub` as variants beside the registry's
+  own classes).
 - **Icons:** 16px by default, 12px at xs and 14px at sm, marked with
   `data-icon` so the button can tighten the padding on that side. An
   icon-only button (`icon`, `icon-sm`) draws its glyph at 20px under

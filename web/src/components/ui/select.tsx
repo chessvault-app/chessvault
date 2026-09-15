@@ -87,7 +87,7 @@ export interface SelectGroup {
  * toolbar is a ROW, and Button and Input grow there too.
  */
 const selectTriggerVariants = cva(
-  "flex w-fit items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4",
+  "flex w-fit items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm max-md:type-row whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4",
   {
     variants: {
       size: {
@@ -194,7 +194,7 @@ function SelectLabel({ className, ...props }: SelectPrimitive.GroupLabel.Props) 
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
-      className={cn('text-muted-foreground px-1.5 py-1 text-xs', className)}
+      className={cn('text-muted-foreground px-1.5 py-1 text-xs max-md:type-row-sub', className)}
       {...props}
     />
   );
@@ -442,7 +442,7 @@ function SelectField({
               {groups.map((group, gi) => (
                 <div key={gi} role="group">
                   {group.label && (
-                    <p className="text-muted-foreground px-2 pb-1 pt-2 text-xs">{t(group.label)}</p>
+                    <p className="text-muted-foreground px-2 pb-1 pt-2 text-xs max-md:type-row-sub">{t(group.label)}</p>
                   )}
                   {group.options.map((option) => (
                     <button
