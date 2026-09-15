@@ -250,23 +250,34 @@ describe('chartedMoves', () => {
 
 describe('launcherColumns', () => {
   it('gives a short row one line', () => {
-    for (let n = 1; n <= 5; n++) expect(launcherColumns(n)).toBe(n);
+    for (let n = 1; n <= 4; n++) expect(launcherColumns(n)).toBe(n);
   });
 
   it('never leaves a single button alone on the last line', () => {
     // The whole point: 5+1 was the shape this row was built to avoid.
-    // Every count the catalogue can produce is checked, plus room to grow.
-    for (let n = 6; n <= 20; n++) {
+    // Every count the catalogue can produce is checked, plus room to
+    // grow. 13 and 25 are the exception the function documents: one past
+    // a multiple of twelve strands one at three columns and at four.
+    for (let n = 5; n <= 20; n++) {
+      if (n % 12 === 1) continue;
       const last = n % launcherColumns(n);
       expect(last === 0 || last >= 2).toBe(true);
     }
   });
 
-  it('prefers five, and drops to four only when five would strand one', () => {
+  it('never goes past four, since the label has to fit its cell', () => {
+    for (let n = 5; n <= 20; n++) expect(launcherColumns(n)).toBeLessThanOrEqual(4);
+  });
+
+  it('prefers four, and drops to three only when four would strand one', () => {
+    expect(launcherColumns(5)).toBe(3);
     expect(launcherColumns(6)).toBe(4);
-    expect(launcherColumns(7)).toBe(5);
-    expect(launcherColumns(11)).toBe(4);
-    expect(launcherColumns(12)).toBe(5);
+    expect(launcherColumns(9)).toBe(3);
+    expect(launcherColumns(12)).toBe(4);
+  });
+
+  it('keeps four where three would strand one too', () => {
+    expect(launcherColumns(13)).toBe(4);
   });
 });
 

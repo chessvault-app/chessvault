@@ -291,17 +291,29 @@ export function resolveHomeLayout<T extends { id: string }>(
 /**
  * How many columns the launcher row gets on a phone.
  *
- * Five was the number when that row was exactly five buttons, and five is
- * still the most that fit a 360px screen with a label under each. The one
- * shape to avoid is a last line holding a single button: 5+1 reads as an
- * accident, which was the original objection to letting the row wrap at
- * all. So a count that would leave one over drops to four — six becomes
- * 4+2 rather than 5+1, eleven becomes 4+4+3 rather than 5+5+1. Five or
- * fewer just share the width between them.
+ * FOUR, because the label under the icon is type and has to fit. It was
+ * five, the number this row held when it was exactly five buttons, with
+ * its label at the caption rung; on the tail rung the phone's rows were
+ * lifted to, a fifth of a 390px screen is 60px of room and "Repertoire"
+ * is 66 wide, so the words ran into their neighbours at every phone
+ * width (measured en, 390/375/320: 2, 3 and 5 of the 8 labels spilled).
+ * A quarter of that screen is 78, which every label in both languages
+ * fits.
+ *
+ * The one shape to avoid is a last line holding a single button: 5+1
+ * read as an accident, which was the original objection to letting the
+ * row wrap at all. So a count that would leave one over drops to three:
+ * five becomes 3+2 rather than 4+1, nine becomes 3+3+3. Four or fewer
+ * just share the width between them.
+ *
+ * A count that strands one BOTH ways keeps four, since no equal-column
+ * row of three or four saves it: that is n of 13, 25, every n one past a
+ * multiple of twelve, and it takes the shape with fewer lines.
  */
 export function launcherColumns(n: number): number {
-  if (n <= 5) return n;
-  return n % 5 === 1 ? 4 : 5;
+  if (n <= 4) return n;
+  if (n % 4 !== 1) return 4;
+  return n % 3 === 1 ? 4 : 3;
 }
 
 /**

@@ -316,7 +316,13 @@ function LauncherButton({ entry }: { entry: Destination }) {
       className={cn(
         'max-sm:h-auto max-sm:flex-col max-sm:gap-1.5 max-sm:whitespace-normal',
         'max-sm:rounded-lg max-sm:px-1 max-sm:py-2',
-        'max-sm:text-center max-sm:text-xs max-sm:leading-tight',
+        // No size of its own below sm: the button's `sm` carries the
+        // registry's 12.8px on a desktop and the tail rung under md, so
+        // the label lands at 14 with the phone's rows instead of the 12
+        // this cell used to write over it, which was the caption rung and
+        // two under the rows above it (lanph3re, on the phone). The row is
+        // four columns wide for it; `launcherColumns` carries the numbers.
+        'max-sm:text-center max-sm:leading-tight',
         // The size's own coarse-pointer overrides would win the
         // cascade back without coarse-specific counters.
         'pointer-coarse:max-sm:h-auto pointer-coarse:max-sm:px-1',
@@ -1751,9 +1757,11 @@ export function HomePage() {
             two demoted entries at a fifth of the width each. Tailwind
             cannot see an interpolated class name, and a static map of
             twelve would be a table to keep in step with a catalogue — so
-            the one number that varies is set as a style. Up to five share
-            the row; beyond that they wrap in fours or fives, never leaving
-            a single orphan on the last line. */}
+            the one number that varies is set as a style. Up to four share
+            the row; beyond that they wrap in threes or fours, never leaving
+            a single orphan on the last line. `launcherColumns` says why
+            four is the ceiling: it is what a label on the tail rung fits
+            inside. */}
         {launchers.length > 0 && (
         <div
           className="mt-4 grid gap-1 max-md:order-2 sm:flex sm:flex-wrap sm:justify-center sm:gap-1.5 md:hidden"
