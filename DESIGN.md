@@ -506,8 +506,12 @@ An icon-only Button draws 20 under `md` on its own. Both platforms put a
 phone's list glyph at 20 to 24 and a toolbar glyph at 20 to 22; the app
 drew 14 beside 16px text after the row lift, a third of its own 36px
 button. No icon in app code is sized `size-3.5` or `size-3` any more; a
-bare `size-3` is a dot or a swatch. The registry's own default-icon rule
-(`[&_svg:not([class*='size-'])]`) also excludes `glyph`, or it would
+bare `size-3` is a dot or a swatch. A `size-4` written out in a
+registry file can still be a row glyph and the sweep's script did not
+read it as one: the Select trigger's chevron was left at 16px at every
+width, the one 16 on a shelf header's 28px row, and now takes `glyph`
+like the arrow and the plus beside it. The registry's own default-icon
+rule (`[&_svg:not([class*='size-'])]`) also excludes `glyph`, or it would
 size every renamed icon to 16 at every width, which the grid caught on
 the desktop Games page. Fitted glyphs (board coordinates, the puzzle
 tile's corner mark, the pane strip) stay where they are.
