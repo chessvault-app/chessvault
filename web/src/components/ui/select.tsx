@@ -121,7 +121,17 @@ function SelectTrigger({
       {...props}
     >
       {children}
-      <SelectPrimitive.Icon render={<ChevronDownIcon className="text-muted-foreground pointer-events-none size-4" />} />
+      {/* `glyph`, not the registry's bare size-4. The rung sweep that
+          made that utility (index.css) rewrote every size-3.5 and
+          size-3 on an icon and never reached this one, so the chevron
+          stayed at 16px at every width while every other labelled
+          control in the app went to 14 on a desktop and 16 on a phone.
+          Measured over 17 routes: every labelled button, in boxes from
+          20px to 153px tall, draws 14 on a desktop; both trigger sizes
+          drew 16, which put a 16px chevron beside a 14px arrow and a
+          14px plus on one 28px row of the shelf headers. A phone was
+          already right and does not move. */}
+      <SelectPrimitive.Icon render={<ChevronDownIcon className="text-muted-foreground pointer-events-none glyph" />} />
     </SelectPrimitive.Trigger>
   );
 }
@@ -425,7 +435,8 @@ function SelectField({
             </span>
           )}
           <span className={labelClass}>{labelInner}</span>
-          <ChevronDownIcon className="text-muted-foreground size-4" />
+          {/* The sheet trigger's own chevron, on the rung above. */}
+          <ChevronDownIcon className="text-muted-foreground glyph" />
         </button>
         {open && (
           <Dialog
