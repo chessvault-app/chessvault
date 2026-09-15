@@ -835,7 +835,7 @@ function Trainer({
         <>
           <p
             className={cn(
-              'text-base font-semibold',
+              'text-base font-medium',
               // Green for a clean solve, amber for one that took a
               // second go — it was still found — and red only where
               // the answer was handed over. Shared with the book
@@ -870,7 +870,7 @@ function Trainer({
       ) : (
         <div className="flex flex-col gap-0.5">
           {puzzle && phase !== 'loading' ? (
-            <p className="text-foreground text-2xl font-bold tracking-tight">
+            <p className="text-foreground text-2xl font-semibold tracking-tight">
               {solverSide === 'white' ? t('White to move') : t('Black to move')}
             </p>
           ) : phase === 'loading' ? (

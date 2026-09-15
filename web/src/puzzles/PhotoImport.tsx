@@ -345,7 +345,7 @@ export function PhotoImport({
     <>
         {dragOver && (
           <div className="bg-muted/85 pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-[inherit]">
-            <p className="text-primary text-base font-semibold">{t('Drop the image')}</p>
+            <p className="text-primary text-base font-medium">{t('Drop the image')}</p>
           </div>
         )}
 

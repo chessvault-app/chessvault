@@ -406,7 +406,7 @@ export function GameRow({
           {customName ? (
             // A renamed game leads with its given name; the matchup joins
             // the detail line so nothing is lost.
-            <span className="text-foreground block truncate text-base font-semibold">
+            <span className="text-foreground block truncate text-base font-medium">
               {customName}
               {game.annotated && (
                 <NotebookPen className="text-info ml-1.5 inline glyph-sm" aria-label={t('Annotated')} />
@@ -688,7 +688,7 @@ export function EcoChip({ eco, flush = false }: { eco: string; flush?: boolean }
   return (
     <span
       className={cn(
-        'inline-block shrink-0 rounded-sm px-1 py-px align-[1px] font-mono text-xs font-semibold leading-4',
+        'inline-block shrink-0 rounded-sm px-1 py-px align-[1px] font-mono text-xs font-medium leading-4',
         // `flush`: pull the box left by exactly its own padding, so what
         // lines up with the column above is the CODE and not the wash
         // behind it. A chip that leads a line under the two side dots

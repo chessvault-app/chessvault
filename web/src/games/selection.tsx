@@ -95,7 +95,7 @@ export function SelectionBar({
       </TitleTip>
       <span
         className={cn(
-          'shrink-0 rounded-full px-1.5 py-0.5 text-xs font-semibold tabular-nums',
+          'shrink-0 rounded-full px-1.5 py-0.5 text-xs max-md:type-row-sub font-medium tabular-nums',
           picked > 0 ? 'bg-muted text-primary' : 'bg-accent text-muted-foreground',
         )}
       >

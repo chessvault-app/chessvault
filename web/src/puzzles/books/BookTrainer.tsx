@@ -583,14 +583,14 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
         {phase === 'done' ? (
           <p
             className={cn(
-              'text-base font-semibold',
+              'text-base font-medium',
               outcomeTone(won ? 'solved' : helped ? 'helped' : 'missed'),
             )}
           >
             {won ? t('Solved') : helped ? t('Solved with help') : t('Not solved')}
           </p>
         ) : (
-          <p className="text-foreground text-2xl font-bold tracking-tight">
+          <p className="text-foreground text-2xl font-semibold tracking-tight">
             {solverSide === 'white' ? t('White to move') : t('Black to move')}
           </p>
         )}

@@ -67,7 +67,7 @@ export function SquareBadge({
       }}
       className={cn(
         'pointer-events-none absolute z-30 grid size-6 place-items-center rounded-full',
-        'text-nag-foreground text-base font-bold shadow-sm',
+        'text-nag-foreground text-base font-semibold shadow-sm',
         className,
       )}
     >

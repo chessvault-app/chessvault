@@ -1265,7 +1265,7 @@ export function HomePage() {
                     to a few letters beside the board instead of taking
                     the wrap the button offers. */}
                 <span className="min-w-0 flex-1 max-[319px]:basis-full">
-                  <span className="text-foreground block truncate text-base font-semibold">
+                  <span className="text-foreground block truncate text-base font-medium">
                     {baseName(boardStudy.id)}
                   </span>
                   <span className="text-muted-foreground block truncate text-sm">

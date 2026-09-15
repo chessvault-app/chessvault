@@ -1098,7 +1098,7 @@ function NodePanel({
           />
         )}
         <div className="min-w-0">
-          <p className="text-foreground text-base font-semibold">{title}</p>
+          <p className="text-foreground text-base font-medium">{title}</p>
           {lineName && !isRoot && <p className="text-muted-foreground truncate text-sm">{lineName}</p>}
           {coverage?.covered && (
             <p className="text-muted-foreground text-sm">

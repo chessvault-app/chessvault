@@ -598,7 +598,7 @@ function Drill({ classId }: { classId: string }) {
           {start && ended ? (
             <p
               className={cn(
-                'text-base font-semibold',
+                'text-base font-medium',
                 phase === 'won' || phase === 'drawn'
                   ? outcomeTone('solved')
                   : phase === 'threw'
@@ -617,7 +617,7 @@ function Drill({ classId }: { classId: string }) {
                     : t('Stopped')}
             </p>
           ) : start && phase !== 'loading' ? (
-            <p className="text-foreground text-2xl font-bold tracking-tight">
+            <p className="text-foreground text-2xl font-semibold tracking-tight">
               {solverSide === 'white' ? t('White to move') : t('Black to move')}
             </p>
           ) : phase === 'loading' ? (

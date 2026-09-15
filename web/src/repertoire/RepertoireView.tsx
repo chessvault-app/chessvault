@@ -1665,9 +1665,9 @@ export function RepertoireView() {
           status line the trainers all carry. */}
       {phase === 'idle' ? (
         /* The trainers' own headline size — the puzzle panel sets its
-           verdict in text-base font-semibold, and this is the same line
+           verdict in text-base font-medium, and this is the same line
            at the same moment: what the board in front of you is. */
-        <p className="text-foreground text-base font-semibold leading-snug">{setupLine}</p>
+        <p className="text-foreground text-base font-medium leading-snug">{setupLine}</p>
       ) : (
         /* A line that ended on a gap has no status line of its own: the
            callout below is the whole verdict, and a sentence above it

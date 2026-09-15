@@ -62,7 +62,7 @@ export function PuzzleDbSetupPlaceholder() {
       className="optical-center h-full overflow-y-auto p-6"
     >
       <div className="flex w-full max-w-md flex-col gap-3 text-center">
-        <p className="relative text-base font-semibold">
+        <p className="relative text-base font-medium">
           <span className="invisible">{t(SETUP_TITLE)}</span>
           <Skeleton className="absolute inset-y-0.5 left-1/2 w-48 max-w-full -translate-x-1/2" />
         </p>
@@ -141,7 +141,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
   return (
     <div className="optical-center h-full overflow-y-auto p-6">
       <div className="flex w-full max-w-md flex-col gap-3 text-center">
-        <p className="text-foreground text-base font-semibold">{t(SETUP_TITLE)}</p>
+        <p className="text-foreground text-base font-medium">{t(SETUP_TITLE)}</p>
 
         {running ? (
           <>

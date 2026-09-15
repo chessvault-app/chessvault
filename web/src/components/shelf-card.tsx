@@ -209,7 +209,7 @@ export function ShelfCard({
                 open();
               }}
               className={cn(
-                'text-foreground block w-full text-left font-semibold',
+                'text-foreground block w-full text-left font-medium',
                 // One line, on a card as on a list row. A card gave the
                 // name a second line for a while (at three columns the
                 // title box is 219px and eight of the demo's twelve titles

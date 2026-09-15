@@ -100,7 +100,7 @@ export function ResultBadge({
     <span
       data-slot="result-badge"
       className={cn(
-        // Medium, with the WINNING DIGIT bold: the mark the colour
+        // Medium, with the WINNING DIGIT semibold: the mark the colour
         // grammar promises (DESIGN.md, "Colour and marks") and the chip
         // had stopped drawing, so that every chip weighs the same and
         // the verdict is a shape as well as a hue. Same weight whether
@@ -115,8 +115,8 @@ export function ResultBadge({
       {verdict && <span className="sr-only">{verdict} </span>}
       {parts.length === 2 && winner ? (
         <>
-          <span className={cn(winner === 'white' && 'font-bold')}>{fmt(parts[0]!)}</span>-
-          <span className={cn(winner === 'black' && 'font-bold')}>{fmt(parts[1]!)}</span>
+          <span className={cn(winner === 'white' && 'font-semibold')}>{fmt(parts[0]!)}</span>-
+          <span className={cn(winner === 'black' && 'font-semibold')}>{fmt(parts[1]!)}</span>
         </>
       ) : (
         fmt(result)

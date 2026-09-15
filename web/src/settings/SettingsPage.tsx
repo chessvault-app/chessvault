@@ -507,7 +507,7 @@ function Card({
   return (
     // data-settings-card is what the jump list above the cards reads.
     <section id={anchor} className="bg-card rounded-xl ring-1 ring-card-ring scroll-mt-14 p-4" data-settings-card>
-      <h2 className="mb-3 flex items-center gap-2 text-base font-semibold">
+      <h2 className="mb-3 flex items-center gap-2 text-base font-medium">
         <Icon className="text-muted-foreground size-4" />
         {title}
         {/* The manual is written card by card, and nothing in the app
@@ -2245,7 +2245,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 text-base font-medium">
           {t('Two-factor authentication')}
-          <span className="bg-good/15 text-good rounded-full px-2 py-0.5 text-xs font-semibold">{t('On')}</span>
+          <span className="bg-good/15 text-good rounded-full px-2 py-0.5 text-xs max-md:type-row-sub font-medium">{t('On')}</span>
         </div>
         <p className="text-muted-foreground text-sm">{t('Turning it off needs a current code from your authenticator app.')}</p>
         <div className="flex items-center gap-2">

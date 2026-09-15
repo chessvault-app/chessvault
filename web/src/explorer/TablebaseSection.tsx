@@ -83,7 +83,7 @@ export function TablebaseSection({ fen, onPlay }: { fen: string; onPlay: (uci: s
             printed for it: one word plus a hostname in a 8px-tall strip
             would push the verdict itself off the end. */}
         <TitleTip title={answer?.source ? t('Answered by {source}', { source: answer.source }) : undefined}>
-          <span className="text-muted-foreground shrink-0 text-xs font-semibold">
+          <span className="text-muted-foreground shrink-0 text-xs max-md:type-row-sub font-medium">
             {t('Tablebase')}
           </span>
         </TitleTip>
@@ -92,7 +92,7 @@ export function TablebaseSection({ fen, onPlay }: { fen: string; onPlay: (uci: s
             <TitleTip title={categoryLabel(answer.category)}>
               <span
                 className={cn(
-                  'shrink-0 rounded-sm px-1.5 py-0.5 text-xs font-semibold leading-4',
+                  'shrink-0 rounded-sm px-1.5 py-0.5 text-xs max-md:type-row-sub font-medium leading-4',
                   TONE[categoryTone(answer.category)],
                 )}
               >
@@ -212,7 +212,7 @@ function MoveRow({
         <TitleTip title={categoryLabel(move.category)}>
           <span
             className={cn(
-              'inline-block rounded-sm px-1.5 py-0.5 text-xs font-semibold leading-4',
+              'inline-block rounded-sm px-1.5 py-0.5 text-xs max-md:type-row-sub font-medium leading-4',
               TONE[categoryTone(move.category)],
             )}
           >
