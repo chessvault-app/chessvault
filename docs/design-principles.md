@@ -614,15 +614,19 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   game opened from Home slid one in after the router's 400 ms wait. So
   every route carries `RouteSkeleton`, the one page shape the shell can
   draw without knowing the page (a title row over one-line rows, in the
-  scrolling column), drawn by `lib/lazyRoute` as ordinary state after
-  500 ms and kept for 500 ms once drawn, or from the first frame inside a
-  page transition, as `useSlowLoad` does. Those two figures are the
-  guides' rather than ours: 500 ms is eBay's floor for using a skeleton
-  at all and TanStack Router's default minimum stay, and Nielsen's one
-  second is the ceiling past which a wait needs feedback. Measured on the
-  same link: the placeholder is up at 545 ms, the page arrives when it
-  did before, and an unthrottled tab never shows it (Studies drew at
-  88 ms).
+  scrolling column), drawn by `lib/lazyRoute` as ordinary state through
+  the same `useSlowLoad` every page's skeleton uses, with its own two
+  figures: up after 200 ms and kept 500 ms once up, or up from the first
+  frame inside a page transition. The guides disagree on the delay
+  (Apple: none, placeholders at once; Android and eBay: 500 ms; Nielsen:
+  feedback by one second; Material: no number), and 200 sits between
+  Apple and the rest: a warm chunk lands in 50 to 90 ms and never shows
+  it. The stay is TanStack Router's default. The two waits, code and
+  data, run in sequence, never together: the route's shape stands until
+  the chunk lands, then the page's own skeleton takes its own 180 ms
+  decision inside a frame that is already up. Measured at 1.5 Mbps: the
+  placeholder is up at 245 ms, the page arrives when it did before, and
+  an unthrottled tab never shows it (Studies drew at 88 ms).
 
 ## Kept pages
 

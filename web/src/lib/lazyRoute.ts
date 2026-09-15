@@ -7,7 +7,7 @@ import {
   type FunctionComponent,
   type ReactNode,
 } from 'react';
-import { routeChanging } from './router';
+import { useSlowLoad } from './slowLoad';
 
 /**
  * A lazily-loaded route that survives the app being redeployed under it.
@@ -62,21 +62,26 @@ import { routeChanging } from './router';
  * held as ordinary state for the reason above (never as a Suspense
  * fallback, which pays the 300 ms reveal throttle on every navigation).
  *
- * The two thresholds are the ones the guides publish rather than ours:
- * a placeholder appears after PENDING_MS and, once shown, stays for
- * MIN_VISIBLE_MS so it cannot flash. 500 ms is eBay's floor for a
- * skeleton at all ("only for loads that take 500ms or longer"), half of
- * Nielsen's one second, past which a wait needs feedback; TanStack
- * Router's default `pendingMinMs` is 500, its `pendingMs` 1000, which
- * would leave a tapped tab blank for a full second and is not taken.
- * During a phone's page transition the placeholder is there from the
- * first frame, as `useSlowLoad` does: the slide is what hides a flash,
- * and a page that slides in blank is the sight this exists to remove.
+ * The wait is governed by the same hook every page's own skeleton uses
+ * (lib/slowLoad), with two figures of its own. The placeholder appears
+ * after PENDING_MS and, once shown, stays MIN_VISIBLE_MS so it cannot
+ * flash. The guides disagree on the first: Apple's HIG says show the
+ * screen at once with placeholders in it (no delay at all), Android's
+ * ContentLoadingProgressBar and eBay's skeleton floor say 500 ms,
+ * Nielsen's one second is the ceiling past which a wait needs feedback,
+ * and Material's guidelines give no number. 200 ms is lanph3re's call
+ * between Apple's zero and the 500 the others share: a warm chunk lands
+ * in 50 to 90 ms and never shows it, a slow link waits a fifth of a
+ * second for a shape instead of half of one. The stay is TanStack
+ * Router's default `pendingMinMs`. During a phone's page transition the
+ * placeholder is there from the first frame, as the hook does for every
+ * page: the slide is what hides a flash, and a page that slides in blank
+ * is the sight this exists to remove.
  */
 const RELOADED_AT = 'chess-vault:chunk-reload';
 const COOLDOWN_MS = 10_000;
 /** How long a chunk may take before its placeholder is drawn. */
-export const PENDING_MS = 500;
+export const PENDING_MS = 200;
 /** How long a drawn placeholder stays, so it cannot flash. */
 export const MIN_VISIBLE_MS = 500;
 
@@ -150,43 +155,29 @@ export function lazyRoute<T extends ComponentType<any>>(
     // chunk should be asked for while the browser is already fetching the
     // shell's own files, not a frame later.
     if (!settled) void fetchModule();
-    // When the placeholder went up, or null while the box is still empty.
-    // Up from the first frame inside a page transition (see the header):
-    // the slide hides the appearance, and a bare ground sliding in is
-    // the thing being removed.
-    const [shownAt, setShownAt] = useState<number | null>(() =>
-      !settled && fallback !== null && routeChanging() ? Date.now() : null,
-    );
-    useEffect(() => {
-      if (settled || fallback === null || shownAt !== null) return;
-      const timer = setTimeout(() => setShownAt(Date.now()), PENDING_MS);
-      return () => clearTimeout(timer);
-    }, [settled, shownAt]);
     useEffect(() => {
       if (settled) return;
       let live = true;
-      let hold: ReturnType<typeof setTimeout> | undefined;
       void fetchModule().then(() => {
-        if (!live) return;
-        // A placeholder that has been seen stays its minimum; one that
-        // never went up costs the arrival nothing.
-        const remaining = shownAt === null ? 0 : MIN_VISIBLE_MS - (Date.now() - shownAt);
-        if (remaining <= 0) setSettled({ ready, failure });
-        else hold = setTimeout(() => setSettled({ ready, failure }), remaining);
+        if (live) setSettled({ ready, failure });
       });
       return () => {
         live = false;
-        clearTimeout(hold);
       };
-    }, [settled, shownAt]);
+    }, [settled]);
+    // Whether the placeholder is up. It goes up after PENDING_MS of
+    // waiting (or at once inside a page transition) and, once up, stays
+    // its minimum even after the module has landed, which is what holds
+    // a chunk that arrives just behind it from flashing the placeholder.
+    const placeholder = useSlowLoad(!settled && fallback !== null, PENDING_MS, MIN_VISIBLE_MS);
     // Thrown from render so the route's error boundary catches it, which
     // is where lazy() used to put it.
     if (settled?.failure) throw settled.failure;
-    if (settled?.ready) return createElement(settled.ready, props);
+    if (settled?.ready && !placeholder) return createElement(settled.ready, props);
     // Until then the same empty box the Suspense fallback drew, for the
     // first PENDING_MS: a section's chunk usually beats the next paint,
     // and a skeleton nobody sees is a flash. Past that, the placeholder.
-    return shownAt === null ? null : fallback;
+    return placeholder ? fallback : null;
   };
   return Object.assign(Route, { pending: () => (ready || failure ? null : fetchModule()) });
 }
