@@ -1,4 +1,4 @@
-import { BookText, ChevronLeft, ChevronRight, CircleStop, FileUp, History, MoreHorizontal, Pencil, Repeat, RotateCw, ScanSearch, Plus, RotateCcw } from 'lucide-react';
+import { BookText, BookX, ChevronLeft, ChevronRight, CircleStop, FileUp, History, MoreHorizontal, Pencil, Repeat, RotateCw, ScanSearch, Plus, RotateCcw } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
@@ -9,6 +9,7 @@ import { SkeletonTiles, useSlowLoad } from '@/components/skeletons';
 import { navigate } from '@/lib/router';
 
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
@@ -279,7 +280,15 @@ export function BookPage({ slug }: { slug: string }) {
   if (missing) {
     return (
       <div className="optical-center h-full">
-        <p className="text-muted-foreground text-base font-medium">{t('That book does not exist.')}</p>
+        <EmptyState
+          ground
+          icon={BookX}
+          title="That puzzle book is not on the shelf"
+          body="It may have been removed. The shelf has what is there."
+          action={
+            <Button onClick={() => navigate('puzzles', 'books')}>{t('Back to Puzzle books')}</Button>
+          }
+        />
       </div>
     );
   }

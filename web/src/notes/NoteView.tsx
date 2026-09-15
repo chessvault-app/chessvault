@@ -1,11 +1,12 @@
 import { EditorContent, useEditor } from '@tiptap/react';
-import { ChevronLeft, Pencil } from 'lucide-react';
+import { ChevronLeft, FileX, Pencil } from 'lucide-react';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { usePrefs } from '@/store/prefs';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/empty-state';
 import { TitleTip } from '@/components/title-tip';
 import { ClearableInput } from '@/components/text-fields';
 import { RecoveryDialog } from '@/components/recovery-dialog';
@@ -84,14 +85,19 @@ export function NoteView({ id }: { id: string }) {
 
   if (failed) {
     return (
-      <div className="optical-center h-full p-8">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-muted-foreground text-base font-medium">{failed}</p>
-          <Button variant="secondary" size="sm" onClick={() => navigate('notes')}>
-            <ChevronLeft className="glyph" data-icon="inline-start" />
-            {t('All notes')}
-          </Button>
-        </div>
+      <div className="optical-center h-full">
+        <EmptyState
+          ground
+          icon={FileX}
+          title="The note could not be opened"
+          body={failed}
+          action={
+            <Button variant="secondary" onClick={() => navigate('notes')}>
+              <ChevronLeft className="glyph" data-icon="inline-start" />
+              {t('All notes')}
+            </Button>
+          }
+        />
       </div>
     );
   }

@@ -1,4 +1,4 @@
-import { BarChart3, Check, ChevronLeft, ChevronRight, Eye, History, LayoutGrid, Pencil, RotateCcw, RotateCw, X } from 'lucide-react';
+import { BarChart3, Check, ChevronLeft, ChevronRight, Eye, History, LayoutGrid, Pencil, RotateCcw, RotateCw, SearchX, X } from 'lucide-react';
 import { useEffect, useEffectEvent, useMemo, useRef, useState } from 'react';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
@@ -34,6 +34,7 @@ import { navigate } from '@/lib/router';
 
 import { announce } from '@/lib/announce';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/empty-state';
 import { CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
@@ -397,8 +398,14 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     const missing = book !== null && solutions !== null && (index < 0 || !answer);
     if (missing) {
       return (
-        <div className="text-muted-foreground optical-center h-full text-base font-medium">
-          {t('That puzzle does not exist.')}
+        <div className="optical-center h-full">
+          <EmptyState
+            ground
+            icon={SearchX}
+            title="That puzzle is not in this book"
+            body="The book may have been imported again since. Its list has what is there."
+            action={<Button onClick={() => navigate('puzzles', 'books', slug)}>{t('Back to the book')}</Button>}
+          />
         </div>
       );
     }

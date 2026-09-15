@@ -2,6 +2,7 @@ import {
   ChevronLeft,
   ChevronDown,
   Cpu,
+  FileX,
   Files,
   ListOrdered,
   ListTree,
@@ -35,6 +36,7 @@ import { useStudy } from '@/store/study';
 import { fenKey } from '@/lib/fen';
 import { consumeJumpTarget } from './jumpTarget';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/empty-state';
 import { ClearableInput } from '@/components/text-fields';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { MobileActionBar } from '@/components/mobile-action-bar';
@@ -242,14 +244,19 @@ export function StudyView({
 
   if (failed) {
     return (
-      <div className="optical-center h-full p-8">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-muted-foreground text-base font-medium">{error ?? `Could not open “${id}”.`}</p>
-          <Button variant="secondary" size="sm" onClick={() => navigate(backSection)}>
-            <ChevronLeft className="glyph" data-icon="inline-start" />
-            {t(kind === 'game' ? 'All games' : 'All studies')}
-          </Button>
-        </div>
+      <div className="optical-center h-full">
+        <EmptyState
+          ground
+          icon={FileX}
+          title={kind === 'game' ? 'The game could not be opened' : 'The study could not be opened'}
+          body={error ?? t('Could not open “{id}”.', { id })}
+          action={
+            <Button variant="secondary" onClick={() => navigate(backSection)}>
+              <ChevronLeft className="glyph" data-icon="inline-start" />
+              {t(kind === 'game' ? 'All games' : 'All studies')}
+            </Button>
+          }
+        />
       </div>
     );
   }

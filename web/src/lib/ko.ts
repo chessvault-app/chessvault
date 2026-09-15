@@ -744,8 +744,6 @@ export const ko: Record<string, string> = {
   'Grade the mainline. This is the only judged moment.':
     '메인 라인을 채점합니다. 평가되는 순간은 여기뿐입니다.',
   'Counts as a failed attempt': '실패한 시도로 기록됩니다',
-  'Puzzle not found.': '퍼즐을 찾을 수 없습니다.',
-  'That book does not exist.': '그런 책이 없습니다.',
   'No puzzle books yet': '아직 퍼즐 책이 없습니다',
   'No puzzle books yet. Import a scanned tactics book and its diagrams become a solvable, progress-tracked set.': '아직 퍼즐 책이 없습니다. 스캔한 전술 책을 가져오면 그 다이어그램이 풀 수 있고 진행이 기록되는 문제집이 됩니다.',
   "One per paper book. Enter its puzzles from the board or import the book's own PDF. Solutions and progress live here, not in the back of the book.":
@@ -1685,7 +1683,6 @@ export const ko: Record<string, string> = {
   'any move': '아무 수나',
   'Any move accepted here (click to require this exact move)':
     '여기서는 아무 수나 받습니다 (클릭하면 이 수만 인정합니다)',
-  'That puzzle does not exist.': '그런 퍼즐이 없습니다.',
 
   // --- puzzles: books, tiers and imports ----------------------------------
   Diagram: '다이어그램',
@@ -2150,6 +2147,15 @@ export const ko: Record<string, string> = {
   'That book is not on the shelf': '목록에 없는 책입니다',
   'It may have been removed. The shelf has what is there.': '제거되었을 수 있습니다. 목록에서 남아 있는 책을 확인하세요.',
   'The PDF could not be opened': 'PDF를 열 수 없습니다',
+  'That puzzle book is not on the shelf': '목록에 없는 퍼즐 책입니다',
+  'Back to Puzzle books': '퍼즐 책 목록으로',
+  'That puzzle is not in this book': '이 책에 없는 퍼즐입니다',
+  'The book may have been imported again since. Its list has what is there.':
+    '그 뒤에 책을 다시 가져왔을 수 있습니다. 책의 목록에서 남아 있는 퍼즐을 확인하세요.',
+  'The note could not be opened': '노트를 열 수 없습니다',
+  'The study could not be opened': '스터디를 열 수 없습니다',
+  'The game could not be opened': '게임을 열 수 없습니다',
+  'Could not open “{id}”.': '“{id}”을(를) 열 수 없습니다.',
   'Storage used': '저장 공간 사용량',
   'What the app keeps on disk. The vault is your documents. The rest is rebuilt or refetched after it is cleared from its own place.':
     '앱이 디스크에 두는 것. 보관함은 내 문서입니다. 나머지는 각자의 자리에서 지운 뒤 다시 만들거나 다시 받습니다.',

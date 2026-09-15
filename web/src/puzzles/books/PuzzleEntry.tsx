@@ -1,4 +1,4 @@
-import { ChevronLeft, Check, Eye, RotateCcw } from 'lucide-react';
+import { ChevronLeft, Check, Eye, RotateCcw, SearchX } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Chess } from 'chessops/chess';
 import { chessgroundDests } from 'chessops/compat';
@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
 import { CardFooter } from '@/components/ui/card';
 import { Spinner } from '@/components/ui/spinner';
@@ -70,7 +71,17 @@ export function PuzzleCorrector({ slug, puzzleId }: { slug: string; puzzleId: st
     return <div className="h-full">{pending && <SkeletonBoard />}</div>;
   }
   if (!puzzle) {
-    return <div className="text-muted-foreground optical-center h-full text-base font-medium">{t('Puzzle not found.')}</div>;
+    return (
+      <div className="optical-center h-full">
+        <EmptyState
+          ground
+          icon={SearchX}
+          title="That puzzle is not in this book"
+          body="The book may have been imported again since. Its list has what is there."
+          action={<Button onClick={() => navigate('puzzles', 'books', slug)}>{t('Back to the book')}</Button>}
+        />
+      </div>
+    );
   }
   return (
     <PuzzleEntry
