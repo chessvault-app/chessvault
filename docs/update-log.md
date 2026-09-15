@@ -29,9 +29,9 @@ finishes the job by reading each file against the rule instead.
   gap marker was also the smallest text in the app and is now the size
   the two labels beside it are.
 - **Compact density now reaches the lists that were ignoring it.**
-  Settings, Licences, Databases, the opening map, the notes lists and
-  the engine's own line list did not get any tighter when you chose
-  Compact. They do now. The Licences page was the worst of them: 203
+  Settings, Licences, Databases, the opening map, the notes lists, a
+  book's contents list and the engine's own line list did not get any
+  tighter when you chose Compact. They do now. The Licences page was the worst of them: 203
   rows that never moved, and a desktop row there is a little shorter
   than it was even at the comfortable setting, so ten fit where nine
   did. Shelves and the other card grids are unchanged on purpose.

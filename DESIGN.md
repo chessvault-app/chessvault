@@ -637,11 +637,12 @@ What the knob does NOT reach is the card grids, and that is a decision
 rather than a gap (lanph3re, 2026-09-16): the Studies, Notes and Books
 shelves, the Themes grid and the puzzle hub's cards are cards, and
 tightening a grid of cards is a different promise from tightening a
-list. One list is still pinned and is worth naming so it is not
-rediscovered: the book reader's chapter list. The reader is out of the
-knob's scope on purpose (`index.css`, which says its h-9 and h-7 are
-toolbar bands), and the note there says it has no list, which its
-chapters are.
+list. The book reader is the one surface that is half in: its toolbars
+stay out, because an h-9 band is a control strip and shrinking it would
+fight the coarse-pointer hit areas, but its chapter list is a list and
+reads the dense rung with every other one. The note in `index.css` put
+the whole reader out on the grounds that it had no list, which was true
+when it was written.
 
 ### Named Rules
 

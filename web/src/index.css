@@ -167,11 +167,15 @@
    that a density is five declarations and not a sweep, and so the next
    rung is five more.
 
-   The book reader is deliberately absent, and it is the one place worth
-   naming: it has no list. It is a PDF canvas beside an analysis board,
-   and its h-9 and h-7 are toolbar bands, not rows. Shrinking a control
-   strip is not what this knob promises, and it would fight the
-   coarse-pointer hit areas besides.
+   The book reader is the one place worth naming, because most of it is
+   deliberately absent: it is a PDF canvas beside an analysis board, and
+   its h-9 and h-7 are toolbar bands, not rows. Shrinking a control strip
+   is not what this knob promises, and it would fight the coarse-pointer
+   hit areas besides. Its CHAPTER list is a list, though, and reads the
+   dense rung like every other one. This note used to say the reader had
+   no list at all, which was true when it was written and had quietly
+   stopped being true; a spacing audit measured the knob against every
+   route and found the chapters sitting still with it (2026-09-16).
 
    Deliberately NOT Tailwind's own `--spacing`. That would be one line and
    the wrong one: 401 rules in the built stylesheet derive from it, `size-*`
