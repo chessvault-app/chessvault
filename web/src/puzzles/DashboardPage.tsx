@@ -415,7 +415,7 @@ export function DashboardPage() {
           {/* What the pool is, in the open. It was To review's tooltip,
               which a phone never sees, and the one sentence that ties
               the figure to the menu's option and the button's verb. */}
-          <p className="text-muted-foreground mt-2 max-w-prose px-(--card-spacing) type-row-sub">
+          <p className="text-muted-foreground mt-2 max-w-prose px-(--card-spacing) text-sm">
             {t('Puzzles whose latest attempt failed. This is the review pool.')}
           </p>
           {/* The sentence that reconciles Attempts with everything else
@@ -433,13 +433,13 @@ export function DashboardPage() {
             // out invisible, because it is one line on a desktop card and
             // three on a phone.
             reserved.reconcile && (
-              <p aria-hidden className="invisible mt-2 max-w-prose px-(--card-spacing) type-row-sub">
+              <p aria-hidden className="invisible mt-2 max-w-prose px-(--card-spacing) text-sm">
                 {t(RECONCILE_NOTE)}
               </p>
             )
           ) : (
             user.attempts !== latestById.size && (
-              <p className="text-muted-foreground mt-2 max-w-prose px-(--card-spacing) type-row-sub">
+              <p className="text-muted-foreground mt-2 max-w-prose px-(--card-spacing) text-sm">
                 {t(RECONCILE_NOTE)}
               </p>
             )
