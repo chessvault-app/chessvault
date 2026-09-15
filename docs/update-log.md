@@ -7,9 +7,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-The type ladder reaches the last places it had not. 0.11.1 lifted every
-list, control and label a search over class names could find; this
-finishes the job by reading each file against the rule instead.
+The type ladder reaches the last places it had not, and the app holds
+its own size under two fingers again. 0.11.1 lifted every list, control
+and label a search over class names could find; this finishes the job by
+reading each file against the rule instead, and stops a pinch on the
+shell enlarging the whole page.
 
 - **Nothing you have to read on a phone is under 14px.** A dozen lines
   were still drawn at 12 at every width: the note under a list that has
