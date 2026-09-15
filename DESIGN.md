@@ -622,12 +622,44 @@ tree, the explorer's tables, the studies chapter list. Default row
 padding is 0.5rem on a 2rem row; compact takes them to 0.3125rem and
 1.75rem. A density is five declarations, not a sweep of call sites.
 
+That sentence was a claim rather than a fact until 2026-09-16. Measured
+on the demo, comfortable to compact, page scroll height at 1280px: the
+puzzle dashboard, a study, Games, Endgames, Insights and Home tightened
+by 7 to 12 per cent, and Settings, Licences, Databases, the opening map,
+the notes lists and the engine's own line list did not move a pixel. The
+Licences page's 203 rows were the largest list in the app ignoring the
+knob, and were ignoring it twice over: a literal padding, and an
+unconditional `min-h-9` above it that the padding could never have
+beaten. Thirty-odd rows read a rung now, and the floor is
+`pointer-coarse` like every Button's.
+
+What the knob does NOT reach is the card grids, and that is a decision
+rather than a gap (lanph3re, 2026-09-16): the Studies, Notes and Books
+shelves, the Themes grid and the puzzle hub's cards are cards, and
+tightening a grid of cards is a different promise from tightening a
+list. One list is still pinned and is worth naming so it is not
+rediscovered: the book reader's chapter list. The reader is out of the
+knob's scope on purpose (`index.css`, which says its h-9 and h-7 are
+toolbar bands), and the note there says it has no list, which its
+chapters are.
+
 ### Named Rules
 
 **The Not-`--spacing` Rule.** Density must never be implemented by
 squeezing Tailwind's own `--spacing`. 401 rules in the built stylesheet
 derive from it, `size-*` included, so shrinking it takes every icon down
 with the padding. Density is about whitespace; a glyph is not whitespace.
+
+**The Pinned-Row Rule.** A row that repeats reads a rung; it does not
+write its own vertical padding. The rungs' comfortable values ARE the
+literals a call site would otherwise type (4, 6 and 8px), so saying
+`py-(--row-py-dense)` instead of `py-1.5` costs nothing at the default
+density and is the whole of what the knob needs. `check:repo` holds the
+half of this a grep can see: an `<li>` outside the registry files may
+not carry a literal `py-*`/`p-*` unless the lines above it say "not a
+row" - a list's floor, the sentinel an infinite scroll watches, is not
+one of its rows. A row drawn as a button or a div is out of the grep's
+reach and stays a matter of reading.
 
 **The Orientation Rule.** Decide side-by-side versus stacked from
 orientation plus a floor, never from width alone. Portrait always stacks.

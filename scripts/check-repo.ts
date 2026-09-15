@@ -114,6 +114,22 @@
  *     the element sits inside a control. An audit found twenty-four of
  *     these beside 235 themed ones. A `title` on a component is a prop,
  *     usually a heading, and is not checked.
+ *
+ * 14. A list row does not pin its own vertical padding. Density is five
+ *     custom properties read by every surface that repeats a row
+ *     (DESIGN.md, Density), and a row that writes `py-1.5` instead of
+ *     `py-(--row-py-dense)` simply does not move when the knob does. An
+ *     audit measured the knob against every route: half the app
+ *     tightened by about a tenth and half did not move a pixel, with
+ *     the Licences page's 203 rows the largest list that ignored it.
+ *     Nothing caught that, because a pinned row is valid Tailwind and
+ *     reads like every other row. So: an `<li>` outside the registry
+ *     files may not carry a literal `py-*`/`p-*`; it reads one of the
+ *     row rungs, whose comfortable values ARE 4, 6 and 8px, so saying
+ *     so costs no pixels. An `<li>` that is a list's FLOOR rather than
+ *     one of its rows - the sentinel an infinite scroll watches - says
+ *     "not a row" above itself and is skipped. Rows that are not `<li>`
+ *     are not reachable by a grep and stay a matter of reading.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -185,6 +201,11 @@ const FITTED_LITERAL = /\b(?:text|rounded|shadow)-\[[^\]\s]*\]/g;
 const FITTED_WHY = /fitted|chip corner|pixel cap/i;
 
 const SAN_RENDER = /figurine\(|numberedSan\(|\{[^{}]*\b\w+\.san\b[^{}]*\}/g;
+
+/** A literal vertical padding: `py-2`, `py-1.5`, `p-3`. `p-0`/`py-0` is not one. */
+const PINNED_ROW_PAD = /\b(?:p|py)-(?!0\b)[0-9]+(?:\.[0-9]+)?\b/;
+/** Any of the density rungs, in the `py-(--token)` form a call site uses. */
+const ROW_RUNG = /--row-py|--row-h|--card-spacing/;
 const ELO_RENDER = /\{[^{}]*\b(?:elo|\w+\.(?:white|black)Elo)\b[^{}]*\}/;
 
 /**
@@ -313,6 +334,32 @@ for (const file of tracked) {
         });
       }
     });
+  }
+
+  if (/^web\/src\/.*\.tsx$/.test(file) && !file.startsWith('web/src/components/ui/')) {
+    // A list row that pins its padding is a row the Density knob cannot
+    // reach. Only <li> is checked: it is the one tag that says "this
+    // repeats" without reading the code around it, and a row drawn as a
+    // button or a div is left to the reading the release audit does.
+    const items = /<li\b[^>]*className=(?:\{(?:[^{}]|\{[^{}]*\})*\}|"[^"]*"|'[^']*')/g;
+    let li: RegExpExecArray | null;
+    while ((li = items.exec(text))) {
+      if (!PINNED_ROW_PAD.test(li[0]) || ROW_RUNG.test(li[0])) continue;
+      // The one escape, spelled out rather than implied: an <li> that is
+      // a list's floor or its empty line does not repeat, so there is no
+      // rhythm for the knob to tighten. Saying "not a row" above it is
+      // the assertion; a comment that merely describes the padding is
+      // not enough, which is what went wrong with the offsets in
+      // EditorView.
+      const above = lines.slice(Math.max(0, text.slice(0, li.index).split('\n').length - 6), text.slice(0, li.index).split('\n').length).join('\n');
+      if (/not a row/i.test(above)) continue;
+      findings.push({
+        file,
+        line: text.slice(0, li.index).split('\n').length,
+        text: (PINNED_ROW_PAD.exec(li[0]) ?? [''])[0],
+        why: 'a list row with a pinned padding - read a density rung (--row-py, --row-py-dense, --row-py-tight), see DESIGN.md, Density',
+      });
+    }
   }
 
   if (/^web\/src\/.*\.tsx$/.test(file)) {
