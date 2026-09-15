@@ -51,7 +51,7 @@ reads as "solved" no matter what you meant (the fidelity marks became
 shape-coded icons for this reason), and the difficulty ramp
 (green→red) is forbidden because it would collide with outcome colours
 in the same rows. Signals should never be colour-only — the winning
-digit is also bold, tier marks also differ by icon shape.
+digit also carries more weight, tier marks also differ by icon shape.
 
 
 Contrast is measured against every background a token can land on —
