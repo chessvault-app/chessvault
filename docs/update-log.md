@@ -28,6 +28,15 @@ finishes the job by reading each file against the rule instead.
   headings each carried a weight the rest of the app does not use. The
   gap marker was also the smallest text in the app and is now the size
   the two labels beside it are.
+- **Compact density now reaches the lists that were ignoring it.**
+  Settings, Licences, Databases, the opening map, the notes lists and
+  the engine's own line list did not get any tighter when you chose
+  Compact. They do now. The Licences page was the worst of them: 203
+  rows that never moved, and a desktop row there is a little shorter
+  than it was even at the comfortable setting, so ten fit where nine
+  did. Shelves and the other card grids are unchanged on purpose.
+- **The warning icon beside a message sits on its line again.** It was
+  a pixel low on a phone, left behind when icons stepped up a size.
 - **Four screens that are not built from the app's stylesheet get its
   sizes back**: the text of a note, the licences page, the desktop
   vault chooser and the website's navigation row, which shrank to
