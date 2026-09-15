@@ -1295,9 +1295,13 @@ export function HomePage() {
                     </span>
                   )}
                 </span>
-                {/* Under 320px a row with a date tail has no room for
-                    both; the date is the fact, the detail is the caption. */}
-                <span className={cn('text-muted-foreground shrink-0', tail && 'max-[319px]:hidden')}>
+                {/* The tail rung, as the date beside it is: this span had no
+                    size and took the ROW's, so a row read 2026-09-05 at 14px
+                    and "Last game" beside it at 16, the caption drawn larger
+                    than the fact it captions (lanph3re, on the phone).
+                    Under 320px a row with a date tail has no room for both;
+                    the date is the fact, the detail is the caption. */}
+                <span className={cn('text-muted-foreground shrink-0 type-row-sub', tail && 'max-[319px]:hidden')}>
                   {detail}
                 </span>
                 <ChevronRight className="text-muted-foreground glyph shrink-0" />
