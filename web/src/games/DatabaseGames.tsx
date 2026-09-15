@@ -55,7 +55,14 @@ const EditorView = lazy(() =>
   import('@/editor/EditorView').then((m) => ({ default: m.EditorView })),
 );
 import { GamePreview, GameRow, collectionKey, gameKey, type GameSummary, type Preview } from './shared';
-import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav, type TableNav } from './GameTable';
+import {
+  GameTableHeader,
+  GameTableRow,
+  gameTableColumns,
+  useGameTableVars,
+  useTableNav,
+  type TableNav,
+} from './GameTable';
 import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
 import { dialogOpen } from '@/hooks/dialog-focus';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
@@ -1680,6 +1687,7 @@ export function DatabaseGames({
       countBand={selecting ? selectionBar : merged ? undefined : countBand}
       listHeader={table ? <GameTableHeader withStanding={selecting} withNotation={!besideDetails} /> : undefined}
       listVars={table ? tableVars : undefined}
+      denseColumns={gameTableColumns(selecting, !besideDetails)}
       dense={table}
       // undefined when empty, or the bare bordered ul doubles the empty
       // state's own top rule.

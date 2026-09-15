@@ -54,6 +54,7 @@ import {
   firstSortDir,
   GameTableHeader,
   GameTableRow,
+  gameTableColumns,
   useGameTableVars,
   useTableNav,
   type GameSort,
@@ -806,7 +807,12 @@ export function CollectionList({
         ) : undefined
       }
       listVars={table ? tableVars : undefined}
+      denseColumns={gameTableColumns(selecting, !besideDetails)}
       dense={table}
+      // This list's card rows are the only ones that carry both (the
+      // star in the tray, the link column after it).
+      rowBookmark
+      rowLink
       // The wait, in the shape of the strip and rows that are coming —
       // drawn at once rather than behind useSlowLoad: these rows are the
       // panel's height, so held back they left a header over nothing

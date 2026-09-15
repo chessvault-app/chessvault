@@ -1,11 +1,13 @@
 import type { CSSProperties, ReactNode, Ref } from 'react';
 
 import { cn } from '@/lib/utils';
+import { t } from '@/lib/i18n';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Spinner } from '@/components/ui/spinner';
 import { SkeletonFilterRow, SkeletonGameRows } from '@/components/skeletons';
 import { usePinnedBand } from '@/hooks/use-pinned-band';
 import { FilterRow } from './GameFilters';
+import type { GameColumn } from './GameTable';
 
 /**
  * Where a list of games is standing, which decides what it brings.
@@ -70,6 +72,9 @@ export function GameListShell({
   listLoading = false,
   listBusy = false,
   dense = false,
+  rowBookmark = false,
+  rowLink = false,
+  denseColumns,
   more,
   footnote,
   tail,
@@ -123,6 +128,17 @@ export function GameListShell({
   /** One-line table rows: the virtualization's intrinsic size drops to
       match, so offscreen rows reserve a row's height, not a card's. */
   dense?: boolean;
+  /** What this list's CARD rows carry at their trailing end, so the
+      placeholder rows carry the same: the collection's bookmark star
+      and its link column, neither of which the archive or the database
+      draws. The shell asks rather than guessing, because a tray that
+      stands in for the wrong list is width the player names give up the
+      moment the games land. */
+  rowBookmark?: boolean;
+  rowLink?: boolean;
+  /** Dense only: the columns the table is drawing, so the placeholder
+      rows land in the same tracks the column header above them does. */
+  denseColumns?: GameColumn[];
   /** The infinite-scroll sentinel row at the list's foot. */
   more?: { ref: Ref<HTMLLIElement>; label: string } | null;
   /** The one-line note under the list (the archive's row cap). */
@@ -180,8 +196,24 @@ export function GameListShell({
       {(list != null || listLoading) &&
         (() => {
           const rows = (
+            <>
+            {/* The wait, said once, beside the list rather than on it.
+                The placeholder rows ARE the list's rows now (see
+                listLoading below): they used to be one <li> wrapping six
+                divs under a role=status of their own, which put every
+                rule this ul draws — the hairlines, the zebra stripe, the
+                intrinsic size — outside them, so a striped list settled
+                under an unstriped placeholder. The announcement could
+                not simply move onto the ul with them: a live region that
+                then fills with fifty game rows is a live region that
+                reads fifty game rows out. */}
+            {listLoading && (
+              <span className="sr-only" role="status" aria-live="polite">
+                {t('Loading')}
+              </span>
+            )}
             <ul
-              aria-busy={listBusy || undefined}
+              aria-busy={listBusy || listLoading || undefined}
               className={cn(
                 // Named container: GameRow's narrow-row rules answer to the
                 // list's own width, not the window's.
@@ -235,9 +267,13 @@ export function GameListShell({
                 // drew the card's three whatever was coming: measured at
                 // 1200px, six placeholders came to 509px against the 204px
                 // of table rows that replaced them.
-                <li>
-                  <SkeletonGameRows rows={6} dense={dense} />
-                </li>
+                <SkeletonGameRows
+                  rows={6}
+                  dense={dense}
+                  columns={denseColumns}
+                  bookmark={rowBookmark}
+                  link={rowLink}
+                />
               ) : (
                 list
               )}
@@ -252,6 +288,7 @@ export function GameListShell({
                 </li>
               )}
             </ul>
+            </>
           );
           if (listHeader == null) return rows;
           return (

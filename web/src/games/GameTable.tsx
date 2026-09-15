@@ -161,6 +161,19 @@ export function useGameTableVars(withStanding = false, withNotation = true): CSS
 }
 
 const GRID = 'grid items-center gap-x-2 px-3 [grid-template-columns:var(--gt-cols)]';
+/**
+ * The header's and the rows' shared grid, and the columns it is drawing,
+ * for the placeholder that stands in for a row while the games are on
+ * their way (components/skeletons, SkeletonGameRows).
+ *
+ * Exported rather than copied: the placeholder is drawn UNDER the real
+ * column header, which is already on the page during the wait, so a row
+ * of bars laid out any other way is a row of bars under the wrong
+ * headings.
+ */
+export const GAME_TABLE_GRID = GRID;
+export const gameTableColumns = colsOf;
+export type { GameColumn };
 
 /** Bare space-separated SAN, numbered for reading: "1. e4 e5 2. Nf3 …". */
 export function numberedSan(sans: string, truncated = false): string {

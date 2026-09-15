@@ -23,13 +23,20 @@ import { SearchInput, searchRowClass } from '@/components/text-fields';
 import { Field } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
 
-import { Skeleton, SkeletonGameRows } from '@/components/skeletons';
+import { Inert, Skeleton } from '@/components/skeletons';
 import { forgetMyGames } from '@/openingmap/useGaps';
 
 import { t } from '@/lib/i18n';
 import { GameRow, collectionKey, gameKey, safeLink, type GameSummary, type Preview } from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
-import { GameTableHeader, GameTableRow, useGameTableVars, useTableNav, type TableNav } from './GameTable';
+import {
+  GameTableHeader,
+  GameTableRow,
+  gameTableColumns,
+  useGameTableVars,
+  useTableNav,
+  type TableNav,
+} from './GameTable';
 import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { loadGamePgn } from './CollectionList';
@@ -137,6 +144,10 @@ interface ArchiveBrowseState {
 const userKey = (provider: string): string => `chess-vault:archive-user:${provider}`;
 
 const savedUser = (provider: string): string => localStorage.getItem(userKey(provider)) ?? '';
+
+/** The handler a control held inert in a placeholder never runs. Module
+    scope, so it is one identity for every render. */
+const NOOP = (): void => {};
 
 const useArchiveBrowse = create<ArchiveBrowseState>(() => ({
   provider: 'chesscom',
@@ -1037,6 +1048,63 @@ export function ArchiveBrowser({
       </>
     ) : undefined;
 
+  /**
+   * Rows are on their way — either because an account is being looked up
+   * or because a month of it is being fetched.
+   *
+   * One flag for the two waits, and both go through the shell's own
+   * list. The lookup used to draw its rows in `tail` instead, in a bare
+   * div beside the shell's ul: a copy of the table wrapper that had none
+   * of its behaviour. The ten columns overflowed the pane rather than
+   * scrolling it, the rule the ul draws under the column header was
+   * missing until the games landed, and the rows stood outside
+   * `@container/arc`, so every row-width query inside them answered as
+   * if the list were infinitely wide. The shell already draws this
+   * exactly once; the lookup now asks it to.
+   */
+  const listLoading =
+    visibleMonthGames.length === 0 &&
+    (loading === 'months' || (Boolean(month) && loading === 'games'));
+
+  /**
+   * The filter controls, or the same controls held still while the
+   * months that fill them are on their way.
+   *
+   * The same nodes as `filters` above, so one set of classes decides
+   * where they stand: below md they fold into the toolbar row, above it
+   * they are the filter band, and the stand-in lands wherever the real
+   * row will. The month select's own first option — the account's whole
+   * span — is known before any month is, so the control can be drawn as
+   * itself rather than as a bar of its width.
+   *
+   * Two things were wrong before. In the folded row the controls simply
+   * appeared, and the username field is `flex-1 basis-72`: it gave up
+   * the width to make room, so the handle you had just typed shifted
+   * left as the rows came in. In the band above md the shell drew
+   * `SkeletonFilterRow`, which is the COLLECTION's three selects —
+   * "Anyone's games", "Any result", "All games" — on a row that says
+   * "Any date", "Either side" and "Any result". Nothing moved there
+   * (every select in both rows is `min-w-0 flex-1`); three wrong words
+   * flashed, on the one list whose filters are not the collection's.
+   */
+  const waitingFilters =
+    filters ??
+    (listLoading ? (
+      <Inert>
+        <Select
+          value={ALL_MONTHS}
+          ariaLabel={t('Archive month')}
+          size="sm"
+          disabled
+          className={cn('min-w-0 flex-1 max-sm:hidden', merged && 'flex-none')}
+          groups={monthGroups}
+        />
+        <SideSelect value="any" onChange={NOOP} className={cn(QUICK_SELECT, merged && 'flex-none')} />
+        <ResultSelect value="any" onChange={NOOP} className={cn(QUICK_SELECT, merged && 'flex-none')} />
+        <MoreFiltersButton on={false} onClick={NOOP} />
+      </Inert>
+    ) : undefined);
+
   // The count and the way into selection mode — the count band's quiet
   // face. At table density it rides the merged toolbar row's right end
   // instead (see the toolbar below), so the band only exists while
@@ -1079,9 +1147,33 @@ export function ArchiveBrowser({
   // month still fetching had no band at all and its whole list rose by
   // the box's 37px (45 under a coarse pointer) the moment the games
   // landed. A bar the width of the count holds it.
+  //
+  // The reservation rides `listLoading` and `merged`, which is the pair
+  // the settled band itself is decided by, so the two cannot disagree.
+  // It used to ride neither. Against `listLoading`: it was reserved only
+  // while a CHOSEN month was fetching, and the account lookup — the wait
+  // this panel opens with — got no band at all (measured on the demo:
+  // the list dropped 33px at 390 and 25px at 1280 when the games
+  // landed). Against `merged`: at table density on a pane over
+  // MERGED_MIN_PX the count rides the toolbar row and there is no band,
+  // so the placeholder drew a bordered 37px band over the list and then
+  // took it away again, which is the same jump upside down.
   const countBand =
-    month && visibleMonthGames.length === 0 && loading === 'games' ? (
-      <Skeleton className="ml-1 h-2.5 w-24" />
+    listLoading ? (
+      merged ? undefined : (
+        <>
+          {/* The tally's own box, so the button lands where it will land. */}
+          <span className="min-w-0 flex-1">
+            <Skeleton className="h-2.5 w-24" />
+          </span>
+          {/* The real button held still, not a bar of its size: it stands
+              beside the count from the first row, and its width is known
+              before the tally is. */}
+          <Inert>
+            <SelectButton disabled onClick={NOOP} />
+          </Inert>
+        </>
+      )
     ) : month && visibleMonthGames.length > 0 ? (
       !selecting ? (
             merged ? undefined : countGroup
@@ -1168,10 +1260,26 @@ export function ArchiveBrowser({
               the filters button ending the row the way the collection's
               does. With the select in the row the field was 108px at
               375px, too narrow to read a username back. */}
-          {filtersInRow && filters}
-          {merged && countGroup && (
+          {filtersInRow && waitingFilters}
+          {/* The count's end of the merged row, held open through the
+              wait. The group is the tally and the Select… button, and it
+              arrives with the games: the field beside it is `flex-1
+              basis-72` and absorbed the whole of it, so the username
+              you had just typed jumped left as the rows appeared. The
+              bar is an estimate of the tally's width, not a measurement
+              of it — which of the two sentences it will be is not known
+              until the months are in — so it is the same w-24 the count
+              band reserves; the button beside it is exact. */}
+          {merged && (countGroup || listLoading) && (
             <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
-              {countGroup}
+              {countGroup ?? (
+                <>
+                  <Skeleton className="h-2.5 w-24" />
+                  <Inert>
+                    <SelectButton disabled onClick={NOOP} />
+                  </Inert>
+                </>
+              )}
             </span>
           )}
         </div>
@@ -1228,26 +1336,6 @@ export function ArchiveBrowser({
 
   const tail = (
     <>
-      {/* Looking one up is a wait, and the wait used to EMPTY the panel:
-          the prompt vanished, the panel collapsed to its bar, and the
-          results arrived somewhere below the fold. Rows in the same box
-          instead, so the panel keeps its size and its place. */}
-      {/* dense and the column header follow the density the list will
-          settle at — this wait ends in a month auto-selected and drawn,
-          and at table density that is one-line rows under the sticky
-          header band: card-shaped placeholders here stood 509px against
-          204 of rows (SkeletonGameRows' own measurement), and the 28px
-          band popped in on top. */}
-      {!month && loading === 'months' && (
-        // No border of its own: the real table wrapper has none, and the
-        // rule under the header is the list's. Drawn here it doubled the
-        // header's own and left the one under it missing.
-        <div className="min-h-0 flex-1" style={table ? tableVars : undefined}>
-          {table && <GameTableHeader withStanding={selecting} withNotation={!besideDetails} />}
-          <SkeletonGameRows rows={6} dense={table} />
-        </div>
-      )}
-
       {/* Nothing browsed yet: fill the panel with a prompt instead of
           leaving a bare bar over blank space. */}
       {!month && loading !== 'months' && (
@@ -1288,19 +1376,26 @@ export function ArchiveBrowser({
       toolbar={toolbar}
       // No reserved filter row at table density, where the filters live
       // in the toolbar row and no filter band will come.
-      filtersLoading={months.length === 0 && loading === 'months' && !filtersInRow}
-      filters={filtersInRow ? undefined : filters}
+      // No `filtersLoading`: the stand-in IS the filter row, so the band
+      // is drawn from one expression whether the months are in or not
+      // and the two cannot describe different controls.
+      filters={filtersInRow ? undefined : waitingFilters}
       filtersRef={archiveTop}
       notice={notice}
       countBand={countBand}
-      listHeader={table && rows ? <GameTableHeader withStanding={selecting} withNotation={!besideDetails} /> : undefined}
-      listVars={table && rows ? tableVars : undefined}
+      listHeader={
+        table && (rows || listLoading) ? (
+          <GameTableHeader withStanding={selecting} withNotation={!besideDetails} />
+        ) : undefined
+      }
+      listVars={table && (rows || listLoading) ? tableVars : undefined}
+      denseColumns={gameTableColumns(selecting, !besideDetails)}
       dense={table}
       list={rows}
       // Rows, not a spinner on an empty box: fetching a month used to
       // take the games away and leave one line of text where the list
       // had been, so the panel appeared to close and reopen.
-      listLoading={Boolean(month) && loading === 'games' && visibleMonthGames.length === 0}
+      listLoading={listLoading}
       // flex-1 at every width: the 24rem cap below sm was the old side
       // column's share; in the all-widths tabbed pane the list owns the
       // panel's height on a phone like every other tab's.
