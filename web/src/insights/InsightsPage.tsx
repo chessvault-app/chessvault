@@ -504,7 +504,7 @@ export function InsightsPage() {
             title="No games of yours yet"
             body="Games count here once your side in them is known. Keep a game with your side marked, or browse one of your Chess.com or Lichess months on the Games page."
             action={
-              <Button variant="secondary" size="sm" onClick={() => navigate('games')}>
+              <Button size="sm" onClick={() => navigate('games')}>
                 {t('Open games')}
               </Button>
             }

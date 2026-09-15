@@ -1099,7 +1099,6 @@ export function HomePage() {
               body="Nothing could be read from the vault. The page fills itself once the server answers."
               action={
                 <Button
-                  variant="secondary"
                   size="sm"
                   onClick={() => {
                     setOutage(null);

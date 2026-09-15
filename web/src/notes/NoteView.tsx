@@ -92,7 +92,7 @@ export function NoteView({ id }: { id: string }) {
           title="The note could not be opened"
           body={failed}
           action={
-            <Button variant="secondary" onClick={() => navigate('notes')}>
+            <Button onClick={() => navigate('notes')}>
               <ChevronLeft className="glyph" data-icon="inline-start" />
               {t('All notes')}
             </Button>

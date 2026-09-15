@@ -251,7 +251,7 @@ export function StudyView({
           title={kind === 'game' ? 'The game could not be opened' : 'The study could not be opened'}
           body={error ?? t('Could not open “{id}”.', { id })}
           action={
-            <Button variant="secondary" onClick={() => navigate(backSection)}>
+            <Button onClick={() => navigate(backSection)}>
               <ChevronLeft className="glyph" data-icon="inline-start" />
               {t(kind === 'game' ? 'All games' : 'All studies')}
             </Button>

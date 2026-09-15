@@ -1093,7 +1093,7 @@ export function DatabaseGames({
         title="Could not load reference games"
         body={metaError}
         action={
-          <Button variant="secondary" size="sm" onClick={loadMeta}>
+          <Button size="sm" onClick={loadMeta}>
             {t('Try again')}
           </Button>
         }
