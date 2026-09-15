@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, CircleHelp, Crown, Eye, EyeOff, HardDrive, H
 import { copyText } from '@/lib/clipboard';
 import { isInstalled, useInstallPrompt } from '@/lib/install';
 import { manualUrl } from '@/lib/manual';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { forgetLichessToken } from '@/components/lichess-token-notice';
 import { forgetTablebaseAnswers } from '@/explorer/tablebase';
@@ -2245,7 +2246,7 @@ function TotpBlock({ settings, onChanged }: { settings: Settings; onChanged: () 
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-2 text-base font-medium">
           {t('Two-factor authentication')}
-          <span className="bg-good/15 text-good rounded-full px-2 py-0.5 text-xs max-md:type-row-sub font-medium">{t('On')}</span>
+          <Badge variant="good">{t('On')}</Badge>
         </div>
         <p className="text-muted-foreground text-sm">{t('Turning it off needs a current code from your authenticator app.')}</p>
         <div className="flex items-center gap-2">

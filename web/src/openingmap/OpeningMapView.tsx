@@ -19,6 +19,7 @@ import { TitleTip } from '@/components/title-tip';
 import { useMediaQuery } from '@/lib/media';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { NAMED_PLIES, useOpeningLabels, useOpeningName } from '@/lib/opening';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CanvasOverlay, CanvasShell } from '@/components/canvas-shell';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -1329,9 +1330,9 @@ function NodePanel({
                       column, not a badge. */}
                   {d.collection && (
                     <TitleTip title={t('In your collection')}>
-                      <span className="bg-muted text-muted-foreground shrink-0 rounded-sm px-1.5 py-0.5 text-xs">
+                      <Badge shape="chip" variant="muted" className="shrink-0">
                         {t('Kept')}
-                      </span>
+                      </Badge>
                     </TitleTip>
                   )}
                   {/* Fixed columns, so four rows read as a table: results

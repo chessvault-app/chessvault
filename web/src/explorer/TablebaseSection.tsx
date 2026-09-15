@@ -1,5 +1,6 @@
 import { RotateCw } from 'lucide-react';
 import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { TitleTip } from '@/components/title-tip';
@@ -34,10 +35,16 @@ import {
 /** Rows before the list folds, matching the moves table above it. */
 const MOVE_LIMIT = 6;
 
-const TONE: Record<Tone, string> = {
-  good: 'bg-good-tint text-good',
-  bad: 'bg-destructive-tint text-destructive',
-  neutral: 'bg-accent text-muted-foreground',
+/**
+ * The verdict's tone as a Badge variant. It was three class strings here,
+ * which is what a variant is; the neutral one drew --accent, a rung the
+ * ladder keeps for selected and pressed, and now draws --muted with every
+ * other quiet chip in the app.
+ */
+const TONE: Record<Tone, 'good' | 'destructive' | 'muted'> = {
+  good: 'good',
+  bad: 'destructive',
+  neutral: 'muted',
 };
 
 /** DTM where the tables have it, DTZ otherwise — see the tips below. */
@@ -90,14 +97,9 @@ export function TablebaseSection({ fen, onPlay }: { fen: string; onPlay: (uci: s
         {answer && (
           <>
             <TitleTip title={categoryLabel(answer.category)}>
-              <span
-                className={cn(
-                  'shrink-0 rounded-sm px-1.5 py-0.5 text-xs max-md:type-row-sub font-medium leading-4',
-                  TONE[categoryTone(answer.category)],
-                )}
-              >
+              <Badge shape="chip" variant={TONE[categoryTone(answer.category)]}>
                 {categoryChip(answer.category)}
-              </span>
+              </Badge>
             </TitleTip>
             <span className="text-muted-foreground min-w-0 truncate text-sm">
               {answer.checkmate
@@ -210,14 +212,9 @@ function MoveRow({
         {/* On the chip, not the row: the row holds a button, and a row's
             tip would open together with anything inside it (title-tip.tsx). */}
         <TitleTip title={categoryLabel(move.category)}>
-          <span
-            className={cn(
-              'inline-block rounded-sm px-1.5 py-0.5 text-xs max-md:type-row-sub font-medium leading-4',
-              TONE[categoryTone(move.category)],
-            )}
-          >
+          <Badge shape="chip" variant={TONE[categoryTone(move.category)]}>
             {categoryChip(move.category)}
-          </span>
+          </Badge>
         </TitleTip>
       </td>
       <td className="text-muted-foreground py-(--row-py-tight) pr-3 text-right font-mono text-xs tabular-nums">

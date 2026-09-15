@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TitleTip } from '@/components/title-tip';
@@ -93,14 +94,13 @@ export function SelectionBar({
           <span className="text-muted-foreground truncate">{empty && all.none ? all.none.label : all.label}</span>
         </label>
       </TitleTip>
-      <span
-        className={cn(
-          'shrink-0 rounded-full px-1.5 py-0.5 text-xs max-md:type-row-sub font-medium tabular-nums',
-          picked > 0 ? 'bg-muted text-primary' : 'bg-accent text-muted-foreground',
-        )}
-      >
+      {/* The ink is the only thing the count says for itself: a number
+          that is not zero is the reader's own selection, which is the
+          primary mark every selected row in the app takes. The fill is
+          the quiet chip's, at rest and picked alike. */}
+      <Badge variant="muted" className={cn('shrink-0 tabular-nums', picked > 0 && 'text-primary')}>
         {t('{n} selected', { n: picked })}
-      </span>
+      </Badge>
       <div className="ml-auto flex shrink-0 items-center gap-1.5">
         <Button variant="ghost" size="sm" onClick={onCancel}>
           {t('Cancel')}

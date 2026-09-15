@@ -34,6 +34,7 @@ import { KeepAlive } from '@/lib/keep-alive';
 import { navigate } from '@/lib/router';
 import { useWideLayout } from '@/lib/media';
 import { announce } from '@/lib/announce';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -857,12 +858,9 @@ function Trainer({
             <dt className="text-muted-foreground">{t('Themes')}</dt>
             <dd className="flex flex-wrap gap-1">
               {puzzle.themes.split(' ').map((t) => (
-                <span
-                  key={t}
-                  className="bg-muted text-muted-foreground rounded-sm px-1.5 py-0.5 text-xs"
-                >
+                <Badge key={t} shape="chip" variant="muted">
                   {themeLabel(t)}
-                </span>
+                </Badge>
               ))}
             </dd>
           </dl>

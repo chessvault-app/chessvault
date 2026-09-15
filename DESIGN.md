@@ -623,10 +623,14 @@ app in step. Buttons and inputs take `lg`; cards take `xl`; small
 controls step down to `md` with a pixel cap (`min(var(--radius-md),12px)`)
 so a small button does not read as a pill.
 
-Bare `rounded` is deliberately **not** on the ladder — it resolves to 4px
-— and is used by badges and move chips, which want a fixed small corner
-rather than the knob. Badges are the exception in the other direction:
-`rounded-4xl` makes them true pills.
+Bare `rounded` is deliberately **not** on the ladder — it resolves to a
+fixed 4px — and nothing in the app uses it. This paragraph said for a
+while that badges and move chips did; they never have, and a corner that
+stops answering the knob is not what either of them wanted. The two
+small-tag corners both come off the ladder and both live on `Badge`:
+`shape="pill"` is `rounded-4xl`, a true pill, and `shape="chip"` is
+`rounded-sm` with tighter sides, for the tag that carries a code, a
+theme or a verdict.
 
 Borders are hairlines. Buttons carry a transparent border by default so
 that a variant can fill it in without the control changing size, and
@@ -732,9 +736,24 @@ hit areas, `title` as a tooltip. Composites live in
 
 ### Badges
 
-- 20px high, pill-cornered (`rounded-4xl`), 12px medium text, 12px icons.
-- Variants mirror the button's colour assignments; destructive is again a
-  10% wash rather than a fill.
+- 20px high, 12px medium text (14 under `md`, with the rows), 12px icons.
+- Two shapes. `pill` (`rounded-4xl`) is the default and is what a status
+  mark wears. `chip` (`rounded-sm`, tighter sides) is the small-cornered
+  tag: an opening code, a puzzle theme, a tablebase verdict. Seven of
+  these were hand-rolled spans until 2026-09-15, each re-deriving its own
+  padding and corner, and two of the seven had quietly lost the weight
+  and the phone step-up the other two carried.
+- Variants mirror the button's colour assignments, plus the app's own
+  grammar: `good` and `destructive` are the OPAQUE `--good-tint` and
+  `--destructive-tint`, not a 10% wash. That is the whole reason those
+  tokens exist (index.css): a badge sits in rows that fill on hover, and
+  a translucent wash measured 3.58:1 in light and 3.02:1 in dark once
+  `--accent` arrived under it. `muted` is the quiet chip, on `--muted`
+  rather than `--accent`, which is a rung the ladder keeps for selected
+  and pressed.
+- Badge was used twice in the whole app before it carried those tones,
+  which is the shape this kind of drift takes: a component nobody can
+  express their case in is a component nobody uses.
 
 ### Navigation
 

@@ -344,7 +344,7 @@ function Row({ entry, open, onToggle }: { entry: Entry; open: boolean; onToggle:
             <span className="text-muted-foreground shrink-0 font-mono type-row-sub">{entry.version}</span>
           )}
           <TitleTip title={entry.license}>
-            <span className="text-muted-foreground border-border max-w-full shrink-0 truncate rounded-full border px-2 py-px type-row-sub whitespace-nowrap">
+            <span className="text-muted-foreground border-border max-w-full shrink-0 truncate rounded-full border px-2 py-px type-row-sub font-medium whitespace-nowrap">
               {entry.license}
             </span>
           </TitleTip>
