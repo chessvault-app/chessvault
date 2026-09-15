@@ -68,6 +68,11 @@ The puzzle hub's boards stop changing under you.
   ⋯ and long-press sheet had about 50px between its title and the first
   row, three spacings written for a column that had none; the rows now
   start right under the title strip.
+- **The quick switcher and the puzzle dashboard's figures follow the
+  phone lift.** Search results and the search field are 16 on a phone
+  with their group headings and detail lines at 14; the dashboard's
+  Solved, To review and Attempts figures are 16 and the sentence under
+  them 14.
 
 ## 0.11.0
 

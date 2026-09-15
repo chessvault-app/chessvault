@@ -392,7 +392,7 @@ export function DashboardPage() {
               Attempts, a different unit, takes the second. It used to
               lead, which paired it with Solved and left To review alone
               beside an empty cell. */}
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-(--card-spacing) text-sm sm:grid-cols-[auto_1fr_auto_1fr]">
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 px-(--card-spacing) type-row sm:grid-cols-[auto_1fr_auto_1fr]">
             <Figure label={t('Solved')} value={user ? String(user.wins) : '…'} />
             {/* No solve rate. It was "win rate" once, renamed because
                 nothing here is won, and then dropped because a percentage
@@ -415,7 +415,7 @@ export function DashboardPage() {
           {/* What the pool is, in the open. It was To review's tooltip,
               which a phone never sees, and the one sentence that ties
               the figure to the menu's option and the button's verb. */}
-          <p className="text-muted-foreground mt-2 max-w-prose px-(--card-spacing) text-xs">
+          <p className="text-muted-foreground mt-2 max-w-prose px-(--card-spacing) type-row-sub">
             {t('Puzzles whose latest attempt failed. This is the review pool.')}
           </p>
           {/* The sentence that reconciles Attempts with everything else
@@ -433,13 +433,13 @@ export function DashboardPage() {
             // out invisible, because it is one line on a desktop card and
             // three on a phone.
             reserved.reconcile && (
-              <p aria-hidden className="invisible mt-2 max-w-prose px-(--card-spacing) text-xs">
+              <p aria-hidden className="invisible mt-2 max-w-prose px-(--card-spacing) type-row-sub">
                 {t(RECONCILE_NOTE)}
               </p>
             )
           ) : (
             user.attempts !== latestById.size && (
-              <p className="text-muted-foreground mt-2 max-w-prose px-(--card-spacing) text-xs">
+              <p className="text-muted-foreground mt-2 max-w-prose px-(--card-spacing) type-row-sub">
                 {t(RECONCILE_NOTE)}
               </p>
             )

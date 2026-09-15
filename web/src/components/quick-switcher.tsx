@@ -440,7 +440,7 @@ function QuickSwitcherWindow({
                         {/* The sentence the words sit in, the match set
                             apart in weight rather than colour so it
                             reads the same in every theme. */}
-                        <span className="truncate text-xs text-muted-foreground">
+                        <span className="truncate text-xs max-md:type-row-sub text-muted-foreground">
                           {hit.snippet.before}
                           <mark className="bg-transparent font-medium text-foreground">{hit.snippet.match}</mark>
                           {hit.snippet.after}
