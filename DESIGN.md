@@ -375,7 +375,13 @@ setting them in mono made every one of them look like a terminal.
 ### Hierarchy
 
 - **Display** (600, 24px / `text-2xl`): the one display figure on a page.
-- **Headline** (600, 20px / `text-xl`): page titles, via `PageHeader`.
+- **Headline** (600, 20px / `text-xl`; the phone's 24px large title
+  under `md`): page titles, via `PageHeader`. Two rungs under one name,
+  for the reason the row rungs are two: a desktop header shares its line
+  with the page's actions, and a phone's is a large title in a 44px row
+  of its own. Exported as `pageTitleClass`, since Settings' loading
+  skeleton draws the same title and had the pair written out a second
+  time.
 - **Headline, board family** (600, 16px / `text-base`): the page title on a
   page whose subject is a board — Board, Editor, Puzzles, Repertoire, the
   book reader. Still the `h1`; a rung quieter because the title shares a
@@ -404,8 +410,11 @@ setting them in mono made every one of them look like a terminal.
   Body's weight and Title's size, on purpose: on a phone the row IS the
   body.
 - **Row tail** (400, 12px / `type-row-sub`; **14px under `md`**): the
-  date, count or word beside a row's text, and a shelf card's meta line.
-  Label's size on a desktop, Body's on a phone.
+  date, count or word beside a row's text, a shelf card's meta line, and
+  the hint beside a `Field`'s label, which `Field` draws itself. That
+  last one was rendered raw, so six call sites each chose a size: three
+  at 12px flat, two at 14, one a bare string inheriting whatever sat
+  above it. Label's size on a desktop, Body's on a phone.
 - **Label** (500, 12px / `text-xs`): captions and dense labels only.
 - **Small control** (500, 12.8px / `text-[0.8rem]`): the label inside a
   `size="sm"` Button, Toggle or calendar cell. The registry's own value,
@@ -456,6 +465,14 @@ them the trainers' side-to-move line, which is the Display rung and is
 hierarchy — the NAG puck and the result chip's winning digit — went to
 600 with them and still step clearly off what they sit on.
 
+A second pass the same day found three more, all of them outside what a
+grep over class names can see. The board's coordinate labels carry
+chessground's own 700 on the smallest text on the screen, which is the
+size both platforms say not to set in bold. The opening map's gap puck
+sets `fontWeight={700}` on an SVG number. The note editor's document
+headings drew 700 and a pair of 650s, a fourth and a fifth weight in a
+ladder that has three. All are 600.
+
 A weight is allowed to mark a state, and does: the current row goes
 `font-semibold` whether or not it also takes a fill. `GameTable` records
 the measurement behind that — in the Neutral scheme `--primary` (20.5%)
@@ -498,6 +515,17 @@ is 13 to 14 on both platforms and only a phone's is 16. The study's
 chapter number and its child count stay put beside the move list's
 number column, for the same reason it does.
 
+A third pass the same day took what the first two had read past, since
+nothing mechanical looks for a row that never lifts. The explorer's and
+the tablebase's move tables and the top-games rows under them, on the
+Insights tables' own pattern (`type-row` on the table, `type-row-sub` on
+the head); the unresolved-links list, beside a linked-mentions list that
+had already been lifted; the expander under each of those tables, since
+"Show all 42 moves" is a control and not a caption; the trailing note
+under six capped lists ("Only the first 200 are shown"), which is a
+sentence; and the date picker's weekday and week-number columns, which
+were the one text in a phone date picker that never stepped up.
+
 **The Phone Glyph Rule.** Icons take the type rungs' bargain. The row
 glyph (a chevron, a row's leading icon, the icon in a small button) is
 `glyph`: 14px on a desktop, 16 under `md`. The mark (a bookmark on a
@@ -532,6 +560,20 @@ was listed here and is not a literal at all.) `check:repo`
 holds that: a `text-[…]`, `rounded-[…]` or `shadow-[…]` literal outside
 the registry files is a finding unless it reads a `var(--…)` or the
 lines above it say what it is fitted to.
+
+What it cannot see is a `font-size` in a stylesheet, or one in a page
+this repo *writes* rather than renders. Three had each grown a scale of
+their own by 2026-09-15: the note editor's document styles (a 16.8px
+heading and 13.6px code, off a 16px document body), the licences page
+`web/vite.licenses.ts` generates (1.6 / .9 / .85 / .8 / .78rem, five
+sizes the app does not draw, on the page that lists what the app is made
+of), and the desktop vault chooser (an 18.4px logotype where its own
+comment says the sidebar's 16px, and a 12.8px blurb where a settings row
+draws 14). All three are on the ladder now, each in the em- or
+rem-relative form its own base makes exact. The landing pages keep a
+scale of their own on purpose — a marketing page reads at 15px and this
+ladder is the app's — but not a size below 12: their nav row clamped
+down to 11.52px and now stops at `--t-xs`.
 
 **The Hangul Fallback Rule.** Any font stack that can appear beside
 Korean must resolve hangul. This is why Pretendard sits inside the *mono*

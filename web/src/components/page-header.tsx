@@ -6,6 +6,15 @@ import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /**
+ * The page title's two rungs, exported because the skeleton that stands
+ * in for a header while Settings loads draws the same title and had them
+ * written out a second time. A rung copied is a rung that moves once.
+ * 20px on a desktop, the phone's 24px large title under `md`; see the
+ * component's own note below and DESIGN.md, Typography.
+ */
+export const pageTitleClass = 'text-2xl font-semibold tracking-tight md:text-xl';
+
+/**
  * The heading every scrolling page starts with: the page's name, its
  * actions pushed to the right, and, where a phone reaches the page through
  * More rather than the sidebar, a back chevron that a desktop never shows.
@@ -109,7 +118,7 @@ export function PageHeader({
         )}
         <h1
           className={cn(
-            'text-2xl font-semibold tracking-tight md:text-xl',
+            pageTitleClass,
             truncate && 'min-w-0 flex-1 truncate',
           )}
         >

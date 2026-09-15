@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { forgetLichessToken } from '@/components/lichess-token-notice';
 import { forgetTablebaseAnswers } from '@/explorer/tablebase';
-import { PageHeader } from '@/components/page-header';
+import { PageHeader, pageTitleClass } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { Field } from '@/components/ui/field';
 import { VAULT_ROWS, VaultTree, type VaultRow } from '@/components/vault-tree';
@@ -379,7 +379,7 @@ function SettingsPlaceholder() {
         <Button variant="ghost" size="icon-sm" className="md:hidden" disabled tabIndex={-1} aria-hidden>
           <ChevronLeft className="glyph" />
         </Button>
-        <h1 className="text-2xl font-semibold tracking-tight md:text-xl">{t('Settings')}</h1>
+        <h1 className={pageTitleClass}>{t('Settings')}</h1>
       </div>
       {/* The section links, as JumpList draws them: text-sm names in
           px-1 buttons, py-2 and mb-1, no row at all below md, and none
