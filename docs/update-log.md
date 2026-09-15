@@ -73,6 +73,10 @@ The puzzle hub's boards stop changing under you.
   with their group headings and detail lines at 14; the dashboard's
   Solved, To review and Attempts figures are 16 and the sentence under
   them 14.
+- **Insights' tables follow the phone lift too.** Table rows are 16
+  with 14px column headers, and the notes under them (the accuracy
+  line, the chart legends and captions) are 14, where they were 14 and
+  12. A desktop keeps the table at 14 over 12.
 
 ## 0.11.0
 

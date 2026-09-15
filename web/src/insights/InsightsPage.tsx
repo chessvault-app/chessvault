@@ -557,7 +557,7 @@ function Tables({ report }: { report: Report }) {
             rows={bySpeed.map((r) => ({ key: r.key, label: t(SPEED_LABEL[r.key]), tally: r.tally }))}
           />
           {judged && (
-            <p className="text-muted-foreground flex flex-wrap items-baseline gap-x-2 text-xs tabular-nums">
+            <p className="text-muted-foreground flex flex-wrap items-baseline gap-x-2 type-row-sub tabular-nums">
               <span>
                 {t('Accuracy from {n} of {total} games analysed at depth {d}', {
                   n: exact.format(report.analysis.games),
@@ -585,8 +585,8 @@ function Tables({ report }: { report: Report }) {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-2">
-          <table className="w-full table-fixed text-sm">
-            <thead className="text-muted-foreground text-xs">
+          <table className="w-full table-fixed type-row">
+            <thead className="text-muted-foreground type-row-sub">
               <tr>
                 <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap">
                   {t('Opening')}
@@ -661,8 +661,8 @@ function Tables({ report }: { report: Report }) {
               {t('No game of yours has left the catalogue by your own move yet.')}
             </p>
           ) : (
-            <table className="w-full table-fixed text-sm">
-              <thead className="text-muted-foreground text-xs">
+            <table className="w-full table-fixed type-row">
+              <thead className="text-muted-foreground type-row-sub">
                 <tr>
                   <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap">
                     {t('Opening')}
@@ -763,7 +763,7 @@ function ActivityCard({ report }: { report: Report }) {
           <figure className="min-w-0">
             {/* The tallest month's count, once, at the top: the picture
                 has no axis and the figures live in the tooltips. */}
-            <div className="text-muted-foreground mb-1 text-xs tabular-nums">
+            <div className="text-muted-foreground mb-1 type-row-sub tabular-nums">
               {t('Most in a month: {n}', { n: exact.format(peak) })}
             </div>
             {/* Each month is a button, not a painted div: a div with a tip
@@ -795,16 +795,16 @@ function ActivityCard({ report }: { report: Report }) {
                 </TitleTip>
               ))}
             </div>
-            <figcaption className="text-muted-foreground mt-1 flex justify-between text-xs tabular-nums">
+            <figcaption className="text-muted-foreground mt-1 flex justify-between type-row-sub tabular-nums">
               <span>{label(series[0]!)}</span>
               {series.length > 1 && <span>{label(series[series.length - 1]!)}</span>}
             </figcaption>
             {/* The pressed month's figures, in print: the one place on a
                 phone they can be read. */}
-            <p className="text-foreground mt-1 min-h-4 text-xs tabular-nums" aria-live="polite">
+            <p className="text-foreground mt-1 min-h-4 type-row-sub tabular-nums" aria-live="polite">
               {pickedMonth ? figures(pickedMonth) : ''}
             </p>
-            <ul className="text-muted-foreground mt-2 flex gap-3 text-xs" aria-hidden>
+            <ul className="text-muted-foreground mt-2 flex gap-3 type-row-sub" aria-hidden>
               {[
                 [MONTH_INK.w, 'Won'],
                 [MONTH_INK.d, 'Drew'],
@@ -894,7 +894,7 @@ function EndingsCard({
           const accuracy = acc ? meanOf(acc) : null;
           return (
             <figure key={key} className="flex min-w-0 flex-col gap-3">
-              <figcaption className="text-muted-foreground flex items-baseline justify-between gap-2 text-xs font-medium">
+              <figcaption className="text-muted-foreground flex items-baseline justify-between gap-2 type-row-sub font-medium">
                 <span>{t(title)}</span>
                 {accuracy !== null && (
                   <span className="font-mono tabular-nums">
@@ -907,7 +907,7 @@ function EndingsCard({
               ) : (
                 <>
                   <Donut shares={shares} ink={ink} total={total} />
-                  <table className="w-full table-fixed text-sm">
+                  <table className="w-full table-fixed type-row">
                     <tbody>
                       {shares.map((s, at) => (
                         <tr key={s.ending}>
@@ -1111,7 +1111,7 @@ function PassStrip() {
     // the light page's own tone (index.css, `[data-ground]`).
     <div data-ground="" className="flex flex-col gap-1.5">
       <Progress value={share} aria-label={t('Games analysed')} />
-      <p className="text-muted-foreground flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-xs tabular-nums">
+      <p className="text-muted-foreground flex flex-wrap items-baseline gap-x-3 gap-y-0.5 type-row-sub tabular-nums">
         <span>
           {t('{done} of {total} games analysed', {
             done: exact.format(job.analysed),
@@ -1146,7 +1146,7 @@ function StartOver() {
   if (job.status === 'running') return null;
   if (!arming) {
     return (
-      <Button variant="link" size="sm" className="h-auto p-0 align-baseline text-xs" onClick={() => setArming(true)}>
+      <Button variant="link" size="sm" className="h-auto p-0 align-baseline type-row-sub" onClick={() => setArming(true)}>
         {t('Start over')}
       </Button>
     );
@@ -1300,7 +1300,7 @@ function InsightsSkeleton({ shape }: { shape: Shape }) {
             <div className="relative">
               <p
                 aria-hidden
-                className="invisible flex flex-wrap items-baseline gap-x-2 text-xs tabular-nums"
+                className="invisible flex flex-wrap items-baseline gap-x-2 type-row-sub tabular-nums"
               >
                 <span>
                   {t('Accuracy from {n} of {total} games analysed at depth {d}', {
@@ -1312,7 +1312,7 @@ function InsightsSkeleton({ shape }: { shape: Shape }) {
                   <Button
                     variant="link"
                     size="sm"
-                    className="h-auto p-0 align-baseline text-xs"
+                    className="h-auto p-0 align-baseline type-row-sub"
                     tabIndex={-1}
                   >
                     {t('Start over')}
@@ -1467,9 +1467,9 @@ function MeanTable({
 }) {
   if (rows.length === 0) return null;
   return (
-    <table className="w-full table-fixed text-sm">
+    <table className="w-full table-fixed type-row">
       <caption className="sr-only">{caption}</caption>
-      <thead className="text-muted-foreground text-xs">
+      <thead className="text-muted-foreground type-row-sub">
         <tr>
           <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap">
             {caption}
@@ -1555,8 +1555,8 @@ function MoveQualityCard({ analysis }: { analysis: Report['analysis'] }) {
             </TitleTip>
           ))}
         </div>
-        <table className="w-full table-fixed text-sm">
-          <thead className="text-muted-foreground text-xs">
+        <table className="w-full table-fixed type-row">
+          <thead className="text-muted-foreground type-row-sub">
             <tr>
               <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap">
                 {t('Verdict')}
@@ -1635,7 +1635,7 @@ function TallyTable({
   // on every tally table alike, the way the openings table shows it.
   const withAccuracy = useContext(AccuracyContext) && rows.some((r) => r.tally.accN > 0);
   return (
-    <table className="w-full table-fixed text-sm">
+    <table className="w-full table-fixed type-row">
       {/* The name a screen reader announces for the table; the visible
           heading below is a column header, and was being read as one. */}
       <caption className="sr-only">{caption}</caption>
@@ -1645,7 +1645,7 @@ function TallyTable({
           The label column is sized to its words and the bar takes what
           is left: the other way round put a hand's width of nothing
           between "As White" and its count on a wide page. */}
-      <thead className="text-muted-foreground text-xs">
+      <thead className="text-muted-foreground type-row-sub">
         <tr>
           <th scope="col" className={cn('py-1 pr-2 text-left font-medium whitespace-nowrap', !dense && 'sm:w-44')}>
             {caption}
