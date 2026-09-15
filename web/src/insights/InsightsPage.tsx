@@ -1337,8 +1337,10 @@ function InsightsSkeleton({ shape }: { shape: Shape }) {
             {/* The stacked verdict bar: 16px, on the chip corner. */}
             <Skeleton className="h-4 w-full rounded-[4px]" />
             {plain(QUALITY.length, 'verdicts', true)}
-            {table(3, 'phase')}
-            {table(shape.moveBands, 'moves')}
+            {/* By phase and by move number: a label, a count and an
+                accuracy, with no bar between them. */}
+            {plain(3, 'phase', true)}
+            {plain(shape.moveBands, 'moves', true)}
           </>,
         )}
       {card(
@@ -1447,10 +1449,9 @@ function InsightsSkeleton({ shape }: { shape: Shape }) {
 const PHASE_LABEL: Record<number, string> = { 0: 'Opening', 1: 'Middlegame', 2: 'Endgame' };
 
 /**
- * A label, a count and a mean accuracy drawn as a bar the width of its
- * percentage in one ink, with the figure beside it: magnitude in one
- * hue, the number always printed, since the bars are read against each
- * other and a difference of two points has to be legible.
+ * A label, a count and a mean accuracy, printed as a figure. The bar
+ * that used to stand beside it is gone: it was the only one of these
+ * tables drawing one, and the numbers are read against each other.
  */
 function MeanTable({
   caption,
@@ -1477,11 +1478,8 @@ function MeanTable({
           <th scope="col" className="w-14 py-1 pr-2 text-right font-medium whitespace-nowrap">
             {unit === 'games' ? t('Games') : t('Moves')}
           </th>
-          <th scope="col" className="w-36 py-1 pr-2 text-left font-medium whitespace-nowrap max-sm:hidden">
+          <th scope="col" className="w-16 py-1 text-right font-medium whitespace-nowrap">
             {t('Accuracy')}
-          </th>
-          <th scope="col" className="w-14 py-1 text-right font-medium whitespace-nowrap">
-            <span className="sr-only">{t('Accuracy')}</span>
           </th>
         </tr>
       </thead>
@@ -1492,13 +1490,7 @@ function MeanTable({
             <td className="text-muted-foreground w-14 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
               {exact.format(row.n)}
             </td>
-            <td className="w-36 py-(--row-py-tight) pr-2 max-sm:hidden">
-              {/* The chip corner, as the result bar's. */}
-              <div className="bg-muted h-2 w-full overflow-hidden rounded-[4px]">
-                <div className="bg-primary/70 h-full" style={{ width: `${row.mean ?? 0}%` }} />
-              </div>
-            </td>
-            <td className="w-14 py-(--row-py-tight) text-right font-mono tabular-nums">
+            <td className="w-16 py-(--row-py-tight) text-right font-mono tabular-nums">
               {row.mean === null ? '' : `${row.mean.toFixed(1)}%`}
             </td>
           </tr>
