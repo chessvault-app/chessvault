@@ -280,7 +280,7 @@ function Row({
     // it exactly, so the whole touch target survives.
     <div className="border-card-ring bg-muted flex items-center gap-2 rounded-md border px-3 py-1.5">
       <Icon className="text-muted-foreground size-4 shrink-0" />
-      <span className="min-w-0 flex-1 truncate text-base">{t(label)}</span>
+      <span className="min-w-0 flex-1 truncate type-row">{t(label)}</span>
       {children}
       {onToggle && <Switch checked={checked ?? false} onCheckedChange={onToggle} aria-label={t(label)} />}
     </div>

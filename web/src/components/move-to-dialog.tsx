@@ -51,7 +51,7 @@ export function MoveToDialog({
               onClick={() => onPick(target)}
               className={cn(
                 'hover:bg-accent group flex w-full items-center gap-2 rounded-md px-2 py-1.5 pointer-coarse:py-2.5',
-                'text-left text-base transition-colors duration-100',
+                'text-left type-row transition-colors duration-100',
               )}
             >
               <FolderIcon className="text-muted-foreground glyph shrink-0" />

@@ -748,7 +748,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
               {list.map(({ id, name }) => (
                 <label
                   key={id}
-                  className="hover:bg-accent flex cursor-pointer items-center gap-2 px-2 py-1.5 text-base"
+                  className="hover:bg-accent flex cursor-pointer items-center gap-2 px-2 py-1.5 type-row"
                 >
                   <Checkbox
                     checked={checked.has(id)}

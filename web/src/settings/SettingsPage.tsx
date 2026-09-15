@@ -1865,7 +1865,7 @@ function TablebaseCard({
           <div className="border-border rounded-lg border">
             <div className="flex items-center gap-2 py-1.5 pl-3 pr-1.5">
               <div className="flex min-w-0 flex-1 items-baseline gap-2">
-                <p className="min-w-0 flex-1 truncate text-base">{t('Cached answers')}</p>
+                <p className="min-w-0 flex-1 truncate type-row">{t('Cached answers')}</p>
                 {/* h-5: the line box the figures stand in, held while they
                     are unknown so the row does not change height when they
                     arrive — the trick the Browsed games rows use. */}
@@ -1874,7 +1874,7 @@ function TablebaseCard({
                     <Skeleton className="h-2.5 w-24" />
                   </span>
                 ) : (
-                  <p className="text-muted-foreground shrink-0 text-sm tabular-nums">
+                  <p className="text-muted-foreground shrink-0 type-row-sub tabular-nums">
                     {cache === 'unknown'
                       ? '—'
                       : cache.answers === 0
@@ -2717,8 +2717,8 @@ function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
                     when they were the whole row; only the button, which
                     has no text to sit on, is centred against them. */}
                 <div className="flex min-w-0 flex-1 items-baseline gap-2">
-                  <p className="min-w-0 flex-1 truncate text-base">{p.user}</p>
-                  <p className="text-muted-foreground shrink-0 text-sm">
+                  <p className="min-w-0 flex-1 truncate type-row">{p.user}</p>
+                  <p className="text-muted-foreground shrink-0 type-row-sub">
                     {PROVIDER_NAME[p.provider] ?? p.provider} · {t('{n} months', { n: p.months })} ·{' '}
                     {size(p.bytes)}
                   </p>
@@ -2815,18 +2815,18 @@ function StorageCard({ storage }: { storage: StorageReport | null }) {
                   // the row's own padding: the negative margin keeps the
                   // row at the 40px it already was. An `after:` hit box
                   // would not do here, since `truncate` clips it.
-                  className="text-foreground hover:text-primary min-w-0 flex-1 truncate text-left text-base pointer-coarse:-my-1.5 pointer-coarse:min-h-9"
+                  className="text-foreground hover:text-primary min-w-0 flex-1 truncate text-left type-row pointer-coarse:-my-1.5 pointer-coarse:min-h-9"
                   onClick={go}
                 >
                   {t(label)}
                 </button>
               ) : (
-                <p className="min-w-0 flex-1 truncate text-base">{t(label)}</p>
+                <p className="min-w-0 flex-1 truncate type-row">{t(label)}</p>
               )}
               {areas === null ? (
                 <Skeleton className="h-2.5 w-16" />
               ) : (
-                <p className="text-muted-foreground shrink-0 text-sm tabular-nums">
+                <p className="text-muted-foreground shrink-0 type-row-sub tabular-nums">
                   {area ? size(area.bytes) : '—'}
                 </p>
               )}

@@ -217,9 +217,9 @@ export function TagPicker({
                         className="hover:bg-accent flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-1.5 text-left disabled:opacity-45"
                       >
                         <Icon className="text-muted-foreground size-4 shrink-0" />
-                        <span className="text-foreground min-w-0 flex-1 truncate text-base">{row.id}</span>
+                        <span className="text-foreground min-w-0 flex-1 truncate type-row">{row.id}</span>
                         {tagged(wholeTag) && (
-                          <span className="text-muted-foreground shrink-0 text-sm">{t('Linked')}</span>
+                          <span className="text-muted-foreground shrink-0 type-row-sub">{t('Linked')}</span>
                         )}
                       </button>
                       {kind === 'study' && (row.chapters ?? 1) > 1 && (
@@ -258,8 +258,8 @@ export function TagPicker({
                     className="hover:bg-accent flex items-center gap-2 rounded-lg px-2 py-1.5 text-left disabled:opacity-45"
                   >
                     <BookOpen className="text-muted-foreground size-4 shrink-0" />
-                    <span className="text-foreground min-w-0 flex-1 truncate text-base">{name}</span>
-                    {tagged(tag) && <span className="text-muted-foreground shrink-0 text-sm">{t('Linked')}</span>}
+                    <span className="text-foreground min-w-0 flex-1 truncate type-row">{name}</span>
+                    {tagged(tag) && <span className="text-muted-foreground shrink-0 type-row-sub">{t('Linked')}</span>}
                   </button>
                 );
               })}
