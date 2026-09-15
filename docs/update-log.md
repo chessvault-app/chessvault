@@ -5,9 +5,15 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.12.0
 
-The puzzle hub's boards stop changing under you.
+The app's type is one ladder, and the puzzle hub's boards stop changing
+under you. On a phone every list, control, label and icon steps up a size
+to what iOS and Material put there, while a desktop keeps its own
+conventions and does not move. One weight per role, bold gone from the app
+entirely, and nothing you have to read left under the body size. The
+puzzle hub is six cards, the "nothing here" screens speak with one voice,
+and the small coloured tags are one component.
 
 - **The next puzzle stays the next puzzle until you attempt it.** The
   hub drew a fresh one on every visit, so the board it showed was a
@@ -115,6 +121,24 @@ The puzzle hub's boards stop changing under you.
   yet" was drawn a size under the cards around it, the only title in the
   app at body size. It is a title now, and the five screens that say the
   same thing without the component say it in the same voice.
+- **The presses on a "nothing here" screen agree.** The five screens the
+  entry above converted shipped their back buttons in two colours and two
+  heights. Counting all 28 of these screens showed the app already had a
+  rule and had simply never written it down: the plain press for the
+  button that resolves the state, the quiet one only for a button that
+  undoes what you asked for. Twenty-four screens already followed it. The
+  seven bare failure screens are identical now, and three older screens
+  that sat on the wrong side of the rule (Home's outage retry, the
+  reference-games retry and Insights' "Open games") have moved across.
+- **The small coloured tags are one component.** Badge was used twice in
+  the whole app while seven hand-written spans drew the same thing, and
+  the cause was not neglect: Badge could not say what the app actually
+  needed, which is a green "On", a green or red tablebase verdict, and a
+  quiet tag. It can now, and six of those places use it. Two tags shift
+  colour slightly in the move, both toward a tone that had been measured:
+  the red one takes the opaque tint that stays legible on a row the
+  pointer is over, and the tablebase's neutral verdict takes the quiet
+  grey instead of the one the app keeps for a selected row.
 
 ## 0.11.0
 
