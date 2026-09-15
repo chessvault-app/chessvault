@@ -97,7 +97,6 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/babel__core": "^7.20.5",
     "@types/better-sqlite3": "^9.6.0",
-    "@types/markdown-it": "^14.2.0",
     "@types/node": "^26.5.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
