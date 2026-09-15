@@ -504,6 +504,23 @@ paragraph read as prose, stays at Body; a caption stays at Label. The
 only things that do not move are on the Fitted-Glyph list, plus a move
 list's number column, which is a column and not a line.
 
+That Body copy does not move is the one part of this rule an audit will
+ask about, since iOS puts Body at 17 and Material's Body Large at 16, so
+neither leaves a phone's reading text at 14. It was asked and settled
+(lanph3re, 2026-09-15: the blurbs are captions saying what each thing
+contains). What settled it is the shape the app writes most of its
+explanations in, a title with a blurb under it as `SettingRow` draws it:
+lifting the blurb to 16 makes it the size of its own title, weight
+becomes the only thing between them, and the row loses its hierarchy.
+Measured on the demo at 390px with every 14px sentence forced to 16,
+which also cost the vault's storage tree two of the seven folders it
+fits. The paragraphs that would read better at 16 are the standalone
+ones with no title over them, and giving those a rung of their own is
+two prose sizes on a phone, which is the tier nobody named. 14 is also
+what Primer, Polaris, Carbon and Fluent set body at on every device; it
+is the two native-platform systems that go higher, and this is a web
+app. Reopen it with new evidence, not with the yardstick.
+
 It reached ten app files first and the rest on 2026-09-15: linked
 mentions, the book reader's chapters, the database manager's three
 lists, the study's chapters, the tag picker, Settings' recovery, cache
