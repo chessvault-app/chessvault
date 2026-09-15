@@ -490,15 +490,12 @@ export function Board({
       // page's own cross-fade instead of a board group of its own.
       style={{ viewTransitionName: sharedBoardArmed() ? SHARED_BOARD : undefined }}
     >
-      {/* The board keeps the page still under two fingers, which the whole
-          app used to do for it (index.css). chessground reads one finger
-          and drops a gesture the moment a second lands, so a pinch that
-          zoomed the shell would scale the squares out from under a drag
-          that is still going. Pans are untouched: a one-finger drag on an
-          empty square scrolls the column exactly as before. A view-only
-          board is a picture of a board, reads nothing, and lets the pinch
-          through to the page. */}
-      <div ref={host} className={cn('size-full', !viewOnly && 'touch-pan-x touch-pan-y')} />
+      {/* No touch-action of its own: body declares `pan-x pan-y` for the
+          whole app (index.css), so a second finger on the board cannot
+          zoom the shell out from under a drag chessground is still
+          reading. The per-board declaration this carried while the app
+          allowed a page pinch would now only repeat that. */}
+      <div ref={host} className="size-full" />
     </div>
   );
 }

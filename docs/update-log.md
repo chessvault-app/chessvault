@@ -41,6 +41,14 @@ finishes the job by reading each file against the rule instead.
   sizes back**: the text of a note, the licences page, the desktop
   vault chooser and the website's navigation row, which shrank to
   11.5px on a narrow phone.
+- **Two fingers no longer zoom the app on a phone.** A pinch anywhere on
+  the shell enlarged the whole page, which no app does, and a page left
+  that way stayed zoomed until it was pinched back. The app holds its own
+  size again, on a Safari tab as well as on Android and the home-screen
+  app. To read the screen larger, use the browser's or the device's own
+  text size, which the app follows. What reads two fingers for itself is
+  unchanged: a book's page, the evidence pages and the opening map still
+  pinch what they show, and a double tap still does nothing.
 
 ## 0.11.1
 
