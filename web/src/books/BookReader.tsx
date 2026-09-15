@@ -1483,7 +1483,7 @@ function ChaptersPopover({
             aria-current={i === at ? 'page' : undefined}
             className={cn(
               'hover:bg-accent hover:text-accent-foreground flex w-full items-baseline gap-3 rounded-md px-2 py-1.5 text-left type-row',
-              i === at ? 'bg-accent text-accent-foreground font-medium' : 'text-foreground',
+              i === at ? 'bg-accent text-accent-foreground font-semibold' : 'text-foreground',
             )}
             style={{ paddingLeft: `${0.5 + Math.min(c.depth, 4) * 0.75}rem` }}
             onClick={() => {

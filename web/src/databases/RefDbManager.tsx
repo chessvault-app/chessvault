@@ -1451,13 +1451,13 @@ function BuildWindow({
           <RadioGroup value={mode} onValueChange={(v) => setMode(v as 'replace' | 'append')}>
             <Field orientation="horizontal">
               <RadioGroupItem value="append" id="build-append" />
-              <FieldLabel htmlFor="build-append" className="font-normal">
+              <FieldLabel htmlFor="build-append">
                 {t('Add to it: index only the games it does not already hold.')}
               </FieldLabel>
             </Field>
             <Field orientation="horizontal">
               <RadioGroupItem value="replace" id="build-replace" />
-              <FieldLabel htmlFor="build-replace" className="font-normal">
+              <FieldLabel htmlFor="build-replace">
                 {t('Replace: build this database again from the picked files.')}
               </FieldLabel>
             </Field>

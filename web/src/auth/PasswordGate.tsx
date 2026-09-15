@@ -182,14 +182,14 @@ export function PasswordGate({ children }: { children: ReactNode }) {
                   containerClassName="justify-center gap-4"
                 >
                   <InputOTPGroup className="gap-1.5">
-                    <InputOTPSlot index={0} className="size-10 rounded-md border border-input text-lg data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
-                    <InputOTPSlot index={1} className="size-10 rounded-md border border-input text-lg data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
-                    <InputOTPSlot index={2} className="size-10 rounded-md border border-input text-lg data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
+                    <InputOTPSlot index={0} className="size-10 rounded-md border border-input text-base data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
+                    <InputOTPSlot index={1} className="size-10 rounded-md border border-input text-base data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
+                    <InputOTPSlot index={2} className="size-10 rounded-md border border-input text-base data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
                   </InputOTPGroup>
                   <InputOTPGroup className="gap-1.5">
-                    <InputOTPSlot index={3} className="size-10 rounded-md border border-input text-lg data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
-                    <InputOTPSlot index={4} className="size-10 rounded-md border border-input text-lg data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
-                    <InputOTPSlot index={5} className="size-10 rounded-md border border-input text-lg data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
+                    <InputOTPSlot index={3} className="size-10 rounded-md border border-input text-base data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
+                    <InputOTPSlot index={4} className="size-10 rounded-md border border-input text-base data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
+                    <InputOTPSlot index={5} className="size-10 rounded-md border border-input text-base data-[active=true]:border-ring first:rounded-md last:rounded-md first:border-l" />
                   </InputOTPGroup>
                 </InputOTP>
               </Field>
