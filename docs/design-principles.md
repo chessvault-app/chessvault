@@ -606,6 +606,23 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   1.6 Mbps link the extra download pushed the webfonts behind it and first
   contentful paint went from 3.1 s to 4.5 s. Draw the app's own frame on
   time; fill it as soon as there is something to fill it with.
+- **A route's own wait is the one wait its page cannot draw.** Every
+  skeleton above lives inside the page's chunk, so while the chunk is on
+  the wire nothing exists that could show one, and "the chunk usually
+  beats the next paint" is true of a fast link only: on an emulated phone
+  at 1.5 Mbps a first tap on Games drew a bare ground for 3.7 s, and a
+  game opened from Home slid one in after the router's 400 ms wait. So
+  every route carries `RouteSkeleton`, the one page shape the shell can
+  draw without knowing the page (a title row over one-line rows, in the
+  scrolling column), drawn by `lib/lazyRoute` as ordinary state after
+  500 ms and kept for 500 ms once drawn, or from the first frame inside a
+  page transition, as `useSlowLoad` does. Those two figures are the
+  guides' rather than ours: 500 ms is eBay's floor for using a skeleton
+  at all and TanStack Router's default minimum stay, and Nielsen's one
+  second is the ceiling past which a wait needs feedback. Measured on the
+  same link: the placeholder is up at 545 ms, the page arrives when it
+  did before, and an unthrottled tab never shows it (Studies drew at
+  88 ms).
 
 ## Kept pages
 

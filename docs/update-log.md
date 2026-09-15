@@ -41,6 +41,12 @@ finishes the job by reading each file against the rule instead.
   sizes back**: the text of a note, the licences page, the desktop
   vault chooser and the website's navigation row, which shrank to
   11.5px on a narrow phone.
+- **A page you open for the first time on a slow link shows its shape
+  instead of nothing.** Each section's code is fetched the first time you
+  go there, and until it arrived the page was blank: several seconds on
+  a slow phone link, and a bare ground sliding in when you opened a game.
+  After half a second of waiting the page now draws a placeholder, a title
+  over rows, which the real page replaces. A fast link never sees it.
 
 ## 0.11.1
 

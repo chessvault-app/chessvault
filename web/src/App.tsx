@@ -27,6 +27,7 @@ import { Component, Fragment, Suspense, useEffect, useEffectEvent, useState, typ
 import { cn } from '@/lib/utils';
 import { displayName, useVaultInfo } from '@/lib/vaultName';
 import { lazyRoute } from '@/lib/lazyRoute';
+import { RouteSkeleton } from '@/components/route-skeleton';
 import { HomePage } from '@/home/HomePage';
 import { atRoute, decodeSegment, navigate, parse, registerRoutePending, sectionHref, useRoute, type Section } from '@/lib/router';
 import { scrollPageToTop } from '@/lib/scroll';
@@ -57,26 +58,33 @@ import { dialogOpen } from '@/hooks/dialog-focus';
 // Route-level code splitting: iOS relaunches the PWA from scratch after
 // backgrounding, so the landing chunk must stay lean — heavy sections
 // (pdf/ocr machinery, TipTap, the study editor) load on first visit.
+// What every route draws while its chunk is still on the wire and the
+// wait has grown long enough to admit to (lib/lazyRoute, PENDING_MS): a
+// page-shaped placeholder, the one shape the shell can draw without
+// knowing which page is coming. One element, made once, so a route that
+// is redrawn does not get a new one.
+const PAGE = { fallback: <RouteSkeleton /> };
+
 // AnalysisView was the one view loaded eagerly, which put the board, the
 // engine, the explorer, the review strip and the move tree into the chunk
 // that has to parse before ANYTHING renders — including the landing page,
 // which uses none of them.
-const AnalysisView = lazyRoute(() => import('@/analysis/AnalysisView').then((m) => ({ default: m.AnalysisView })));
-const WorkspaceView = lazyRoute(() => import('@/workspace/WorkspaceView').then((m) => ({ default: m.WorkspaceView })));
-const EditorView = lazyRoute(() => import('@/editor/EditorView').then((m) => ({ default: m.EditorView })));
-const GamesView = lazyRoute(() => import('@/games/GamesView').then((m) => ({ default: m.GamesView })));
-const NotesView = lazyRoute(() => import('@/notes/NotesView').then((m) => ({ default: m.NotesView })));
-const PuzzlesView = lazyRoute(() => import('@/puzzles/PuzzlesView').then((m) => ({ default: m.PuzzlesView })));
-const BooksView = lazyRoute(() => import('@/books/BooksView').then((m) => ({ default: m.BooksView })));
+const AnalysisView = lazyRoute(() => import('@/analysis/AnalysisView').then((m) => ({ default: m.AnalysisView })), PAGE);
+const WorkspaceView = lazyRoute(() => import('@/workspace/WorkspaceView').then((m) => ({ default: m.WorkspaceView })), PAGE);
+const EditorView = lazyRoute(() => import('@/editor/EditorView').then((m) => ({ default: m.EditorView })), PAGE);
+const GamesView = lazyRoute(() => import('@/games/GamesView').then((m) => ({ default: m.GamesView })), PAGE);
+const NotesView = lazyRoute(() => import('@/notes/NotesView').then((m) => ({ default: m.NotesView })), PAGE);
+const PuzzlesView = lazyRoute(() => import('@/puzzles/PuzzlesView').then((m) => ({ default: m.PuzzlesView })), PAGE);
+const BooksView = lazyRoute(() => import('@/books/BooksView').then((m) => ({ default: m.BooksView })), PAGE);
 // HomePage is EAGER (imported above), alone among the routes. With no
 // launch screen, iOS drops its startup image at the app's first paint —
 // and when home was a lazy chunk, that first paint was the shell around
 // an empty box, with the page popping in a beat later (caught on
 // lanph3re's recording). Home is six tiles and some fetches; the engine,
 // the board and the parsers stay behind the lazy routes here.
-const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })));
-const SettingsPage = lazyRoute(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
-const LicensesPage = lazyRoute(() => import('@/settings/LicensesPage').then((m) => ({ default: m.LicensesPage })));
+const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })), PAGE);
+const SettingsPage = lazyRoute(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })), PAGE);
+const LicensesPage = lazyRoute(() => import('@/settings/LicensesPage').then((m) => ({ default: m.LicensesPage })), PAGE);
 
 // Which chunk a hash draws, for the phone's page transition to wait on
 // (lib/router, swapRoute). The same table as the switch in AppShell's
@@ -116,11 +124,11 @@ registerRoutePending((hash) => {
       return null;
   }
 });
-const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
-const EndgamesView = lazyRoute(() => import('@/endgames/EndgamesView').then((m) => ({ default: m.EndgamesView })));
-const OpeningMapView = lazyRoute(() => import('@/openingmap/OpeningMapView').then((m) => ({ default: m.OpeningMapView })));
-const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((m) => ({ default: m.DatabasesPage })));
-const InsightsPage = lazyRoute(() => import('@/insights/InsightsPage').then((m) => ({ default: m.InsightsPage })));
+const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })), PAGE);
+const EndgamesView = lazyRoute(() => import('@/endgames/EndgamesView').then((m) => ({ default: m.EndgamesView })), PAGE);
+const OpeningMapView = lazyRoute(() => import('@/openingmap/OpeningMapView').then((m) => ({ default: m.OpeningMapView })), PAGE);
+const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((m) => ({ default: m.DatabasesPage })), PAGE);
+const InsightsPage = lazyRoute(() => import('@/insights/InsightsPage').then((m) => ({ default: m.InsightsPage })), PAGE);
 
 // Top-level destinations, in the reading order lanph3re set. Board and
 // Editor are not here — they live under Tools (a group, below), the way
