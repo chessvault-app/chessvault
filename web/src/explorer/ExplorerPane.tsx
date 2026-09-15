@@ -339,13 +339,13 @@ export function ExplorerPane({
                   {lineOpening.eco}
                 </span>
                 <TitleTip title={`${lineOpening.eco} ${lineOpening.name}`}>
-                  <span className="text-foreground min-w-0 truncate text-sm font-medium">
+                  <span className="text-foreground min-w-0 truncate text-sm max-md:type-row font-medium">
                     {lineOpening.name}
                   </span>
                 </TitleTip>
               </>
             ) : (
-              <span className="text-muted-foreground text-sm">
+              <span className="text-muted-foreground text-sm max-md:type-row">
                 {node.ply === 0 ? t('Starting position') : t('Out of book')}
               </span>
             )}

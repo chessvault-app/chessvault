@@ -898,7 +898,7 @@ function DbRow({
     // pr-3, the search row's own: the delete button and the upload
     // button above are the same 28px box, and at pr-1.5 the trash
     // column stood 6px right of the upload icon.
-    <li className="flex items-center gap-2 py-1.5 pl-[17px] pr-3 text-sm">
+    <li className="flex items-center gap-2 py-1.5 pl-[17px] pr-3 type-row">
       {/* Below md the name and its figures stack, with the ⋯ beside them
           as the row's only control. The old single line could not be made
           to fit a phone: the two figure columns and the four icon buttons
@@ -958,7 +958,7 @@ function DbRow({
                 // — say so where the press landed, or it reads as ignored
                 // and the first search merely slow.
                 <span
-                  className="text-muted-foreground flex shrink-0 items-center gap-1.5 text-xs"
+                  className="text-muted-foreground flex shrink-0 items-center gap-1.5 type-row-sub"
                   role="status"
                 >
                   <Spinner className="glyph" />
@@ -1134,7 +1134,7 @@ function SourceList({
   return (
     <ul className="divide-border divide-y">
       {sources.map((s) => (
-        <li key={s.name} className="flex items-center gap-2 py-1.5 pl-3 pr-3 text-sm">
+        <li key={s.name} className="flex items-center gap-2 py-1.5 pl-3 pr-3 type-row">
           {/* The label covers the tick, the name and the size, and
               nothing else: a button inside it would toggle the tick on
               its way to being pressed.
@@ -1230,7 +1230,7 @@ function AddToWindow({
             </p>
             <ul className="divide-border max-h-64 divide-y overflow-y-auto rounded-md border">
               {list.map((s) => (
-                <li key={s.name} className="flex items-center px-3 py-1.5 text-sm">
+                <li key={s.name} className="flex items-center px-3 py-1.5 type-row">
                   <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
                     <Checkbox
                       checked={ticked.has(s.name)}

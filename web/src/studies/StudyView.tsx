@@ -736,7 +736,7 @@ function ChapterRow({
         // Touch: the inline input sits where the keyboard lands — rename in
         // a top-pinned sheet instead (the annotation/opening-search idiom).
         <>
-          <span className="text-muted-foreground flex h-(--row-h) min-w-0 flex-1 items-center truncate px-1.5 text-sm">
+          <span className="text-muted-foreground flex h-(--row-h) min-w-0 flex-1 items-center truncate px-1.5 type-row">
             {ownName}
           </span>
           <PromptDialog
@@ -786,7 +786,7 @@ function ChapterRow({
             // The height is the density token, not a literal: this row
             // cannot be sized by its text (it swaps in a rename input and
             // carries a hover tray), so what it states is a height.
-            'flex h-(--row-h) min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 text-left text-sm',
+            'flex h-(--row-h) min-w-0 flex-1 items-center gap-1.5 rounded-md px-1.5 text-left type-row',
             'transition-colors duration-100',
             index === chapterIndex
               ? 'bg-muted text-primary font-semibold'

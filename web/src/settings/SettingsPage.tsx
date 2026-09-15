@@ -2544,8 +2544,8 @@ function RecoveryCard() {
               className="flex items-center justify-between gap-2 py-1"
             >
               <span className="min-w-0">
-                <span className="text-foreground block truncate text-sm">{item.id}</span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-foreground block truncate type-row">{item.id}</span>
+                <span className="text-muted-foreground type-row-sub">
                   {t('{kind} · deleted {when}', {
                     kind: kindLabel(item.kind),
                     when: formatWhen(item.at),

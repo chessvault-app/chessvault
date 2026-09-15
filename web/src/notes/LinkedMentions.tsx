@@ -211,11 +211,11 @@ export function LinkedMentions({
                   // where every other control wears the page's 3px.
                   className="hover:bg-accent flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-2 text-left"
                 >
-                  <span className="flex items-center gap-1.5 text-sm font-medium">
+                  <span className="flex items-center gap-1.5 type-row font-medium">
                     <SourceIcon m={m} className="text-muted-foreground glyph shrink-0" />
                     {m.from.split('/').at(-1)}
                   </span>
-                  <span className="text-muted-foreground text-xs leading-5">
+                  <span className="text-muted-foreground type-row-sub leading-5">
                     <Context text={m.context} mark={m.target} at={m.markAt} />
                   </span>
                 </button>
@@ -229,7 +229,7 @@ export function LinkedMentions({
                   somebody made, these are guesses about ones they might
                   have meant to. Mixing them would make the list above less
                   trustworthy than it is. */}
-              <h3 className="text-muted-foreground mt-2 px-2 text-xs font-medium">
+              <h3 className="text-muted-foreground mt-2 px-2 type-row font-medium">
                 {t('Unlinked mentions')}
               </h3>
               <ul className="flex flex-col gap-0.5">
@@ -256,11 +256,11 @@ export function LinkedMentions({
                         <button
                           type="button"
                           onClick={() => openSource(m)}
-                          className="block max-w-full truncate rounded-sm text-left text-sm font-medium"
+                          className="block max-w-full truncate rounded-sm text-left type-row font-medium"
                         >
                           {m.from.split('/').at(-1)}
                         </button>
-                        <p className="text-muted-foreground mt-0.5 text-xs leading-5">
+                        <p className="text-muted-foreground mt-0.5 type-row-sub leading-5">
                           <Context text={m.context} mark={m.target} at={m.markAt} />
                         </p>
                       </div>
