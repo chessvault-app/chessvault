@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { displayName, useVaultInfo } from '@/lib/vaultName';
 import { lazyRoute } from '@/lib/lazyRoute';
 import { RouteSkeleton } from '@/components/route-skeleton';
+import { prefetchWhenIdle } from '@/lib/prefetch';
 import { HomePage } from '@/home/HomePage';
 import { atRoute, decodeSegment, navigate, parse, registerRoutePending, sectionHref, useRoute, type Section } from '@/lib/router';
 import { scrollPageToTop } from '@/lib/scroll';
@@ -129,6 +130,38 @@ const EndgamesView = lazyRoute(() => import('@/endgames/EndgamesView').then((m) 
 const OpeningMapView = lazyRoute(() => import('@/openingmap/OpeningMapView').then((m) => ({ default: m.OpeningMapView })), PAGE);
 const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((m) => ({ default: m.DatabasesPage })), PAGE);
 const InsightsPage = lazyRoute(() => import('@/insights/InsightsPage').then((m) => ({ default: m.InsightsPage })), PAGE);
+
+// The chunk each section draws, for warming it before it is asked for
+// (lib/prefetch, and the sidebar's hover). The same components as the
+// switch in renderSection; the phone's tab bar reaches the first three.
+const SECTION_CHUNK: Partial<Record<Section, { pending: () => Promise<void> | null }>> = {
+  games: GamesView,
+  studies: StudiesView,
+  puzzles: PuzzlesView,
+  board: AnalysisView,
+  notes: NotesView,
+  books: BooksView,
+  openingmap: OpeningMapView,
+  insights: InsightsPage,
+  databases: DatabasesPage,
+  repertoire: RepertoireView,
+  endgames: EndgamesView,
+  settings: SettingsPage,
+  workspace: WorkspaceView,
+  editor: EditorView,
+};
+/** Start a section's chunk on its way, if it is not in hand. */
+function warmSection(section: Section): Promise<void> | null {
+  return SECTION_CHUNK[section]?.pending() ?? null;
+}
+// The order the sweep warms them in: the three tabs a thumb reaches
+// first, then the board (where a game or a study opens to, and the
+// heaviest chunk), then the rest in the sidebar's order. Licences is
+// left out: a page reached from Settings, read once.
+const WARM_ORDER: Section[] = [
+  'games', 'studies', 'puzzles', 'board', 'notes', 'books', 'openingmap',
+  'insights', 'databases', 'repertoire', 'endgames', 'settings', 'workspace', 'editor',
+];
 
 // Top-level destinations, in the reading order lanph3re set. Board and
 // Editor are not here — they live under Tools (a group, below), the way
@@ -419,6 +452,10 @@ function Shell() {
   useEffect(() => {
     rememberRoute(section, sectionHref(section, ...params));
   }, [section, params]);
+  // Once the app is up and the browser idle, the other sections' chunks
+  // are fetched one at a time (lib/prefetch), so the first tap on a tab
+  // finds its page in hand instead of behind a placeholder.
+  useEffect(() => prefetchWhenIdle(WARM_ORDER.map((s) => () => warmSection(s))), []);
   // What was opened, for the quick switcher's Recent group (store/recent).
   const recordOpen = useRecentOpens((s) => s.record);
   const opened = recentOpenOf(section, params);
@@ -923,6 +960,10 @@ function Sidebar({ active, params }: { active: Section; params: string[] }) {
             <NavLink
               href={sectionHref(section)}
               onActivate={() => openSection(section, active)}
+              // Hover is intent (TanStack Router's default): the chunk
+              // starts on the way before the click, where the idle sweep
+              // has not reached it yet. A no-op once it is in hand.
+              onPointerEnter={() => void warmSection(section)}
               aria-label={t(label)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(

@@ -627,6 +627,19 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   decision inside a frame that is already up. Measured at 1.5 Mbps: the
   placeholder is up at 245 ms, the page arrives when it did before, and
   an unthrottled tab never shows it (Studies drew at 88 ms).
+- **A section is warmed before it is asked for.** The placeholder covers
+  a cold chunk; `lib/prefetch` sees to it that few are cold. Once the app
+  has loaded and the browser is idle, the sections' chunks are fetched
+  one section at a time (a section's own imports still arrive together,
+  which is how modules load), the three phone tabs first, then the
+  board, then the sidebar's order; and a sidebar row fetches its section
+  on hover, which is TanStack Router's default and Next.js's on
+  viewport. Nothing is warmed on a 2G link or where the user has asked
+  to save data. Measured on the demo at 3 Mbps: the sweep runs 5 s
+  after the home page is up and the first tap on Games then draws in
+  97 ms with no placeholder, where the same tap on the previous build
+  drew a bare box; the home page itself arrived at the same time on
+  both.
 
 ## Kept pages
 

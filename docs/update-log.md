@@ -48,6 +48,13 @@ finishes the job by reading each file against the rule instead.
   After a fifth of a second of waiting the page now draws a placeholder,
   a title over rows, which the real page replaces. A fast link never sees
   it.
+- **Sections load in the background after the app opens.** Once the home
+  page is up and the browser has nothing else to do, the other sections'
+  code is fetched one at a time, the three phone tabs first, so the first
+  tap on Games or Puzzles opens at once even on a slow link. On a desktop
+  a sidebar row starts fetching its section when the pointer reaches it.
+  Nothing is fetched ahead on a 2G link or when the browser is set to
+  save data.
 
 ## 0.11.1
 
