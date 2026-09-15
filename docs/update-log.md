@@ -5,6 +5,34 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+The type ladder reaches the last places it had not. 0.11.1 lifted every
+list, control and label a search over class names could find; this
+finishes the job by reading each file against the rule instead.
+
+- **Nothing you have to read on a phone is under 14px.** A dozen lines
+  were still drawn at 12 at every width: the note under a list that has
+  been cut short, the game filter's warning, the instruction in the
+  picture dropzone, and the "Show all 42 moves" control under the
+  explorer's tables, which is a button and not a caption. The explorer's
+  and the tablebase's move tables, the games listed under them and the
+  unresolved links beside a note all step up with every other list now.
+- **The date picker's weekday letters and week numbers step up too.**
+  They were the one text in a phone date picker that never did.
+- **The hint beside a field's name is one size.** It was written out at
+  each place it appears, at three different sizes. The field draws it
+  now, on the same rung as the date beside a list row.
+- **Bold is gone from the last five places it was.** The board's
+  coordinates, the opening map's gap marker and the note editor's
+  headings each carried a weight the rest of the app does not use. The
+  gap marker was also the smallest text in the app and is now the size
+  the two labels beside it are.
+- **Four screens that are not built from the app's stylesheet get its
+  sizes back**: the text of a note, the licences page, the desktop
+  vault chooser and the website's navigation row, which shrank to
+  11.5px on a narrow phone.
+
 ## 0.11.1
 
 The app's type is one ladder, and the puzzle hub's boards stop changing
