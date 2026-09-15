@@ -152,9 +152,28 @@ usage moved up a rung instead:
 | body, list rows, panel text | `text-sm` | 14px |
 | a list row and the panel heading over it | `type-row` | 14px; 16 on a phone |
 | the tail beside a row's text (a date, a count) | `type-row-sub` | 12px; 14 on a phone |
-| titles, setting rows | `text-base` | 16px |
+| titles, setting rows, an empty state's title | `text-base` | 16px |
 | page titles (`PageHeader`, desktop) | `text-xl` | 20px |
 | the one display figure, and a phone's page title | `text-2xl` | 24px |
+
+Weight is a shorter ladder than size, and it has to be: regular for body,
+medium for a title or a label, semibold for a headline or a state. Three,
+which is what Primer, Fluent and Material all land on, and one of them
+per role. An audit on 2026-09-15 found the 16px title split 26 sites to
+12 between medium and semibold, with two files drawing one shape both
+ways, and resolved it downward onto medium, the weight this table's
+`text-base` row has always implied and the one the registry's own
+`CardTitle` draws.
+
+There is no bold. Primer does not define a 700 token, Apple's guidance
+is not to use it for standard UI text, and neither Material's scale nor
+Fluent's ramp hands a role one; the six places that had it are 600 now.
+The two exceptions that survive are not weights but marks: the current
+row goes semibold whether or not it also takes a fill, because in the
+Neutral scheme `--primary` and `--foreground` are nearly the same ink
+and a colour change says nothing there, while a weight step reads at
+every contrast knob. A weight that changes on HOVER is not allowed, as
+it reflows the text under the pointer.
 
 The two `type-row` rungs are the same class at both widths and a
 different size: a list row's line is 16 or 17 on both phone platforms

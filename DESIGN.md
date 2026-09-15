@@ -381,7 +381,13 @@ setting them in mono made every one of them look like a terminal.
   book reader. Still the `h1`; a rung quieter because the title shares a
   strip with the board's own controls and every point it takes is a point
   off the board.
-- **Title** (500, 16px / `text-base`): section titles, setting rows.
+- **Title** (500, 16px / `text-base`): section titles, setting rows, and
+  the title of an empty state, via `EmptyTitle`. That last one drew at
+  `text-sm` until 2026-09-15, which made it the only title in the app at
+  Body size — a shelf naming its own emptiness a rung under the cards
+  beside it, which three separate comments in `skeletons.tsx` had each
+  measured around. The five screens that say the same thing without the
+  component say it in this voice too.
 - **Panel title** (500, 14px / `text-sm`; `type-row`'s 16px under `md`): the header
   of a panel, via `PanelHeader`, in the registry's own card-title voice.
   Deliberately on the row rung, not Title: a panel's header shares a row
@@ -434,6 +440,31 @@ dashboard once spent it four times in a row on Solved / Attempts / Win
 rate / Failed; four numbers at the top size is a scoreboard, not
 emphasis. They are a figure list at body size now.
 
+**The Three Weights Rule.** The app draws 400, 500 and 600, and nothing
+else. One role takes one weight: a 16px title is 500 everywhere, whether
+it names a card, a shelf entry, a trainer's verdict or a settings card,
+and it is 500 rather than 600 because that is what this ladder has always
+said, what Material's Title Medium is, and what the registry's own
+`CardTitle` draws. An audit on 2026-09-15 found the rung split 26 sites to
+12, with two files carrying both weights for one shape.
+
+700 is not a weight here. Primer has no 700 token at all, Apple's
+guidance is not to use Bold for standard UI text, and neither Material's
+type scale nor Fluent's ramp gives a role one. Six sites had it, three of
+them the trainers' side-to-move line, which is the Display rung and is
+600 everywhere else. The two that were carrying meaning rather than
+hierarchy — the NAG puck and the result chip's winning digit — went to
+600 with them and still step clearly off what they sit on.
+
+A weight is allowed to mark a state, and does: the current row goes
+`font-semibold` whether or not it also takes a fill. `GameTable` records
+the measurement behind that — in the Neutral scheme `--primary` (20.5%)
+and `--foreground` (14.5%) are nearly the same ink, so a colour change
+says nothing there while a weight step reads in every scheme and at every
+contrast knob. What a weight may not do is change on hover, which
+reflows the text under the pointer; `PvMoves` did that until the same
+audit.
+
 **The Body Is 14px Rule.** Body copy sits on `text-sm`, not `text-xs`.
 The 12px rung is captions — the size Material, Fluent and GitHub all
 reserve for them. Body once sat there at 284 call sites, which on a phone
@@ -455,6 +486,17 @@ the registry rule, apply font sizes consistently"). Body copy, a
 paragraph read as prose, stays at Body; a caption stays at Label. The
 only things that do not move are on the Fitted-Glyph list, plus a move
 list's number column, which is a column and not a line.
+
+It reached ten app files first and the rest on 2026-09-15: linked
+mentions, the book reader's chapters, the database manager's three
+lists, the study's chapters, the tag picker, Settings' recovery, cache
+and storage rows, and the customise-home and move-to dialogs, which are
+windows at every width and so had been drawing 16px rows on a desktop.
+A row pinned at `text-base` at every width is not exempt from this rule
+— it is the same mistake read from the other end, since a desktop row
+is 13 to 14 on both platforms and only a phone's is 16. The study's
+chapter number and its child count stay put beside the move list's
+number column, for the same reason it does.
 
 **The Phone Glyph Rule.** Icons take the type rungs' bargain. The row
 glyph (a chevron, a row's leading icon, the icon in a small button) is

@@ -82,6 +82,39 @@ The puzzle hub's boards stop changing under you.
   toast titles are one rung larger under the phone width: 16 where they
   were 14, 14 where they were 12 or 12.8. No text of one role is left at
   a different size because of the file it lives in.
+- **One weight per role, and the app draws three of them.** A 16px title
+  was semibold in some places and medium in others, for the same job, and
+  two screens carried both: the shelf card's name was heavier than the
+  book card's beside it, and the opening map set the same name-over-a-
+  sub-line at two weights on two of its own screens. Titles are medium
+  everywhere now, which is what the card and dialog titles already used.
+  Bold has gone from the app entirely: the trainers' "White to move" was
+  the top size at a weight nothing else used, and the annotation puck and
+  the result chip's winning digit step off their backgrounds just as
+  clearly a notch down. What is left is regular, medium and semibold.
+- **Nothing you have to read is smaller than the body size.** Sixteen
+  paragraphs had grown to 16px and four had shrunk to 12: the engine
+  card's four lines, two in the database manager, the book reader's
+  replace notice, which was the only warning in the app at 12px, and the
+  game filter's suggestion list, whose chosen line was smaller than the
+  command palette's. They are all 14 now, and so are the page gate, the
+  leave and recovery dialogs, and the lone status lines beside a spinner
+  in the PDF import and the opening map. A line with a smaller line under
+  it is a title and keeps its 16.
+- **The rows that were stuck at 16 take the row size.** Settings drew its
+  cached answers, its cached players and its storage areas at 16 over 14
+  on every screen, while its own recovery rows twenty lines away were 14
+  over 12. Those, the tag picker's two lists, and the customise-home and
+  move-to windows now read 14 over 12 on a desktop and 16 over 14 on a
+  phone, like every other list.
+- **The phone lift reaches the lists it had missed.** Linked mentions,
+  the book reader's chapters, the database manager's three lists, the
+  study's chapters and Settings' recovery rows step up on a phone with
+  the rest. Dense tables and number columns stay where they are.
+- **An empty shelf names itself like everything else.** "Nothing here
+  yet" was drawn a size under the cards around it, the only title in the
+  app at body size. It is a title now, and the five screens that say the
+  same thing without the component say it in the same voice.
 
 ## 0.11.0
 
