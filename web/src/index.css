@@ -1699,7 +1699,10 @@ cg-board square.check {
 .cg-wrap coords {
   font-family: var(--font-mono);
   font-size: 0.66em;
-  font-weight: 700;
+  /* 600, not chessground's 700: the ladder draws three weights and this
+     is the smallest text on the screen, the size both platforms tell you
+     not to set in bold. The size is fitted to the square and stays. */
+  font-weight: 600;
   /* Lowercase files, as chess prints them and as every SAN in the moves
      panel already has them; chessground's stylesheet uppercases the
      labels and the board read "A B C D" under "1. e4". */
@@ -2160,18 +2163,18 @@ cg-board square.check {
 }
 .note-editor h1 {
   font-size: 1.5em;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.015em;
   margin-top: 1em;
 }
 .note-editor h2 {
   font-size: 1.25em;
-  font-weight: 650;
+  font-weight: 600;
   margin-top: 1em;
 }
 .note-editor h3 {
   font-size: 1.05em;
-  font-weight: 650;
+  font-weight: 600;
   margin-top: 0.9em;
 }
 .note-editor ul,

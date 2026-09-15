@@ -1662,8 +1662,12 @@ export function MapCanvas({
                       <text
                         x={r + 7 * inv}
                         y={3 * inv}
-                        fontSize={9.5 * inv}
-                        fontWeight={700}
+                        /* The micro rung, and 600 with every other
+                           weight in the app: this was 9.5 at 700, a size
+                           and a weight the ladder does not have, in a
+                           15px puck two digits still clear. */
+                        fontSize={10 * inv}
+                        fontWeight={600}
                         textAnchor="middle"
                         fill="var(--color-warn-foreground)"
                       >
