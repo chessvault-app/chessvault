@@ -368,9 +368,13 @@ export function AnnotationPane({
   const notice =
     rewrites > 0 ? (
       <p className="text-warn flex items-start gap-1.5 text-xs leading-4">
-        {/* mt-px: text-xs's 16px line around a 14px icon, centred on the
-            first line the way EditorView centres its own. */}
-        <AlertCircle className="mt-px glyph shrink-0" />
+        {/* A box one line tall (leading-4) with the glyph centred in it,
+            the way EditorView centres its own. It was mt-px, which the
+            phone glyph rule left a pixel low: a 16px icon fills a 16px
+            line exactly, so there is no offset to have. */}
+        <span className="flex h-4 shrink-0 items-center">
+          <AlertCircle className="glyph" />
+        </span>
         {rewriteNotice()}
       </p>
     ) : null;

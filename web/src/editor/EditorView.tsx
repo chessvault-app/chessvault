@@ -668,10 +668,16 @@ export function EditorView({
               (lanph3re's call, same as the analysis Load panel). */}
           {!validity.legal && (
             <p className="text-warn flex items-start gap-1.5 px-3 pb-1.5 text-sm">
-              {/* mt-[3px]: text-sm's 20px line around a 14px icon —
-                  centred on the FIRST line (items-start keeps multi-line
-                  reasons hanging right); mt-px sat it visibly high. */}
-              <AlertCircle className="mt-[3px] glyph shrink-0" />
+              {/* A box one text-sm line tall with the glyph centred in
+                  it, so the icon sits on the FIRST line (items-start
+                  keeps a multi-line reason hanging right) at whatever
+                  size the glyph is. It was mt-[3px], the arithmetic for
+                  a 14px icon on a 20px line done once by hand; the phone
+                  glyph rule made the icon 16px under md and left it a
+                  pixel low. A box has no number to keep in step. */}
+              <span className="flex h-5 shrink-0 items-center">
+                <AlertCircle className="glyph" />
+              </span>
               {t(validity.reason ?? '')}
             </p>
           )}
@@ -700,7 +706,9 @@ export function EditorView({
         <div className="grid gap-3">{positionFields}</div>
         {!validity.legal && (
           <p className="text-warn flex items-start gap-1.5 text-sm">
-            <AlertCircle className="mt-[3px] glyph shrink-0" />
+            <span className="flex h-5 shrink-0 items-center">
+              <AlertCircle className="glyph" />
+            </span>
             {t(validity.reason ?? '')}
           </p>
         )}
@@ -1013,7 +1021,9 @@ export function EditorView({
             >
               {!validity.legal && (
                 <>
-                  <AlertCircle className="mt-[3px] glyph shrink-0" aria-hidden />
+                  <span className="flex h-5 shrink-0 items-center" aria-hidden>
+                    <AlertCircle className="glyph" />
+                  </span>
                   <span>{t(validity.reason ?? '')}</span>
                 </>
               )}
@@ -1037,7 +1047,9 @@ export function EditorView({
               <div className="grid gap-3">{positionFields}</div>
               {!validity.legal && (
                 <p className="text-warn flex items-start gap-1.5 text-sm">
-                  <AlertCircle className="mt-[3px] glyph shrink-0" />
+                  <span className="flex h-5 shrink-0 items-center">
+                    <AlertCircle className="glyph" />
+                  </span>
                   {t(validity.reason ?? '')}
                 </p>
               )}
