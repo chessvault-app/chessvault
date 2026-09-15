@@ -41,6 +41,13 @@ finishes the job by reading each file against the rule instead.
   sizes back**: the text of a note, the licences page, the desktop
   vault chooser and the website's navigation row, which shrank to
   11.5px on a narrow phone.
+- **Move quality's accuracy column is a number now, with no bar beside
+  it.** The two tables under that card, by phase and by move number,
+  drew a bar as wide as each accuracy. It was the only accuracy in
+  Insights drawn that way, and with every figure between 92 and 98 per
+  cent the bars all came out the same length. On a phone the bar was
+  never drawn and the heading went with it, which left the column
+  unnamed; it is named at both widths now.
 
 ## 0.11.1
 
