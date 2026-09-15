@@ -5,7 +5,7 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## 0.12.0
+## 0.11.1
 
 The app's type is one ladder, and the puzzle hub's boards stop changing
 under you. On a phone every list, control, label and icon steps up a size
