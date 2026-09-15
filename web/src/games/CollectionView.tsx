@@ -157,11 +157,18 @@ export function CollectionView() {
           gets a shelf's header, at every width. Below md it was a disc
           floating over the list's corner (see CreateControl for why
           that went); the one word is what fits beside a phone's large
-          title, and the page it sits on already says what is imported. */}
+          title, and the page it sits on already says what is imported.
+
+          `sm`, the size every other page header's actions are drawn at
+          (CreateControl on the four shelves, the puzzle book's own row).
+          It was `default`, which on a phone is 16px against their 14 on
+          the same line of the same header, and on a desktop a 32px
+          button beside their 28. Both sizes stand 36px tall under a
+          thumb, so nothing here was a hit area. */}
       <PageHeader
         title={t('Games')}
         actions={
-          <Button variant="default" size="default" onClick={() => openImport.current?.()}>
+          <Button variant="default" size="sm" onClick={() => openImport.current?.()}>
             <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
             <span className="md:hidden">{t('Import')}</span>
             <span className="max-md:hidden">{t('Import a game')}</span>
