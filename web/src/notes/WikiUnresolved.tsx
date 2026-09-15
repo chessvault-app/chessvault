@@ -113,7 +113,7 @@ export function WikiUnresolved() {
                     // style. These rows drew `ring-2 ring-ring` over
                     // `outline-none` instead — a second focus style, 2px
                     // where every other control wears the page's 3px.
-                    className="hover:bg-accent flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left text-sm"
+                    className="hover:bg-accent flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left type-row"
                   >
                     <Icon className="text-muted-foreground glyph shrink-0" />
                     <span className="truncate">{id}</span>
@@ -138,7 +138,7 @@ export function WikiUnresolved() {
                 type="button"
                 disabled={creating}
                 onClick={() => void create(section)}
-                className="hover:bg-accent flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left text-sm disabled:opacity-50"
+                className="hover:bg-accent flex w-full items-center gap-1.5 rounded-md px-2 py-2 text-left type-row disabled:opacity-50"
               >
                 {/* The section's own icon rather than three identical
                     plusses: which of the three this row makes is the whole

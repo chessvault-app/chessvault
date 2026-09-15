@@ -180,7 +180,7 @@ export function FieldStats({
               : t('{n} games in the field here', { n: exact.format(games) })
           }
         >
-          <span className="text-muted-foreground text-xs">
+          <span>
             {t('{n} games', { n: compact.format(games) })}
             {gaps ? ` · ${t('{pct}% met', { pct: Math.round(gaps.metShare * 100) })}` : ''}
           </span>

@@ -129,7 +129,7 @@ export function WikiSuggest({
           </div>
         ))}
         {total > items.length && (
-          <div className="text-muted-foreground px-2 py-1 text-xs">
+          <div className="text-muted-foreground px-2 py-1 type-row-sub">
             {t('{n} more, keep typing', { n: total - items.length })}
           </div>
         )}

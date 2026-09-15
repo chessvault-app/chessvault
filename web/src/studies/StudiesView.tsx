@@ -557,7 +557,7 @@ function CreateMenu() {
               label="PGN"
               hint={
                 pgnText.trim() ? (
-                  <span className={cn('text-sm', chapterCount > 0 ? 'text-good' : 'text-warn')}>
+                  <span className={chapterCount > 0 ? 'text-good' : 'text-warn'}>
                     {chapterCount === 0
                       ? t('No moves found')
                       : chapterCount === 1
@@ -738,11 +738,7 @@ function LichessImportForm({ folders, onClose }: { folders: string[]; onClose: (
               scroll to show it. */}
           <Field
             label="Studies to import"
-            hint={
-              <span className="text-muted-foreground text-sm">
-                {t('{n} of {total} selected', { n: checked.size, total: list.length })}
-              </span>
-            }
+            hint={t('{n} of {total} selected', { n: checked.size, total: list.length })}
           >
             <div className="border-border max-h-60 overflow-y-auto rounded-md border">
               {list.map(({ id, name }) => (

@@ -789,7 +789,7 @@ function IssueLine({ badge, message }: { badge: string; message: string }) {
       <Badge variant="outline" className="shrink-0 font-mono">
         {badge}
       </Badge>
-      <span className="text-warn min-w-0 truncate text-xs">{message}</span>
+      <span className="text-warn min-w-0 truncate type-row-sub">{message}</span>
     </li>
   );
 }
@@ -1077,7 +1077,7 @@ export function SearchQueryHints({
   return (
     <div className="bg-popover border-window-ring absolute inset-x-0 top-full z-20 mt-1 rounded-md border p-1 shadow-md">
       {prefixOps.length > 0 && (
-        <p className="text-muted-foreground px-2 py-1 text-xs font-medium">
+        <p className="text-muted-foreground px-2 py-1 type-row-sub font-medium">
           {t('Narrow the search with')}
         </p>
       )}
@@ -1126,7 +1126,7 @@ export function SearchQueryHints({
           ))}
         </ul>
       )}
-      {hint && <p className="text-muted-foreground px-2 py-1 text-xs">{hint}</p>}
+      {hint && <p className="text-muted-foreground px-2 py-1 type-row-sub">{hint}</p>}
     </div>
   );
 }

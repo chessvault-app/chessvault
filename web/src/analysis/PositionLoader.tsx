@@ -282,7 +282,7 @@ export function LoadPositionForm({
       >
         <ImagePlus className="size-4" />
         {t('…or read the position from a picture')}
-        <span className="text-xs">{t('click to choose, drop a file, or paste an image')}</span>
+        <span className="type-row-sub">{t('click to choose, drop a file, or paste an image')}</span>
       </FilePicker>
       {/* Under the last field, not sunk to the window's floor (lanph3re). */}
       <div className="mt-1 flex justify-end gap-2">

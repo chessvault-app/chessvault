@@ -139,7 +139,7 @@ export function TablebaseSection({ fen, onPlay }: { fen: string; onPlay: (uci: s
         // can have forty legal moves, and expanding them must not push
         // the game statistics off the bottom of the panel.
         <div className="min-h-0 overflow-y-auto">
-          <table className="w-full text-sm">
+          <table className="w-full type-row">
             {/* Headed for a screen reader only, like the statistics table
                 below it: the strip above is the visible heading. */}
             <thead className="sr-only">
@@ -164,7 +164,7 @@ export function TablebaseSection({ fen, onPlay }: { fen: string; onPlay: (uci: s
             <button
               type="button"
               onClick={() => setAll((v) => !v)}
-              className="text-muted-foreground hover:text-foreground w-full px-3 py-(--row-py-tight) text-left text-xs transition-colors duration-100"
+              className="text-muted-foreground hover:text-foreground w-full px-3 py-(--row-py-tight) text-left type-row-sub transition-colors duration-100"
             >
               {all ? t('Show fewer moves') : t('Show all {n} moves', { n: answer.moves.length })}
             </button>

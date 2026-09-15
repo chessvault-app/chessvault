@@ -155,7 +155,18 @@ function Field({
           <FieldLabel id={target ? `${target}-label` : undefined} htmlFor={target}>
             {t(label)}
           </FieldLabel>
-          {hint}
+          {/* The hint is the label's tail: a count, a unit, a state,
+              on the row-tail rung the way a list row's date is, and it
+              follows the label up on a phone. It was rendered raw, so
+              six call sites each chose a size - three at 12px flat, two
+              at 14, one a bare string inheriting whatever sat above it.
+              A hint that is really a readout (a slider's mono value)
+              still says so on its own element. */}
+          {hint !== undefined && (
+            <div data-slot="field-hint" className="text-muted-foreground type-row-sub">
+              {hint}
+            </div>
+          )}
         </div>
         {control}
       </div>

@@ -278,7 +278,7 @@ export function LinkedMentions({
                 })}
               </ul>
               {unlinkedCapped && (
-                <p className="text-muted-foreground px-2 pb-1 text-xs">
+                <p className="text-muted-foreground px-2 pb-1 type-row-sub">
                   {t('Only the first {n} are shown.', { n: unlinked.length })}
                 </p>
               )}

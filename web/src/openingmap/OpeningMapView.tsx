@@ -1153,7 +1153,7 @@ function NodePanel({
           </Field>
           <Field
             label="Intended depth"
-            hint={<span className="text-muted-foreground text-xs">{t('full moves')}</span>}
+            hint={t('full moves')}
           >
             <Input
               type="number"
@@ -1213,7 +1213,7 @@ function NodePanel({
                 <TitleTip title={tag.id}>
                 <button
                   type="button"
-                  className="text-foreground hover:text-primary min-w-0 flex-1 truncate text-left text-sm"
+                  className="text-foreground hover:text-primary min-w-0 flex-1 truncate text-left type-row"
                   onClick={() => {
                     // A study opens ON this node's position, not at its
                     // first chapter's first move — that is what following
@@ -1305,11 +1305,7 @@ function NodePanel({
       {deviations.length > 0 && (
         <Field
           label="Games that left here"
-          hint={
-            <span className="text-muted-foreground text-xs">
-              {t('{n} games', { n: deviations.length })}
-            </span>
-          }
+          hint={t('{n} games', { n: deviations.length })}
         >
           <div className="flex flex-col gap-1">
             {deviations.slice(0, 4).map((d) => {
@@ -1415,7 +1411,7 @@ function NodePanel({
       {chartable.length > 0 && (
         <Field
           label="Prepared, not on the map"
-          hint={<span className="text-muted-foreground text-xs">{t('tap to add')}</span>}
+          hint={t('tap to add')}
         >
           <div className="flex flex-wrap gap-1.5">
             {chartable.map((san) => (

@@ -218,7 +218,7 @@ export function OpeningPicker({
                 ))
               )}
               {hidden > 0 && (
-                <li className="text-muted-foreground px-2 py-1.5 text-xs">
+                <li className="text-muted-foreground px-2 py-1.5 type-row-sub">
                   {t('{count} more, type to narrow.', { count: hidden.toLocaleString() })}
                 </li>
               )}

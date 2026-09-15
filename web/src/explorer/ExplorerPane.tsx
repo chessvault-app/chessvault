@@ -478,7 +478,7 @@ export function ExplorerPane({
                 </>
               ) : (
                 <>
-                  <table className="w-full text-sm">
+                  <table className="w-full type-row">
                     {/* Headed for a screen reader only: the pane's own
                         line above the table is its visible heading, and
                         a bar needs no word over it for a sighted eye. */}
@@ -504,7 +504,7 @@ export function ExplorerPane({
                     <button
                       type="button"
                       onClick={() => setAllMoves((v) => !v)}
-                      className="text-muted-foreground hover:text-foreground w-full px-3 py-(--row-py-tight) text-left text-xs transition-colors duration-100"
+                      className="text-muted-foreground hover:text-foreground w-full px-3 py-(--row-py-tight) text-left type-row-sub transition-colors duration-100"
                     >
                       {allMoves
                         ? t('Show fewer moves')
@@ -1349,13 +1349,13 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
                   <button
                     type="button"
                     onClick={() => void open(g)}
-                    className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-1.5 py-(--row-py-tight) text-left text-sm"
+                    className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-1.5 py-(--row-py-tight) text-left type-row"
                   >
                     <span data-user-text className="text-foreground min-w-0 flex-1 truncate">
                       {g.white} – {g.black}
                     </span>
                     <ResultBadge result={g.result} />
-                    {g.date && <span className="text-muted-foreground shrink-0 text-xs">{g.date}</span>}
+                    {g.date && <span className="text-muted-foreground shrink-0 type-row-sub">{g.date}</span>}
                   </button>
                 </TitleTip>
               </li>
@@ -1455,7 +1455,7 @@ function TopGamesList({
 
   return (
     <div className="border-border border-t px-1.5 pb-2">
-      <p className="text-muted-foreground px-1.5 pb-1 pt-2 text-sm font-medium">
+      <p className="text-muted-foreground px-1.5 pb-1 pt-2 type-row font-medium">
         {mine ? t('Recent games') : t('Top games')}
       </p>
       <ul className="flex flex-col gap-px">
@@ -1486,7 +1486,7 @@ function TopGamesList({
                   onClick={() => void open(g)}
                   className={cn(
                     'hover:bg-accent flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-(--row-py-tight)',
-                    'text-left text-sm transition-colors duration-100',
+                    'text-left type-row transition-colors duration-100',
                   )}
                 >
                   <span data-user-text className="min-w-0 flex-1 truncate">
@@ -1495,11 +1495,11 @@ function TopGamesList({
                         both dots hung below the line's visual centre. */}
                     <SideDot side="white" className="mr-1 inline-block size-2 align-[1px]" />
                     <span className="text-foreground">{g.white}</span>
-                    <span className="text-muted-foreground font-mono text-xs"> {g.whiteElo || ''} </span>
+                    <span className="text-muted-foreground font-mono type-row-sub"> {g.whiteElo || ''} </span>
                     <span className="text-muted-foreground mx-0.5">vs</span>
                     <SideDot side="black" className="mx-1 inline-block size-2 align-[1px]" />
                     <span className="text-foreground">{g.black}</span>
-                    <span className="text-muted-foreground font-mono text-xs"> {g.blackElo || ''}</span>
+                    <span className="text-muted-foreground font-mono type-row-sub"> {g.blackElo || ''}</span>
                   </span>
                   <ResultBadge result={g.result} />
                 </button>
@@ -1529,7 +1529,7 @@ function TopGamesList({
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="text-muted-foreground hover:text-foreground w-full px-1.5 pt-1 text-left text-xs"
+          className="text-muted-foreground hover:text-foreground w-full px-1.5 pt-1 text-left type-row-sub"
         >
           {expanded ? t('Show fewer') : t('Show all {n}', { n: games.length })}
         </button>
