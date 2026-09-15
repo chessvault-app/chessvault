@@ -819,7 +819,7 @@ export function DashboardPage() {
                   history at 500 attempts, and neither used to say so: a
                   vault past either simply ended. */}
               {puzzles.length > 200 && (
-                <li className="text-muted-foreground px-3 py-2 type-row-sub">
+                <li className="text-muted-foreground px-3 py-(--row-py) type-row-sub">
                   {t('Showing the latest {n}', { n: 200 })}
                 </li>
               )}

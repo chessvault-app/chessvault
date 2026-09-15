@@ -1864,7 +1864,7 @@ function TablebaseCard({
             {t('Answers are kept for good, so each ending is asked about once.')}
           </p>
           <div className="border-border rounded-lg border">
-            <div className="flex items-center gap-2 py-1.5 pl-3 pr-1.5">
+            <div className="flex items-center gap-2 py-(--row-py-dense) pl-3 pr-1.5">
               <div className="flex min-w-0 flex-1 items-baseline gap-2">
                 <p className="min-w-0 flex-1 truncate type-row">{t('Cached answers')}</p>
                 {/* h-5: the line box the figures stand in, held while they
@@ -2542,7 +2542,7 @@ function RecoveryCard() {
           {(showAll ? gone : gone.slice(0, FIRST)).map((item) => (
             <li
               key={`${item.kind}/${item.id}`}
-              className="flex items-center justify-between gap-2 py-1"
+              className="flex items-center justify-between gap-2 py-(--row-py-tight)"
             >
               <span className="min-w-0">
                 <span className="text-foreground block truncate type-row">{item.id}</span>
@@ -2678,7 +2678,7 @@ function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
            flash-or-shove. */
         <>
           <div className="divide-border border-border divide-y rounded-lg border">
-            <div className="flex items-center gap-2 py-1.5 pl-3 pr-1.5">
+            <div className="flex items-center gap-2 py-(--row-py-dense) pl-3 pr-1.5">
               {/* h-7, matching the row's clear button — the tallest thing
                   in it, and so what the row takes its height from. The
                   name's own line box is 24px and the size's 20px, which
@@ -2713,7 +2713,7 @@ function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
         <>
           <ul className="divide-border border-border divide-y rounded-lg border">
             {players.map((p) => (
-              <li key={`${p.provider}/${p.user}`} className="flex items-center gap-2 py-1.5 pl-3 pr-1.5">
+              <li key={`${p.provider}/${p.user}`} className="flex items-center gap-2 py-(--row-py-dense) pl-3 pr-1.5">
                 {/* The name and its sizes keep the baseline they shared
                     when they were the whole row; only the button, which
                     has no text to sit on, is centred against them. */}
@@ -2808,7 +2808,7 @@ function StorageCard({ storage }: { storage: StorageReport | null }) {
           const target = anchor ? document.getElementById(anchor) : null;
           const go = section ? () => navigate(section) : target ? () => target.scrollIntoView({ block: 'start' }) : null;
           return (
-            <li key={label} className="flex items-baseline gap-2 px-3 py-2">
+            <li key={label} className="flex items-baseline gap-2 px-3 py-(--row-py)">
               {go ? (
                 <button
                   type="button"

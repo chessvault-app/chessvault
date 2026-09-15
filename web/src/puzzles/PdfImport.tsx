@@ -835,7 +835,7 @@ export function PdfImport({
                 {/* The board being read right now. Same row shape as the rest,
                     so the list does not jump when it turns into a real one. */}
                 {scanning && (
-                  <li className="flex items-center gap-2 py-1.5 pl-2 pr-4">
+                  <li className="flex items-center gap-2 py-(--row-py-dense) pl-2 pr-4">
                     {/* The row's first cell is its Checkbox, inert: disabled,
                         out of the tab order, and not offered to a reader,
                         since there is nothing to keep yet. */}

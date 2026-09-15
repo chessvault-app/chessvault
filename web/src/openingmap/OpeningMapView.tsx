@@ -841,7 +841,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
  * rows at 36px read as a different kind of control, so the trigger
  * takes the row's own metrics instead.
  */
-const ROW_SELECT = 'w-full h-auto pointer-coarse:h-auto px-3 py-2 text-base';
+const ROW_SELECT = 'w-full h-auto pointer-coarse:h-auto px-3 py-(--row-py) text-base';
 
 const ADD_ROW =
   'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground flex items-center gap-2 ' +
@@ -923,7 +923,7 @@ function PickRow({
       onClick={onPick}
       aria-pressed={picked}
       className={cn(
-        'flex items-center gap-2 rounded-lg border px-3 py-2 text-left text-base transition-colors duration-100',
+        'flex items-center gap-2 rounded-lg border px-3 py-(--row-py) text-left text-base transition-colors duration-100',
         picked
           ? 'border-primary/40 bg-muted text-primary font-medium'
           : 'border-border text-foreground hover:bg-accent',
@@ -1207,7 +1207,7 @@ function NodePanel({
             return (
               <div
                 key={`${tag.kind}\n${tag.id}\n${tag.chapter ?? ''}`}
-                className="border-border flex items-center gap-2 rounded-lg border px-2 py-1.5"
+                className="border-border flex items-center gap-2 rounded-lg border px-2 py-(--row-py-dense)"
               >
                 <Icon className={broken ? 'text-destructive size-4 shrink-0' : 'text-muted-foreground size-4 shrink-0'} />
                 <TitleTip title={tag.id}>

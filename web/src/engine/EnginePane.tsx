@@ -220,13 +220,13 @@ export function EngineBlock({
             )}
           >
             {terminal ? (
-              <li className="text-muted-foreground px-3 py-1 text-sm">
+              <li className="text-muted-foreground px-3 py-(--row-py-tight) text-sm">
                 {terminal.mate !== undefined
                   ? t('Checkmate. There is nothing left to search.')
                   : t('The game ends here. There is nothing left to search.')}
               </li>
             ) : visibleLines.length === 0 ? (
-              <li className="text-muted-foreground px-3 py-1 text-sm">{t('Thinking…')}</li>
+              <li className="text-muted-foreground px-3 py-(--row-py-tight) text-sm">{t('Thinking…')}</li>
             ) : (
               visibleLines.map((line) => (
                 <PvRow
@@ -250,7 +250,7 @@ export function EngineBlock({
           variation OF, and coming back. On a desktop the Moves panel is
           already the next thing down this same column and a second copy
           of the line would be a second copy of the line. */}
-      {enabled && !error && standalone && <CurrentLine className="border-border border-t px-3 py-1.5" />}
+      {enabled && !error && standalone && <CurrentLine className="border-border border-t px-3 py-(--row-py-dense)" />}
       {/* Closes the expanded engine body so the Moves header below reads
           as its own section; when the engine is off the header's own
           bottom border already does the job. Nothing follows it when the
@@ -310,7 +310,7 @@ function PvRow({
           up beside it. */}
       <div
         className={cn(
-          'group hover:bg-accent flex w-full items-baseline gap-2 px-3 py-1 text-left',
+          'group hover:bg-accent flex w-full items-baseline gap-2 px-3 py-(--row-py-tight) text-left',
           'transition-colors duration-100',
         )}
       >

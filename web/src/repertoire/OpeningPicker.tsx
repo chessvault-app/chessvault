@@ -190,7 +190,7 @@ export function OpeningPicker({
           const list = (
             <ul className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
               {matches.length === 0 ? (
-                <li className="text-muted-foreground px-2 py-1.5 text-sm">
+                <li className="text-muted-foreground px-2 py-(--row-py-dense) text-sm">
                   {all === null ? t('Reading the catalogue…') : t('No opening matches that.')}
                 </li>
               ) : (
@@ -200,7 +200,7 @@ export function OpeningPicker({
                       type="button"
                       onClick={() => pick(o)}
                       className={cn(
-                        'flex w-full items-baseline gap-2 rounded-md px-2 py-1.5 text-left text-sm',
+                        'flex w-full items-baseline gap-2 rounded-md px-2 py-(--row-py-dense) text-left text-sm',
                         'hover:bg-accent transition-colors duration-100 pointer-coarse:py-2.5',
                         value !== null && o.name === value.name && o.eco === value.eco
                           ? 'text-primary font-medium'
@@ -218,7 +218,7 @@ export function OpeningPicker({
                 ))
               )}
               {hidden > 0 && (
-                <li className="text-muted-foreground px-2 py-1.5 type-row-sub">
+                <li className="text-muted-foreground px-2 py-(--row-py-dense) type-row-sub">
                   {t('{count} more, type to narrow.', { count: hidden.toLocaleString() })}
                 </li>
               )}

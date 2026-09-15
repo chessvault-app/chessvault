@@ -784,7 +784,7 @@ export async function catalogSuggest(
 /** One issue line: the offending piece as a badge, the reason beside it. */
 function IssueLine({ badge, message }: { badge: string; message: string }) {
   return (
-    <li className="flex items-baseline gap-2 px-2 py-1">
+    <li className="flex items-baseline gap-2 px-2 py-(--row-py-tight)">
       <TriangleAlert className="text-warn glyph-sm shrink-0 self-center" aria-hidden />
       <Badge variant="outline" className="shrink-0 font-mono">
         {badge}

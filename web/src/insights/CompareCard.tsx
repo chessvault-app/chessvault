@@ -253,7 +253,7 @@ function CompareBody({ databases }: { databases: FieldDatabase[] }) {
                 key={row.key}
                 type="button"
                 onClick={() => void open(row)}
-                className="hover:bg-accent flex flex-col gap-0.5 rounded-md px-2 py-1.5 text-left outline-none focus-visible:ring-3 focus-visible:ring-ring"
+                className="hover:bg-accent flex flex-col gap-0.5 rounded-md px-2 py-(--row-py-dense) text-left outline-none focus-visible:ring-3 focus-visible:ring-ring"
               >
                 <span className="flex w-full items-baseline gap-2">
                   <span className="text-foreground font-moves min-w-0 flex-1 truncate text-sm font-medium">

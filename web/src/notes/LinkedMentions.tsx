@@ -209,7 +209,7 @@ export function LinkedMentions({
                   // style. These rows drew `ring-2 ring-ring` over
                   // `outline-none` instead — a second focus style, 2px
                   // where every other control wears the page's 3px.
-                  className="hover:bg-accent flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-2 text-left"
+                  className="hover:bg-accent flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-(--row-py) text-left"
                 >
                   <span className="flex items-center gap-1.5 type-row font-medium">
                     <SourceIcon m={m} className="text-muted-foreground glyph shrink-0" />
@@ -250,7 +250,7 @@ export function LinkedMentions({
                        ran on underneath it, so the text passed behind the
                        button and neither edge lined up with anything. A
                        column ends the text where the button starts. */
-                    <li key={at} className="hover:bg-accent flex items-start gap-2 rounded-md px-2 py-2">
+                    <li key={at} className="hover:bg-accent flex items-start gap-2 rounded-md px-2 py-(--row-py)">
                       <SourceIcon m={m} className="text-muted-foreground mt-1 glyph shrink-0" />
                       <div className="min-w-0 flex-1">
                         <button

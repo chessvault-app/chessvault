@@ -242,6 +242,10 @@ export function GameListShell({
                 list
               )}
               {!listLoading && more && (
+                // The sentinel the observer watches, not a row: it is the
+                // list's floor, one of it however many games are above,
+                // and its padding is the room the spinner sits in rather
+                // than a rhythm anything repeats. Density leaves it.
                 <li ref={more.ref} className="flex items-center justify-center gap-2 p-3">
                   <Spinner className="text-muted-foreground size-4" />
                   <span className="text-muted-foreground text-sm">{more.label}</span>

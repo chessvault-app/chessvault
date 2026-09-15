@@ -317,7 +317,7 @@ function Row({ entry, open, onToggle }: { entry: Entry; open: boolean; onToggle:
         aria-controls={open ? panelId : undefined}
         // The full muted fill, the ghost variant's hover, not a wash of it:
         // half of the ground rung over the page measured 1.04:1.
-        className="hover:bg-muted flex min-h-9 w-full items-center gap-2 rounded-md px-2 py-1.5 text-left type-row transition-colors duration-100"
+        className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-(--row-py-dense) text-left type-row transition-colors duration-100 pointer-coarse:min-h-9"
       >
         <ChevronRight
           className={cn(
