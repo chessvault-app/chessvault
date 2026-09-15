@@ -544,7 +544,7 @@ function EngineRow() {
     <Field label="Engine">
       <div className="grid gap-2">
         <Select value={shown} onValueChange={pick} ariaLabel={t('Engine')} groups={[{ options }]} />
-        <p className="text-muted-foreground text-xs leading-relaxed">
+        <p className="text-muted-foreground text-sm leading-relaxed">
           {threadsAvailable
             ? demo
               ? t('Stockfish 19 lite runs on the 1 MB network every build ships. Stockfish 18 is the single-threaded build.')
@@ -554,7 +554,7 @@ function EngineRow() {
         {progress ? (
           <div className="grid gap-1">
             {progress.total ? <Progress value={percent} aria-label={t('Download progress')} /> : null}
-            <p className="text-muted-foreground text-xs tabular-nums">
+            <p className="text-muted-foreground text-sm tabular-nums">
               {progress.total
                 ? t('Downloading, {done} of {total}', { done: mb(progress.bytes), total: mb(progress.total) })
                 : t('Starting the download…')}
@@ -562,14 +562,14 @@ function EngineRow() {
           </div>
         ) : error ? (
           <div className="flex items-center justify-between gap-2">
-            <p className="text-destructive text-xs">{t('Could not download: {reason}', { reason: error })}</p>
+            <p className="text-destructive text-sm">{t('Could not download: {reason}', { reason: error })}</p>
             <Button variant="outline" size="sm" onClick={() => void start()}>
               {t('Try again')}
             </Button>
           </div>
         ) : status?.ready ? (
           <div className="flex items-center justify-between gap-2">
-            <p className="text-muted-foreground text-xs">{t('Full network kept on the server, {size}.', { size: mb(status.bytes) })}</p>
+            <p className="text-muted-foreground text-sm">{t('Full network kept on the server, {size}.', { size: mb(status.bytes) })}</p>
             <Button variant="ghost" size="sm" title={t('Remove the full network from the server')} onClick={() => void remove()}>
               {t('Remove')}
             </Button>

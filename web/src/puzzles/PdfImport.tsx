@@ -566,7 +566,7 @@ export function PdfImport({
           )}
 
           {preparing && (
-            <p className="text-muted-foreground flex items-center gap-2 text-base">
+            <p className="text-muted-foreground flex items-center gap-2 text-sm">
               <Spinner />
               {/* Covers both halves of the preparation: the readability
                   probe every path runs, and the clear a rebuild adds. */}
@@ -575,7 +575,7 @@ export function PdfImport({
           )}
           {scanning && (
             <div className="flex items-center gap-2">
-              <p className="text-muted-foreground flex min-w-0 flex-1 items-center gap-2 text-base">
+              <p className="text-muted-foreground flex min-w-0 flex-1 items-center gap-2 text-sm">
                 <Spinner className="size-4 shrink-0" />
                 <span className="truncate">
                   {t('page {page}/{pages}, {n} diagrams so far', {
@@ -613,7 +613,7 @@ export function PdfImport({
             </div>
           )}
           {reading && (
-            <p className="text-muted-foreground flex items-center gap-2 text-base">
+            <p className="text-muted-foreground flex items-center gap-2 text-sm">
               <Spinner />
               {job.engineAt
                 ? t('checking positions the book’s answers did not fit ({done} of {total})', {

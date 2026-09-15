@@ -88,7 +88,7 @@ export function LeaveDialog() {
       }}
     >
       <DialogContent size="sm" title={t('Unsaved changes')} className="gap-3">
-        <p className="text-foreground text-base">
+        <p className="text-foreground text-sm">
           {t('You have unsaved changes in “{name}”. Would you like to save before leaving?', {
             name,
           })}

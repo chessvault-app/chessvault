@@ -63,7 +63,7 @@ export function RecoveryDialog({
       }}
     >
       <DialogContent size="sm" title={t('Unsaved changes were found')} className="gap-3">
-        <p className="text-foreground text-base">
+        <p className="text-foreground text-sm">
           {stamp
             ? t('“{name}” has changes from {when} that were never saved.', { name, when: stamp })
             : t('“{name}” has changes that were never saved.', { name })}

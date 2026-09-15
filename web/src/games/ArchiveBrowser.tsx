@@ -1264,7 +1264,7 @@ export function ArchiveBrowser({
               is the first thing to go when there is no room. There is
               room: the window scrolls. */}
           <CloudBoardArt className="w-20 shrink-0" />
-          <p className="text-muted-foreground max-w-xs text-base leading-relaxed">
+          <p className="text-muted-foreground max-w-xs text-sm leading-relaxed">
             {t(
               'Browse your games. Type your {site} username above and pick a month, then add the ones worth keeping to your collection.',
               { site: provider === 'chesscom' ? 'Chess.com' : 'Lichess' },

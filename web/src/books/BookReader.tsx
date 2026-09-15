@@ -772,7 +772,7 @@ function ReaderMenu({ book, onChanged }: { book: LibraryBook; onChanged: () => v
   return (
     <>
       {note && (
-        <span className="text-destructive text-xs" role="alert">
+        <span className="text-destructive text-sm" role="alert">
           {note}
         </span>
       )}

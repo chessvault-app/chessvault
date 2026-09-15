@@ -46,7 +46,7 @@ export function PageGate({
           <Icon className="size-6" strokeWidth={1.75} />
         </div>
         <h1 className={cn('text-xl font-semibold tracking-tight', titleClassName)}>{title}</h1>
-        <p className="text-muted-foreground text-base leading-relaxed">{body}</p>
+        <p className="text-muted-foreground text-sm leading-relaxed">{body}</p>
         {actions && <div className="mt-1 flex gap-2">{actions}</div>}
       </div>
     </div>

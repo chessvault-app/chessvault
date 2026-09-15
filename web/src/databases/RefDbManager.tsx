@@ -550,7 +550,7 @@ export function RefDbManager({
               </Progress>
             )}
             {quiet && (
-              <p className="text-muted-foreground text-xs leading-relaxed">
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 {t(
                   'Nothing new for {minutes} minutes. This step is one database operation and reports nothing until it finishes. On a large database that can take an hour.',
                   { minutes: quietMinutes },
@@ -1439,7 +1439,7 @@ function BuildWindow({
         />
         {/* The rule the server holds the name to, said before it refuses:
             "invalid database name" on its own left the user guessing. */}
-        <p className="text-muted-foreground -mt-1 text-xs leading-relaxed">
+        <p className="text-muted-foreground -mt-1 text-sm leading-relaxed">
           {t('Letters, digits, dots, dashes and underscores, with no spaces.')}
         </p>
         {error && (

@@ -857,7 +857,7 @@ const HintRow = memo(function HintRow({
             {item.primary}
           </Badge>
         ) : (
-          <span className="text-foreground min-w-0 truncate text-xs font-medium">
+          <span className="text-foreground min-w-0 truncate text-sm font-medium">
             {item.primary}
           </span>
         )}

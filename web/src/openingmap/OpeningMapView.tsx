@@ -547,7 +547,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
       {/* The universe itself — no box, no border, edge to edge. */}
       {loaded && map && resolved && !empty && !revealed && (
         <CanvasOverlay>
-          <div className="text-muted-foreground flex items-center gap-2 text-base">
+          <div className="text-muted-foreground flex items-center gap-2 text-sm">
             <Spinner />
             {t('Preparing the map…')}
           </div>
