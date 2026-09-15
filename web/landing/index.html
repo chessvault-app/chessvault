@@ -552,8 +552,10 @@
            shortest had slack. */
         flex: 1 1 auto; min-width: fit-content; justify-content: center;
         gap: 0.35rem; padding-inline: var(--s2);
-        /* Shrinks with the viewport so the row never has to wrap. */
-        font-size: clamp(0.72rem, 0.636rem + 0.41vw, var(--t-md));
+        /* Shrinks with the viewport so the row never has to wrap, and
+           stops at 12px: below that is under every system's floor, and
+           this is a control's label on a phone. */
+        font-size: clamp(var(--t-xs), 0.636rem + 0.41vw, var(--t-md));
         white-space: nowrap;
       }
       .btn.os svg { width: 1em; height: 1em; flex: none; }

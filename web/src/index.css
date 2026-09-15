@@ -2173,7 +2173,7 @@ cg-board square.check {
   margin-top: 1em;
 }
 .note-editor h3 {
-  font-size: 1.05em;
+  font-size: 1em;
   font-weight: 600;
   margin-top: 0.9em;
 }
@@ -2199,7 +2199,7 @@ cg-board square.check {
 }
 .note-editor code {
   font-family: var(--font-mono);
-  font-size: 0.85em;
+  font-size: 0.875em;
   background: var(--surface-inset);
   border: 1px solid var(--border);
   border-radius: 4px;
@@ -2207,7 +2207,7 @@ cg-board square.check {
 }
 .note-editor pre {
   font-family: var(--font-mono);
-  font-size: 0.85em;
+  font-size: 0.875em;
   background: var(--surface-inset);
   border: 1px solid var(--border);
   border-radius: var(--radius);

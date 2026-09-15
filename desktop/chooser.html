@@ -75,15 +75,20 @@
       }
       /* The logotype as the app sets it beside the mark
          (web/src/components/brand-mark.tsx): joined, lowercase, medium. */
+      /* 16px, the size brand-mark draws the logotype at in the sidebar,
+         which is what the note below always meant. The window's rungs are
+         the app's: 16 for the title, 14 for everything else off a 14px
+         body. It had been 18.4 / 13.6 / 12.8, three sizes the app has no
+         rung for. */
       h1 {
-        font-size: 1.15rem;
+        font-size: 1rem;
         font-weight: 500;
         margin: 0;
       }
       .sub {
         margin: 0 0 0.75rem;
         color: var(--text-subtle);
-        font-size: 0.85rem;
+        font-size: 0.875rem;
       }
       .option {
         width: 100%;
@@ -110,7 +115,7 @@
       }
       .option .desc {
         color: var(--text-subtle);
-        font-size: 0.8rem;
+        font-size: 0.875rem;
       }
       .option svg {
         width: 1.1rem;
@@ -136,7 +141,7 @@
         background: none;
         color: var(--text-subtle);
         font: inherit;
-        font-size: 0.85rem;
+        font-size: 0.875rem;
         cursor: pointer;
         border-radius: 0.5rem;
       }
@@ -170,7 +175,7 @@
         background: var(--surface-inset);
         color: inherit;
         font: inherit;
-        font-size: 0.85rem;
+        font-size: 0.875rem;
         outline: none;
       }
       input:focus {
@@ -188,7 +193,7 @@
       }
       .error {
         color: var(--bad);
-        font-size: 0.8rem;
+        font-size: 0.875rem;
         margin: 0;
       }
     </style>

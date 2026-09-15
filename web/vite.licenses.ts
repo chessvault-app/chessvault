@@ -539,9 +539,13 @@ function indexPage(
         margin: 0 auto; padding: 2.5rem 1.25rem 5rem; max-width: 48rem;
         font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
       }
-      h1 { font-size: 1.6rem; margin: 0 0 .3rem; }
+      /* The app's rungs, in a page with no Tailwind: 1.5rem/1rem/.875rem/
+         .75rem off a 16px body (DESIGN.md, Typography). It had grown a
+         1.6/.9/.85/.8/.78rem scale of its own, five sizes the app does
+         not draw, on the one page that lists what the app is made of. */
+      h1 { font-size: 1.5rem; margin: 0 0 .3rem; }
       .lede { opacity: .75; margin: 0 0 .4rem; }
-      .copyright { font-size: .9rem; opacity: .85; margin: 0 0 1.4rem; }
+      .copyright { font-size: .875rem; opacity: .85; margin: 0 0 1.4rem; }
       .controls { display: flex; flex-wrap: wrap; gap: .4rem; margin: 1rem 0 .3rem; }
       /* The filter owns its line and the group chips own theirs. Sharing
          one wrapping row put the chips on a second line anyway on a phone,
@@ -573,21 +577,21 @@ function indexPage(
       /* Cancel empties the field and puts the keyboard away. Touch only:
          a mouse has neither problem and has Escape besides. */
       #cancel {
-        font: inherit; font-size: .85rem; padding: .45rem .7rem; border: 0;
+        font: inherit; font-size: .875rem; padding: .45rem .7rem; border: 0;
         border-radius: 999px; background: rgba(128,128,128,.18); color: inherit;
         cursor: pointer; white-space: nowrap;
       }
       #cancel[hidden] { display: none; }
       @media (pointer: fine) { #cancel { display: none !important; } }
       .chip {
-        font: inherit; font-size: .8rem; padding: .3rem .6rem; border-radius: 999px;
+        font: inherit; font-size: .75rem; padding: .3rem .6rem; border-radius: 999px;
         border: 1px solid rgba(128,128,128,.4); background: transparent; color: inherit;
         cursor: pointer;
       }
       .chip:hover { background: rgba(128,128,128,.15); }
       .chip[aria-pressed="true"] { background: rgba(128,128,128,.28); font-weight: 600; }
       .chip .n { opacity: .6; }
-      #count { font-size: .85rem; opacity: .7; margin: .2rem 0 .8rem; }
+      #count { font-size: .875rem; opacity: .7; margin: .2rem 0 .8rem; }
 
       .dep { border-top: 1px solid rgba(128,128,128,.25); }
       .dep[hidden] { display: none; }
@@ -602,16 +606,16 @@ function indexPage(
         font-weight: 600; min-width: 0; overflow: hidden;
         text-overflow: ellipsis; white-space: nowrap;
       }
-      .dep .ver { font-size: .8rem; opacity: .6; font-family: ui-monospace, monospace; flex: none; }
+      .dep .ver { font-size: .75rem; opacity: .6; font-family: ui-monospace, monospace; flex: none; }
       .dep .lic { font-size: .75rem; opacity: .8; margin-left: auto; flex: none;
                   white-space: nowrap;
                   border: 1px solid rgba(128,128,128,.35); border-radius: 999px; padding: .05rem .5rem; }
-      .dep .src { margin: .1rem .2rem .5rem; font-size: .8rem; word-break: break-all; }
+      .dep .src { margin: .1rem .2rem .5rem; font-size: .75rem; word-break: break-all; }
       .dep pre {
         margin: 0 0 1rem; padding: .9rem 1rem; border-radius: .5rem;
         background: rgba(128,128,128,.12); overflow-x: auto;
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: .78rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+        font-size: .75rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
       }
     </style>
   </head>
