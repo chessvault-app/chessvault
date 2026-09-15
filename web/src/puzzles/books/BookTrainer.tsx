@@ -397,7 +397,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     const missing = book !== null && solutions !== null && (index < 0 || !answer);
     if (missing) {
       return (
-        <div className="text-muted-foreground optical-center h-full text-base">
+        <div className="text-muted-foreground optical-center h-full text-base font-medium">
           {t('That puzzle does not exist.')}
         </div>
       );

@@ -244,7 +244,7 @@ export function StudyView({
     return (
       <div className="optical-center h-full p-8">
         <div className="flex flex-col items-center gap-3 text-center">
-          <p className="text-muted-foreground text-base">{error ?? `Could not open “${id}”.`}</p>
+          <p className="text-muted-foreground text-base font-medium">{error ?? `Could not open “${id}”.`}</p>
           <Button variant="secondary" size="sm" onClick={() => navigate(backSection)}>
             <ChevronLeft className="glyph" data-icon="inline-start" />
             {t(kind === 'game' ? 'All games' : 'All studies')}
