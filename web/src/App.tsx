@@ -86,7 +86,13 @@ const BooksView = lazyRoute(() => import('@/books/BooksView').then((m) => ({ def
 // lanph3re's recording). Home is six tiles and some fetches; the engine,
 // the board and the parsers stay behind the lazy routes here.
 const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })), PAGE);
-const SettingsPage = lazyRoute(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })), PAGE);
+// The first route converted to the shape every router settles on: its
+// outline is its own module beside the page, fetched in parallel with
+// it, and the PAGE draws the same module while /api/settings is out
+// (lib/lazyRoute, `outline`). RouteSkeleton no longer guesses this one.
+const SettingsPage = lazyRoute(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })), {
+  outline: () => import('@/settings/SettingsPage.skeleton'),
+});
 const LicensesPage = lazyRoute(() => import('@/settings/LicensesPage').then((m) => ({ default: m.LicensesPage })), PAGE);
 
 // Which chunk a hash draws, for the phone's page transition to wait on

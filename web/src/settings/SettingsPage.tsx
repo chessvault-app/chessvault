@@ -1,27 +1,28 @@
 import { useEffect, useEffectEvent, useRef, useState, type CSSProperties } from 'react';
 import { Skeleton, SkeletonVaultTree, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
-import { ChevronLeft, ChevronRight, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
+import { Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
 import { copyText } from '@/lib/clipboard';
 import { isInstalled, useInstallPrompt } from '@/lib/install';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { forgetLichessToken } from '@/components/lichess-token-notice';
 import { forgetTablebaseAnswers } from '@/explorer/tablebase';
-import { PageHeader, pageTitleClass } from '@/components/page-header';
+import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
+import { routePlaceholderShown } from '@/lib/lazyRoute';
 import { Field } from '@/components/ui/field';
 import { VAULT_ROWS, VaultTree, type VaultRow } from '@/components/vault-tree';
 import {
   DEMO_VAULT_NOTE,
   PROFILE_NOTE,
   SettingsCard as Card,
-  SettingsOutline,
+  SettingsPlaceholder,
   VAULT_COPY_NOTE,
   VAULT_NAME_NOTE,
   VAULT_ROWS_KEY,
   readVaultPaths,
-} from '@/components/settings-outline';
+} from '@/settings/SettingsPage.skeleton';
 import { toast } from '@/components/ui/toast';
 import { ClearableInput } from '@/components/text-fields';
 import { Input } from '@/components/ui/input';
@@ -40,7 +41,7 @@ import { Select } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { Disclosure } from '@/components/disclosure';
-import { SettingRow, SkeletonSettingRow } from '@/components/setting-row';
+import { SettingRow } from '@/components/setting-row';
 import { TitleTip } from '@/components/title-tip';
 import { usePinnedBand } from '@/hooks/use-pinned-band';
 import { Switch } from '@/components/ui/switch';
@@ -153,7 +154,20 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
       re-read instead of standing on the figures they loaded with. */
   const [storageStamp, setStorageStamp] = useState(0);
   const storage = useStorage(storageStamp);
-  const pending = useSlowLoad(settings === null && loadError === null);
+  const waiting = settings === null && loadError === null;
+  /**
+   * Whether the route's own outline was already on screen when this page
+   * mounted (lib/lazyRoute, routePlaceholderShown).
+   *
+   * It is the same component this page is about to draw, out of the same
+   * module, so there is nothing for `useSlowLoad`'s 180ms to protect
+   * against: a delay exists to keep a placeholder from flashing where
+   * nothing stood, and here the picture is already up. Without this the
+   * two waits hand over through a hole and the outline blinks out and
+   * back in.
+   */
+  const [continuing] = useState(routePlaceholderShown);
+  const pending = useSlowLoad(waiting) || (continuing && waiting);
   /**
    * Whether this page's own outline has been on screen.
    *
@@ -373,80 +387,6 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
  * own placeholder does with its path. The third card ends under the
  * fold at both widths, and what follows settles under it.
  */
-function SettingsPlaceholder() {
-  return (
-    <div role="status" aria-label={t('Loading')} aria-live="polite" className="contents">
-      {/* The page title, as PageHeader draws it: text-xl on a desktop,
-          whose line box is 28px; below md the header is the phone's 44px
-          bar (PageHeader's min-h-11) with the back chevron before the
-          name. The title is known without the answer, so it is the real
-          words, and the chevron is the real button held inert. */}
-      <div className="flex h-7 items-center gap-x-3 max-md:h-11">
-        <Button variant="ghost" size="icon-sm" className="md:hidden" disabled tabIndex={-1} aria-hidden>
-          <ChevronLeft className="glyph" />
-        </Button>
-        <h1 className={pageTitleClass}>{t('Settings')}</h1>
-      </div>
-      {/* The link row and the first cards are the shared outline, which
-          the route placeholder draws too (components/settings-outline):
-          two waits for one page, one picture. What follows is the cards
-          that outline leaves to whoever holds this chunk. */}
-      <SettingsOutline>
-        <Card icon={Save} title={t('Documents')}>
-          <SkeletonSettingRow title="Auto-save" blurb="Write changes to the vault as you make them. Off, they wait for you to save." />
-        </Card>
-        {isDemo() && (
-          <Card icon={Palette} title={t('Appearance')}>
-            {APPEARANCE_FIELDS.map((label) => (
-              <SelectFieldPlaceholder key={label} label={label} />
-            ))}
-            <SkeletonSettingRow title="Board coordinates" blurb="File and rank labels on the board edge." />
-            <SkeletonSettingRow title="Move box" blurb="Play moves from the keyboard." />
-            <DisclosurePlaceholder />
-          </Card>
-        )}
-      </SettingsOutline>
-    </div>
-  );
-}
-
-/** The Appearance card's seven Selects, in the card's order (AppearanceCard). */
-const APPEARANCE_FIELDS = ['App language', 'App theme', 'Density', 'Colours', 'Board', 'Pieces', 'Castling'];
-
-/**
- * A labelled control, held inert: the real Field with its real label
- * over the real control, a lg input at h-9 or a select trigger at h-8,
- * both h-9 under a coarse pointer. The label is known before the answer
- * is, so it is the real words rather than a bar; the value is not, so
- * the input is empty and the select shows its no-value dash. The select
- * sits under `inert` rather than `disabled`, because the phone's trigger
- * is its own button and does not take the prop.
- */
-function SelectFieldPlaceholder({ label }: { label: string }) {
-  return (
-    <Field label={label}>
-      <div inert>
-        <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} />
-      </div>
-    </Field>
-  );
-}
-
-/** The closed "More options" row of a Disclosure, held inert: one text-sm line, 36px under a coarse pointer. */
-function DisclosurePlaceholder() {
-  return (
-    <button
-      type="button"
-      disabled
-      tabIndex={-1}
-      className="text-muted-foreground flex items-center gap-1.5 self-start text-sm pointer-coarse:min-h-9"
-    >
-      <ChevronRight className="glyph" aria-hidden />
-      {t('More options')}
-    </button>
-  );
-}
-
 /**
  * The card names, each a jump to its card.
  *

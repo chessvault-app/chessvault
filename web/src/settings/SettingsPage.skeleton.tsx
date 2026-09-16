@@ -1,9 +1,13 @@
-import { CircleHelp, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CircleHelp, Palette, Save, User } from 'lucide-react';
 import type { ComponentType, ReactNode } from 'react';
 import { BrandMark } from '@/components/brand-mark';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { PageShell } from '@/components/page-shell';
+import { pageTitleClass } from '@/components/page-header';
+import { SkeletonSettingRow } from '@/components/setting-row';
 import { TitleTip } from '@/components/title-tip';
 import { SkeletonVaultTree } from '@/components/skeletons';
 import { VAULT_ROWS } from '@/components/vault-tree';
@@ -35,7 +39,7 @@ import { t } from '@/lib/i18n';
  * The card frames are real and the sentences a card prints whatever the
  * answer are the real words; only what waits on the answer is a bar.
  */
-export function SettingsOutline({
+function SettingsOutlineTop({
   children,
 }: {
   /** The cards below the fold, drawn by whoever has the chunk for them. */
@@ -226,3 +230,98 @@ export const readVaultPaths = (): readonly string[] | undefined => {
     return undefined;
   }
 };
+
+/**
+ * The page's whole outline, for the wait BEFORE the page's own chunk.
+ *
+ * `lib/lazyRoute` imports this module in parallel with SettingsPage and
+ * draws this while the page is still on the wire; SettingsPage draws
+ * `SettingsPlaceholder` out of the same module while /api/settings is
+ * out. One picture over both waits, and it cannot be two pictures,
+ * because it is one component.
+ *
+ * The shell is the page's own (`PageShell width="narrow"`), which is all
+ * SettingsPage puts around the placeholder itself.
+ */
+export default function SettingsOutlinePage() {
+  return (
+    <PageShell width="narrow">
+      <SettingsPlaceholder />
+    </PageShell>
+  );
+}
+
+export function SettingsPlaceholder() {
+  return (
+    <div role="status" aria-label={t('Loading')} aria-live="polite" className="contents">
+      {/* The page title, as PageHeader draws it: text-xl on a desktop,
+          whose line box is 28px; below md the header is the phone's 44px
+          bar (PageHeader's min-h-11) with the back chevron before the
+          name. The title is known without the answer, so it is the real
+          words, and the chevron is the real button held inert. */}
+      <div className="flex h-7 items-center gap-x-3 max-md:h-11">
+        <Button variant="ghost" size="icon-sm" className="md:hidden" disabled tabIndex={-1} aria-hidden>
+          <ChevronLeft className="glyph" />
+        </Button>
+        <h1 className={pageTitleClass}>{t('Settings')}</h1>
+      </div>
+      {/* The link row and the first cards are the shared outline, which
+          the route placeholder draws too (settings/SettingsPage.skeleton):
+          two waits for one page, one picture. What follows is the cards
+          that outline leaves to whoever holds this chunk. */}
+      <SettingsOutlineTop>
+        <SettingsCard icon={Save} title={t('Documents')}>
+          <SkeletonSettingRow title="Auto-save" blurb="Write changes to the vault as you make them. Off, they wait for you to save." />
+        </SettingsCard>
+        {isDemo() && (
+          <SettingsCard icon={Palette} title={t('Appearance')}>
+            {APPEARANCE_FIELDS.map((label) => (
+              <SelectFieldPlaceholder key={label} label={label} />
+            ))}
+            <SkeletonSettingRow title="Board coordinates" blurb="File and rank labels on the board edge." />
+            <SkeletonSettingRow title="Move box" blurb="Play moves from the keyboard." />
+            <DisclosurePlaceholder />
+          </SettingsCard>
+        )}
+      </SettingsOutlineTop>
+    </div>
+  );
+}
+
+/** The Appearance card's seven Selects, in the card's order (AppearanceCard). */
+const APPEARANCE_FIELDS = ['App language', 'App theme', 'Density', 'Colours', 'Board', 'Pieces', 'Castling'];
+
+/**
+ * A labelled control, held inert: the real Field with its real label
+ * over the real control, a lg input at h-9 or a select trigger at h-8,
+ * both h-9 under a coarse pointer. The label is known before the answer
+ * is, so it is the real words rather than a bar; the value is not, so
+ * the input is empty and the select shows its no-value dash. The select
+ * sits under `inert` rather than `disabled`, because the phone's trigger
+ * is its own button and does not take the prop.
+ */
+function SelectFieldPlaceholder({ label }: { label: string }) {
+  return (
+    <Field label={label}>
+      <div inert>
+        <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} />
+      </div>
+    </Field>
+  );
+}
+
+/** The closed "More options" row of a Disclosure, held inert: one text-sm line, 36px under a coarse pointer. */
+function DisclosurePlaceholder() {
+  return (
+    <button
+      type="button"
+      disabled
+      tabIndex={-1}
+      className="text-muted-foreground flex items-center gap-1.5 self-start text-sm pointer-coarse:min-h-9"
+    >
+      <ChevronRight className="glyph" aria-hidden />
+      {t('More options')}
+    </button>
+  );
+}
+

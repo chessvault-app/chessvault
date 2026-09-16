@@ -11,8 +11,7 @@ import {
 } from '@/components/skeletons';
 import { SearchInput } from '@/components/text-fields';
 import { readShelfLayout, readShelfShape, shelfHasShape } from '@/components/shelf-reservation';
-import { SettingsOutline } from '@/components/settings-outline';
-import { parse, up, type Section } from '@/lib/router';
+import { parse, type Section } from '@/lib/router';
 import { t } from '@/lib/i18n';
 
 /**
@@ -283,25 +282,12 @@ function shapeFor(section: Section, params: string[]): ReactNode {
         />
       );
 
+    // Settings is gone from here: it carries its own outline module now
+    // (settings/SettingsPage.skeleton), which lib/lazyRoute draws for the
+    // chunk wait and the page draws for its own. This branch only ever
+    // sees the licences sub-route.
     case 'settings':
-      if (params[0] === 'licenses') return <ChromeOnly title={t('Licences')} width="medium" />;
-      return (
-        <PageShell width="narrow">
-          <div role="status" aria-label={t('Loading')} aria-live="polite" className="contents">
-            {/* The settled page's own header, `back` and all, so the
-                chevron a phone shows is in the row rather than arriving
-                into it. It works while it waits, which is the right
-                answer for a page that is taking its time. */}
-            <PageHeader title={t('Settings')} back={() => up('home')} />
-            {/* Shared with SettingsPage's own placeholder, which draws
-                this same outline for the wait AFTER this one
-                (components/settings-outline). Two waits for one page,
-                one picture, so the column is drawn once and filled in
-                rather than redrawn. */}
-            <SettingsOutline />
-          </div>
-        </PageShell>
-      );
+      return params[0] === 'licenses' ? <ChromeOnly title={t('Licences')} width="medium" /> : null;
     case 'insights':
       return <ChromeOnly title={t('Insights')} width="medium" />;
     case 'databases':
