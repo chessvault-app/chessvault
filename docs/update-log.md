@@ -5,6 +5,27 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+Every page now waits as itself. 0.11.2 gave a loading page an outline
+its content settles into; that outline was still drawn by the app shell,
+from a table that guessed each page's shape, so a slow start drew one
+picture and then replaced it with the page's own. Each page carries its
+own outline now, fetched alongside the page and used for both waits, so
+the screen is drawn once and filled in.
+
+- **A page you are waiting for shows its own shape from the start.**
+  Tapping Studies on a slow connection drew a list of grey lines, then a
+  grid of cards, then the studies. It draws the cards' own shape
+  throughout now. The same for the board, a note, a game, a drill and
+  Settings.
+- **Opening a note no longer goes blank in the middle.** The note editor
+  is the largest thing the app downloads, and while it came down the
+  page showed nothing at all: the outline appeared, vanished for the
+  length of that download, and came back. It stays.
+- **Nothing on a settled page changed.** This is about the seconds
+  before a page arrives; every screen looks exactly as it did.
+
 ## 0.11.2
 
 The type ladder reaches the last places it had not, the app holds its

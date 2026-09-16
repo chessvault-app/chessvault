@@ -606,27 +606,53 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   1.6 Mbps link the extra download pushed the webfonts behind it and first
   contentful paint went from 3.1 s to 4.5 s. Draw the app's own frame on
   time; fill it as soon as there is something to fill it with.
-- **A route's own wait is the one wait its page cannot draw.** Every
-  skeleton above lives inside the page's chunk, so while the chunk is on
-  the wire nothing exists that could show one, and "the chunk usually
-  beats the next paint" is true of a fast link only: on an emulated phone
-  at 1.5 Mbps a first tap on Games drew a bare ground for 3.7 s, and a
-  game opened from Home slid one in after the router's 400 ms wait. So
-  every route carries `RouteSkeleton`, the one page shape the shell can
-  draw without knowing the page (a title row over one-line rows, in the
-  scrolling column), drawn by `lib/lazyRoute` as ordinary state through
-  the same `useSlowLoad` every page's skeleton uses, with its own two
-  figures: up after 200 ms and kept 500 ms once up, or up from the first
-  frame inside a page transition. The guides disagree on the delay
-  (Apple: none, placeholders at once; Android and eBay: 500 ms; Nielsen:
-  feedback by one second; Material: no number), and 200 sits between
-  Apple and the rest: a warm chunk lands in 50 to 90 ms and never shows
-  it. The stay is TanStack Router's default. The two waits, code and
-  data, run in sequence, never together: the route's shape stands until
-  the chunk lands, then the page's own skeleton takes its own 180 ms
-  decision inside a frame that is already up. Measured at 1.5 Mbps: the
-  placeholder is up at 245 ms, the page arrives when it did before, and
-  an unthrottled tab never shows it (Studies drew at 88 ms).
+- **A page has one outline, and it is not in the chunk it stands in
+  for.** A page can be waiting on two things — its code, then its data —
+  and for a while those drew different pictures: a table in the shell
+  guessed each page's shape for the first wait, and the page drew its own
+  for the second, so a cold tap on a slow link rearranged the column
+  twice. No router works that way. Next's `loading`, TanStack's
+  `pendingComponent` and React Router's `HydrateFallback` are each ONE
+  loading component per route covering both waits, and each keeps it out
+  of the route's own chunk — TanStack leaves `pendingComponent` out of
+  the default split groups on exactly that argument, and React Router
+  splits `Component` and `HydrateFallback` into separate files fetched in
+  parallel. So every route here names an `outline` (`lib/lazyRoute`): its
+  own module beside the page as `<Name>.skeleton`, fetched at the same
+  moment and a fraction of the size, so it lands first — and imported by
+  the page for the page's own wait. One picture over both. It costs the
+  launch nothing, which is the point of the parallel chunk: measured on
+  the Settings outline, drawing it is 6 chunks and 6,730 gzipped bytes
+  against the page's 14 and 61,737. `check:repo`'s build-time sibling
+  refuses an outline that has drifted into the launch payload, because
+  that failure is invisible — the bytes move, the placeholder stops
+  appearing, and the app looks the same.
+- **What an outline may not do is guess.** It draws what the page draws,
+  from `components/skeletons` and the page's own reservations, or it
+  draws the shell and the name and leaves the body alone. Where a page's
+  outline sits under real controls in the page's chunk — Games' tab strip
+  and filter rail, the licences page's blurb and chips — reserving the
+  body without them is a promise the page then breaks: measured that way
+  the licence rows stood 145px high and the games rows 86px. The body
+  arrives into empty space below instead and pushes nothing down. The
+  workspace, the editor, the repertoire trainer and the opening map are
+  not shapes `components/skeletons` draws at all, and draw nothing.
+- **The placeholder is drawn once and filled in, never drawn twice.**
+  `lib/lazyRoute` draws the outline as ordinary state through the same
+  `useSlowLoad` every page's skeleton uses, with two figures of its own:
+  up after 200 ms and kept 500 ms once up, or up from the first frame
+  inside a page transition. The guides disagree on the delay (Apple: none,
+  placeholders at once; Android and eBay: 500 ms; Nielsen: feedback by one
+  second; Material: no number), and 200 sits between Apple and the rest: a
+  warm chunk lands in 50 to 90 ms and never shows it. The stay is TanStack
+  Router's default. When the chunk lands the page mounts UNDER that
+  outline and starts its own wait, and `routePlaceholderShown()` is what
+  the page ORs into its own gate so the 180 ms delay does not open a hole
+  between the two and blink the picture out and back. Measured at
+  1.5 Mbps: the outline is up at 245 ms, the page arrives when it did
+  before, and an unthrottled tab never shows it (Studies drew at 88 ms).
+  `npm run shots:placeholders` is what photographs all of this; the pixel
+  grid cannot, because on the demo every chunk beats the 200 ms.
 - **A section is warmed before it is asked for.** The placeholder covers
   a cold chunk; `lib/prefetch` sees to it that few are cold. Once the app
   has loaded and the browser is idle, the sections' chunks are fetched
