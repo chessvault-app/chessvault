@@ -6,6 +6,7 @@ import { PageHeader } from '@/components/page-header';
 import { Segmented } from '@/components/segmented';
 import { Select } from '@/components/ui/select';
 import type { ShelfLayout } from '@/components/shelf-card';
+import { shelfLayoutOf } from '@/components/shelf-reservation';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
@@ -67,10 +68,10 @@ function storedShelfOrder<S extends string>(
     return {
       sort,
       dir: saved.dir === 'asc' || saved.dir === 'desc' ? saved.dir : natural[sort],
-      layout: saved.layout === 'list' ? 'list' : 'grid',
+      layout: shelfLayoutOf(saved.layout),
     };
   } catch {
-    return { sort: fallback, dir: natural[fallback], layout: 'grid' };
+    return { sort: fallback, dir: natural[fallback], layout: shelfLayoutOf(null) };
   }
 }
 

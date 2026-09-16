@@ -28,7 +28,8 @@ import { useUndoable } from '@/hooks/use-undoable';
 import { CreateControl } from '@/components/fab';
 import { Arrival, SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
 import {
-  parseShelfShape,
+  SHELVES,
+  readShelfShape,
   shelfHasShape,
   afterPaint,
   readShelfHeights,
@@ -66,9 +67,6 @@ export function StudiesView({ params }: { params: string[] }) {
   );
 }
 
-/** See `reservedShelf` below: the shelf's grouped shape, last visit. */
-const STUDIES_SHELF_KEY = 'vault:studies-shelf';
-
 function StudyList() {
   const studies = useStudy((s) => s.studies);
   const folders = useStudy((s) => s.folders);
@@ -84,7 +82,7 @@ function StudyList() {
   // the root, cards per collection — so the wait reserves the list that
   // is coming instead of a flat five-card guess
   // (components/shelf-reservation, on home's paint-hint bargain).
-  const [reservedShelf] = useState(() => parseShelfShape(localStorage.getItem(STUDIES_SHELF_KEY)));
+  const [reservedShelf] = useState(() => readShelfShape('studies'));
   // Remembered for the NEXT visit's reservation — the settled answer
   // only, never an error's empty list.
   // The cards' heights go with it, read off the page once they are
@@ -101,7 +99,7 @@ function StudyList() {
     if (!listLoaded || error !== null) return;
     const shape = shelfShapeOf(studies.map((s) => s.id), folders);
     const store = (): void =>
-      localStorage.setItem(STUDIES_SHELF_KEY, storedShelfShape(shape, readShelfHeights()));
+      localStorage.setItem(SHELVES.studies.key, storedShelfShape(shape, readShelfHeights()));
     const cancel = afterPaint(store);
     let stale = false;
     void document.fonts?.ready.then(() => {

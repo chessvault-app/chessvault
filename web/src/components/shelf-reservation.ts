@@ -202,3 +202,53 @@ export const storedShelfShape = (shape: ShelfShape, heights: number[] | null = n
     heights !== null && heights.length === cards ? { ...shape, heights: heights.map((h) => Math.round(h * 10) / 10) } : shape,
   );
 };
+
+/**
+ * Where each shelf keeps the shape above, and what it reserves on a
+ * device that has never seen it.
+ *
+ * These were three constants inside the three shelf pages, which was
+ * enough while each page was its own only reader. The route placeholder
+ * reads them too now (components/route-skeleton): a shelf's download
+ * placeholder draws the cards the page is about to draw, and it cannot
+ * read a constant that lives in the chunk it is standing in for.
+ */
+export const SHELVES = {
+  studies: { key: 'vault:studies-shelf', floor: WELCOME_SHELF },
+  notes: { key: 'vault:notes-shelf', floor: WELCOME_SHELF },
+  // Nothing seeds a book, so a device that has never seen the vault
+  // reserves nothing here (BooksPage's own note).
+  library: { key: 'vault:library-shelf', floor: EMPTY_SHELF },
+} as const;
+
+export type ShelfName = keyof typeof SHELVES;
+
+/** The shape a shelf had last visit, from its own key and its own floor. */
+export const readShelfShape = (shelf: ShelfName): ShelfShape =>
+  parseShelfShape(localStorage.getItem(SHELVES[shelf].key), SHELVES[shelf].floor);
+
+/**
+ * A stored layout as the layout it means: anything that is not the list
+ * is the grid, which is what a shelf opens on.
+ *
+ * Here rather than in the toolbar that owns the preference, because the
+ * placeholder needs the answer before the toolbar's chunk exists, and a
+ * grid shelf drawn as a list rearranges completely as it lands
+ * (SkeletonCards' `layout` says what that cost). One derivation, two
+ * readers, so the placeholder cannot disagree with the shelf.
+ */
+export const shelfLayoutOf = (stored: unknown): 'grid' | 'list' =>
+  stored === 'list' ? 'list' : 'grid';
+
+/** How a shelf was last laid out, read from the view its toolbar stores
+    (`useShelfOrder`, components/shelf-toolbar) without going through it. */
+export function readShelfLayout(shelf: ShelfName): 'grid' | 'list' {
+  try {
+    const saved = JSON.parse(localStorage.getItem(`chess-vault:shelf-${shelf}`) ?? '{}') as {
+      layout?: unknown;
+    };
+    return shelfLayoutOf(saved.layout);
+  } catch {
+    return shelfLayoutOf(null);
+  }
+}

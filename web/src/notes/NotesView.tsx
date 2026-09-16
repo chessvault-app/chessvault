@@ -25,7 +25,8 @@ import { PromptDialog } from '@/components/prompt-dialog';
 import { CreateControl } from '@/components/fab';
 import { Arrival, SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
 import {
-  parseShelfShape,
+  SHELVES,
+  readShelfShape,
   shelfHasShape,
   afterPaint,
   readShelfHeights,
@@ -135,9 +136,6 @@ async function newUntitledNote(
   return null;
 }
 
-/** See `reservedShelf` below: the shelf's grouped shape, last visit. */
-const NOTES_SHELF_KEY = 'vault:notes-shelf';
-
 function NoteList() {
   const [notes, setNotes] = useState<NoteMeta[]>([]);
   const [folders, setFolders] = useState<string[]>([]);
@@ -152,14 +150,14 @@ function NoteList() {
   const view = useShelfView('notes');
   // The grouped shape this shelf had last visit, per device, exactly as
   // the studies shelf keeps its own — see components/shelf-reservation.
-  const [reservedShelf] = useState(() => parseShelfShape(localStorage.getItem(NOTES_SHELF_KEY)));
+  const [reservedShelf] = useState(() => readShelfShape('notes'));
   // Remembered for the NEXT visit's reservation — the settled answer
   // only, never an error's empty list.
   useEffect(() => {
     if (!loaded || error !== null) return;
     const shape = shelfShapeOf(notes.map((n) => n.id), folders);
     const store = (): void =>
-      localStorage.setItem(NOTES_SHELF_KEY, storedShelfShape(shape, readShelfHeights()));
+      localStorage.setItem(SHELVES.notes.key, storedShelfShape(shape, readShelfHeights()));
     // The heights are read off the page after the cards are drawn, and
     // again when the layout switches: a list row and a grid card differ.
     // And once more when the web font is in, since the fallback face

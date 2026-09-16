@@ -10,8 +10,8 @@ import { PromptDialog } from '@/components/prompt-dialog';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
 import { SkeletonBookCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
 import {
-  EMPTY_SHELF,
-  parseShelfShape,
+  SHELVES,
+  readShelfShape,
   shelfHasShape,
   shelfShapeFromCollections,
   storedShelfShape,
@@ -80,9 +80,6 @@ const NATURAL: Record<LibrarySort, ShelfDir> = {
   read: 'desc',
 };
 
-/** See `reservedShelf` below: the library's grouped shape, last visit. */
-const LIBRARY_SHELF_KEY = 'vault:library-shelf';
-
 export function BooksPage() {
   const [books, setBooks] = useState<LibraryBook[] | null>(libraryMemory.books);
   const [folders, setFolders] = useState<string[]>(libraryMemory.folders);
@@ -95,18 +92,17 @@ export function BooksPage() {
   const pending = useSlowLoad(books === null);
   const view = useShelfOrder('chess-vault:shelf-library', LIBRARY_SORTS, NATURAL, 'added');
   // The grouped shape this shelf had last visit, per device
-  // (components/shelf-reservation). The floor is EMPTY_SHELF, not the
-  // welcome one: nothing seeds a book, so a device that has never seen
-  // the vault reserves nothing here.
-  const [reservedShelf] = useState(() =>
-    parseShelfShape(localStorage.getItem(LIBRARY_SHELF_KEY), EMPTY_SHELF),
-  );
+  // (components/shelf-reservation, where this shelf's key and floor sit
+  // beside the other two so the route placeholder can read them). The
+  // floor is EMPTY_SHELF, not the welcome one: nothing seeds a book, so
+  // a device that has never seen the vault reserves nothing here.
+  const [reservedShelf] = useState(() => readShelfShape('library'));
   // Remembered for the NEXT visit's reservation — the settled answer
   // only, never an error's empty list.
   useEffect(() => {
     if (books === null || error !== null) return;
     localStorage.setItem(
-      LIBRARY_SHELF_KEY,
+      SHELVES.library.key,
       storedShelfShape(shelfShapeFromCollections(books.map((b) => b.collection), folders)),
     );
   }, [books, folders, error]);
