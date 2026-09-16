@@ -169,30 +169,3 @@ function size(bytes: number): string {
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
-
-/**
- * The vault rows this device saw listed last visit, for a placeholder to
- * reserve before /api/storage answers.
- *
- * Here rather than in the Settings page that writes it, because the page
- * is no longer the only reader: the route placeholder draws the same
- * tree while the Settings chunk is still on the wire
- * (components/route-skeleton), and a second copy of this filter would be
- * a second answer to "which rows". It validates against VAULT_ROWS,
- * which is why this is the file it belongs in.
- */
-export const VAULT_ROWS_KEY = 'vault:storage-rows';
-export const readVaultPaths = (): readonly string[] | undefined => {
-  try {
-    const raw = localStorage.getItem(VAULT_ROWS_KEY);
-    if (raw === null) return undefined;
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return undefined;
-    const known = parsed.filter((v): v is string => typeof v === 'string' && VAULT_ROWS.some((r) => r.path === v));
-    // An empty list is not "nothing listed", it is a record we cannot
-    // use: fall back to the count, as an absent record does.
-    return known.length > 0 ? known : undefined;
-  } catch {
-    return undefined;
-  }
-};
