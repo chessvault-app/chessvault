@@ -12,7 +12,7 @@ import { forgetTablebaseAnswers } from '@/explorer/tablebase';
 import { PageHeader, pageTitleClass } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { Field } from '@/components/ui/field';
-import { VAULT_ROWS, VaultTree, type VaultRow } from '@/components/vault-tree';
+import { VAULT_ROWS, VAULT_ROWS_KEY, VaultTree, readVaultPaths, type VaultRow } from '@/components/vault-tree';
 import { toast } from '@/components/ui/toast';
 import { ClearableInput } from '@/components/text-fields';
 import { Input } from '@/components/ui/input';
@@ -811,21 +811,6 @@ function revealVault(): (() => Promise<boolean>) | null {
  * as the other reservations: a paint hint, wrong by at most one visit,
  * corrected by whatever /api/storage says.
  */
-const VAULT_ROWS_KEY = 'vault:storage-rows';
-const readVaultPaths = (): readonly string[] | undefined => {
-  try {
-    const raw = localStorage.getItem(VAULT_ROWS_KEY);
-    if (raw === null) return undefined;
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return undefined;
-    const known = parsed.filter((v): v is string => typeof v === 'string' && VAULT_ROWS.some((r) => r.path === v));
-    // An empty list is not "nothing listed", it is a record we cannot
-    // use: fall back to the count, as an absent record does.
-    return known.length > 0 ? known : undefined;
-  } catch {
-    return undefined;
-  }
-};
 /** What a settled listing records for the reader above. */
 function useStoredVaultPaths(rows: VaultRow[] | null): void {
   useEffect(() => {
