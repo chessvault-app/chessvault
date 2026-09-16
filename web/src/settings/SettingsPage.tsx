@@ -1,10 +1,9 @@
 import { useEffect, useEffectEvent, useRef, useState, type CSSProperties } from 'react';
 import { Skeleton, SkeletonVaultTree, useSlowLoad } from '@/components/skeletons';
 import QRCode from 'qrcode';
-import { ChevronLeft, ChevronRight, CircleHelp, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Crown, Eye, EyeOff, HardDrive, History, Hourglass, Info, KeyRound, MonitorSmartphone, Palette, RotateCcw, Save, ShieldCheck, Smartphone, Trash2, User, Volume2 } from 'lucide-react';
 import { copyText } from '@/lib/clipboard';
 import { isInstalled, useInstallPrompt } from '@/lib/install';
-import { manualUrl } from '@/lib/manual';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { forgetLichessToken } from '@/components/lichess-token-notice';
@@ -13,6 +12,16 @@ import { PageHeader, pageTitleClass } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { Field } from '@/components/ui/field';
 import { VAULT_ROWS, VaultTree, type VaultRow } from '@/components/vault-tree';
+import {
+  DEMO_VAULT_NOTE,
+  PROFILE_NOTE,
+  SettingsCard as Card,
+  SettingsOutline,
+  VAULT_COPY_NOTE,
+  VAULT_NAME_NOTE,
+  VAULT_ROWS_KEY,
+  readVaultPaths,
+} from '@/components/settings-outline';
 import { toast } from '@/components/ui/toast';
 import { ClearableInput } from '@/components/text-fields';
 import { Input } from '@/components/ui/input';
@@ -347,25 +356,6 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
   );
 }
 
-/** The sentences the first cards print, shared with the placeholder that prints them too. */
-const DEMO_VAULT_NOTE = 'This tab holds the demo vault. Installing the app puts one on disk, and this card shows where.';
-const VAULT_NAME_NOTE =
-  'Names this vault at the foot of the sidebar and in the window title. Every device that opens it sees the same name.';
-const VAULT_COPY_NOTE =
-  'The copy is one tar file of every document and the change history. Settings and tokens stay on the server.';
-const PROFILE_NOTE = 'Usernames pre-fill the archive browser on the Games page.';
-
-/**
- * The names the section links will carry, in card order, one list per
- * start (the render above is the source; the desktop shell adds one
- * card, "Desktop app", and the lag build another). The placeholder lays
- * them out invisibly, because how many lines the row takes is a fact
- * about the words: nine Korean names fit one line at the narrow width
- * and the same nine in English take two.
- */
-const JUMP_NAMES_DEMO = ['Vault', 'Documents', 'Appearance', 'Storage used', 'Deleted documents', 'Sound', 'Home screen', 'This is a demo', 'Version'];
-const JUMP_NAMES_SERVER = ['Profile', 'Vault', 'Documents', 'Security', 'Lichess token', 'Tablebase', 'Browsed games', 'Appearance', 'Storage used', 'Deleted documents', 'Sound', 'Home screen', 'Danger zone', 'Version'];
-
 /**
  * The page while the settings answer is out.
  *
@@ -384,10 +374,6 @@ const JUMP_NAMES_SERVER = ['Profile', 'Vault', 'Documents', 'Security', 'Lichess
  * fold at both widths, and what follows settles under it.
  */
 function SettingsPlaceholder() {
-  // The same record the Vault cards read: this outline draws the tree
-  // too, and reading it only in the cards left the page's own copy on
-  // the first eight rows.
-  const [reservedPaths] = useState(readVaultPaths);
   return (
     <div role="status" aria-label={t('Loading')} aria-live="polite" className="contents">
       {/* The page title, as PageHeader draws it: text-xl on a desktop,
@@ -401,63 +387,25 @@ function SettingsPlaceholder() {
         </Button>
         <h1 className={pageTitleClass}>{t('Settings')}</h1>
       </div>
-      {/* The section links, as JumpList draws them: text-sm names in
-          px-1 buttons, py-2 and mb-1, no row at all below md, and none
-          from xl either, where the names stand in the margin and take no
-          room in the column. The names are the real words in the real
-          button, held inert, so the row wraps where the real one will. */}
-      <div className="-mx-1 mb-1 hidden flex-wrap gap-x-3 gap-y-1 px-1 py-2 text-sm md:flex xl:hidden">
-        {(isDemo() ? JUMP_NAMES_DEMO : JUMP_NAMES_SERVER).map((name) => (
-          <button key={name} type="button" disabled tabIndex={-1} className="text-muted-foreground rounded-md px-1">
-            {t(name)}
-          </button>
-        ))}
-      </div>
-      {isDemo() ? (
-        <>
-          <Card icon={BrandMark} title={t('Vault')}>
-            <SkeletonVaultTree path={null} rows={7} paths={reservedPaths} />
-            <p className="text-muted-foreground text-sm">{t(DEMO_VAULT_NOTE)}</p>
-          </Card>
-          <Card icon={Save} title={t('Documents')}>
-            <SkeletonSettingRow title="Auto-save" blurb="Write changes to the vault as you make them. Off, they wait for you to save." />
-          </Card>
+      {/* The link row and the first cards are the shared outline, which
+          the route placeholder draws too (components/settings-outline):
+          two waits for one page, one picture. What follows is the cards
+          that outline leaves to whoever holds this chunk. */}
+      <SettingsOutline>
+        <Card icon={Save} title={t('Documents')}>
+          <SkeletonSettingRow title="Auto-save" blurb="Write changes to the vault as you make them. Off, they wait for you to save." />
+        </Card>
+        {isDemo() && (
           <Card icon={Palette} title={t('Appearance')}>
             {APPEARANCE_FIELDS.map((label) => (
-              <FieldPlaceholder key={label} control="select" label={label} />
+              <SelectFieldPlaceholder key={label} label={label} />
             ))}
             <SkeletonSettingRow title="Board coordinates" blurb="File and rank labels on the board edge." />
             <SkeletonSettingRow title="Move box" blurb="Play moves from the keyboard." />
             <DisclosurePlaceholder />
           </Card>
-        </>
-      ) : (
-        <>
-          <Card icon={User} title={t('Profile')}>
-            <FieldPlaceholder control="input" label="Display name" />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <FieldPlaceholder control="input" label="Chess.com username" />
-              <FieldPlaceholder control="input" label="Lichess username" />
-            </div>
-            <p className="text-muted-foreground text-sm">{t(PROFILE_NOTE)}</p>
-            <ButtonPlaceholder label="Save profile" />
-          </Card>
-          <Card icon={BrandMark} title={t('Vault')}>
-            <FieldPlaceholder control="input" label="Vault name" />
-            <p className="text-muted-foreground text-sm">{t(VAULT_NAME_NOTE)}</p>
-            <ButtonPlaceholder label="Save name" />
-            <SkeletonVaultTree paths={reservedPaths} />
-            <div className="flex flex-wrap items-center gap-2">
-              <ButtonPlaceholder variant="secondary" label="Download a copy" />
-              <ButtonPlaceholder variant="secondary" label="Copy the path" />
-            </div>
-            <p className="text-muted-foreground text-sm">{t(VAULT_COPY_NOTE)}</p>
-          </Card>
-          <Card icon={Save} title={t('Documents')}>
-            <SkeletonSettingRow title="Auto-save" blurb="Write changes to the vault as you make them. Off, they wait for you to save." />
-          </Card>
-        </>
-      )}
+        )}
+      </SettingsOutline>
     </div>
   );
 }
@@ -474,26 +422,13 @@ const APPEARANCE_FIELDS = ['App language', 'App theme', 'Density', 'Colours', 'B
  * sits under `inert` rather than `disabled`, because the phone's trigger
  * is its own button and does not take the prop.
  */
-function FieldPlaceholder({ control, label }: { control: 'input' | 'select'; label: string }) {
+function SelectFieldPlaceholder({ label }: { label: string }) {
   return (
     <Field label={label}>
-      {control === 'input' ? (
-        <Input inputSize="lg" disabled tabIndex={-1} />
-      ) : (
-        <div inert>
-          <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} />
-        </div>
-      )}
+      <div inert>
+        <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} />
+      </div>
     </Field>
-  );
-}
-
-/** A default button, held inert, with the label the real one carries: h-8, and h-9 under a coarse pointer. */
-function ButtonPlaceholder({ label, variant = 'default' }: { label: string; variant?: 'default' | 'secondary' }) {
-  return (
-    <Button variant={variant} disabled tabIndex={-1}>
-      {t(label)}
-    </Button>
   );
 }
 
@@ -509,46 +444,6 @@ function DisclosurePlaceholder() {
       <ChevronRight className="glyph" aria-hidden />
       {t('More options')}
     </button>
-  );
-}
-
-function Card({
-  icon: Icon,
-  title,
-  anchor,
-  children,
-}: {
-  /** A lucide icon, or the brand mark: anything that takes a className. */
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  /** An id another card can scroll to (the Storage rows). */
-  anchor?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    // data-settings-card is what the jump list above the cards reads.
-    <section id={anchor} className="bg-card rounded-xl ring-1 ring-card-ring scroll-mt-14 p-4" data-settings-card>
-      <h2 className="mb-3 flex items-center gap-2 text-base font-medium">
-        <Icon className="text-muted-foreground size-4" />
-        {title}
-        {/* The manual is written card by card, and nothing in the app
-            pointed at it. One quiet mark per card opens the manual's
-            Settings page in a new tab; the shortcut sheet stays what it
-            was. */}
-        <TitleTip title={t('Open the manual')}>
-          <a
-            href={manualUrl('settings')}
-            target="_blank"
-            rel="noreferrer"
-            aria-label={t('Open the manual')}
-            className="text-muted-foreground hover:text-foreground ml-auto grid size-6 place-items-center rounded-md pointer-coarse:size-9"
-          >
-            <CircleHelp className="glyph" />
-          </a>
-        </TitleTip>
-      </h2>
-      <div className="flex flex-col gap-3">{children}</div>
-    </section>
   );
 }
 
@@ -811,21 +706,6 @@ function revealVault(): (() => Promise<boolean>) | null {
  * as the other reservations: a paint hint, wrong by at most one visit,
  * corrected by whatever /api/storage says.
  */
-const VAULT_ROWS_KEY = 'vault:storage-rows';
-const readVaultPaths = (): readonly string[] | undefined => {
-  try {
-    const raw = localStorage.getItem(VAULT_ROWS_KEY);
-    if (raw === null) return undefined;
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return undefined;
-    const known = parsed.filter((v): v is string => typeof v === 'string' && VAULT_ROWS.some((r) => r.path === v));
-    // An empty list is not "nothing listed", it is a record we cannot
-    // use: fall back to the count, as an absent record does.
-    return known.length > 0 ? known : undefined;
-  } catch {
-    return undefined;
-  }
-};
 /** What a settled listing records for the reader above. */
 function useStoredVaultPaths(rows: VaultRow[] | null): void {
   useEffect(() => {

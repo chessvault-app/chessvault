@@ -11,7 +11,8 @@ import {
 } from '@/components/skeletons';
 import { SearchInput } from '@/components/text-fields';
 import { readShelfLayout, readShelfShape, shelfHasShape } from '@/components/shelf-reservation';
-import { parse, type Section } from '@/lib/router';
+import { SettingsOutline } from '@/components/settings-outline';
+import { parse, up, type Section } from '@/lib/router';
 import { t } from '@/lib/i18n';
 
 /**
@@ -66,17 +67,25 @@ import { t } from '@/lib/i18n';
  * BOARD_SCROLL_SHELL, so none of the three is this shape and none is
  * guessed at.
  *
- * Everywhere else the sketch sits UNDER chrome the page owns — Games'
- * tab strip and filter rail, Settings' cards and jump list, the licence
- * page's blurb and chips — and that chrome is real controls in the
- * page's chunk. Reproducing it out here is the hand-copy this commit
- * exists to delete, and drawing the body without it is a promise the
- * page then breaks: the licence rows came out 145px high that way, the
- * vault tree 50px and outside the card it belongs in. So those pages
- * draw their shell and their name, which are known and cost nothing,
- * and leave the body to the page. Moving one of those outlines into
- * components/skeletons so both sides can draw it is the next step, and
- * it is a measurable one: every module it reaches is launch payload.
+ * Settings is the one page whose own outline was LIFTED so both sides
+ * can draw it (components/settings-outline). It had two waits and two
+ * different pictures — the chunk, then the settings themselves — so a
+ * slow start redrew the column twice; now the same outline stands
+ * through both. Only the top of it was lifted, because the cards below
+ * reach the setting rows, the switch and the Appearance selects, which
+ * a probe measured at three extra launch chunks and 4.1 kB gzipped. The
+ * top costs one chunk and 2.2 kB, and it is the part that decides
+ * whether anything moves.
+ *
+ * Everywhere else the sketch still sits UNDER chrome the page owns —
+ * Games' tab strip and filter rail, the licence page's blurb and chips
+ * — and that chrome is real controls in the page's chunk. Reproducing
+ * it out here is the hand-copy this file exists to have deleted, and
+ * drawing the body without it is a promise the page then breaks: the
+ * licence rows came out 145px high that way. So those pages draw their
+ * shell and their name, which are known and cost nothing, and leave the
+ * body to the page. Lifting one of them is the same measurable trade
+ * Settings just made: every module it reaches is launch payload.
  */
 export function RouteSkeleton() {
   const { section, params } = parse(useSyncExternalStore(watchHash, readHash, readHash));
@@ -274,12 +283,24 @@ function shapeFor(section: Section, params: string[]): ReactNode {
         />
       );
 
-    // Outlines their pages own; see the file comment.
     case 'settings':
-      return params[0] === 'licenses' ? (
-        <ChromeOnly title={t('Licences')} width="medium" />
-      ) : (
-        <ChromeOnly title={t('Settings')} width="narrow" />
+      if (params[0] === 'licenses') return <ChromeOnly title={t('Licences')} width="medium" />;
+      return (
+        <PageShell width="narrow">
+          <div role="status" aria-label={t('Loading')} aria-live="polite" className="contents">
+            {/* The settled page's own header, `back` and all, so the
+                chevron a phone shows is in the row rather than arriving
+                into it. It works while it waits, which is the right
+                answer for a page that is taking its time. */}
+            <PageHeader title={t('Settings')} back={() => up('home')} />
+            {/* Shared with SettingsPage's own placeholder, which draws
+                this same outline for the wait AFTER this one
+                (components/settings-outline). Two waits for one page,
+                one picture, so the column is drawn once and filled in
+                rather than redrawn. */}
+            <SettingsOutline />
+          </div>
+        </PageShell>
       );
     case 'insights':
       return <ChromeOnly title={t('Insights')} width="medium" />;
