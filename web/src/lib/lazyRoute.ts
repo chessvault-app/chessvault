@@ -150,15 +150,20 @@ export function lazyRoute<T extends ComponentType<any>>(
      * imports it for its DATA wait and this imports it for the CHUNK
      * wait, so one picture covers both and neither can drift from the
      * other. It is a fraction of the page's size, so it lands first.
+     *
+     * Drawn with the page's OWN props, so a section whose shape depends
+     * on the address (a shelf, or one document out of it) can answer the
+     * same question the page answers from the same `params`. An outline
+     * that does not care simply takes none.
      */
-    outline?: () => Promise<{ default: ComponentType }>;
+    outline?: () => Promise<{ default: ComponentType<ComponentProps<T>> }>;
   } = {},
 ): LazyRouteComponent<ComponentProps<T>> {
   // Module-level, so a section visited twice draws immediately the second
   // time and the import is never asked for twice.
   let ready: T | null = null;
   /** The outline module, on the same terms as `ready` above. */
-  let sketch: ComponentType | null = null;
+  let sketch: ComponentType<ComponentProps<T>> | null = null;
   let sketchPending: Promise<void> | null = null;
   // What the boundary above is owed when the chunk will not come at all:
   // React.lazy threw it out of the render, and so does this — a route that
@@ -219,7 +224,7 @@ export function lazyRoute<T extends ComponentType<any>>(
     );
     // Whether the outline is in hand. Held as state for the same reason
     // `settled` is: the render that has it has to be a new one.
-    const [drawn, setDrawn] = useState<ComponentType | null>(() => sketch);
+    const [drawn, setDrawn] = useState<ComponentType<ComponentProps<T>> | null>(() => sketch);
     // In render, not in an effect: effects run after the paint, and the
     // chunk should be asked for while the browser is already fetching the
     // shell's own files, not a frame later. Both requests go out together
@@ -293,7 +298,7 @@ export function lazyRoute<T extends ComponentType<any>>(
     // and a skeleton nobody sees is a flash. Past that, the outline if it
     // is here, the old shell-drawn element if this route still has one.
     if (!placeholder) return null;
-    return drawn ? createElement(drawn) : fallback;
+    return drawn ? createElement(drawn, props) : fallback;
   };
   return Object.assign(Route, {
     pending: () => (ready || failure ? null : fetchModule()),
