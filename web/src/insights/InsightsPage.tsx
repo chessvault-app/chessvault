@@ -221,6 +221,11 @@ export function InsightsPage() {
   const running = job.status === 'running';
   const unanalysed = job.total > 0 && job.analysed === 0 && !running;
   const gated = !job.known || unanalysed;
+  // Whether the filter row stands, for the next visit's outline: the row
+  // rides this status, not the report, so nothing else can record it.
+  useEffect(() => {
+    if (job.known) writeShape({ analysed: !unanalysed });
+  }, [job.known, unanalysed]);
   const wasHeld = useRef(gated || running);
   useEffect(() => {
     const held = gated || running;
@@ -288,7 +293,11 @@ export function InsightsPage() {
     if (report === null) return;
     const openings = openingRows(report.cells);
     const judged = QUALITY.reduce((n, q) => n + report.analysis.quality[q.key], 0);
-    const next: Omit<Shape, 'compare'> = {
+    const next: Omit<Shape, 'compare' | 'analysed'> = {
+      // The Results footnote's two figures, so the sentence it lays out
+      // invisible is the length it will really be (./shape).
+      games: report.games,
+      accGames: report.analysis.games,
       openings: Math.min(OPENING_FOLD, openings.length),
       book: earliestExits(openings).length,
       summary: exitSplit(report.cells).exits > 0,
@@ -344,9 +353,21 @@ export function InsightsPage() {
 
       {/* Not while the gate is closed: eight live controls over a page
           that cannot yet change read as a broken page. While a run is
-          going the tables stand, so the controls do too. */}
-      {!gated && (
+          going the tables stand, so the controls do too.
+
+          But "the gate is closed" covers two states, and only one of
+          them is settled. `unanalysed` is an answer: this vault has
+          nothing analysed and the row is not coming. `!job.known` is a
+          request still out — a DIFFERENT request from the report, so
+          the outline below can be on screen with no row above it and
+          then gain one, measured at 30px on a desktop and 78 on a
+          phone. There the row is drawn from what this device saw last
+          visit (./shape, `analysed`), held inert: every control in it
+          reads `filters`, which is this device's own and needs no
+          answer, so the stand-in is the row itself at its real width. */}
+      {(!gated || (!job.known && shape.analysed)) && (
       <FilterRow className="px-0 py-0">
+        <MaybeInert inert={gated}>
         <Select
           value={filters.range}
           onValueChange={(v) => setFilters({ range: v as DateRange })}
@@ -400,6 +421,7 @@ export function InsightsPage() {
             {t('Clear filters')}
           </Button>
         )}
+        </MaybeInert>
       </FilterRow>
       )}
 
@@ -1128,6 +1150,16 @@ function StartOver() {
  * arrived. Their row counts come from the shape store, as the openings
  * and leaving-book counts do.
  */
+/** A stored figure as the digits it will print, or a three-digit
+    stand-in where this device has not seen the page. */
+const figureDigits = (n: number): string => (n > 0 ? exact.format(n) : '000');
+
+/** The filter row's controls, live or held still, from one subtree: the
+    stand-in has to BE the row or it is a second statement of its width. */
+function MaybeInert({ inert, children }: { inert: boolean; children: React.ReactNode }) {
+  return inert ? <Inert>{children}</Inert> : <>{children}</>;
+}
+
 function InsightsSkeleton({ shape }: { shape: Shape }) {
   /**
    * A table's header band and its rows, at the geometry Tables draws.
@@ -1301,8 +1333,13 @@ function InsightsSkeleton({ shape }: { shape: Shape }) {
               >
                 <span>
                   {t('Accuracy from {n} of {total} games analysed at depth {d}', {
-                    n: '000',
-                    total: '000',
+                    // This device's own figures where it has them: the
+                    // idiom below sets the box from the sentence, and the
+                    // sentence's length rides its digits. With `000` for
+                    // both, a vault of 31 games reserved a line more than
+                    // it settled at.
+                    n: figureDigits(shape.accGames),
+                    total: figureDigits(shape.games),
                     d: '00',
                   })}
                   {`, ${t('{n} centipawns lost per move', { n: '00' })}`}.{' '}
@@ -1488,8 +1525,11 @@ function InsightsSkeleton({ shape }: { shape: Shape }) {
         <>
           {['won', 'drew', 'lost'].map((key) => (
             <div key={key} className="flex min-w-0 flex-col gap-3">
-              {/* The figcaption: a word and an accuracy, text-xs. */}
-              <div className="flex h-4 items-center justify-between">
+              {/* The figcaption: a word and an accuracy, on the column's
+                  own `type-row-sub`. Pinned at 16 it was the desktop
+                  rung, so each of the three columns stood 4px short on a
+                  phone and the card 12. */}
+              <div className="type-row-sub-box flex items-center justify-between">
                 <Skeleton className="h-2 w-10" />
                 <Skeleton className="h-2 w-12" />
               </div>

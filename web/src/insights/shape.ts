@@ -46,6 +46,28 @@ export interface Shape {
    * rather than reserving a card most vaults do not draw.
    */
   compare: boolean;
+  /**
+   * Whether the analysis pass had got anywhere, which is what decides
+   * the filter row above the cards.
+   *
+   * That row rides the pass STATUS, a different request from the report,
+   * so while the status is out the row is not drawn and the outline has
+   * to know whether one is coming: a vault with nothing analysed settles
+   * without it, and reserving it there would be the jump the other way.
+   */
+  analysed: boolean;
+  /**
+   * The two figures in the Results card's footnote, so the sentence laid
+   * out invisible to set that box is the length it will really be.
+   *
+   * The idiom handles language and width; it cannot handle digits. With
+   * `000` standing in for both, a vault of 31 games reserved a line more
+   * than it settled at (measured on the demo at 390: the footnote 76px
+   * against 56). Zero means this device has not seen the page and the
+   * stand-in digits are used.
+   */
+  games: number;
+  accGames: number;
 }
 
 export const DEFAULT_SHAPE: Shape = {
@@ -59,6 +81,9 @@ export const DEFAULT_SHAPE: Shape = {
   lengths: 6,
   endings: 4,
   compare: false,
+  analysed: true,
+  games: 0,
+  accGames: 0,
 };
 
 /** The fold the openings table takes, which also caps what is stored. */
@@ -80,6 +105,13 @@ export function readShape(): Shape {
       lengths: Math.max(0, Number(p.lengths) || 0),
       endings: Math.max(0, Number(p.endings) || 0),
       compare: p.compare === true,
+      // True by default: a device that has never opened this page is far
+      // likelier to have an analysed vault than not, and reserving the
+      // row is the cheaper way to be wrong (it is one 30px band, and it
+      // is removed rather than inserted).
+      analysed: p.analysed !== false,
+      games: Math.max(0, Number(p.games) || 0),
+      accGames: Math.max(0, Number(p.accGames) || 0),
     };
   } catch {
     return DEFAULT_SHAPE;
