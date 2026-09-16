@@ -1360,8 +1360,10 @@ export function refGamesApi(
       if (!existsSync(fileFor(name))) return c.json({ error: 'no such database' }, 404);
       await close(name);
       // A resident index outliving its file would keep answering for a
-      // database that no longer exists — and holding its memory.
-      evictResident(fileFor(name));
+      // database that no longer exists — and holding its memory. Awaited,
+      // because its shards hold the file open until the thread is gone and
+      // Windows refuses to delete a file anything still has open.
+      await evictResident(fileFor(name));
       rmSync(fileFor(name));
       return c.json({ deleted: name });
     });
@@ -1412,7 +1414,7 @@ export function refGamesApi(
         return c.json({ error: 'could not load the index' }, 500);
       }
     }
-    evictResident(path);
+    await evictResident(path);
     return c.json({ on: false });
   });
 
@@ -2722,7 +2724,7 @@ export function refGamesApi(
   return Object.assign(api, {
     closeDb: async () => {
       await close();
-      evictAllResidents();
+      await evictAllResidents();
     },
   });
 }

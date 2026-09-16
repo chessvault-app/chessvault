@@ -39,7 +39,8 @@
  * to replay it.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import Database from 'better-sqlite3';
@@ -383,9 +384,14 @@ async function main(): Promise<void> {
     );
     console.log('fuzz-parity: clean');
   } finally {
-    jsApi?.closeDb();
-    rsApi?.closeDb();
-    rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    // Awaited, and rm rather than rmSync: closing takes the query
+    // children and the resident scan threads with it, and until they have
+    // exited they still hold the database file — Windows then refuses the
+    // delete. rmSync's retry budget is inert (it ignores maxRetries here);
+    // the async form honours it.
+    await jsApi?.closeDb();
+    await rsApi?.closeDb();
+    await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   }
 }
 

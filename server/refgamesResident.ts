@@ -57,7 +57,7 @@ function ensureSweeper(): void {
   sweeper = setInterval(() => {
     const now = Date.now();
     for (const [path, entry] of residents) {
-      if (now - entry.lastUsed > IDLE_EVICT_MS) evictResident(path);
+      if (now - entry.lastUsed > IDLE_EVICT_MS) void evictResident(path);
     }
     if (residents.size === 0 && sweeper) {
       clearInterval(sweeper);
@@ -139,7 +139,7 @@ export function ensureResident(path: string): Promise<{ games: number; bytes: nu
       entry!.pending.set(seq, {
         settle: (result) => {
           if (result instanceof Error) {
-            evictResident(path);
+            void evictResident(path);
             refuse(result);
           } else {
             done({ games: entry!.games, bytes: entry!.bytes });
@@ -214,20 +214,31 @@ export function residentStatus(path: string): { games: number; bytes: number } |
   return entry && entry.games > 0 ? { games: entry.games, bytes: entry.bytes } : null;
 }
 
-/** Terminate the worker — eviction IS termination, nothing partial. */
-export function evictResident(path: string): void {
+/**
+ * Terminate the worker — eviction IS termination, nothing partial.
+ * Resolves once the thread is GONE, which is the only moment its
+ * database file is free: the worker's shards hold read-only
+ * connections (scanWorker.ts opens one per shard to fetch movetext
+ * when it verifies a candidate) and nothing closes them, because
+ * termination is what closes them. On Windows an open SQLite
+ * connection refuses the file's deletion outright, so a caller about
+ * to delete or replace the file — a database deleted through the
+ * route, a test removing its temp directory — must await this.
+ */
+export function evictResident(path: string): Promise<void> {
   const entry = residents.get(path);
-  if (!entry) return;
+  if (!entry) return Promise.resolve();
   residents.delete(path);
-  void entry.worker.terminate();
+  return entry.worker.terminate().then(() => undefined);
 }
 
 /** Every resident index down — the test suite's afterAll, and nothing
     else: production eviction is per-database or idle. */
-export function evictAllResidents(): void {
-  for (const path of [...residents.keys()]) evictResident(path);
+export function evictAllResidents(): Promise<void> {
+  const gone = [...residents.keys()].map((path) => evictResident(path));
   if (sweeper) {
     clearInterval(sweeper);
     sweeper = null;
   }
+  return Promise.all(gone).then(() => undefined);
 }

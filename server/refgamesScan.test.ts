@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Chess, normalizeMove } from 'chessops/chess';
@@ -263,7 +264,12 @@ describe('resident scan through the route', () => {
 
   afterAll(async () => {
     await refgames.closeDb();
-    rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    // rm, not rmSync: the sync form ignores maxRetries/retryDelay here
+    // (measured on node 24 — it threw EPERM in 1 ms with a budget of 20
+    // retries), and a synchronous retry could not let a pending teardown
+    // run anyway. closeDb above already waits for every handle; this is
+    // the belt for a virus scanner or an indexer holding the file.
+    await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 
   const run = async (query: string): Promise<{ games: unknown[]; done: Record<string, unknown> }> => {
@@ -403,7 +409,8 @@ describe('key index through the route', () => {
 
   afterAll(async () => {
     await refgames.closeDb();
-    rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
+    // rm, not rmSync, for the reason the suite above records.
+    await rm(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   });
 
   const run = async (query: string): Promise<{ games: unknown[]; matched: unknown }> => {
