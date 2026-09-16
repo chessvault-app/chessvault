@@ -26,7 +26,8 @@ import { cn } from '@/lib/utils';
 import { isCoarsePointer, useTabbedPanes } from '@/lib/media';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
-import { SkeletonBoard, useSlowLoad } from '@/components/skeletons';
+import { useSlowLoad } from '@/components/skeletons';
+import StudyOutline, { playersKey } from '@/studies/StudyView.skeleton';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
@@ -53,14 +54,6 @@ import { t } from '@/lib/i18n';
 import { TitleTip } from '@/components/title-tip';
 
 type StudyPane = 'moves' | 'engine' | 'chapters' | 'explorer';
-
-/**
- * Whether this document drew player bars last time — see `reservedPlayers`.
- * A study's chapters can carry White and Black headers (one made from an
- * imported game does), and the bars are drawn for the headers, not for
- * the kind. Per document, like a puzzle book's shape.
- */
-const playersKey = (base: string, id: string): string => `vault:doc-players:${base}:${id}`;
 
 export function StudyView({
   id,
@@ -137,14 +130,10 @@ export function StudyView({
   // here falls back to the guess. Keyed on the document, not the mount:
   // this view is not remounted between one study and the next.
   const hasPlayers = useAnalysis((s) => s.gameHeaders !== null);
-  const reservedPlayers = useMemo<boolean | null>(() => {
-    const stored = localStorage.getItem(playersKey(base, id));
-    return stored === null ? null : stored === '1';
-  }, [base, id]);
   useEffect(() => {
     if (openId !== id) return;
-    localStorage.setItem(playersKey(base, id), hasPlayers ? '1' : '0');
-  }, [openId, id, base, hasPlayers]);
+    localStorage.setItem(playersKey(kind, id), hasPlayers ? '1' : '0');
+  }, [openId, id, kind, hasPlayers]);
 
   useEffect(() => {
     let cancelled = false;
@@ -267,13 +256,7 @@ export function StudyView({
     // into place when it does.
     return (
       <div className="h-full">
-        {pending && (
-          <SkeletonBoard
-            players={reservedPlayers ?? kind === 'game'}
-            chapters={kind === 'study'}
-            explorer
-          />
-        )}
+        {pending && <StudyOutline id={id} kind={kind} />}
         {/* The phone's bottom bar is claimed now, not when the study
             mounts: the global tabs stood there through the wait and were
             swapped for the move controls as the document landed. The

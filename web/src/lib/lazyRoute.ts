@@ -5,7 +5,6 @@ import {
   type ComponentProps,
   type ComponentType,
   type FunctionComponent,
-  type ReactNode,
 } from 'react';
 import { useSlowLoad } from './slowLoad';
 
@@ -58,7 +57,7 @@ import { useSlowLoad } from './slowLoad';
  * a first tap on the Games tab drew nothing at all for 3.7 s, Puzzles
  * for 1.6 s, and a game opened from Home slid a bare ground in after the
  * router's 400 ms wait and kept it for another 3.3 s. So a route may
- * carry a `fallback`, drawn once the wait is long enough to admit to,
+ * carry an `outline`, drawn once the wait is long enough to admit to,
  * held as ordinary state for the reason above (never as a Suspense
  * fallback, which pays the 300 ms reveal throttle on every navigation).
  *
@@ -128,16 +127,8 @@ export const routePlaceholderShown = (): boolean => outlineOnScreen > 0;
 export function lazyRoute<T extends ComponentType<any>>(
   load: () => Promise<{ default: T }>,
   {
-    fallback = null,
     outline,
   }: {
-    /** What stands in for the page while its chunk is on the wire, once
-        the wait has passed PENDING_MS. Nothing, by default.
-
-        The older form, kept while the pages are converted: one element,
-        made in the shell, which the shell therefore has to know the
-        shape of. `outline` is the one to add. */
-    fallback?: ReactNode;
     /**
      * The page's OWN outline, as its own module, fetched in parallel
      * with the page.
@@ -262,15 +253,11 @@ export function lazyRoute<T extends ComponentType<any>>(
     // waiting (or at once inside a page transition) and, once up, stays
     // its minimum even after the module has landed, which is what holds
     // a chunk that arrives just behind it from flashing the placeholder.
-    const placeholder = useSlowLoad(
-      !settled && (fallback !== null || outline !== undefined),
-      PENDING_MS,
-      MIN_VISIBLE_MS,
-    );
+    const placeholder = useSlowLoad(!settled && outline !== undefined, PENDING_MS, MIN_VISIBLE_MS);
     // What is actually on screen: the gate is open AND there is something
     // to put through it. With an outline that may still be on the wire,
     // in which case nothing is drawn yet and this is false.
-    const showing = placeholder && (drawn !== null || fallback !== null);
+    const showing = placeholder && drawn !== null;
     // Counted from an effect, never from render (the compiler refuses a
     // module variable written during one, and is right to).
     //
@@ -295,10 +282,10 @@ export function lazyRoute<T extends ComponentType<any>>(
     if (settled?.ready && !placeholder) return createElement(settled.ready, props);
     // Until then the same empty box the Suspense fallback drew, for the
     // first PENDING_MS: a section's chunk usually beats the next paint,
-    // and a skeleton nobody sees is a flash. Past that, the outline if it
-    // is here, the old shell-drawn element if this route still has one.
-    if (!placeholder) return null;
-    return drawn ? createElement(drawn, props) : fallback;
+    // and a skeleton nobody sees is a flash. Past that, the outline —
+    // and still nothing if the outline itself has not landed, which on a
+    // link slow enough to matter it has, being the smaller of the two.
+    return placeholder && drawn ? createElement(drawn, props) : null;
   };
   return Object.assign(Route, {
     pending: () => (ready || failure ? null : fetchModule()),

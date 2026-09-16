@@ -14,7 +14,7 @@ import { t } from '@/lib/i18n';
  * that the shelf's cards stood in for a page that was about to draw
  * prose.
  */
-export default function NotesOutline({ params }: { params: string[] }) {
+export default function NotesOutline({ params = [] }: { params?: string[] }) {
   return params[0] ? <NoteOutline /> : <ShelfOutline />;
 }
 

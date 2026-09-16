@@ -11,7 +11,7 @@ import { t } from '@/lib/i18n';
  * the reader's own chunk and has no sketch out here; it draws nothing,
  * as it did before. Nothing in the address opens the library.
  */
-export default function BooksOutline({ params }: { params: string[] }) {
+export default function BooksOutline({ params = [] }: { params?: string[] }) {
   return params[0] ? null : <LibraryOutline />;
 }
 

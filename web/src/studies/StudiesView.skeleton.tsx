@@ -1,6 +1,8 @@
 import { PageShell } from '@/components/page-shell';
 import { ShelfHeader } from '@/components/shelf-outline';
-import { SkeletonBoard, SkeletonCards } from '@/components/skeletons';
+import { SkeletonCards } from '@/components/skeletons';
+import StudyOutline from '@/studies/StudyView.skeleton';
+import { decodeSegment } from '@/lib/router';
 import { readShelfLayout, readShelfShape, shelfHasShape } from '@/components/shelf-reservation';
 import { t } from '@/lib/i18n';
 
@@ -11,14 +13,12 @@ import { t } from '@/lib/i18n';
  * props): an id opens a study, which is a board beside its moves, and
  * nothing opens the shelf.
  *
- * The open study's picture is SkeletonBoard alone here, where StudyView
- * draws it with the player bars this document wore last visit and with
- * the phone's bottom bar claimed. Both of those are keyed on the
- * document or reach into the board's own chunk; they join this outline
- * when the board family is converted.
+ * An open study draws the shared document outline, the same module
+ * StudyView draws while the document itself is in flight
+ * (./StudyView.skeleton), so the board cannot land in two places.
  */
-export default function StudiesOutline({ params }: { params: string[] }) {
-  return params[0] ? <SkeletonBoard chapters explorer /> : <ShelfOutline />;
+export default function StudiesOutline({ params = [] }: { params?: string[] }) {
+  return params[0] ? <StudyOutline id={decodeSegment(params[0])} /> : <ShelfOutline />;
 }
 
 /**

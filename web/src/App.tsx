@@ -27,7 +27,6 @@ import { Component, Fragment, Suspense, useEffect, useEffectEvent, useState, typ
 import { cn } from '@/lib/utils';
 import { displayName, useVaultInfo } from '@/lib/vaultName';
 import { lazyRoute } from '@/lib/lazyRoute';
-import { RouteSkeleton } from '@/components/route-skeleton';
 import { prefetchWhenIdle } from '@/lib/prefetch';
 import { HomePage } from '@/home/HomePage';
 import { atRoute, decodeSegment, navigate, parse, registerRoutePending, sectionHref, useRoute, type Section } from '@/lib/router';
@@ -59,27 +58,43 @@ import { dialogOpen } from '@/hooks/dialog-focus';
 // Route-level code splitting: iOS relaunches the PWA from scratch after
 // backgrounding, so the landing chunk must stay lean — heavy sections
 // (pdf/ocr machinery, TipTap, the study editor) load on first visit.
-// What every route draws while its chunk is still on the wire and the
-// wait has grown long enough to admit to (lib/lazyRoute, PENDING_MS):
-// the page's OWN sketch, which RouteSkeleton picks from the address
-// rather than being told — the same table as renderSection below, read
-// one step earlier. One element, made once, so a route that is redrawn
-// does not get a new one; it reads the hash itself, so the one element
-// still draws the right page.
-const PAGE = { fallback: <RouteSkeleton /> };
+//
+// What a route draws while its chunk is on the wire is the page's OWN
+// outline, named here and living beside the page as `<Name>.skeleton`
+// (lib/lazyRoute, `outline`): its own module, fetched in parallel with
+// the page and a fraction of its size, so it lands first — and drawn by
+// the page too, for the page's own wait. One picture over both waits,
+// per route, which is what Next's `loading`, TanStack's
+// `pendingComponent` and React Router's `HydrateFallback` each are.
+//
+// There was a table in the shell that guessed each page's shape instead.
+// It is gone; nothing out here knows what a page looks like now.
 
 // AnalysisView was the one view loaded eagerly, which put the board, the
 // engine, the explorer, the review strip and the move tree into the chunk
 // that has to parse before ANYTHING renders — including the landing page,
 // which uses none of them.
-const AnalysisView = lazyRoute(() => import('@/analysis/AnalysisView').then((m) => ({ default: m.AnalysisView })), PAGE);
-const WorkspaceView = lazyRoute(() => import('@/workspace/WorkspaceView').then((m) => ({ default: m.WorkspaceView })), PAGE);
-const EditorView = lazyRoute(() => import('@/editor/EditorView').then((m) => ({ default: m.EditorView })), PAGE);
-const GamesView = lazyRoute(() => import('@/games/GamesView').then((m) => ({ default: m.GamesView })), PAGE);
+const AnalysisView = lazyRoute(() => import('@/analysis/AnalysisView').then((m) => ({ default: m.AnalysisView })), {
+  outline: () => import('@/analysis/AnalysisView.skeleton'),
+});
+// No outline, and none guessed: the workspace is a grid of panes
+// (WORKSPACE_SHELL), the editor and the repertoire trainer sit on
+// BOARD_SCROLL_SHELL with a palette or a trainer beside the board, and
+// the opening map is a canvas in CanvasShell. None of the four is a
+// shape components/skeletons draws, and inventing one out here is the
+// guessing this work removed. They draw nothing while their chunk comes
+// down, as they did before there was a table to guess from.
+const WorkspaceView = lazyRoute(() => import('@/workspace/WorkspaceView').then((m) => ({ default: m.WorkspaceView })));
+const EditorView = lazyRoute(() => import('@/editor/EditorView').then((m) => ({ default: m.EditorView })));
+const GamesView = lazyRoute(() => import('@/games/GamesView').then((m) => ({ default: m.GamesView })), {
+  outline: () => import('@/games/GamesView.skeleton'),
+});
 const NotesView = lazyRoute(() => import('@/notes/NotesView').then((m) => ({ default: m.NotesView })), {
   outline: () => import('@/notes/NotesView.skeleton'),
 });
-const PuzzlesView = lazyRoute(() => import('@/puzzles/PuzzlesView').then((m) => ({ default: m.PuzzlesView })), PAGE);
+const PuzzlesView = lazyRoute(() => import('@/puzzles/PuzzlesView').then((m) => ({ default: m.PuzzlesView })), {
+  outline: () => import('@/puzzles/PuzzlesView.skeleton'),
+});
 const BooksView = lazyRoute(() => import('@/books/BooksView').then((m) => ({ default: m.BooksView })), {
   outline: () => import('@/books/BooksView.skeleton'),
 });
@@ -99,7 +114,9 @@ const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => 
 const SettingsPage = lazyRoute(() => import('@/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })), {
   outline: () => import('@/settings/SettingsPage.skeleton'),
 });
-const LicensesPage = lazyRoute(() => import('@/settings/LicensesPage').then((m) => ({ default: m.LicensesPage })), PAGE);
+const LicensesPage = lazyRoute(() => import('@/settings/LicensesPage').then((m) => ({ default: m.LicensesPage })), {
+  outline: () => import('@/settings/LicensesPage.skeleton'),
+});
 
 // Which chunk a hash draws, for the phone's page transition to wait on
 // (lib/router, swapRoute). The same table as the switch in AppShell's
@@ -139,11 +156,17 @@ registerRoutePending((hash) => {
       return null;
   }
 });
-const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })), PAGE);
-const EndgamesView = lazyRoute(() => import('@/endgames/EndgamesView').then((m) => ({ default: m.EndgamesView })), PAGE);
-const OpeningMapView = lazyRoute(() => import('@/openingmap/OpeningMapView').then((m) => ({ default: m.OpeningMapView })), PAGE);
-const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((m) => ({ default: m.DatabasesPage })), PAGE);
-const InsightsPage = lazyRoute(() => import('@/insights/InsightsPage').then((m) => ({ default: m.InsightsPage })), PAGE);
+const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
+const EndgamesView = lazyRoute(() => import('@/endgames/EndgamesView').then((m) => ({ default: m.EndgamesView })), {
+  outline: () => import('@/endgames/EndgamesView.skeleton'),
+});
+const OpeningMapView = lazyRoute(() => import('@/openingmap/OpeningMapView').then((m) => ({ default: m.OpeningMapView })));
+const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((m) => ({ default: m.DatabasesPage })), {
+  outline: () => import('@/databases/DatabasesPage.skeleton'),
+});
+const InsightsPage = lazyRoute(() => import('@/insights/InsightsPage').then((m) => ({ default: m.InsightsPage })), {
+  outline: () => import('@/insights/InsightsPage.skeleton'),
+});
 
 // The chunk each section draws, for warming it before it is asked for
 // (lib/prefetch, and the sidebar's hover). The same components as the
