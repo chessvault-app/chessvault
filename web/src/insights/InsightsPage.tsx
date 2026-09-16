@@ -1184,65 +1184,117 @@ function StartOver() {
  * and leaving-book counts do.
  */
 function InsightsSkeleton({ shape }: { shape: Shape }) {
-  /** A results row: name, count, the result bar's own box, a figure. */
-  const table = (rows: number, key: string) => (
+  /**
+   * A table's header band and its rows, at the geometry Tables draws.
+   *
+   * Two boxes deep, and it has to be: the `<th>`/`<td>` heights are a
+   * line box PLUS a padding, and these are border-box, so a padding on
+   * the same element that carries the height comes out of the line
+   * instead of adding to it. The outer div is the padding the cell
+   * carries (`py-1` on a head, the density token on a row) and the inner
+   * one is the line the type sets.
+   *
+   * Both were flat: `h-6` for a header and `h-7` for a row, which is the
+   * settled geometry on a fine-pointer desktop at the comfortable rung
+   * and nowhere else. A row is 20px + 2×4 there, 24 + 2×4 on a phone
+   * (`type-row` steps up under md) and 20 + 2×2 on a compact vault.
+   * Computed from those and the default Shape's row counts, not measured:
+   * `/api/insights` 404s on the static demo, so this page cannot be
+   * photographed there. About 270px short over the outline on a phone,
+   * and about 250 long on a compact desktop.
+   */
+  const headRow = (children: React.ReactNode) => (
+    <div className="flex flex-col py-1">
+      <div className="type-row-sub-box flex items-center gap-2">{children}</div>
+    </div>
+  );
+  const bodyRow = (key: number, children: React.ReactNode) => (
+    <div key={key} className="flex flex-col py-(--row-py-tight)">
+      <div className="type-row-box flex items-center gap-2">{children}</div>
+    </div>
+  );
+  /**
+   * A results row: name, count, the result bar's own box, a figure.
+   *
+   * `dense` is TallyTable's own prop, and it decides whether there is a
+   * Results column at all: the weekday table passes it, because at 80px
+   * the bar printed its figures over each other. Below sm the column
+   * steps aside on every table. Neither was asked here, so a 144px bar
+   * stood in for a column that lands on no phone and in no weekday
+   * table.
+   */
+  const table = (rows: number, key: string, dense = false) => (
     <div key={key} className="flex flex-col">
-      <div className="flex h-6 items-center gap-2">
-        <Skeleton className="h-2 w-16" />
-        <Skeleton className="ml-auto h-2 w-8" />
-        <Skeleton className="h-2 w-10" />
-        <Skeleton className="ml-20 h-2 w-8" />
-      </div>
-      {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex h-7 items-center gap-2">
-          <Skeleton className={cn('h-2.5', ['w-24', 'w-20', 'w-28', 'w-16'][i % 4])} />
-          <Skeleton className="ml-auto h-2.5 w-6" />
-          {/* The result bar's box: its 16px track and the chip corner. */}
-          <Skeleton className="h-4 w-36 rounded-[4px]" />
-          <Skeleton className="h-2.5 w-8" />
-        </div>
-      ))}
+      {headRow(
+        <>
+          <Skeleton className="h-2 w-16" />
+          <Skeleton className="ml-auto h-2 w-8" />
+          {!dense && <Skeleton className="h-2 w-10 max-sm:hidden" />}
+          <Skeleton className="ml-20 h-2 w-8" />
+        </>,
+      )}
+      {Array.from({ length: rows }, (_, i) =>
+        bodyRow(
+          i,
+          <>
+            <Skeleton className={cn('h-2.5', ['w-24', 'w-20', 'w-28', 'w-16'][i % 4])} />
+            <Skeleton className="ml-auto h-2.5 w-6" />
+            {/* The result bar's box: its 16px track and the chip corner. */}
+            {!dense && <Skeleton className="h-4 w-36 rounded-[4px] max-sm:hidden" />}
+            <Skeleton className="h-2.5 w-8" />
+          </>,
+        ),
+      )}
     </div>
   );
   /** The leaving-book row: a name and four figures, and no result bar,
       which that table has no column for. */
   const bookTable = (rows: number, key: string) => (
     <div key={key} className="flex flex-col">
-      <div className="flex h-6 items-center gap-2">
-        <Skeleton className="h-2 w-16" />
-        <Skeleton className="ml-auto h-2 w-8" />
-        <Skeleton className="ml-2 h-2 w-16" />
-        <Skeleton className="ml-2 h-2 w-6" />
-        <Skeleton className="ml-2 h-2 w-8" />
-      </div>
-      {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex h-7 items-center gap-2">
-          <Skeleton className={cn('h-2.5', ['w-24', 'w-20', 'w-28', 'w-16'][i % 4])} />
-          <Skeleton className="ml-auto h-2.5 w-6" />
-          <Skeleton className="ml-2 h-2.5 w-10" />
-          <Skeleton className="ml-2 h-2.5 w-6" />
-          <Skeleton className="ml-2 h-2.5 w-6" />
-        </div>
-      ))}
+      {headRow(
+        <>
+          <Skeleton className="h-2 w-16" />
+          <Skeleton className="ml-auto h-2 w-8" />
+          <Skeleton className="ml-2 h-2 w-16" />
+          <Skeleton className="ml-2 h-2 w-6" />
+          <Skeleton className="ml-2 h-2 w-8" />
+        </>,
+      )}
+      {Array.from({ length: rows }, (_, i) =>
+        bodyRow(
+          i,
+          <>
+            <Skeleton className={cn('h-2.5', ['w-24', 'w-20', 'w-28', 'w-16'][i % 4])} />
+            <Skeleton className="ml-auto h-2.5 w-6" />
+            <Skeleton className="ml-2 h-2.5 w-10" />
+            <Skeleton className="ml-2 h-2.5 w-6" />
+            <Skeleton className="ml-2 h-2.5 w-6" />
+          </>,
+        ),
+      )}
     </div>
   );
   /** A table with no result bar: a word, a count, a share. */
   const plain = (rows: number, key: string, head = false) => (
     <div key={key} className="flex flex-col">
-      {head && (
-        <div className="flex h-6 items-center gap-2">
-          <Skeleton className="h-2 w-16" />
-          <Skeleton className="ml-auto h-2 w-10" />
-          <Skeleton className="ml-2 h-2 w-8" />
-        </div>
+      {head &&
+        headRow(
+          <>
+            <Skeleton className="h-2 w-16" />
+            <Skeleton className="ml-auto h-2 w-10" />
+            <Skeleton className="ml-2 h-2 w-8" />
+          </>,
+        )}
+      {Array.from({ length: rows }, (_, i) =>
+        bodyRow(
+          i,
+          <>
+            <Skeleton className={cn('h-2.5', ['w-20', 'w-24', 'w-16', 'w-28'][i % 4])} />
+            <Skeleton className="ml-auto h-2.5 w-8" />
+            <Skeleton className="ml-2 h-2.5 w-8" />
+          </>,
+        ),
       )}
-      {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className="flex h-7 items-center gap-2">
-          <Skeleton className={cn('h-2.5', ['w-20', 'w-24', 'w-16', 'w-28'][i % 4])} />
-          <Skeleton className="ml-auto h-2.5 w-8" />
-          <Skeleton className="ml-2 h-2.5 w-8" />
-        </div>
-      ))}
     </div>
   );
   /**
@@ -1406,7 +1458,7 @@ function InsightsSkeleton({ shape }: { shape: Shape }) {
               ))}
             </div>
           </div>
-          {shape.weekdays > 0 && table(shape.weekdays, 'week')}
+          {shape.weekdays > 0 && table(shape.weekdays, 'week', true)}
         </>,
         'grid gap-6 md:grid-cols-[1fr_18rem]',
       )}

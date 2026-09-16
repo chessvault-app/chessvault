@@ -263,13 +263,18 @@ export function SkeletonRows({
                 mark, a name, the difficulty word, a right-aligned time and
                 the eye beside the row. Drawn as three, every row re-laid
                 itself out sideways when the answers came. */}
-            <div className={cn('flex h-5 shrink-0 items-center', nameWidth)}>
+            {/* Each cell on the row's own line box: the rows these stand
+                for are `ListRow dense` at `type-row`, so 20px on a
+                desktop and 24 on a phone. Pinned at 20, the row was 4px
+                short on a fine-pointer window under md; on a touch screen
+                ListRow's 44px floor hid it on both sides. */}
+            <div className={cn('type-row-box flex shrink-0 items-center', nameWidth)}>
               <Skeleton className={cn('h-2.5 max-w-full', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
             </div>
-            <div className="flex h-5 w-14 shrink-0 items-center">
+            <div className="type-row-box flex w-14 shrink-0 items-center">
               <Skeleton className="h-2.5 w-10" />
             </div>
-            <div className="ml-auto flex h-5 w-20 shrink-0 items-center justify-end">
+            <div className="type-row-box ml-auto flex w-20 shrink-0 items-center justify-end">
               <Skeleton className="h-2.5 w-12" />
             </div>
           </div>
@@ -309,7 +314,12 @@ export function SkeletonLicenceRows({ rows = 10, className }: { rows?: number; c
                 glyph on every row and depends on nothing the page is
                 waiting for. */}
             <ChevronRight className="text-muted-foreground glyph shrink-0" aria-hidden />
-            <div className="flex h-5 min-w-0 flex-1 items-center">
+            {/* The package name, on the row's own `type-row`
+                (LicensesPage). The 36px floor above still decides this
+                row's height at both rungs, so naming the box changes no
+                pixel today; it stops the one number here from being the
+                desktop's when the floor moves. */}
+            <div className="type-row-box flex min-w-0 flex-1 items-center">
               <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
             </div>
             {/* The version, on the rows that have one. The inventory opens
@@ -434,11 +444,15 @@ export function SkeletonCards({
           grid && 'flex flex-col justify-center sm:min-h-[4.125rem]',
         )}
       >
-        {/* Title on a 24px line, then the quiet stat line on 16. */}
+        {/* The title is `text-base` at every width (shelf-card: a card
+            name is one line and does not take the row rungs), so its box
+            is the literal 24. The stat line under it IS on the rungs
+            (`type-row-sub`), and was pinned at the desktop 16: 4px a card
+            on every phone. */}
         <div className="flex h-6 items-center">
           <Skeleton className={cn('h-3.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
         </div>
-        <div className="flex h-4 items-center">
+        <div className="type-row-sub-box flex items-center">
           <Skeleton className="h-2 w-1/5" />
         </div>
         {grid && (
@@ -804,10 +818,17 @@ export function SkeletonThemeCard({
     >
       <Skeleton className="size-4 shrink-0 rounded-sm" />
       <div className="min-w-0 flex-1">
-        {/* A name at text-sm on a 20px line, over a count on 16. */}
-        <div className="flex h-5 items-center">
+        {/* ThemeCard's own two lines: the name on `type-row`, the count
+            under it on `type-row-sub`. Both were pinned at the desktop
+            number, so the card stood 8px short of the one it stands in
+            for on every phone, and a grid of seventy themes about 280px. */}
+        <div className="type-row-box flex items-center">
           {label ? (
-            <span className="relative">
+            // The chip's width comes from this word, so it is laid out in
+            // the type the card will set it in: without `type-row
+            // font-medium` it shrink-wrapped narrower than the card that
+            // replaces it, which is the one thing the label is for.
+            <span className="relative type-row font-medium">
               <span className="invisible whitespace-nowrap">{label}</span>
               <Skeleton className="absolute inset-y-1 left-0 w-full" />
             </span>
@@ -815,7 +836,7 @@ export function SkeletonThemeCard({
             <Skeleton className="h-2.5 w-2/3" />
           )}
         </div>
-        <div className="flex h-4 items-center">
+        <div className="type-row-sub-box flex items-center">
           <Skeleton className="h-2 w-8" />
         </div>
       </div>
@@ -846,9 +867,11 @@ export function SkeletonThemeGroups({
         // The real groups end at their last card; a margin under the last
         // placeholder group stood the page 16px taller than it settles.
         <section key={g} className="mb-4 last:mb-0">
-          {/* The group heading: an h2 at text-sm, whose line box is 20px
-              — measured. It was drawn on a 16px line. */}
-          <div className="mb-2 flex h-5 items-center">
+          {/* The group heading: an h2 on `type-row` (ThemesPage,
+              ThemeGroup), so 20px on a desktop and 24 on a phone. It was
+              drawn on a 16px line, then on a pinned 20, which is the
+              desktop half of the same mistake. */}
+          <div className="type-row-box mb-2 flex items-center">
             <Skeleton className="h-2.5 w-28" />
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">

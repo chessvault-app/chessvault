@@ -775,14 +775,20 @@ export function RefDbManagerSkeleton({ rows }: {
                   prevent. `contents` from md up, the same trick the row
                   uses, so the wide placeholder is the flat line it was.
 
-                  my-1 on both bars below md: a 12px and a 10px bar stand
-                  in for two 20px lines of text, and left bare they made
-                  every row 18px short of the one that landed. From md
-                  the trailing square sets the height and the margins
-                  would do nothing, so they are not asked for. */}
+                  Margins on both bars below md, because the row's two
+                  stacked lines are text and a bar is not: the row is
+                  `type-row`, so each line is a 24px box there, and the
+                  12px bar takes 6px above and below to stand in one. It
+                  was my-1, which is the same arithmetic against the 20px
+                  the rung was before 2026-09-15: 8px a row, and about
+                  96px over the twelve this reserves. The bars cannot take
+                  `type-row-box` themselves, since `md:contents` above
+                  makes them the wide row's own cells. From md the
+                  trailing square sets the height and the margins would do
+                  nothing, so they are not asked for. */}
               <div className="flex min-w-0 flex-1 flex-col gap-1 md:contents">
-                <Skeleton className={cn('my-1 h-3 md:my-0', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
-                <Skeleton className="my-1 h-3 w-24 shrink-0 md:my-0 md:ml-auto md:h-2.5" />
+                <Skeleton className={cn('my-1.5 h-3 md:my-0', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+                <Skeleton className="my-1.5 h-3 w-24 shrink-0 md:my-0 md:ml-auto md:h-2.5" />
               </div>
               {/* The row's controls, the real buttons held inert: the ⋯
                   below md, and from md the four icons the row carries

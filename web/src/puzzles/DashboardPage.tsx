@@ -541,12 +541,18 @@ export function DashboardPage() {
                             it stands for draws it; and the row's own
                             chevron. */}
                         <div className="flex min-w-0 flex-1 flex-col gap-1">
-                          <div className="flex h-5 items-center max-md:h-6">
+                          {/* The row's title is `type-row` and the figure
+                              beside it `type-row-sub`, so each box is the
+                              rung's own, named (index.css) rather than
+                              written out as `h-5 max-md:h-6` here and
+                              forgotten at the seven sites that had the
+                              same line to reserve. */}
+                          <div className="type-row-box flex items-center">
                             <Skeleton className="h-2.5 w-2/5" />
                           </div>
                           <Progress value={0} aria-hidden className="sm:hidden" />
                         </div>
-                        <div className="flex h-5 shrink-0 items-center">
+                        <div className="type-row-sub-box flex shrink-0 items-center">
                           <Skeleton className="h-2.5 w-10" />
                         </div>
                         <Progress value={0} aria-hidden className="w-24 shrink-0 max-sm:hidden" />
@@ -718,7 +724,7 @@ export function DashboardPage() {
             // rows were the jump in the other direction.
             reserved.attempts === 0 ? (
               <div className="px-3 py-3">
-                <div className="flex h-5 items-center max-md:h-6">
+                <div className="type-row-box flex items-center">
                   <Skeleton className="h-2.5 w-56 max-w-full" />
                 </div>
               </div>

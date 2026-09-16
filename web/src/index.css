@@ -1543,6 +1543,45 @@
   }
 }
 
+/* The BOX a placeholder bar waits in where one of those lines is coming:
+   the same line box at the same widths, read from the same variables, so
+   a reservation cannot be left behind when the rung moves.
+
+   The rungs above landed on 2026-09-15 and every placeholder for a row
+   kept the height it had been measured at before them, which is the
+   desktop number. Measured on the demo's themes grid at 390: a
+   placeholder card 58px against the 66px card that replaced it, over the
+   71 cards and 9 group headings that page draws, so its two columns
+   settled about 324px short. Computed the same way from the classes,
+   since neither page can be reached on the static demo: a databases row
+   8px a row over the twelve it reserves, the insights outline about
+   270px on its default shape, a shelf card 4px. The two sites that had
+   noticed wrote `h-5 max-md:h-6` by hand (the dashboard's books panel
+   and its log), which is the unnamed tier the note above forbids, and
+   seven more wrote `h-5` and were simply wrong below md. Put the height
+   on a box that carries no padding of its own: these are border-box, so
+   a padding on the same element comes out of the line rather than adding
+   to it.
+
+   The height is the size TIMES its line height, because `--text-*--line-height`
+   in this theme is a ratio and not a length (`calc(1.25 / .875)` for
+   text-sm). `height: var(--text-sm--line-height)` parses as a number with
+   no unit, so the declaration is dropped and Tailwind emits no rule at
+   all: measured on the themes grid, the cards came out 40px, which is
+   the padding plus the two bars and no line box between them. */
+@utility type-row-box {
+  height: calc(var(--text-sm) * var(--text-sm--line-height));
+  @media (width < 48rem) {
+    height: calc(var(--text-base) * var(--text-base--line-height));
+  }
+}
+@utility type-row-sub-box {
+  height: calc(var(--text-xs) * var(--text-xs--line-height));
+  @media (width < 48rem) {
+    height: calc(var(--text-sm) * var(--text-sm--line-height));
+  }
+}
+
 /* The icon rungs, on the type rungs' bargain: the app's row glyph is 14px
    (a chevron, a row's leading icon, the icon in a small button) and its
    mark is 12 (a bookmark on a card, a badge's tick), and both platforms
