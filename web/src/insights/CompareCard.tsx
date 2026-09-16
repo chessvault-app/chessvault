@@ -222,11 +222,15 @@ function CompareBody({ databases }: { databases: FieldDatabase[] }) {
           )}
         </div>
         {rows === null ? (
-          // The rows are two lines — a move line over a sentence, at
-          // px-2 py-1.5 in a gap-px column — so three of them are 164px.
+          // The rows are two lines, a move line over a sentence, in a
+          // gap-px column: three of them are 164px at the comfortable
+          // rung. The padding is the row's own token, not the py-1.5 it
+          // resolves to there — the rows below read `--row-py-dense`, so
+          // on a compact vault the three placeholders stood 18px over the
+          // three that replaced them.
           <div className="flex flex-col gap-px" role="status" aria-label={t('Loading')}>
             {[0, 1, 2].map((i) => (
-              <div key={i} className="flex flex-col gap-0.5 px-2 py-1.5">
+              <div key={i} className="flex flex-col gap-0.5 px-2 py-(--row-py-dense)">
                 <div className="flex h-5 items-center">
                   <Skeleton className="h-2.5 w-2/5" />
                 </div>

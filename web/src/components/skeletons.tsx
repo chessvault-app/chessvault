@@ -289,16 +289,20 @@ export function SkeletonRows({
 
 /**
  * The licences page's rows: a chevron, a package name, its version and a
- * licence pill on the page's own `min-h-9 px-2 py-1.5` button, which is
- * not ListRow's dense rung. The page drew SkeletonRows for a while, and
- * the demo measured the difference: ten placeholders at 33px against rows
- * of 37 on a desktop, and 44 (the ListRow coarse-pointer floor that
- * SkeletonRows carries) against the same 37 on a phone, where this row
- * keeps to the 36px floor.
+ * licence pill on the page's own button, which is `px-2
+ * py-(--row-py-dense)` with a 36px floor under a coarse pointer — not
+ * ListRow's dense rung, which carries that floor at every pointer. The
+ * page drew SkeletonRows for a while, and the demo measured the
+ * difference: ten placeholders at 33px against rows of 37 on a desktop,
+ * and 44 (ListRow's coarse floor) against the same 37 on a phone.
+ *
+ * Those two numbers are the row as it stood in 2026-09-11. It has since
+ * taken the density token and the type rungs, and this had kept a literal
+ * copy of the old arithmetic, which is what the tokens exist to stop.
  *
  * Two boxes a row, as the page draws it: the hairline is the list item's
- * and the 36px floor is the button's inside it. With the floor on the
- * divided box itself, the border came out of the 36 and every row was a
+ * and the padding is the button's inside it. With the padding on the
+ * divided box itself, the border came out of the row and every one was a
  * pixel short.
  */
 /** Leading inventory rows that print no version; see the row below. */
@@ -309,7 +313,14 @@ export function SkeletonLicenceRows({ rows = 10, className }: { rows?: number; c
     <Loading className={cn('divide-border divide-y', className)}>
       {Array.from({ length: rows }, (_, i) => (
         <div key={i}>
-          <div className="flex min-h-9 items-center gap-2 px-2 py-1.5">
+          {/* The page's own row (LicensesPage): the density token, and the
+              36px floor only under a coarse pointer. Both were pinned —
+              `py-1.5` and an unconditional `min-h-9` — which is the
+              settled height on a touch screen and nowhere else. On a
+              fine-pointer desktop the row is 32px comfortable and 26
+              compact, so ten placeholders stood 40px over the rows at one
+              rung and 100 at the other. */}
+          <div className="flex items-center gap-2 px-2 py-(--row-py-dense) pointer-coarse:min-h-9">
             {/* The row's own chevron (LicensesPage), closed: it is the same
                 glyph on every row and depends on nothing the page is
                 waiting for. */}

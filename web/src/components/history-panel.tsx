@@ -204,12 +204,29 @@ function HistorySheet({
         )}
 
         {!unavailable && versions === null && (
-          // No gap: the list below is a plain <ul>, so the 36px rows
-          // meet. At gap-1.5 the placeholder stood 120px against 108.
+          // No gap: the list below is a plain <ul>, so the rows meet. At
+          // gap-1.5 the placeholder stood 120px against 108.
+          //
+          // The row's own padding, not the 36px the three solid blocks
+          // pinned: that number is the comfortable rung (a text-sm line
+          // of 20 plus 2×8), and on a compact vault the rows below come
+          // out at 30, so the placeholder stood 6px over each of them and
+          // the sheet's body shrank by 18 when the versions landed. The
+          // two bars are the row's two spans, the relative time over the
+          // exact one, on the baseline they share.
           <div className="flex flex-col">
-            <Skeleton className="h-9" />
-            <Skeleton className="h-9" />
-            <Skeleton className="h-9" />
+            {/* Two boxes a row: the padding outside, the line box inside.
+                These are border-box, so a height on the same element as
+                the padding would come out of the line instead of adding
+                to it. */}
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="px-2 py-(--row-py)">
+                <div className="flex h-5 items-center gap-2">
+                  <Skeleton className="h-2.5 w-16 shrink-0" />
+                  <Skeleton className="h-2 w-24 shrink-0" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
