@@ -325,29 +325,42 @@ export function SkeletonLicenceRows({ rows = 10, className }: { rows?: number; c
                 glyph on every row and depends on nothing the page is
                 waiting for. */}
             <ChevronRight className="text-muted-foreground glyph shrink-0" aria-hidden />
-            {/* The package name, on the row's own `type-row`
-                (LicensesPage). The 36px floor above still decides this
-                row's height at both rungs, so naming the box changes no
-                pixel today; it stops the one number here from being the
-                desktop's when the floor moves. */}
-            <div className="type-row-box flex min-w-0 flex-1 items-center">
-              <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+            {/* The name, the version and the pill share one WRAPPING box,
+                as the row does: below sm the name takes `basis-full` and
+                the other two drop to a line of their own. Drawn as three
+                siblings on one line, the placeholder was a 36px row where
+                the settled one is 62 — 26px each, 260 over the ten this
+                reserves, on every phone. The row took the wrap one day
+                after this placeholder was written and it was never told. */}
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
+              {/* The package name, on the row's own `type-row`. */}
+              <div className="type-row-box flex min-w-0 basis-full items-center sm:flex-1 sm:basis-0">
+                <Skeleton className={cn('h-2.5', NAME_WIDTHS[i % NAME_WIDTHS.length])} />
+              </div>
+              {/* The version, on the rows that have one. The inventory
+                  opens with the copied assets (web/vite.licenses.ts
+                  ASSETS), which carry no version, and the first installed
+                  package is the tenth row: checked against the built
+                  index.json, entries 0-8 print none and entry 9 is the
+                  first that does. A bar on all ten stood where nine
+                  settled rows have nothing. Add an asset and this number
+                  moves with it. */}
+              {i >= VERSIONLESS_LICENCE_ROWS && (
+                <div className="type-row-sub-box flex shrink-0 items-center">
+                  <Skeleton className="h-2.5 w-10" />
+                </div>
+              )}
+              {/* The licence pill: a `type-row-sub` line in `py-px` inside
+                  a border, so its box is that line plus 4 — 20px from md
+                  and 24 below it, which no type box states on its own.
+                  Widths measured at 81-114px across the names that
+                  actually stand here (MIT to Apache-2.0), so they are
+                  ragged rather than one 48px stub that ended nowhere near
+                  them. */}
+              <Skeleton
+                className={cn('h-5 shrink-0 rounded-full max-md:h-6', ['w-20', 'w-24', 'w-28', 'w-20'][i % 4])}
+              />
             </div>
-            {/* The version, on the rows that have one. The inventory opens
-                with the copied assets (web/vite.licenses.ts ASSETS), which
-                carry no version, and the first installed package is the
-                tenth row: checked against the built index.json, entries 0-8
-                print none and entry 9 is the first that does. A bar on all
-                ten stood where nine settled rows have nothing. Add an asset
-                and this number moves with it. */}
-            {i >= VERSIONLESS_LICENCE_ROWS && <Skeleton className="h-2.5 w-10 shrink-0" />}
-            {/* The licence pill: one text-xs line, py-px and its border.
-                Measured at 81-114px across the names that actually stand
-                here (MIT to Apache-2.0), so the widths are ragged rather
-                than one 48px stub that ended nowhere near them. */}
-            <Skeleton
-              className={cn('h-5 shrink-0 rounded-full', ['w-20', 'w-24', 'w-28', 'w-20'][i % 4])}
-            />
           </div>
         </div>
       ))}
