@@ -200,6 +200,40 @@ const DASH_KEY = 'vault:home-dash';
     and the only one on this page that a phone reserves too. */
 const CHECKLIST_SHOWN_KEY = 'vault:home-checklist-shown';
 /**
+ * Which tiles carried a figure last launch.
+ *
+ * A tile's `count` says it CAN carry one; whether it does rides the
+ * answer. Four of the seven are conditional (nothing due, no puzzle
+ * database, an unstarted map, an empty library), so a placeholder drawn
+ * from `count` alone reserved a 20px line on tiles that then landed
+ * without one and SHRANK by it — the jump the reservation exists to
+ * prevent, upside down. It hits the shipped default arrangement, whose
+ * one counted tile is the opening map: a vault that has charted nothing
+ * saw the grid settle upwards on every launch.
+ *
+ * Empty until a launch has answered, so a device with no memory of this
+ * vault reserves nothing rather than guessing, as the Continue card's
+ * reservation does one key up.
+ */
+const FIGURES_KEY = 'vault:home-figures';
+
+function readFigures(): HomeCount[] {
+  try {
+    const parsed: unknown = JSON.parse(localStorage.getItem(FIGURES_KEY) ?? '[]');
+    return Array.isArray(parsed) ? parsed.filter((x): x is HomeCount => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeFigures(counts: Partial<Record<HomeCount, unknown>>): void {
+  try {
+    localStorage.setItem(FIGURES_KEY, JSON.stringify(Object.keys(counts)));
+  } catch {
+    // Nothing to reserve next launch; the tiles grow instead of shrinking.
+  }
+}
+/**
  * This device's arrangement of the page: the authority, not a hint.
  *
  * It used to be the echo of what the vault stored under config.json's
@@ -596,6 +630,9 @@ export function HomePage() {
   // mount like the card's: a reservation that changed while the answer was
   // in flight would be a second jump rather than none.
   const [reservedDash] = useState(() => dashReservation(localStorage.getItem(DASH_KEY)));
+  // And which tiles carried a figure, on the same terms: read once at
+  // mount, so this launch reserves what the last one drew.
+  const [reservedFigures] = useState(readFigures);
   const [reservedChecklist] = useState(() =>
     checklistReservation(localStorage.getItem(CHECKLIST_SHOWN_KEY)),
   );
@@ -744,6 +781,8 @@ export function HomePage() {
         .filter((d) => d.updatedAt)
         .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
         .slice(0, 5);
+      // Which tiles ended up with a figure, for next launch's reservation.
+      writeFigures(counts);
       setData({
         counts,
         solvedToday: typeof solvedToday === 'number' ? solvedToday : null,
@@ -1526,9 +1565,13 @@ export function HomePage() {
                     </span>
                   ) : (
                     // Only the tiles that will get a number keep space for
-                    // one: Board and Editor are tools and never carry one.
+                    // one: Board and Editor are tools and never carry one,
+                    // and of the rest four carry one only sometimes, so
+                    // what this device saw last launch decides rather than
+                    // the tile's own `count` (FIGURES_KEY).
                     loading &&
-                    count !== undefined && (
+                    count !== undefined &&
+                    reservedFigures.includes(count) && (
                       // On the figure's own line, as the figure is: inline beside the
                       // name, the tile grew a 20px line when the number landed.
                       <Skeleton className="my-1.5 block h-2 w-10" />
