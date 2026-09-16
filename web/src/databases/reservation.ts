@@ -79,3 +79,17 @@ export function databasesShapeOf(meta: { ready: boolean; databases?: unknown[] }
 /** What a settled page stores for the reader above. Stored uncapped —
     the cap belongs to the reader, so a later version can raise it. */
 export const storedDatabasesShape = (shape: DatabasesShape): string => JSON.stringify(shape);
+
+/** Where this page keeps its shape, and the shape it had last visit.
+
+    The key lived in DatabasesPage while that page was its only reader;
+    the route outline reads it too now, and is drawn before that chunk
+    exists. */
+export const DATABASES_SHAPE_KEY = 'vault:databases-shape';
+export const readDatabasesShape = (): DatabasesShape => {
+  try {
+    return parseDatabasesShape(localStorage.getItem(DATABASES_SHAPE_KEY));
+  } catch {
+    return FRESH_DATABASES;
+  }
+};

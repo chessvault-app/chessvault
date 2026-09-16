@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
-import { RefDbManager, RefDbManagerSkeleton, type RefDb, type Source } from './RefDbManager';
+import { RefDbManager, type RefDb, type Source } from './RefDbManager';
+import { MountNote, RefDbManagerSkeleton } from '@/databases/DatabasesPage.skeleton';
+import { routePlaceholderShown } from '@/lib/lazyRoute';
 import { useSlowLoad } from '@/components/skeletons';
 import { t } from '@/lib/i18n';
-import { databasesShapeOf, parseDatabasesShape, storedDatabasesShape } from './reservation';
+import { DATABASES_SHAPE_KEY, databasesShapeOf, readDatabasesShape, storedDatabasesShape } from './reservation';
 
 /** See `reserved` below: which block the page drew last visit, and how
     many rows its list held. */
-const DATABASES_SHAPE_KEY = 'vault:databases-shape';
 
 /**
  * One page for everything built from uploaded PGN collections.
@@ -51,7 +51,7 @@ export function DatabasesPage() {
   // What this device reserves while /api/refgames is out, from what it
   // saw last visit (databases/reservation.ts) — a paint hint on home's
   // bargain, corrected by the answer. Read once; the wait cannot change it.
-  const [reserved] = useState(() => parseDatabasesShape(localStorage.getItem(DATABASES_SHAPE_KEY)));
+  const [reserved] = useState(readDatabasesShape);
   useEffect(() => {
     if (meta !== null) localStorage.setItem(DATABASES_SHAPE_KEY, storedDatabasesShape(databasesShapeOf(meta)));
   }, [meta]);
@@ -96,7 +96,11 @@ export function DatabasesPage() {
   // answered. It has the panel's own shape now, and only once the wait is
   // long enough to be worth admitting to — a skeleton that flashes past
   // reads as a fault, and against a local server this one never appears.
-  const slow = useSlowLoad(meta === null);
+  /** The route's outline drew this same panel while the chunk came down
+      (lib/lazyRoute); without this the two waits hand over through
+      useSlowLoad's 180ms and it blinks out and back. */
+  const [continuing] = useState(routePlaceholderShown);
+  const slow = useSlowLoad(meta === null) || (continuing && meta === null);
 
   return (
     <PageShell width="medium" scroll={false} className="h-full min-h-0 pb-4 md:pb-6">
@@ -133,49 +137,3 @@ export function DatabasesPage() {
   );
 }
 
-/**
- * What is mounted, and why there is nothing to press. Only the count:
- * this mount has no name to show, and its size cannot be measured
- * through the demo's in-memory filesystem.
- *
- * As a placeholder it is the same card with its words invisible, so a
- * device that saw this mount last visit reserves the card's own height
- * rather than a panel's — the panel-sized ghost is what the demo used to
- * draw over a two-line card.
- */
-function MountNote({
-  ready,
-  games,
-  placeholder = false,
-}: {
-  ready: boolean;
-  games: number;
-  placeholder?: boolean;
-}) {
-  return (
-    <div
-      className={cn(
-        'bg-card flex shrink-0 flex-col gap-1 rounded-xl ring-1 ring-card-ring p-4 text-sm',
-        placeholder && '[&>p]:invisible',
-      )}
-      {...(placeholder ? { role: 'status', 'aria-label': t('Loading'), 'aria-live': 'polite' as const } : {})}
-    >
-      {ready ? (
-        <>
-          <p className="text-foreground font-medium">
-            {t('{n} games', { n: games.toLocaleString() })}
-          </p>
-          <p className="text-muted-foreground leading-relaxed">
-            {t(
-              'This database is read-only. Uploading files and building databases need the installed app.',
-            )}
-          </p>
-        </>
-      ) : (
-        <p className="text-muted-foreground leading-relaxed">
-          {t('This server has no reference games database.')}
-        </p>
-      )}
-    </div>
-  );
-}
