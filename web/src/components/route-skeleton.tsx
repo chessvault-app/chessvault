@@ -2,15 +2,12 @@ import { useSyncExternalStore, type ReactNode } from 'react';
 import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
 import {
-  Inert,
   SkeletonBoard,
   SkeletonBookCards,
   SkeletonCards,
-  SkeletonDocument,
-  SkeletonSubtitle,
 } from '@/components/skeletons';
-import { SearchInput } from '@/components/text-fields';
 import { readShelfLayout, readShelfShape, shelfHasShape } from '@/components/shelf-reservation';
+import { ShelfHeader } from '@/components/shelf-outline';
 import { parse, type Section } from '@/lib/router';
 import { t } from '@/lib/i18n';
 
@@ -133,52 +130,6 @@ function ChromeOnly({
 }
 
 /**
- * A shelf's header while its page downloads: the name, the count line
- * the shelf is about to print, and the search field.
- *
- * The field is the real one, held inert, on the rule the placeholders
- * already follow — a control whose shape is known before the data is is
- * drawn as ITSELF rather than as a grey box of its size (skeletons,
- * `INERT`). ShelfToolbar is PageHeader with this field in its search
- * slot, and both are in the launch set, so this is the toolbar's own
- * geometry rather than an impression of it. What is left out is the row
- * of buttons beside the title (sort, layout, Create), which changes
- * nothing about where the cards start.
- */
-function ShelfHeader({
-  title,
-  search,
-  subtitle,
-}: {
-  title: string;
-  /** The field's own placeholder, which is also its label. */
-  search: string;
-  /** Whether a count line is coming. The studies shelf drops it entirely
-      on a vault with no studies, so the stored shape is what knows. */
-  subtitle: boolean;
-}) {
-  return (
-    <PageHeader
-      title={title}
-      subtitle={subtitle ? <SkeletonSubtitle /> : undefined}
-      search={
-        <Inert>
-          <SearchInput
-            type="text"
-            inputSize="sm"
-            value=""
-            readOnly
-            placeholder={search}
-            aria-label={search}
-            className="min-w-0 flex-1"
-          />
-        </Inert>
-      }
-    />
-  );
-}
-
-/**
  * A document shelf's wait: the cards it held last visit, in the layout
  * it was left in.
  *
@@ -248,12 +199,6 @@ function shapeFor(section: Section, params: string[]): ReactNode {
         <SkeletonBoard chapters explorer />
       ) : (
         <ShelfPage title={t('Studies')} search={t('Search studies…')} shelf="studies" />
-      );
-    case 'notes':
-      return params[0] ? (
-        <SkeletonDocument />
-      ) : (
-        <ShelfPage title={t('Notes')} search={t('Search notes…')} shelf="notes" />
       );
     case 'books': {
       // One book is the reader, whose shell is not in the launch set.

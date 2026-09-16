@@ -76,7 +76,9 @@ const AnalysisView = lazyRoute(() => import('@/analysis/AnalysisView').then((m) 
 const WorkspaceView = lazyRoute(() => import('@/workspace/WorkspaceView').then((m) => ({ default: m.WorkspaceView })), PAGE);
 const EditorView = lazyRoute(() => import('@/editor/EditorView').then((m) => ({ default: m.EditorView })), PAGE);
 const GamesView = lazyRoute(() => import('@/games/GamesView').then((m) => ({ default: m.GamesView })), PAGE);
-const NotesView = lazyRoute(() => import('@/notes/NotesView').then((m) => ({ default: m.NotesView })), PAGE);
+const NotesView = lazyRoute(() => import('@/notes/NotesView').then((m) => ({ default: m.NotesView })), {
+  outline: () => import('@/notes/NotesView.skeleton'),
+});
 const PuzzlesView = lazyRoute(() => import('@/puzzles/PuzzlesView').then((m) => ({ default: m.PuzzlesView })), PAGE);
 const BooksView = lazyRoute(() => import('@/books/BooksView').then((m) => ({ default: m.BooksView })), PAGE);
 // HomePage is EAGER (imported above), alone among the routes. With no

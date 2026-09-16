@@ -12,7 +12,9 @@ import { ClearableInput } from '@/components/text-fields';
 import { RecoveryDialog } from '@/components/recovery-dialog';
 import { SaveControl, type SaveState } from '@/components/save-control';
 import { DocumentTools } from '@/components/document-tools';
-import { SkeletonDocument, useSlowLoad } from '@/components/skeletons';
+import { useSlowLoad } from '@/components/skeletons';
+import NoteOutline from './NoteView.skeleton';
+import { routePlaceholderShown } from '@/lib/lazyRoute';
 import { docToMarkdown, markdownToDoc, noteExtensions, splitFrontMatter } from './markdown';
 import { EditorPalette } from './EditorPalette';
 import { WikiSuggest } from './WikiSuggest';
@@ -33,7 +35,12 @@ const PARK_MS = 4000;
 /** One open note: a Tiptap editor over markdown, boards included. */
 export function NoteView({ id }: { id: string }) {
   const [initialDoc, setInitialDoc] = useState<object | null>(null);
-  const pending = useSlowLoad(initialDoc === null);
+  /** The route's own outline was already drawing this picture while the
+      editor's chunk came down (lib/lazyRoute), so useSlowLoad's 180ms has
+      nothing to protect against here and would only put a hole between
+      the two. */
+  const [continuing] = useState(routePlaceholderShown);
+  const pending = useSlowLoad(initialDoc === null) || (continuing && initialDoc === null);
   const [failed, setFailed] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('saved');
   /**
@@ -108,7 +115,7 @@ export function NoteView({ id }: { id: string }) {
     // SkeletonDocument is the note's own column, scrolling and all, so it
     // needs no wrapper of its own — one used to add a second scroller
     // around a box that already had one.
-    return <div className="h-full">{pending && <SkeletonDocument />}</div>;
+    return pending ? <NoteOutline /> : <div className="h-full" />;
   }
 
   return (

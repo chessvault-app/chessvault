@@ -10,7 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import { Suspense, memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
-import { lazyRoute } from '@/lib/lazyRoute';
+import { lazyRoute, routePlaceholderShown } from '@/lib/lazyRoute';
 import { KeepAlive } from '@/lib/keep-alive';
 import { decodeSegment, navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
@@ -23,7 +23,8 @@ import { useUndoable } from '@/hooks/use-undoable';
 import { MoveToDialog } from '@/components/move-to-dialog';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { CreateControl } from '@/components/fab';
-import { Arrival, SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
+import { Arrival, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
+import { NotesCards } from '@/notes/NotesView.skeleton';
 import {
   SHELVES,
   readShelfShape,
@@ -40,7 +41,13 @@ import { api, apiErrorMessage } from '@/lib/api';
 // The note EDITOR is TipTap and ProseMirror — by a distance the heaviest
 // thing in the app. The list needs none of it, so opening Notes no longer
 // pays for it; it loads when a note is actually opened.
-const NoteView = lazyRoute(() => import('./NoteView').then((m) => ({ default: m.NoteView })));
+// Its own outline, which it went without: the editor's chunk is the
+// heaviest in the app and drew NOTHING while it came down, between two
+// halves of the same picture (./NoteView.skeleton says what that looked
+// like).
+const NoteView = lazyRoute(() => import('./NoteView').then((m) => ({ default: m.NoteView })), {
+  outline: () => import('./NoteView.skeleton'),
+});
 
 interface NoteMeta {
   id: string;
@@ -146,7 +153,11 @@ function NoteList() {
   const [loaded, setLoaded] = useState(false);
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const pending = useSlowLoad(!loaded);
+  /** The route's outline drew these same cards while the chunk came
+      down (lib/lazyRoute); without this the two waits hand over through
+      useSlowLoad's 180ms and the shelf blinks out and back. */
+  const [continuing] = useState(routePlaceholderShown);
+  const pending = useSlowLoad(!loaded) || (continuing && !loaded);
   const view = useShelfView('notes');
   // The grouped shape this shelf had last visit, per device, exactly as
   // the studies shelf keeps its own — see components/shelf-reservation.
@@ -324,12 +335,7 @@ function NoteList() {
         // A vault seen empty reserves nothing: its settle is the
         // EmptyState, and invented cards would be the jump the other way.
         pending && shelfHasShape(reservedShelf) ? (
-          <SkeletonCards
-            layout={view.layout}
-            groups={reservedShelf}
-            gridClassName="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
-            cover={false}
-          />
+          <NotesCards layout={view.layout} groups={reservedShelf} />
         ) : null
       ) : /* Nothing in the vault at all — no note at any depth (the listing
              walks the tree) and not one collection either. A shelf holding
