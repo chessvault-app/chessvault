@@ -67,6 +67,12 @@ const ROUTES = [
   '#/openingmap',
   '#/books',
   '#/board',
+  // The demo answers /api/insights in the page like every other route, so
+  // this page has always been photographable; it was left out because an
+  // earlier audit recorded the endpoint as a 404 and the note stuck. It is
+  // the page with the most cards and the longest column, and its outline
+  // reserves every one of them, so it is worth a picture.
+  '#/insights',
   '#/more',
 ];
 
