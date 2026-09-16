@@ -2,20 +2,27 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!-- Nothing caps the scale: a pinch has to be able to enlarge the app,
-         which is WCAG 1.4.4 and the one way to read a phone screen that is
-         too small for the eyes using it. maximum-scale=1 and
-         user-scalable=no were here until 0.9.6, to stop two fingers on the
-         shell zooming the whole page; the reading now is that a gesture
-         nobody has to use costs less than an app that cannot be enlarged.
-         iOS auto-zoom on a focused field is declined where it is caused
-         instead — components/ui/input gives its fields a 16px font on a
-         coarse pointer — rather than by taking zooming away from everyone.
-         The surfaces that read their own touches hold the page still
-         themselves, in their own touch-action: the board, the book
-         reader's page, the evidence pages, the opening map and the bottom
-         bar. -->
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <!-- The page holds its own size on a phone: two fingers on the shell
+         do not zoom the whole app, which no app does. maximum-scale=1 and
+         user-scalable=no are half of that, honoured by Android and by the
+         home-screen app on iOS; a Safari tab ignores both, and there
+         body's touch-action (index.css) withholds the pinch instead, so
+         the two together are the whole lock. They were dropped in 0.9.6
+         for WCAG 1.4.4 and are back by the owner's decision of
+         2026-09-16: enlarging text is still the browser's or the OS's own
+         text size, which this app's rem-based type follows, and Safari's
+         own page zoom, neither of which the cap touches. iOS auto-zoom on
+         a focused field is declined where it is caused rather than by the
+         cap — components/ui/input gives its fields a 16px font on a
+         coarse pointer — so the cap is not load-bearing for that. What
+         reads two fingers for itself is unaffected, because touch-action
+         never withholds a touch or gesture listener: the book reader's
+         page, the evidence pages and the opening map still pinch what
+         they show, and not the app. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
     <title>Chess Vault</title>
     <meta name="description" content="A private, offline-first chess vault: analysis, opening explorer, studies, notes and puzzles." />
     <meta name="color-scheme" content="light dark" />

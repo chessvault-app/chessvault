@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import {
   Bookmark,
   ChevronLeft,
@@ -49,49 +49,11 @@ import { t } from '@/lib/i18n';
  *    fast enough that the right thing to show is nothing at all.
  */
 import { Skeleton } from '@/components/ui/skeleton';
-import { routeChanging } from '@/lib/router';
 export { Skeleton };
 
-/**
- * Whether a wait has gone on long enough to be worth admitting to.
- *
- * A skeleton that flashes is worse than no skeleton: the eye reads a
- * flicker as something going wrong, and it also makes a fast load FEEL
- * slower than the same load with nothing in it. So nothing is shown for
- * the first `delay` — most loads finish inside it and stay invisible — and
- * once something is shown it stays for `minVisible`, so it cannot appear
- * and vanish in the same breath.
- */
-export function useSlowLoad(active: boolean, delay = 180, minVisible = 400): boolean {
-  const [shown, setShown] = useState(false);
-  const shownAt = useRef(0);
-  useEffect(() => {
-    if (active) {
-      if (shown) return;
-      // No beat while the page is arriving: a phone's push slides the
-      // new page in over 337ms, and a page that draws nothing until its
-      // record lands slid in as a bare ground (black on a dark theme,
-      // seen on a phone over 5G opening a game). The slide is what
-      // hides a flash, so the placeholder can be there from the first
-      // frame; the minimum stay still applies.
-      const wait = routeChanging() ? 0 : delay;
-      const timer = setTimeout(() => {
-        shownAt.current = Date.now();
-        setShown(true);
-      }, wait);
-      return () => clearTimeout(timer);
-    }
-    if (!shown) return;
-    const remaining = minVisible - (Date.now() - shownAt.current);
-    if (remaining <= 0) {
-      setShown(false);
-      return;
-    }
-    const timer = setTimeout(() => setShown(false), remaining);
-    return () => clearTimeout(timer);
-  }, [active, shown, delay, minVisible]);
-  return shown;
-}
+// The slow-load hook lives in lib/slowLoad (the route loader shares it);
+// re-exported so the pages' import path stands.
+export { useSlowLoad } from '@/lib/slowLoad';
 
 /**
  * The box a placeholder and the content it stands for share: once a

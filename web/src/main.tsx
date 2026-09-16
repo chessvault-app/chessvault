@@ -48,12 +48,13 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   });
 }
 
-// The viewport is whatever index.html says and nothing rewrites it: no
-// maximum-scale cap, so a pinch enlarges the app the way WCAG 1.4.4 wants,
-// and no user agent sniffing to keep correct as devices change. iOS
-// auto-zoom is declined where it is caused instead — components/ui/input
-// gives its fields a 16px font on a coarse pointer. What must not zoom
-// says so for itself, in its own touch-action (index.css, board/Board).
+// The viewport is whatever index.html says and nothing rewrites it, and
+// the scale cap there is only half of the lock: a Safari tab ignores it,
+// and body's touch-action (index.css) is what holds the page still there.
+// No user agent sniffing either, so there is nothing to keep correct as
+// devices change. iOS auto-zoom is declined where it is caused —
+// components/ui/input gives its fields a 16px font on a coarse pointer —
+// rather than leaned on the cap.
 
 // The keyboard is measured on every platform that has one, and the app
 // shell ends where it begins — see startKeyboardTracking.

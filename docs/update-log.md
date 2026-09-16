@@ -7,9 +7,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-The type ladder reaches the last places it had not. 0.11.1 lifted every
-list, control and label a search over class names could find; this
-finishes the job by reading each file against the rule instead.
+The type ladder reaches the last places it had not, and the app holds
+its own size under two fingers again. 0.11.1 lifted every list, control
+and label a search over class names could find; this finishes the job by
+reading each file against the rule instead, and stops a pinch on the
+shell enlarging the whole page.
 
 - **Nothing you have to read on a phone is under 14px.** A dozen lines
   were still drawn at 12 at every width: the note under a list that has
@@ -41,6 +43,35 @@ finishes the job by reading each file against the rule instead.
   sizes back**: the text of a note, the licences page, the desktop
   vault chooser and the website's navigation row, which shrank to
   11.5px on a narrow phone.
+- **Move quality's accuracy column is a number now, with no bar beside
+  it.** The two tables under that card, by phase and by move number,
+  drew a bar as wide as each accuracy. It was the only accuracy in
+  Insights drawn that way, and with every figure between 92 and 98 per
+  cent the bars all came out the same length. On a phone the bar was
+  never drawn and the heading went with it, which left the column
+  unnamed; it is named at both widths now.
+- **Two fingers no longer zoom the app on a phone.** A pinch anywhere on
+  the shell enlarged the whole page, which no app does, and a page left
+  that way stayed zoomed until it was pinched back. The app holds its own
+  size again, on a Safari tab as well as on Android and the home-screen
+  app. To read the screen larger, use the browser's or the device's own
+  text size, which the app follows. What reads two fingers for itself is
+  unchanged: a book's page, the evidence pages and the opening map still
+  pinch what they show, and a double tap still does nothing.
+- **A page you open for the first time on a slow link shows its shape
+  instead of nothing.** Each section's code is fetched the first time you
+  go there, and until it arrived the page was blank: several seconds on
+  a slow phone link, and a bare ground sliding in when you opened a game.
+  After a fifth of a second of waiting the page now draws a placeholder,
+  a title over rows, which the real page replaces. A fast link never sees
+  it.
+- **Sections load in the background after the app opens.** Once the home
+  page is up and the browser has nothing else to do, the other sections'
+  code is fetched one at a time, the three phone tabs first, so the first
+  tap on Games or Puzzles opens at once even on a slow link. On a desktop
+  a sidebar row starts fetching its section when the pointer reaches it.
+  Nothing is fetched ahead on a 2G link or when the browser is set to
+  save data.
 
 ## 0.11.1
 

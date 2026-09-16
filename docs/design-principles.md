@@ -606,6 +606,40 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   1.6 Mbps link the extra download pushed the webfonts behind it and first
   contentful paint went from 3.1 s to 4.5 s. Draw the app's own frame on
   time; fill it as soon as there is something to fill it with.
+- **A route's own wait is the one wait its page cannot draw.** Every
+  skeleton above lives inside the page's chunk, so while the chunk is on
+  the wire nothing exists that could show one, and "the chunk usually
+  beats the next paint" is true of a fast link only: on an emulated phone
+  at 1.5 Mbps a first tap on Games drew a bare ground for 3.7 s, and a
+  game opened from Home slid one in after the router's 400 ms wait. So
+  every route carries `RouteSkeleton`, the one page shape the shell can
+  draw without knowing the page (a title row over one-line rows, in the
+  scrolling column), drawn by `lib/lazyRoute` as ordinary state through
+  the same `useSlowLoad` every page's skeleton uses, with its own two
+  figures: up after 200 ms and kept 500 ms once up, or up from the first
+  frame inside a page transition. The guides disagree on the delay
+  (Apple: none, placeholders at once; Android and eBay: 500 ms; Nielsen:
+  feedback by one second; Material: no number), and 200 sits between
+  Apple and the rest: a warm chunk lands in 50 to 90 ms and never shows
+  it. The stay is TanStack Router's default. The two waits, code and
+  data, run in sequence, never together: the route's shape stands until
+  the chunk lands, then the page's own skeleton takes its own 180 ms
+  decision inside a frame that is already up. Measured at 1.5 Mbps: the
+  placeholder is up at 245 ms, the page arrives when it did before, and
+  an unthrottled tab never shows it (Studies drew at 88 ms).
+- **A section is warmed before it is asked for.** The placeholder covers
+  a cold chunk; `lib/prefetch` sees to it that few are cold. Once the app
+  has loaded and the browser is idle, the sections' chunks are fetched
+  one section at a time (a section's own imports still arrive together,
+  which is how modules load), the three phone tabs first, then the
+  board, then the sidebar's order; and a sidebar row fetches its section
+  on hover, which is TanStack Router's default and Next.js's on
+  viewport. Nothing is warmed on a 2G link or where the user has asked
+  to save data. Measured on the demo at 3 Mbps: the sweep runs 5 s
+  after the home page is up and the first tap on Games then draws in
+  97 ms with no placeholder, where the same tap on the previous build
+  drew a bare box; the home page itself arrived at the same time on
+  both.
 
 ## Kept pages
 
