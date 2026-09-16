@@ -145,6 +145,26 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
   const [storageStamp, setStorageStamp] = useState(0);
   const storage = useStorage(storageStamp);
   const pending = useSlowLoad(settings === null && loadError === null);
+  /**
+   * Whether this page's own outline has been on screen.
+   *
+   * The outline draws the Vault tree (SettingsPlaceholder), and the two
+   * Vault cards draw it again once the settings land — but the LISTING
+   * is a second request, and the slower of the two, so the card mounts
+   * with nothing to show and `useSlowLoad` holds its placeholder back
+   * for 180ms. Measured on the demo with /api/storage held: the tree was
+   * 348px, went to 0 at 1860ms and came back at 2040. The card collapsed
+   * by its whole box and re-expanded, which is the jump both placeholders
+   * exist to prevent, handed over between them.
+   *
+   * So the cards are told. A delay is there to keep a placeholder from
+   * flashing where nothing stood before; where the outline has already
+   * been drawing this one, there is nothing to protect against and the
+   * bars simply carry on. State adjusted during render, React's own
+   * pattern for a value that follows a prop, as `Arrival` does it.
+   */
+  const [outlineShown, setOutlineShown] = useState(false);
+  if (pending && !outlineShown) setOutlineShown(true);
 
   // The licences page's chunk, fetched while this page is read. That
   // page has one way in, the link at the foot of this one, and on a
@@ -247,7 +267,7 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
             which nobody comes for, keeps its place. */}
         {isDemo() ? (
           <>
-            <DemoVaultCard storage={storage} />
+            <DemoVaultCard storage={storage} outlineShown={outlineShown} />
             <DocumentsCard />
             <AppearanceCard />
             {/* Storage is here in the demo as well, now that the in-memory
@@ -277,7 +297,7 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
         ) : (
           <>
             <ProfileCard settings={settings} onSaved={refresh} />
-            <VaultCard settings={settings} onSaved={refresh} storage={storage} />
+            <VaultCard settings={settings} onSaved={refresh} storage={storage} outlineShown={outlineShown} />
             <DocumentsCard />
             <SecurityCard settings={settings} onChanged={refresh} />
             <LichessCard settings={settings} onChanged={refresh} />
@@ -823,7 +843,14 @@ function useStoredVaultPaths(rows: VaultRow[] | null): void {
  * give or a path to show. It is the one card that says what a vault is
  * MADE of, which is worth showing somebody deciding whether to install.
  */
-function DemoVaultCard({ storage }: { storage: StorageReport | null }) {
+function DemoVaultCard({
+  storage,
+  outlineShown,
+}: {
+  storage: StorageReport | null;
+  /** The page outline has been drawing this tree; see SettingsPage. */
+  outlineShown: boolean;
+}) {
   const vault = storage && vaultRows(storage);
   const [reservedPaths] = useState(readVaultPaths);
   useStoredVaultPaths(vault ? vault.rows : null);
@@ -833,7 +860,11 @@ function DemoVaultCard({ storage }: { storage: StorageReport | null }) {
   // everybody can see. The whole card used to be withheld until the
   // listing was in, which is what left the jump row above with no Vault
   // in it.
-  const slow = useSlowLoad(vault === null);
+  //
+  // No delay once the page outline has been drawing this tree: the
+  // handover is the one moment a delay cannot help, and it left a hole
+  // (see SettingsPage, outlineShown).
+  const slow = useSlowLoad(vault === null) || outlineShown;
   return (
     <Card icon={BrandMark} title={t('Vault')} anchor="vault">
       {vault ? (
@@ -850,10 +881,13 @@ function VaultCard({
   settings,
   onSaved,
   storage,
+  outlineShown,
 }: {
   settings: Settings;
   onSaved: () => Promise<void>;
   storage: StorageReport | null;
+  /** The page outline has been drawing this tree; see SettingsPage. */
+  outlineShown: boolean;
 }) {
   const [name, setName] = useState(settings.name ?? '');
   const [note, setNote] = useState<Note>(null);
@@ -864,7 +898,10 @@ function VaultCard({
   const vault = storage && vaultRows(storage);
   const [reservedPaths] = useState(readVaultPaths);
   useStoredVaultPaths(vault ? vault.rows : null);
-  const slow = useSlowLoad(vault === null);
+  // No delay once the page outline has been drawing this tree: the
+  // handover between the two is the one moment a delay cannot help, and
+  // it left a hole (see SettingsPage, outlineShown).
+  const slow = useSlowLoad(vault === null) || outlineShown;
   const reveal = revealVault();
   const copyPath = async (): Promise<void> => {
     // copyText, not the bare Clipboard API: the isolated build denies
