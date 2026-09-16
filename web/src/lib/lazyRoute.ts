@@ -91,27 +91,75 @@ export type LazyRouteComponent<P> = FunctionComponent<P> & {
   /**
    * Whether the chunk is already in hand, and if not, the promise of it.
    * Null when the route will draw on its next render; otherwise the
-   * import, started here if it has not been. The router asks before a
-   * phone's page transition (lib/router, swapRoute): a route that draws
-   * blank until its chunk lands slides a bare ground in, and nobody
-   * wants to watch that.
+   * import, started here if it has not been. This is the PAGE, and it is
+   * what warming waits on (lib/prefetch), one section at a time.
    */
   pending: () => Promise<void> | null;
+  /**
+   * The same, but resolving as soon as there is anything to draw —
+   * whichever of the page and its outline arrives first.
+   *
+   * The router asks this before a phone's page transition (lib/router,
+   * swapRoute), and waits CHUNK_WAIT_MS for it: a route that draws blank
+   * until its chunk lands slides a bare ground in, and nobody wants to
+   * watch that. The outline is a fraction of the page's size, so on the
+   * link where that mattered it is the one that answers.
+   */
+  drawable: () => Promise<void> | null;
 };
+
+/**
+ * Whether a route's outline is on screen right now.
+ *
+ * A page whose chunk has just landed mounts UNDER its own outline, and
+ * then starts its own wait for its own data — through `useSlowLoad`,
+ * which holds a placeholder back 180ms so one cannot flash where nothing
+ * stood. Here something did stand: the route's outline, drawn from the
+ * same module the page is about to draw from. Without this the two waits
+ * hand over through a 180ms hole, and the outline blinks out and back.
+ *
+ * So a page ORs this into its own gate. It is the same bargain
+ * SettingsPage struck by hand between its own two waits (`outlineShown`),
+ * made once here for the wait before them both.
+ */
+let outlineOnScreen = 0;
+export const routePlaceholderShown = (): boolean => outlineOnScreen > 0;
 
 export function lazyRoute<T extends ComponentType<any>>(
   load: () => Promise<{ default: T }>,
   {
     fallback = null,
+    outline,
   }: {
     /** What stands in for the page while its chunk is on the wire, once
-        the wait has passed PENDING_MS. Nothing, by default. */
+        the wait has passed PENDING_MS. Nothing, by default.
+
+        The older form, kept while the pages are converted: one element,
+        made in the shell, which the shell therefore has to know the
+        shape of. `outline` is the one to add. */
     fallback?: ReactNode;
+    /**
+     * The page's OWN outline, as its own module, fetched in parallel
+     * with the page.
+     *
+     * This is the shape every router settles on — Next's `loading`,
+     * TanStack's `pendingComponent`, React Router's `HydrateFallback` —
+     * and the rule they all keep is that the outline must not sit inside
+     * the chunk it stands in for, or it arrives with the thing it was
+     * meant to cover. Beside the page, in its own chunk: the page
+     * imports it for its DATA wait and this imports it for the CHUNK
+     * wait, so one picture covers both and neither can drift from the
+     * other. It is a fraction of the page's size, so it lands first.
+     */
+    outline?: () => Promise<{ default: ComponentType }>;
   } = {},
 ): LazyRouteComponent<ComponentProps<T>> {
   // Module-level, so a section visited twice draws immediately the second
   // time and the import is never asked for twice.
   let ready: T | null = null;
+  /** The outline module, on the same terms as `ready` above. */
+  let sketch: ComponentType | null = null;
+  let sketchPending: Promise<void> | null = null;
   // What the boundary above is owed when the chunk will not come at all:
   // React.lazy threw it out of the render, and so does this — a route that
   // silently stayed blank would be the black window all over again.
@@ -140,6 +188,24 @@ export function lazyRoute<T extends ComponentType<any>>(
         },
       ));
 
+  /**
+   * The outline, asked for alongside the page.
+   *
+   * A failure is swallowed rather than thrown: the page itself is on its
+   * way and will report its own trouble, and a stale-deploy reload is
+   * already `fetchModule`'s job. An outline that cannot be fetched
+   * should cost the reader a plain wait, never an error screen.
+   */
+  const fetchSketch = (): Promise<void> =>
+    (sketchPending ??= outline!().then(
+      (module) => {
+        sketch = module.default;
+      },
+      () => {
+        /* no outline, so no picture: the page is still coming */
+      },
+    ));
+
   const Route: FunctionComponent<ComponentProps<T>> = function Route(props: ComponentProps<T>) {
     // Left to React as written. The compiler takes a component made
     // inside a factory for a top-level one: `ready` and `failure`, the
@@ -151,10 +217,18 @@ export function lazyRoute<T extends ComponentType<any>>(
     const [settled, setSettled] = useState<{ ready: T | null; failure: unknown } | null>(() =>
       ready || failure ? { ready, failure } : null,
     );
+    // Whether the outline is in hand. Held as state for the same reason
+    // `settled` is: the render that has it has to be a new one.
+    const [drawn, setDrawn] = useState<ComponentType | null>(() => sketch);
     // In render, not in an effect: effects run after the paint, and the
     // chunk should be asked for while the browser is already fetching the
-    // shell's own files, not a frame later.
-    if (!settled) void fetchModule();
+    // shell's own files, not a frame later. Both requests go out together
+    // — the point of the outline being its own chunk is that the small
+    // one can overtake the large one.
+    if (!settled) {
+      void fetchModule();
+      if (outline && !sketch) void fetchSketch();
+    }
     useEffect(() => {
       if (settled) return;
       let live = true;
@@ -165,19 +239,74 @@ export function lazyRoute<T extends ComponentType<any>>(
         live = false;
       };
     }, [settled]);
+    useEffect(() => {
+      if (settled || !outline || drawn) return;
+      let live = true;
+      void fetchSketch().then(() => {
+        // `() => sketch`, never `sketch`: a setter handed a FUNCTION
+        // treats it as an updater and calls it, so React rendered what
+        // the outline component RETURNED as if that were the component
+        // (error #130 on every converted route).
+        if (live) setDrawn(() => sketch);
+      });
+      return () => {
+        live = false;
+      };
+    }, [settled, drawn]);
     // Whether the placeholder is up. It goes up after PENDING_MS of
     // waiting (or at once inside a page transition) and, once up, stays
     // its minimum even after the module has landed, which is what holds
     // a chunk that arrives just behind it from flashing the placeholder.
-    const placeholder = useSlowLoad(!settled && fallback !== null, PENDING_MS, MIN_VISIBLE_MS);
+    const placeholder = useSlowLoad(
+      !settled && (fallback !== null || outline !== undefined),
+      PENDING_MS,
+      MIN_VISIBLE_MS,
+    );
+    // What is actually on screen: the gate is open AND there is something
+    // to put through it. With an outline that may still be on the wire,
+    // in which case nothing is drawn yet and this is false.
+    const showing = placeholder && (drawn !== null || fallback !== null);
+    // Counted from an effect, never from render (the compiler refuses a
+    // module variable written during one, and is right to).
+    //
+    // The timing still works, and it is worth writing down why. The
+    // count goes up in the commit that first DRAWS the outline, and the
+    // page cannot mount in that commit — it mounts in a later one, when
+    // the chunk has landed and the placeholder's minimum stay is over.
+    // By then the count has been up for at least MIN_VISIBLE_MS. It
+    // comes down in this effect's cleanup, which React runs after that
+    // later render and before its effects, so the page's own
+    // `useState(() => routePlaceholderShown())` has already read it.
+    useEffect(() => {
+      if (!showing) return;
+      outlineOnScreen += 1;
+      return () => {
+        outlineOnScreen -= 1;
+      };
+    }, [showing]);
     // Thrown from render so the route's error boundary catches it, which
     // is where lazy() used to put it.
     if (settled?.failure) throw settled.failure;
     if (settled?.ready && !placeholder) return createElement(settled.ready, props);
     // Until then the same empty box the Suspense fallback drew, for the
     // first PENDING_MS: a section's chunk usually beats the next paint,
-    // and a skeleton nobody sees is a flash. Past that, the placeholder.
-    return placeholder ? fallback : null;
+    // and a skeleton nobody sees is a flash. Past that, the outline if it
+    // is here, the old shell-drawn element if this route still has one.
+    if (!placeholder) return null;
+    return drawn ? createElement(drawn) : fallback;
   };
-  return Object.assign(Route, { pending: () => (ready || failure ? null : fetchModule()) });
+  return Object.assign(Route, {
+    pending: () => (ready || failure ? null : fetchModule()),
+    drawable: () => {
+      if (ready || failure) return null;
+      const page = fetchModule();
+      // Whichever can be drawn first. Without the outline in the race the
+      // router would hold its page transition for the whole page and then
+      // slide in a bare ground when CHUNK_WAIT_MS ran out, which is the
+      // sight the outline exists to remove.
+      if (!outline) return page;
+      if (sketch) return null;
+      return Promise.race([page, fetchSketch()]);
+    },
+  });
 }

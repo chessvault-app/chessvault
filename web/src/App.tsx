@@ -96,33 +96,33 @@ registerRoutePending((hash) => {
   const { section, params } = parse(hash);
   switch (section) {
     case 'board':
-      return AnalysisView.pending();
+      return AnalysisView.drawable();
     case 'workspace':
-      return WorkspaceView.pending();
+      return WorkspaceView.drawable();
     case 'editor':
-      return EditorView.pending();
+      return EditorView.drawable();
     case 'studies':
-      return StudiesView.pending();
+      return StudiesView.drawable();
     case 'games':
-      return GamesView.pending();
+      return GamesView.drawable();
     case 'notes':
-      return NotesView.pending();
+      return NotesView.drawable();
     case 'puzzles':
-      return PuzzlesView.pending();
+      return PuzzlesView.drawable();
     case 'books':
-      return BooksView.pending();
+      return BooksView.drawable();
     case 'repertoire':
-      return RepertoireView.pending();
+      return RepertoireView.drawable();
     case 'endgames':
-      return EndgamesView.pending();
+      return EndgamesView.drawable();
     case 'openingmap':
-      return OpeningMapView.pending();
+      return OpeningMapView.drawable();
     case 'databases':
-      return DatabasesPage.pending();
+      return DatabasesPage.drawable();
     case 'insights':
-      return InsightsPage.pending();
+      return InsightsPage.drawable();
     case 'settings':
-      return params[0] === 'licenses' ? LicensesPage.pending() : SettingsPage.pending();
+      return params[0] === 'licenses' ? LicensesPage.drawable() : SettingsPage.drawable();
     default:
       return null;
   }
