@@ -481,7 +481,17 @@ export function BookPage({ slug }: { slug: string }) {
           </Button>
         )}
 
-        {book && book.puzzles.length > 0 && (
+        {/* `gridReady`, not just `book`: the placeholder below stands in
+            for this panel AND the tile grid under it (SkeletonTiles draws
+            both), and the grid is deliberately held back a frame so the
+            placeholder can paint before React builds it. Gated on the
+            data alone, the real panel mounted the moment the book landed
+            while the placeholder was still up, so the page drew the
+            Cycles panel TWICE, stacked: one frame on a small book and
+            about 900ms on the 5,334-puzzle one this file measures.
+            CyclesPanel is pure render with one action handler, so the
+            frame it waits costs nothing. */}
+        {book && gridReady && book.puzzles.length > 0 && (
           <CyclesPanel
             book={book}
             slug={slug}
