@@ -754,15 +754,29 @@ export function PdfImport({
                       // content-visibility, and without an intrinsic size it
                       // is skipped as ZERO HIGH — so a list of a thousand
                       // reported a fraction of its real height, and every
-                      // jump to the end landed short. 41px is the row; once
-                      // one has been laid out `auto` uses what it measured,
-                      // including the taller rows with a crop open.
+                      // jump to the end landed short. 41px is the row at
+                      // the comfortable rung; once one has been laid out
+                      // `auto` uses what it measured, including the
+                      // taller rows with a crop open and the shorter ones
+                      // on a compact vault, so the guess only has to be
+                      // close for the first screenful.
                       className="[content-visibility:auto] [contain-intrinsic-size:auto_41px]"
                     >
                       <div
                         data-row={i}
                         className={cn(
-                          'flex items-center gap-2 py-1.5 pl-2 text-sm transition-colors duration-100',
+                          // The density token, not the py-1.5 it resolves
+                          // to at the comfortable rung: this is a list of
+                          // a thousand rows, which is the list a density
+                          // knob is for, and it was the one row the
+                          // 2026-09-16 sweep missed — the padding sits on
+                          // this box rather than on the li, which is the
+                          // only shape `check:repo` can see. Its own
+                          // placeholder beneath already read the token,
+                          // so the row being scanned was 6px shorter than
+                          // the rows above it on a compact vault and grew
+                          // by that the moment it became real.
+                          'flex items-center gap-2 py-(--row-py-dense) pl-2 text-sm transition-colors duration-100',
                           // pr-4, not pr-2: the mark sat against the
                           // scrollbar, which on Windows is a solid gutter
                           // rather than an overlay, and "3개 불확실" read as
@@ -832,8 +846,11 @@ export function PdfImport({
                     </li>
                   );
                 })}
-                {/* The board being read right now. Same row shape as the rest,
-                    so the list does not jump when it turns into a real one. */}
+                {/* The board being read right now. Same row shape as the
+                    rest, so the list does not jump when it turns into a
+                    real one — including the padding, which both sides now
+                    read from the density token rather than one of them
+                    pinning what it resolves to at the comfortable rung. */}
                 {scanning && (
                   <li className="flex items-center gap-2 py-(--row-py-dense) pl-2 pr-4">
                     {/* The row's first cell is its Checkbox, inert: disabled,
