@@ -58,6 +58,20 @@ shell enlarging the whole page.
   text size, which the app follows. What reads two fingers for itself is
   unchanged: a book's page, the evidence pages and the opening map still
   pinch what they show, and a double tap still does nothing.
+- **A page you open for the first time on a slow link shows its shape
+  instead of nothing.** Each section's code is fetched the first time you
+  go there, and until it arrived the page was blank: several seconds on
+  a slow phone link, and a bare ground sliding in when you opened a game.
+  After a fifth of a second of waiting the page now draws a placeholder,
+  a title over rows, which the real page replaces. A fast link never sees
+  it.
+- **Sections load in the background after the app opens.** Once the home
+  page is up and the browser has nothing else to do, the other sections'
+  code is fetched one at a time, the three phone tabs first, so the first
+  tap on Games or Puzzles opens at once even on a slow link. On a desktop
+  a sidebar row starts fetching its section when the pointer reaches it.
+  Nothing is fetched ahead on a 2G link or when the browser is set to
+  save data.
 
 ## 0.11.1
 
