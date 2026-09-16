@@ -17,7 +17,9 @@ import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { ResultBar } from '@/components/result-bar';
 import { TitleTip } from '@/components/title-tip';
-import { Skeleton, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
+import { Inert, Skeleton, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
+import { Segmented } from '@/components/segmented';
+import { OPENING_FOLD, readShape, writeShape, type Shape } from './shape';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select } from '@/components/ui/select';
@@ -63,61 +65,10 @@ interface InsightsFilters extends MyGamesFilters {
 }
 
 const EMPTY_FILTERS: InsightsFilters = { range: 'any' };
-const FILTERS_KEY = 'vault:insights-filters';
-/** What the page drew last visit: how many opening and leaving-book rows,
-    and whether the book summary line stood. The skeleton reserves that,
-    the way the Databases page reserves its list, so the answer lands on
-    the outline instead of moving it. */
-const SHAPE_KEY = 'vault:insights-shape';
-interface Shape {
-  openings: number;
-  book: number;
-  summary: boolean;
-  /** Whether the pass had judged anything, so the Move quality card and
-      the Results footnote stood. */
-  quality: boolean;
-  /** Rows in Move quality's by-move-number table. */
-  moveBands: number;
-  /** Rows in the Results card's by-time-control table. */
-  speeds: number;
-  /** Rows in Activity's weekday table and in Game length's. */
-  weekdays: number;
-  lengths: number;
-  /** The longest of the three ending legends. */
-  endings: number;
-}
-const DEFAULT_SHAPE: Shape = {
-  openings: 8,
-  book: 4,
-  summary: false,
-  quality: true,
-  moveBands: 6,
-  speeds: 3,
-  weekdays: 7,
-  lengths: 6,
-  endings: 4,
-};
-function readShape(): Shape {
-  try {
-    const raw = localStorage.getItem(SHAPE_KEY);
-    if (!raw) return DEFAULT_SHAPE;
-    const p = JSON.parse(raw) as Partial<Shape>;
-    return {
-      openings: Math.min(OPENING_FOLD, Math.max(0, Number(p.openings) || 0)),
-      book: Math.max(0, Number(p.book) || 0),
-      summary: p.summary === true,
-      quality: p.quality === true,
-      moveBands: Math.max(0, Number(p.moveBands) || 0),
-      speeds: Math.max(0, Number(p.speeds) || 0),
-      weekdays: Math.max(0, Number(p.weekdays) || 0),
-      lengths: Math.max(0, Number(p.lengths) || 0),
-      endings: Math.max(0, Number(p.endings) || 0),
-    };
-  } catch {
-    return DEFAULT_SHAPE;
-  }
-}
+/** The handler a control held inert in a placeholder never runs. */
+const NOOP = (): void => {};
 
+const FILTERS_KEY = 'vault:insights-filters';
 const SPEEDS: { id: Speed; label: string }[] = [
   { id: 'bullet', label: 'Bullet' },
   { id: 'blitz', label: 'Blitz' },
@@ -173,8 +124,6 @@ const ENDING_LABEL: Record<Ending, string> = {
   unknown: 'Not recorded',
 };
 
-/** How many opening rows show before "Show all". */
-const OPENING_FOLD = 20;
 
 const exact = new Intl.NumberFormat('en');
 /** A share as a whole percent; under half a percent it says so rather
@@ -339,7 +288,7 @@ export function InsightsPage() {
     if (report === null) return;
     const openings = openingRows(report.cells);
     const judged = QUALITY.reduce((n, q) => n + report.analysis.quality[q.key], 0);
-    const next: Shape = {
+    const next: Omit<Shape, 'compare'> = {
       openings: Math.min(OPENING_FOLD, openings.length),
       book: earliestExits(openings).length,
       summary: exitSplit(report.cells).exits > 0,
@@ -353,11 +302,7 @@ export function InsightsPage() {
         ...(['w', 'd', 'l'] as const).map((o) => endingShares(report.endings, o).length),
       ),
     };
-    try {
-      localStorage.setItem(SHAPE_KEY, JSON.stringify(next));
-    } catch {
-      // Nothing to reserve next time; the default outline serves.
-    }
+    writeShape(next);
   }, [report]);
 
   // The previous answer stays on the page while the next is fetched, so
@@ -1435,24 +1380,96 @@ function InsightsSkeleton({ shape }: { shape: Shape }) {
         </>,
         'flex flex-col gap-3',
       )}
+      {/* Compare, where the report does not decide whether it stands:
+          the card rides /api/refgames, so what this device saw last
+          visit is the only thing that can say (./shape, `compare`). It
+          sits HERE, between Leaving book and Activity, which is why
+          leaving it out did not merely lose a card at the foot of the
+          page — the three below it were reserved in the wrong places
+          and dropped by its whole height when the report landed. The
+          comment on the card helper records fixing exactly this for
+          Move quality; it went on happening one card along. */}
+      {shape.compare &&
+        card(
+          'compare',
+          t('Compare with a database'),
+          t('Your recent games as White, checked against this database’s players. Positions where your move is one they rarely choose, strongest habit first.'),
+          <>
+            {/* The side toggle and, where there is more than one
+                database, the picker beside it. Held inert, as every
+                other known control in a placeholder is. */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Inert>
+                <Segmented
+                  value="white"
+                  onChange={NOOP}
+                  ariaLabel="Side"
+                  segments={[
+                    { value: 'white', label: t('White') },
+                    { value: 'black', label: t('Black') },
+                  ]}
+                />
+              </Inert>
+            </div>
+            {/* "At level" over its chip row. */}
+            <div className="flex flex-col gap-1.5">
+              <div className="type-row-box flex items-center">
+                <Skeleton className="h-2.5 w-16" />
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {['w-12', 'w-16', 'w-20', 'w-16', 'w-14'].map((w) => (
+                  <Skeleton key={w} className={cn('h-7 rounded-full', w)} />
+                ))}
+              </div>
+            </div>
+            {/* The card's own three-row wait, at its own geometry. */}
+            <div className="flex flex-col gap-px">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="flex flex-col gap-0.5 px-2 py-(--row-py-dense)">
+                  <div className="flex h-5 items-center">
+                    <Skeleton className="h-2.5 w-2/5" />
+                  </div>
+                  <div className="flex h-5 items-center">
+                    <Skeleton className="h-2 w-4/5" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>,
+          'flex flex-col gap-3',
+        )}
       {card(
         'activity',
         t('Activity'),
         t('Games per month, won over drew over lost, and the week.'),
         <>
           <div className="min-w-0">
-            {/* The count line over the chart, its caption under it, and
-                the won/drew/lost key: text-xs each, at the figure's own
-                margins. */}
-            <div className="mb-1 flex h-4 items-center">
+            {/* The figure's four lines around its chart, each on
+                `type-row-sub` as ActivityCard sets them, at the figure's
+                own margins. They were `h-4`, the desktop half of that
+                rung, and the third of them was not drawn at all: the
+                pressed month's figures, which stand as an empty
+                `min-h-4` line until a bar is pressed and are the one
+                place a phone can read a month's split. Measured on the
+                demo at 390: the card was 582px against the 614 it
+                settled at, 4px for each caption line and 24 for the
+                missing one. */}
+            <div className="type-row-sub-box mb-1 flex items-center">
               <Skeleton className="h-2 w-24" />
             </div>
             <Skeleton className="h-32 w-full" />
-            <div className="mt-1 flex h-4 items-center justify-between">
+            <div className="type-row-sub-box mt-1 flex items-center justify-between">
               <Skeleton className="h-2 w-16" />
               <Skeleton className="h-2 w-16" />
             </div>
-            <div className="mt-2 flex h-4 items-center gap-3">
+            {/* Empty, as it settles: nothing is pressed yet, and a bar
+                here would stand for a figure the page is not going to
+                print by itself. `min-h-4` alone, NOT the type box beside
+                it: an empty block generates no line, so the real <p> is
+                its 16px floor at both widths and the rung never applies.
+                Measured: with the box it came out 618 against 614. */}
+            <div className="mt-1 min-h-4" aria-hidden />
+            <div className="type-row-sub-box mt-2 flex items-center gap-3">
               {['w-10', 'w-10', 'w-8'].map((w) => (
                 <Skeleton key={w} className={cn('h-2', w)} />
               ))}

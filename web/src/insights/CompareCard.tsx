@@ -14,6 +14,7 @@ import { Select } from '@/components/ui/select';
 import { Skeleton } from '@/components/skeletons';
 import { Button } from '@/components/ui/button';
 import { fieldDatabases, type FieldDatabase } from '@/repertoire/field';
+import { writeShape } from './shape';
 
 /**
  * The improver's diff, read out loud: every position in your recent
@@ -86,6 +87,14 @@ export function CompareCard() {
       .then((body) => setDatabases(fieldDatabases(body)))
       .catch(() => setDatabases([]));
   }, []);
+  // Whether this card stands is the one thing the page's outline cannot
+  // work out for itself: it rides /api/refgames, which the page does not
+  // ask for. Recorded here, so the next visit reserves this card's box
+  // instead of letting the three cards below it drop by its whole height
+  // when the report lands (./shape).
+  useEffect(() => {
+    if (databases !== null) writeShape({ compare: databases.length > 0 });
+  }, [databases]);
   if (databases === null || databases.length === 0) return null;
   return <CompareBody databases={databases} />;
 }
