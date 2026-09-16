@@ -60,10 +60,12 @@ import { dialogOpen } from '@/hooks/dialog-focus';
 // backgrounding, so the landing chunk must stay lean — heavy sections
 // (pdf/ocr machinery, TipTap, the study editor) load on first visit.
 // What every route draws while its chunk is still on the wire and the
-// wait has grown long enough to admit to (lib/lazyRoute, PENDING_MS): a
-// page-shaped placeholder, the one shape the shell can draw without
-// knowing which page is coming. One element, made once, so a route that
-// is redrawn does not get a new one.
+// wait has grown long enough to admit to (lib/lazyRoute, PENDING_MS):
+// the page's OWN sketch, which RouteSkeleton picks from the address
+// rather than being told — the same table as renderSection below, read
+// one step earlier. One element, made once, so a route that is redrawn
+// does not get a new one; it reads the hash itself, so the one element
+// still draws the right page.
 const PAGE = { fallback: <RouteSkeleton /> };
 
 // AnalysisView was the one view loaded eagerly, which put the board, the
