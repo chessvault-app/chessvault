@@ -5,7 +5,7 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.11.2
 
 The type ladder reaches the last places it had not, the app holds its
 own size under two fingers again, and a screen you are waiting on now
