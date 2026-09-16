@@ -47,6 +47,69 @@ function noChunkCycles(): Plugin {
   };
 }
 
+/**
+ * Fail the build if a route's outline is reachable from the entry.
+ *
+ * An outline (`<Name>.skeleton`) exists to be fetched BESIDE its page,
+ * in its own chunk, so it costs the launch nothing and still arrives
+ * first by being the smaller of the two. Static-import one from the
+ * shell and that bargain is quietly off: the bytes move into the launch
+ * payload, every reader pays them on every start, and the app looks
+ * exactly the same. That is the regression this catches, and it is the
+ * mistake the shell's own placeholder table WAS before these modules
+ * existed.
+ *
+ * The other way round — an outline pulling its page in behind it — needs
+ * no check: an outline is a dynamic entry, so any module it shares with
+ * the page is hoisted into a chunk they both import rather than left in
+ * either, and a module the outline imports from the page module would be
+ * a cycle that noChunkCycles above already refuses. Measured on the
+ * Settings outline: 6 chunks and 6,730 gzipped bytes to draw it, none of
+ * them the page's.
+ */
+function outlineOutOfTheLaunch(): Plugin {
+  return {
+    name: 'outline-out-of-the-launch',
+    generateBundle(_options, bundle) {
+      const chunks = new Map<string, { imports: string[]; modules: string[] }>();
+      for (const [file, out] of Object.entries(bundle)) {
+        if (out.type !== 'chunk') continue;
+        // Separators normalised: rolldown hands back this platform's own
+        // module ids, which on Windows are backslashed, and a check that
+        // only knows about `/` passes everywhere it matters.
+        chunks.set(file, {
+          imports: out.imports,
+          modules: Object.keys(out.modules).map((id) => id.replaceAll('\\', '/')),
+        });
+      }
+      // The entry's STATIC graph, which is what index.html preloads.
+      const launch = new Set<string>();
+      const walk = (file: string): void => {
+        if (launch.has(file) || !chunks.has(file)) return;
+        launch.add(file);
+        for (const next of chunks.get(file)!.imports) walk(next);
+      };
+      for (const [file, out] of Object.entries(bundle))
+        if (out.type === 'chunk' && out.isEntry) walk(file);
+      for (const file of launch) {
+        const outline = chunks.get(file)!.modules.find((id) => /\.skeleton\.tsx$/.test(id));
+        if (!outline) continue;
+        const why =
+          `${outline} is in the launch payload, through ${file}. A route outline is fetched ` +
+          'beside its page and must stay out of the entry graph; something in the shell ' +
+          "imports it directly instead of naming it in lazyRoute's `outline` option.";
+        // Printed as well as thrown. A generateBundle throw stops the
+        // write, and the next plugin's closeBundle then fails on the
+        // missing dist/assets and is the only error that reaches the
+        // terminal — so the reason for the build failing was invisible
+        // until this line existed.
+        console.error(`\n[outline-out-of-the-launch] ${why}\n`);
+        throw new Error(why);
+      }
+    },
+  };
+}
+
 const root = fileURLToPath(new URL('.', import.meta.url));
 const repo = fileURLToPath(new URL('..', import.meta.url));
 
@@ -68,7 +131,7 @@ export default defineConfig({
   // a blocking stylesheet means the first thing painted is a styled page
   // rather than an unstyled flash. (vite.launchScreen.ts, which deferred
   // it, went with the launch screen it existed for.)
-  plugins: [react(), ...reactCompiler(`${root}src`), tailwindcss(), licenses(), precache(), noChunkCycles()],
+  plugins: [react(), ...reactCompiler(`${root}src`), tailwindcss(), licenses(), precache(), noChunkCycles(), outlineOutOfTheLaunch()],
   // Stated false so it FOLDS. `isDemo()` guards on
   // `typeof __DEMO__ !== 'undefined'`, which is safe when the identifier is
   // absent but cannot be evaluated at build time — so the demo's dynamic
