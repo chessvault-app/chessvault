@@ -80,14 +80,18 @@ const NotesView = lazyRoute(() => import('@/notes/NotesView').then((m) => ({ def
   outline: () => import('@/notes/NotesView.skeleton'),
 });
 const PuzzlesView = lazyRoute(() => import('@/puzzles/PuzzlesView').then((m) => ({ default: m.PuzzlesView })), PAGE);
-const BooksView = lazyRoute(() => import('@/books/BooksView').then((m) => ({ default: m.BooksView })), PAGE);
+const BooksView = lazyRoute(() => import('@/books/BooksView').then((m) => ({ default: m.BooksView })), {
+  outline: () => import('@/books/BooksView.skeleton'),
+});
 // HomePage is EAGER (imported above), alone among the routes. With no
 // launch screen, iOS drops its startup image at the app's first paint —
 // and when home was a lazy chunk, that first paint was the shell around
 // an empty box, with the page popping in a beat later (caught on
 // lanph3re's recording). Home is six tiles and some fetches; the engine,
 // the board and the parsers stay behind the lazy routes here.
-const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })), PAGE);
+const StudiesView = lazyRoute(() => import('@/studies/StudiesView').then((m) => ({ default: m.StudiesView })), {
+  outline: () => import('@/studies/StudiesView.skeleton'),
+});
 // The first route converted to the shape every router settles on: its
 // outline is its own module beside the page, fetched in parallel with
 // it, and the PAGE draws the same module while /api/settings is out

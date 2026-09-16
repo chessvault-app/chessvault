@@ -8,7 +8,9 @@ import { MoveToDialog } from '@/components/move-to-dialog';
 import { PageShell } from '@/components/page-shell';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
-import { SkeletonBookCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
+import { SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
+import { LibraryCards } from '@/books/BooksView.skeleton';
+import { routePlaceholderShown } from '@/lib/lazyRoute';
 import {
   SHELVES,
   readShelfShape,
@@ -89,7 +91,11 @@ export function BooksPage() {
   const undoable = useUndoable();
   // Nothing at all for the first moment: a shelf that arrives in 30 ms
   // should not flash a skeleton on its way in.
-  const pending = useSlowLoad(books === null);
+  /** The route's outline drew these same covers while the chunk came
+      down (lib/lazyRoute); without this the two waits hand over through
+      useSlowLoad's 180ms and the shelf blinks out and back. */
+  const [continuing] = useState(routePlaceholderShown);
+  const pending = useSlowLoad(books === null) || (continuing && books === null);
   const view = useShelfOrder('chess-vault:shelf-library', LIBRARY_SORTS, NATURAL, 'added');
   // The grouped shape this shelf had last visit, per device
   // (components/shelf-reservation, where this shelf's key and floor sit
@@ -293,7 +299,7 @@ export function BooksPage() {
         // A vault seen without books (or never seen — nothing seeds one)
         // reserves nothing: its settle is the EmptyState.
         pending && shelfHasShape(reservedShelf) ? (
-          <SkeletonBookCards groups={reservedShelf} footer="line" />
+          <LibraryCards groups={reservedShelf} />
         ) : null
       ) : visible.length === 0 && (folders.length === 0 || needle || markedOnly) ? (
         books.length === 0 ? (

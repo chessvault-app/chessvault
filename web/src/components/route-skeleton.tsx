@@ -1,13 +1,7 @@
 import { useSyncExternalStore, type ReactNode } from 'react';
 import { PageShell } from '@/components/page-shell';
 import { PageHeader } from '@/components/page-header';
-import {
-  SkeletonBoard,
-  SkeletonBookCards,
-  SkeletonCards,
-} from '@/components/skeletons';
-import { readShelfLayout, readShelfShape, shelfHasShape } from '@/components/shelf-reservation';
-import { ShelfHeader } from '@/components/shelf-outline';
+import { SkeletonBoard } from '@/components/skeletons';
 import { parse, type Section } from '@/lib/router';
 import { t } from '@/lib/i18n';
 
@@ -129,39 +123,6 @@ function ChromeOnly({
   );
 }
 
-/**
- * A document shelf's wait: the cards it held last visit, in the layout
- * it was left in.
- *
- * A shelf whose stored shape says nothing draws NO cards, which is the
- * page's own rule — a vault seen empty settles on an EmptyState, and
- * invented cards would be the jump the other way (StudiesView).
- *
- * Read per render rather than held in state, as SkeletonBoard reads its
- * stored panel height: the wait this stands through cannot change what
- * the last visit recorded.
- */
-function ShelfPage({
-  title,
-  search,
-  shelf,
-}: {
-  title: string;
-  search: string;
-  shelf: 'studies' | 'notes';
-}) {
-  const groups = readShelfShape(shelf);
-  const has = shelfHasShape(groups);
-  return (
-    <PageShell width="wide">
-      <ShelfHeader title={title} search={search} subtitle={has} />
-      {has && (
-        <SkeletonCards layout={readShelfLayout(shelf)} groups={groups} cover={shelf === 'studies'} />
-      )}
-    </PageShell>
-  );
-}
-
 /** The page each section draws while its chunk is on the wire. The same
     table as App's renderSection, read one step earlier. */
 function shapeFor(section: Section, params: string[]): ReactNode {
@@ -194,27 +155,6 @@ function shapeFor(section: Section, params: string[]): ReactNode {
     // keyed on a document this has not resolved, so the kind's default
     // stands, exactly as it does there for a document this device has
     // not opened.
-    case 'studies':
-      return params[0] ? (
-        <SkeletonBoard chapters explorer />
-      ) : (
-        <ShelfPage title={t('Studies')} search={t('Search studies…')} shelf="studies" />
-      );
-    case 'books': {
-      // One book is the reader, whose shell is not in the launch set.
-      if (params[0]) return null;
-      const groups = readShelfShape('library');
-      return (
-        <PageShell width="medium">
-          {/* The count line stands whatever the shelf holds here: the
-              library prints "n books" from an empty vault too, so its
-              own placeholder draws the line unconditionally
-              (BooksPage). */}
-          <ShelfHeader title={t('Books')} search={t('Search books…')} subtitle />
-          {shelfHasShape(groups) && <SkeletonBookCards groups={groups} footer="line" />}
-        </PageShell>
-      );
-    }
     case 'games':
       return params[0] && params[0] !== 'elite' ? (
         <SkeletonBoard players explorer />

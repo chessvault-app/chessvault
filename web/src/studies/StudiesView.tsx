@@ -26,7 +26,9 @@ import { ShelfCount, ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type S
 import { PageShell } from '@/components/page-shell';
 import { useUndoable } from '@/hooks/use-undoable';
 import { CreateControl } from '@/components/fab';
-import { Arrival, SkeletonCards, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
+import { Arrival, SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
+import { StudiesCards } from '@/studies/StudiesView.skeleton';
+import { routePlaceholderShown } from '@/lib/lazyRoute';
 import {
   SHELVES,
   readShelfShape,
@@ -76,7 +78,11 @@ function StudyList() {
   const create = useStudy((s) => s.create);
 
   const [query, setQuery] = useState('');
-  const pending = useSlowLoad(!listLoaded);
+  /** The route's outline drew these same cards while the chunk came
+      down (lib/lazyRoute); without this the two waits hand over through
+      useSlowLoad's 180ms and the shelf blinks out and back. */
+  const [continuing] = useState(routePlaceholderShown);
+  const pending = useSlowLoad(!listLoaded) || (continuing && !listLoaded);
   const view = useShelfView('studies');
   // The grouped shape this shelf had last visit, per device — cards at
   // the root, cards per collection — so the wait reserves the list that
@@ -235,7 +241,7 @@ function StudyList() {
         // notice. A vault seen empty reserves nothing: its settle is the
         // EmptyState, and invented cards would be the jump the other way.
         pending && shelfHasShape(reservedShelf) ? (
-          <SkeletonCards layout={view.layout} groups={reservedShelf} />
+          <StudiesCards layout={view.layout} groups={reservedShelf} />
         ) : null
       ) : /* Nothing in the vault at all — no study at any depth (the listing
              walks the tree) and not one collection either. A shelf holding
