@@ -21,12 +21,12 @@ import {
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Disclosure } from '@/components/disclosure';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { autoFocusField } from '@/lib/media';
 import { navigate } from '@/lib/router';
 
 import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/segmented';
+import { GamesTabStrip, type MainTab } from './GamesTabStrip';
 
 import { ClearableInput } from '@/components/text-fields';
 import { Textarea } from '@/components/ui/textarea';
@@ -61,16 +61,6 @@ import type { GameListShape } from './GameListShell';
     the others'; the strip is the provider choice). Width changes the
     dressing, not the structure: `table` adds the dense rows, and the
     Games page adds its details column beside this whole pane. */
-type MainTab = 'databases' | 'collection' | 'chesscom' | 'lichess';
-const TABS: { id: MainTab; label: string }[] = [
-  { id: 'collection', label: 'Collection' },
-  { id: 'databases', label: 'Databases' },
-  // Site names, not sentences — they stay untranslated on purpose.
-  // Capitalised like its neighbours: a lowercase word in a row of
-  // capitalised tabs read as a typo, not as branding.
-  { id: 'chesscom', label: 'Chess.com' },
-  { id: 'lichess', label: 'Lichess' },
-];
 
 /** Which tab is showing, held OUTSIDE the component for the archive's
     reason (see useArchiveBrowse): opening a game navigates away and
@@ -673,51 +663,7 @@ export function GamesBrowser({
             header's own rule, thickened under the name showing. On a
             page the strip is the row under the page's own title, and
             the rule under it is the page's. */}
-        <Tabs value={tab} onValueChange={(v) => setTab(v as MainTab)} className="contents">
-          {/* The SCROLLER is a wrapper, never the list itself. Four
-              labels just fit a 375px phone in Korean and brush the
-              edge in English, so the strip must scroll sideways —
-              but the registry's line tabs draw their 40px triggers
-              and the active underline OVERFLOWING the list's own
-              32px box, and a list turned scroll container clipped
-              them (first symptom: the underline vanished under the
-              new scrollbar; hidden bar, it was still losing its
-              lower pixels to the clip). box-content h-10: the
-              wrapper's CONTENT box matches the triggers exactly, so
-              nothing is clipped and the underline ends flush on the
-              border. */}
-          <div
-            ref={stripRef}
-            className="border-border scrollbar-hidden box-content flex h-10 shrink-0 items-center overflow-x-auto overflow-y-hidden border-b"
-          >
-            <TabsList
-              variant="line"
-              aria-label={t('What the pane is showing')}
-              className={cn(
-                'flex w-max min-w-full items-center justify-start gap-1 rounded-none border-0 bg-transparent p-0',
-                // In a card the first label steps in from the card's
-                // edge; on a page the first trigger's underline starts
-                // where the title and the search field do.
-                frame === 'panel' ? 'px-2' : 'px-0',
-              )}
-            >
-              {TABS.map(({ id, label }) => (
-                <TabsTrigger
-                  key={id}
-                  value={id}
-                  // after:bottom-0, not the -bottom-px the other
-                  // line tabs use: inside the scrolling wrapper the
-                  // underline cannot overlap the border without
-                  // being clipped, so it sits ON the rule instead
-                  // of thickening it — the same 2px to the eye.
-                  className="h-10 min-w-0 flex-none rounded-none px-1.5 font-semibold group-data-horizontal/tabs:after:bottom-0"
-                >
-                  <span className="truncate">{t(label)}</span>
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-        </Tabs>
+        <GamesTabStrip value={tab} onValueChange={setTab} frame={frame} stripRef={stripRef} />
         {/* Inside the pane rather than above it (where the page used to
             draw it): the browser owns the failure, and a host's layout
             has no slot for a line that is almost never there. */}
