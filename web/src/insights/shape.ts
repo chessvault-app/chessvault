@@ -54,6 +54,12 @@ export interface Shape {
    * so while the status is out the row is not drawn and the outline has
    * to know whether one is coming: a vault with nothing analysed settles
    * without it, and reserving it there would be the jump the other way.
+   *
+   * False covers BOTH the states that draw no row — this vault has
+   * nothing analysed, and this device has not looked — so the field
+   * needs no third value and the outline never guesses. A device with no
+   * memory reserves nothing, which is the rule every other reservation
+   * on this page and on home takes.
    */
   analysed: boolean;
   /**
@@ -81,7 +87,7 @@ export const DEFAULT_SHAPE: Shape = {
   lengths: 6,
   endings: 4,
   compare: false,
-  analysed: true,
+  analysed: false,
   games: 0,
   accGames: 0,
 };
@@ -105,11 +111,9 @@ export function readShape(): Shape {
       lengths: Math.max(0, Number(p.lengths) || 0),
       endings: Math.max(0, Number(p.endings) || 0),
       compare: p.compare === true,
-      // True by default: a device that has never opened this page is far
-      // likelier to have an analysed vault than not, and reserving the
-      // row is the cheaper way to be wrong (it is one 30px band, and it
-      // is removed rather than inserted).
-      analysed: p.analysed !== false,
+      // An absent field reads false, so a shape stored before this field
+      // existed reserves nothing until the next visit records it.
+      analysed: p.analysed === true,
       games: Math.max(0, Number(p.games) || 0),
       accGames: Math.max(0, Number(p.accGames) || 0),
     };

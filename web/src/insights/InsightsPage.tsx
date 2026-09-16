@@ -364,7 +364,14 @@ export function InsightsPage() {
           phone. There the row is drawn from what this device saw last
           visit (./shape, `analysed`), held inert: every control in it
           reads `filters`, which is this device's own and needs no
-          answer, so the stand-in is the row itself at its real width. */}
+          answer, so the stand-in is the row itself at its real width.
+
+          A device that has not looked reserves nothing, exactly as one
+          whose vault has nothing analysed does: the flag is false in
+          both cases and the outline never guesses at a row. Being wrong
+          about a first visit would be the same pop-in one launch later,
+          and it would be the launch where nothing else on the page is
+          remembered either. */}
       {(!gated || (!job.known && shape.analysed)) && (
       <FilterRow className="px-0 py-0">
         <MaybeInert inert={gated}>
