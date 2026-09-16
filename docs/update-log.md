@@ -7,11 +7,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-The type ladder reaches the last places it had not, and the app holds
-its own size under two fingers again. 0.11.1 lifted every list, control
-and label a search over class names could find; this finishes the job by
-reading each file against the rule instead, and stops a pinch on the
-shell enlarging the whole page.
+The type ladder reaches the last places it had not, the app holds its
+own size under two fingers again, and a screen you are waiting on now
+has the shape of the screen it becomes. 0.11.1 lifted every list,
+control and label a search over class names could find; this finishes
+the job by reading each file against the rule instead. A pinch on the
+shell no longer enlarges the whole page, and a page that is still
+loading draws an outline its content settles into rather than jumping
+when it lands.
 
 - **Nothing you have to read on a phone is under 14px.** A dozen lines
   were still drawn at 12 at every width: the note under a list that has
@@ -72,6 +75,46 @@ shell enlarging the whole page.
   a sidebar row starts fetching its section when the pointer reaches it.
   Nothing is fetched ahead on a 2G link or when the browser is set to
   save data.
+- **The shape a page shows while it loads now matches the page that
+  arrives.** Placeholders across the app reserved the wrong amount of
+  room, so the content moved when it landed. Nine of them were drawing a
+  phone's rows at a desktop's height, left behind when those rows grew a
+  size in 0.11.1: the Themes grid settled about 320px below the outline
+  that had been standing there. Three more ignored the Density setting,
+  so at Compact the wait was taller than the list it was waiting for, and
+  the scan list in a PDF import turned out to be the last row in the app
+  the density work had missed. The licences rows wrap onto two lines on a
+  phone and their placeholder drew them on one, leaving ten rows about
+  260px short. A desktop note opens ready to edit, and its placeholder
+  had it opening read-only, so the text landed about 35px below where the
+  outline put it. Home had the fault the other way round: it held a line
+  for a figure on tiles that were not going to get one, so the grid
+  settled upwards on every launch.
+- **Insights settles without moving.** The outline drawn while the report
+  is fetched left out the card that compares you with a database, and
+  that card sits in the middle of the stack, so Activity, How games ended
+  and Game length were all reserved in the wrong places and dropped by
+  its whole height when the report landed. The filter row above them
+  appeared late, the Results footnote held a line too many on a phone,
+  and How games ended was a few pixels short in each of its three
+  columns. The page now draws its outline from what your own Insights
+  looked like last visit, so the outline and the settled page are the
+  same height, card for card, at both widths. A device that has not
+  opened the page yet reserves only what it can know.
+- **The online archive waits in the shape of your own screen.** Looking
+  an account up drew a filter row holding the collection's three menus
+  rather than the archive's own, a preview button no row on a phone has,
+  rows that sat outside the table they stood in for so the columns
+  overflowed the pane instead of scrolling it, and bars that did not line
+  up with the column headings above them. The game count had no band at
+  all, so the list dropped 33px on a phone when the games arrived. The
+  wait and the list now start their rows in the same place at both
+  widths.
+- **Two screens no longer flicker while they load.** The Settings vault
+  tree was drawn, taken away for about a fifth of a second and drawn
+  again, which on a vault of books was the most prominent thing on that
+  page doing it. And a puzzle book drew its Cycles panel twice, one above
+  the other, for about a second on a large book.
 
 ## 0.11.1
 
