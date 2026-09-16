@@ -1,14 +1,11 @@
 import { ChevronRight } from 'lucide-react';
 import { useEffect, useId, useMemo, useState } from 'react';
-import { ChipRow } from '@/components/chip-row';
 import { TitleTip } from '@/components/title-tip';
 import { Button } from '@/components/ui/button';
-import { FilterChip } from '@/components/filter-chip';
-import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
-import { SearchInput } from '@/components/text-fields';
-import { Arrival, Skeleton, SkeletonLicenceRows, useSlowLoad } from '@/components/skeletons';
-import { navigate } from '@/lib/router';
+import { Arrival, SkeletonLicenceRows, useSlowLoad } from '@/components/skeletons';
+import { GROUPS_KEY, LicencesHead, groupsOf, readGroups } from '@/settings/LicensesPage.skeleton';
+import { routePlaceholderShown } from '@/lib/lazyRoute';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -78,16 +75,7 @@ const BASE = `${import.meta.env.BASE_URL}licenses/`;
  * short in the app. Same bargain as the other reservations: a paint
  * hint, wrong by at most one visit, corrected by whatever lands.
  */
-const GROUPS_KEY = 'vault:licences-groups';
 /** The group names the licence walk writes, in its order (web/vite.licenses.ts). */
-const GROUP_NAMES = ['Bundled assets', 'Packages', 'Chromium (desktop app)'];
-/** What a device that has not seen this page reserves: the web build's. */
-const FRESH_GROUPS = 2;
-const MAX_GROUPS = 6;
-const readGroups = (): number => {
-  const n = Number(localStorage.getItem(GROUPS_KEY));
-  return Number.isInteger(n) && n > 0 ? Math.min(n, MAX_GROUPS) : FRESH_GROUPS;
-};
 
 export function LicensesPage() {
   const [inventory, setInventory] = useState<Inventory | null>(null);
@@ -96,7 +84,11 @@ export function LicensesPage() {
   const [group, setGroup] = useState('');
   const [open, setOpen] = useState<Set<number>>(() => new Set());
   const [reservedGroups] = useState(readGroups);
-  const slow = useSlowLoad(!inventory && !failed);
+  /** The route's outline drew this same head and these same rows while
+      the chunk came down (lib/lazyRoute); without this the two waits hand
+      over through useSlowLoad's 180ms and the page blinks out and back. */
+  const [continuing] = useState(routePlaceholderShown);
+  const slow = useSlowLoad(!inventory && !failed) || (continuing && !inventory && !failed);
 
   useEffect(() => {
     let live = true;
@@ -109,11 +101,7 @@ export function LicensesPage() {
     };
   }, []);
 
-  const groups = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const e of inventory?.entries ?? []) counts.set(e.group, (counts.get(e.group) ?? 0) + 1);
-    return [...counts];
-  }, [inventory]);
+  const groups = useMemo(() => groupsOf(inventory), [inventory]);
   useEffect(() => {
     if (groups.length === 0) return;
     try {
@@ -137,7 +125,6 @@ export function LicensesPage() {
       );
   }, [inventory, query, group]);
 
-  const total = inventory?.entries.length ?? 0;
   const toggle = (i: number): void =>
     setOpen((prev) => {
       const next = new Set(prev);
@@ -148,119 +135,15 @@ export function LicensesPage() {
 
   return (
     <PageShell width="medium">
-      <PageHeader
-        title={t('Licences')}
-        back={() => navigate('settings')}
-        description={
-          <>
-            {t('Everything this app is built from, and the terms it is used under.')}
-            {!failed && (
-              <>
-                {' '}
-                Chess Vault ©{' '}
-                {inventory ? (
-                  `${inventory.year} ${inventory.holder}`
-                ) : (
-                  // A year and a holder's name, as words in the sentence.
-                  <>
-                    <Skeleton className="inline-block h-2.5 w-8 align-middle" />{' '}
-                    <Skeleton className="inline-block h-2.5 w-36 align-middle" />
-                  </>
-                )}
-                .{' '}
-                <a
-                  className="text-primary underline underline-offset-2"
-                  href={`${BASE}GPL-3.0.txt`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {t('GNU General Public License v3')}
-                </a>
-                {' · '}
-                {inventory ? (
-                  <a
-                    className="text-primary underline underline-offset-2"
-                    href={inventory.repo}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {t('Source code')}
-                  </a>
-                ) : (
-                  <span>{t('Source code')}</span>
-                )}
-              </>
-            )}
-          </>
-        }
-        search={
-          !failed && (
-            <SearchInput
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('Filter by package or licence')}
-              aria-label={t('Filter by package or licence')}
-              className="min-w-0 flex-1"
-            />
-          )
-        }
+      <LicencesHead
+        inventory={inventory}
+        failed={failed}
+        query={query}
+        onQuery={setQuery}
+        group={group}
+        onGroup={setGroup}
+        reservedGroups={reservedGroups}
       />
-      {!failed && (
-        <div className="flex flex-col gap-2">
-          <ChipRow>
-            {inventory ? (
-              <>
-                <FilterChip label="All" count={total} active={group === ''} onClick={() => setGroup('')} />
-                {groups.map(([g, n]) => (
-                  <FilterChip
-                    key={g}
-                    label={g}
-                    count={n}
-                    active={group === g}
-                    onClick={() => setGroup(group === g ? '' : g)}
-                  />
-                ))}
-              </>
-            ) : (
-              // The All chip with its count still to come, and the group
-              // chips' own pills (a chip is text-sm, py-1 and its border;
-              // 36px under a coarse pointer). The group names are fixed in
-              // the licence walk, so the widths are theirs: measured 142
-              // and 116px in English, 108 and 90 in Korean, against the 96
-              // and 80 that stood here and left the row short.
-              <>
-                <FilterChip
-                  label={
-                    <>
-                      {t('All')}
-                      {/* The lit chip is filled accent, the fill a bar has
-                          everywhere else, so this one was invisible in
-                          both themes: the primary at 20% is the rung
-                          deeper in the same ink. */}
-                      <Skeleton className="bg-primary/20 ml-1 inline-block h-2.5 w-6 align-middle" />
-                    </>
-                  }
-                  active
-                  onClick={() => {}}
-                />
-                {Array.from({ length: reservedGroups }, (_, i) => (
-                  <FilterChip
-                    key={i}
-                    label={
-                      <>
-                        {t(GROUP_NAMES[i % GROUP_NAMES.length]!)}
-                        <Skeleton className="ml-1 inline-block h-2.5 w-6 align-middle" />
-                      </>
-                    }
-                    active={false}
-                    onClick={() => {}}
-                  />
-                ))}
-              </>
-            )}
-          </ChipRow>
-        </div>
-      )}
       <Arrival pending={slow && !inventory && !failed}>
       {failed ? (
         <p className="text-muted-foreground text-sm">{t('The licence list could not be loaded.')}</p>
