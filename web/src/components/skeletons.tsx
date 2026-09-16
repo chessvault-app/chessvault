@@ -937,10 +937,21 @@ export function SkeletonDocument({ className }: { className?: string }) {
     >
       {/* The header the note keeps at the top of its column: a 28px row of
           back, name, edit and save, over the rule under it. */}
-      {/* pb-3, not the pb-1.5 the header wears while the formatting
-          palette is showing: a note opens READ-ONLY, and that is the state
-          this stands in for. Measured at 59px against the real 65. */}
-      <div className="-mx-4 flex shrink-0 flex-col gap-3 border-b border-transparent px-4 pb-3 pt-4 md:-mx-6 md:px-6 md:pt-6">
+      {/* The bottom padding follows the palette below, as the real header
+          does: pb-3 where the note opens read-only, pb-1.5 where it opens
+          editable and the palette sits against the rule.
+
+          A note does NOT open read-only, which is what this said and was
+          measured against ("59px against the real 65"). It opens editable
+          on any viewport from md with a fine pointer (NoteView,
+          `opensEditable`), which is every desktop — so the settled header
+          carried a 28px palette row and its gap that nothing here stood
+          in for, and the prose landed about 35px low on every desktop
+          note open. Photographed on the demo. Written as the same rule in
+          classes rather than read through matchMedia: this is a
+          placeholder, and a media query it has to subscribe to is a
+          render it has to do twice. */}
+      <div className="-mx-4 flex shrink-0 flex-col gap-3 border-b border-transparent px-4 pb-3 pt-4 md:-mx-6 md:px-6 md:pt-6 md:pointer-fine:pb-1.5">
         {/* pointer-coarse:h-9, like every control the row holds: the back
             chevron and the edit button are icon-sm and sm, which grow to
             36px under a thumb. Pinned at h-7 the row was a button short on
@@ -957,6 +968,18 @@ export function SkeletonDocument({ className }: { className?: string }) {
           <InertDocumentTools />
           <InertEditButton />
           <Skeleton className="h-2.5 w-10 shrink-0" />
+        </div>
+        {/* EditorPalette's row, on the same rule: ten icon-sm buttons at
+            gap-0.5, drawn only where the note will open editable. The
+            real ones are the editor's commands and cannot be held inert
+            usefully, so these are the boxes alone. */}
+        <div
+          aria-hidden
+          className="hidden shrink-0 items-center gap-0.5 md:pointer-fine:flex"
+        >
+          {Array.from({ length: 10 }, (_, i) => (
+            <Skeleton key={i} className="size-7 shrink-0 rounded-md" />
+          ))}
         </div>
       </div>
       {/* min-h-[60vh] is .note-editor's own floor (index.css): a short
