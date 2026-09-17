@@ -217,7 +217,7 @@ function Shell() {
         // Standalone PWAs draw edge-to-edge: keep content clear of the
         // dynamic island / notch (top) and the rounded corners (sides).
         // The bottom inset lives on MobileNav, which sits on that edge.
-        'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-[env(safe-area-inset-top)]',
+        'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-(--safe-t)',
       )}
     >
       {/* The first thing Tab reaches: a jump past the section list into
@@ -240,7 +240,7 @@ function Shell() {
         }}
         className={cn(
           'sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:z-50',
-          'focus-visible:top-[calc(env(safe-area-inset-top)+0.5rem)] focus-visible:left-[calc(env(safe-area-inset-left)+0.5rem)]',
+          'focus-visible:top-[calc(var(--safe-t)+0.5rem)] focus-visible:left-[calc(env(safe-area-inset-left)+0.5rem)]',
           'bg-card text-foreground border-window-ring rounded-lg border px-3 py-1.5 text-sm font-medium',
           'outline-none focus-visible:ring-3 focus-visible:ring-ring',
         )}

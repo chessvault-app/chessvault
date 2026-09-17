@@ -38,6 +38,26 @@
   --safe-b: env(safe-area-inset-bottom);
 }
 
+/* The top clearance, named for the same reason, and because on iOS 27 the
+   env() is not the whole of it. The system lays a blur and dim band over
+   the top of an installed app, reaching below the status bar, and reports
+   no larger inset for it. No meta or CSS switches it off: an opaque status
+   bar style and a fixed strip for WebKit to sample were both tried on
+   lanph3re's phone (2026-09-18) and the band stayed. So the shell keeps
+   clear of it by layout. index.html's launch script sets the class before
+   first paint, only for an installed app on iOS 27 or later. The 16px is
+   other projects' figure, and on that phone it was enough: the band no
+   longer covers the header. The band's own height was never measured.
+   If Apple reports an inset for it or drops it, this goes: the class,
+   --ios-band and the script are the whole of it. */
+:root {
+  --ios-band: 0px;
+  --safe-t: calc(env(safe-area-inset-top) + var(--ios-band));
+}
+:root.ios27-band {
+  --ios-band: 16px;
+}
+
 /* How tall a bottom sheet may grow, as a share of the layer it floats
    in — named here because the answer changes when the keyboard is up.
    The percentage resolves where it is USED, against the sheet's own
@@ -53,7 +73,7 @@
    visibly shorter than the room above the keyboard, which is the one
    moment a sheet has the least room to spare. */
 :root {
-  --sheet-band: calc(100% - env(safe-area-inset-top) - 0.75rem);
+  --sheet-band: calc(100% - var(--safe-t) - 0.75rem);
 }
 
 .kb-open {
@@ -74,7 +94,7 @@
      button came out behind the clock. The shell already carried this
      padding; the floating layers never needed it, because at rest they
      are bottom-anchored and stop well short of the top. */
-  padding-top: env(safe-area-inset-top);
+  padding-top: var(--safe-t);
 }
 
 /* Below the band, the screen is not empty. iOS keeps painting the layout

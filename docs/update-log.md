@@ -36,6 +36,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   Opening a game swapped the tabs for the move controls on the slide's
   first frame, and Back swapped them back the same way. What is in the
   bar now fades in over the slide.
+- **The installed app keeps clear of iOS 27's top band.** iOS 27 dims a
+  strip below the status bar of a home screen app, and it lay over the
+  top of every page's header. The app now starts 16 pixels lower there.
+  The strip is the system's and stays; nothing sits under it any more.
 
 ## 0.11.3
 

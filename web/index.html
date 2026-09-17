@@ -187,6 +187,25 @@
         } catch (e) {
           /* first run, or storage blocked — fall through to light */
         }
+        // iOS 27 dims a band at the top of an installed app and reports no
+        // inset for it (styles/shell.css, --ios-band). Here, before first
+        // paint, so the shell never jumps. The version is asked twice
+        // because the user agent may not say: Safari has frozen its OS
+        // token before, and an installed app's string carries no Version/.
+        // The second answer is two features that arrived with Safari 27.
+        try {
+          var ua = navigator.userAgent;
+          var ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+          var installed = navigator.standalone === true;
+          var m = /\bOS (\d+)(?:_\d+)* like Mac OS X/.exec(ua) || /\bVersion\/(\d+)/.exec(ua);
+          var byUa = m && Number(m[1]) >= 27;
+          var byFeature =
+            typeof CSS !== 'undefined' && CSS.supports('selector(:heading)') &&
+            typeof ReadableStream !== 'undefined' && 'from' in ReadableStream;
+          if (ios && installed && (byUa || byFeature)) document.documentElement.classList.add('ios27-band');
+        } catch (e) {
+          /* no class: the shell keeps the plain inset */
+        }
       })();
     </script>
   </head>
