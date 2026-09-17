@@ -543,6 +543,29 @@ under six capped lists ("Only the first 200 are shown"), which is a
 sentence; and the date picker's weekday and week-number columns, which
 were the one text in a phone date picker that never stepped up.
 
+A fourth pass, on 2026-09-17, took the windows. Each of the three above
+was verified by a script that walked the demo's 21 phone routes and
+measured every visible text node, and a closed dialog has no text nodes,
+so nothing in any of them could see one: the residue was almost all
+inside a sheet or a popover. Frozen at the desktop rung: the history
+sheet's version rows (its placeholder took `type-row-box` with them, or
+it would have reserved a desktop line for a phone's); the opening
+picker's list, whose own trailing note was already `type-row-sub`, so the
+footnote was bigger than the rows it footnotes; the game filters'
+suggestion rows and their glosses, inside an `h-7` that is pinned for the
+windowing and still holds a 24px line; the build-a-database window's file
+list; the PDF import's per-page state word; and `FieldRow`, which is the
+map panel's statistics table and the add-a-move sheet both. Pinned at
+`text-base` instead: the coverage dialog's rows and the Select among
+them, a window at both widths drawing 16px rows on a desktop — the
+mistake this section already names, two dialogs later. Two group
+headings went to `type-row` with them, and the tablebase's distance cell
+simply lost its `text-xs`, since the table is `type-row` and every other
+cell in both of those tables inherits it. Codes stayed at 12 throughout,
+on the games list's ECO precedent. The `text-base` half of that mistake
+is `check:repo`'s rule 15 now; the `text-sm` half has no shape a grep can
+hold, because `text-sm` on anything that is not a row is correct.
+
 **The Phone Glyph Rule.** Icons take the type rungs' bargain. The row
 glyph (a chevron, a row's leading icon, the icon in a small button) is
 `glyph`: 14px on a desktop, 16 under `md`. The mark (a bookmark on a

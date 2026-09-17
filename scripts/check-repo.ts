@@ -130,6 +130,20 @@
  *     one of its rows - the sentinel an infinite scroll watches - says
  *     "not a row" above itself and is skipped. Rows that are not `<li>`
  *     are not reachable by a grep and stay a matter of reading.
+ *
+ * 15. A row does not pin itself at the phone's type size. DESIGN.md's
+ *     Phone Row Rule steps a row from 14 to 16 under `md` and carries it
+ *     with `type-row`, and says a row pinned at `text-base` at every
+ *     width is the same mistake read from the other end, since only a
+ *     phone's row is 16. Both halves were swept by hand, and the second
+ *     survived twice in the coverage dialog, because the sweeps measured
+ *     the demo's phone ROUTES and a window nothing opens has no text to
+ *     measure. This is the half a grep can hold: a class that reads a
+ *     row's padding token may not also carry a flat `text-base`. A
+ *     surface that only ever draws under `md` is 16 because a phone's row
+ *     is, and says "phone only" above itself. The other freeze, a row
+ *     left at `text-sm`, looks exactly like every correct desktop class
+ *     in the app and stays a matter of reading.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -206,6 +220,10 @@ const SAN_RENDER = /figurine\(|numberedSan\(|\{[^{}]*\b\w+\.san\b[^{}]*\}/g;
 const PINNED_ROW_PAD = /\b(?:p|py)-(?!0\b)[0-9]+(?:\.[0-9]+)?\b/;
 /** Any of the density rungs, in the `py-(--token)` form a call site uses. */
 const ROW_RUNG = /--row-py|--row-h|--card-spacing/;
+/** A row's OWN padding token, which is what says "this repeats as a row". */
+const ROW_PAD_TOKEN = /py-\(--row-py/;
+/** The phone's row size, written flat, so it is also a desktop's. */
+const PINNED_PHONE_ROW = /\btext-base\b/;
 const ELO_RENDER = /\{[^{}]*\b(?:elo|\w+\.(?:white|black)Elo)\b[^{}]*\}/;
 
 /**
@@ -358,6 +376,28 @@ for (const file of tracked) {
         line: text.slice(0, li.index).split('\n').length,
         text: (PINNED_ROW_PAD.exec(li[0]) ?? [''])[0],
         why: 'a list row with a pinned padding - read a density rung (--row-py, --row-py-dense, --row-py-tight), see DESIGN.md, Density',
+      });
+    }
+
+    // A row that reads the padding token and then pins `text-base` is a
+    // row at the phone's size on a desktop. Any class list, not just an
+    // <li>: the two this caught were a shared `const` string and a
+    // button's cn(), neither of them a tag. The other freeze, a row left
+    // at `text-sm`, is not reachable this way - `text-sm` on something
+    // that is not a row is what most of the app correctly says.
+    const sized = /className=(?:\{(?:[^{}]|\{[^{}]*\})*\}|"[^"]*"|'[^']*')|=\s*(?:'[^']*'|"[^"]*")/g;
+    let cls: RegExpExecArray | null;
+    while ((cls = sized.exec(text))) {
+      if (!ROW_PAD_TOKEN.test(cls[0]) || !PINNED_PHONE_ROW.test(cls[0])) continue;
+      const at = text.slice(0, cls.index).split('\n').length;
+      // The one escape: a surface that only ever draws under md is 16
+      // because a phone's row is 16, and saying so is how it is claimed.
+      if (/phone only/i.test(lines.slice(Math.max(0, at - 6), at).join('\n'))) continue;
+      findings.push({
+        file,
+        line: at,
+        text: 'text-base',
+        why: 'a row pinned at the phone size at every width - carry the rung with type-row (DESIGN.md, the Phone Row Rule)',
       });
     }
   }
