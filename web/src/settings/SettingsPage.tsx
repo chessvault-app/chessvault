@@ -136,8 +136,13 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
   // which is why the effect is keyed on whether they have landed and
   // not on the settings themselves.
   const loaded = settings !== null;
+  // And once per anchor: this page is kept while hidden (lib/keep-alive)
+  // and its effects run again on every show, which must come back where
+  // it was left and not where the link first sent it.
+  const scrolledTo = useRef<string | null>(null);
   const scrollToAnchor = useEffectEvent(() => {
-    if (!anchor || settings === null) return;
+    if (!anchor || settings === null || scrolledTo.current === anchor) return;
+    scrolledTo.current = anchor;
     document.getElementById(anchor)?.scrollIntoView({ block: 'start' });
   });
   useEffect(() => {

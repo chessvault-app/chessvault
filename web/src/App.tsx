@@ -113,12 +113,28 @@ function renderSection(section: Section, params: string[]): ReactNode {
       // A sub-route rather than a section of its own: the licences are
       // read from Settings and belong under it, and the sidebar has no
       // business growing an entry for a footnote.
-      return params[0] === 'licenses' ? <LicensesPage /> : <SettingsPage anchor={params[0]} />;
+      return <SettingsView params={params} />;
     case 'more':
       return <MorePage />;
     default:
       return <Placeholder section={section} />;
   }
+}
+
+/** Settings stays mounted under the licences (lib/keep-alive), as a shelf
+    does under its leaf: the one link to them is at the foot of a long
+    page, and Back used to land at the top of it. */
+function SettingsView({ params }: { params: string[] }) {
+  const licences = params[0] === 'licenses';
+  return (
+    <KeepAlive
+      current={licences ? 'licences' : 'settings'}
+      data={params}
+      keep={(key) => key === 'settings'}
+      budget={1}
+      render={(key, p) => (key === 'licences' ? <LicensesPage /> : <SettingsPage anchor={p[0]} />)}
+    />
+  );
 }
 
 function Shell() {
