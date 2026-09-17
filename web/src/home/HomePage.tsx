@@ -21,6 +21,7 @@ import { navigate } from '@/lib/router';
 import { ApiError, api } from '@/lib/api';
 import { formatAgo, formatUntil } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
+import { WindowOpening } from '@/components/window-opening';
 import { Figures } from '@/components/figures';
 import { openQuickSwitcher } from '@/components/quick-switcher';
 import { nameSharedBoard } from '@/lib/shared-board';
@@ -1822,7 +1823,7 @@ export function HomePage() {
             not on screen behind it at all. The card switches apply at
             whichever width draws the card. */}
         {editing && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<WindowOpening title={t('Customise home')} size="sm" lines={6} />}>
             <CustomiseDialog
               layout={effective}
               onChange={save}

@@ -11,6 +11,7 @@ import { bookShapeKey, readBookShape } from '../reservation';
 import { cyclesProse } from '../PuzzlesView.skeleton';
 
 import { Button } from '@/components/ui/button';
+import { WindowOpening } from '@/components/window-opening';
 import { EmptyState } from '@/components/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { PageShell } from '@/components/page-shell';
@@ -475,7 +476,7 @@ export function BookPage({ slug }: { slug: string }) {
         )}
 
         {importing && (
-          <Suspense fallback={null}>
+          <Suspense fallback={<WindowOpening title={t('Import a book PDF')} icon={FileUp} />}>
         <PdfImport
             slug={slug}
             title={book?.title ?? ''}

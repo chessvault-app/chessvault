@@ -39,12 +39,11 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { CustomMaterialWindow, EMPTY_CUSTOM, type CustomDraft, type CustomSpec } from './CustomMaterialWindow';
 import { EDITOR_WINDOW_SIZE } from '@/components/layout';
 import { cn } from '@/lib/utils';
-import { useSlowLoad } from '@/components/skeletons';
+import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { EmptyState } from '@/components/empty-state';
 import { GameListShell, type GameListShape } from './GameListShell';
 
 import type { RefDb } from '@/databases/RefDbManager';
-import { Spinner } from '@/components/ui/spinner';
 import { t } from '@/lib/i18n';
 import { announce } from '@/lib/announce';
 
@@ -54,6 +53,34 @@ import { announce } from '@/lib/announce';
 const EditorView = lazy(() =>
   import('@/editor/EditorView').then((m) => ({ default: m.EditorView })),
 );
+
+/** What that window holds while the editor's chunk is on the wire: the
+    palette's row, the board, and the row of tools under it, at the
+    heights they land at. The window's own size is fixed
+    (EDITOR_WINDOW_SIZE), so nothing here moves when the editor arrives. */
+function SetupBoardOpening() {
+  return (
+    <div
+      role="status"
+      aria-label={t('Loading')}
+      aria-live="polite"
+      className="flex min-h-0 flex-1 flex-col items-center gap-2 p-3"
+    >
+      <div className="flex w-full items-end justify-center gap-1">
+        {Array.from({ length: 6 }, (_, i) => (
+          <Skeleton key={i} className="size-9 shrink-0 rounded-md" />
+        ))}
+      </div>
+      <Skeleton className="aspect-square w-full max-w-[32rem] rounded-xl" />
+      <div className="flex w-full items-end justify-center gap-1">
+        {Array.from({ length: 6 }, (_, i) => (
+          <Skeleton key={i} className="size-9 shrink-0 rounded-md" />
+        ))}
+      </div>
+      <Skeleton className="h-9 w-64 shrink-0 rounded-lg" />
+    </div>
+  );
+}
 import { GamePreview, GameRow, collectionKey, gameKey, type GameSummary, type Preview } from './shared';
 import {
   GameTableHeader,
@@ -1780,9 +1807,12 @@ export function DatabaseGames({
           size="full"
         >
           <div className="force-stacked flex min-h-0 flex-1 flex-col overflow-y-auto">
-            <Suspense
-              fallback={<Spinner className="text-muted-foreground m-auto size-5" />}
-            >
+            {/* The editor's own chunk, which this window is the only
+                way into from here. A spinner in the middle of a fixed
+                window said "something is happening" and nothing about
+                what; the shape is a board with its palette over it and
+                its tools under, which is what lands. */}
+            <Suspense fallback={<SetupBoardOpening />}>
               <EditorView
                 key={huntFen.trim() || 'blank'}
                 initialFen={huntFen.trim() || undefined}

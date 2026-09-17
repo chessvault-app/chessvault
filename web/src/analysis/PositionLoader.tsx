@@ -1,4 +1,4 @@
-import { AlertCircle, ClipboardPaste, FolderInput, ImagePlus } from 'lucide-react';
+import { AlertCircle, ClipboardPaste, FolderInput, ImagePlus, ImageUp } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useAnalysis } from '@/store/analysis';
 import { builtinTemplates } from '@/puzzles/ocr/builtin';
@@ -7,6 +7,7 @@ import { Suspense, lazy } from 'react';
 
 const PhotoImport = lazy(() => import('@/puzzles/PhotoImport').then((m) => ({ default: m.PhotoImport })));
 import { FilePicker } from '@/components/file-picker';
+import { WindowOpening } from '@/components/window-opening';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -105,7 +106,7 @@ export function LoadPositionButton({
               and backing out of a picture therefore dropped you all the
               way to the board, with the FEN you had typed gone with it. */}
           {templates !== null && (
-            <Suspense fallback={null}>
+            <Suspense fallback={<WindowOpening title={t('Position from an image')} icon={ImageUp} className="sm:max-w-[38rem]" />}>
               <PhotoImport
                 templates={templates}
                 initialFile={imageFile ?? undefined}
