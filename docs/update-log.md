@@ -48,6 +48,21 @@ drawn once and filled in.
 - **Nothing on a settled page changed.** This is about the seconds
   before a page arrives; every screen looks exactly as it did.
 
+Three smaller things went in beside it, and these do show on a settled
+page:
+
+- **A panel that fails no longer takes the page with it.** An error
+  inside one panel, the explorer say, used to replace the whole page
+  with "Something went wrong", board included. The panel now says so
+  itself and offers "Try again", and everything beside it keeps working.
+- **Korean text breaks at spaces.** A description used to end a line in
+  the middle of a word, because a browser will break Korean between any
+  two syllables. Lines now break between words, as printed Korean does.
+  A few descriptions are a line taller for it.
+- **Headings and paragraphs wrap more evenly.** A heading that wraps
+  balances its lines, and a paragraph no longer leaves one short word
+  alone on its last line.
+
 ## 0.11.2
 
 The type ladder reaches the last places it had not, the app holds its
