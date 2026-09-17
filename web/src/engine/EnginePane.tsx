@@ -23,6 +23,7 @@ import { CurrentLine } from '@/analysis/CurrentLine';
 import { terminalScore } from './terminal.ts';
 import { formatScore, toWhitePov, type PvLine } from './uci.ts';
 import { t } from '@/lib/i18n';
+import { turnOf } from '@/lib/fen';
 
 /**
  * The engine, panel-less: a slim strip (label, depth, settings, switch)
@@ -64,7 +65,7 @@ export function EngineBlock({
   const [showSettings, setShowSettings] = useState(false);
 
   const node = getNode(tree, cursorId);
-  const turn: 'white' | 'black' = node.fen.split(' ')[1] === 'b' ? 'black' : 'white';
+  const turn: 'white' | 'black' = turnOf(node.fen);
   /**
    * A finished position has no lines to wait for, and this pane was
    * waiting anyway.

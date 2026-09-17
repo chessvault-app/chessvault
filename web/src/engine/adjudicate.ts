@@ -2,6 +2,7 @@ import type { Color } from 'chessops/types';
 import { defaultFlavor, StockfishEngine, supportsThreads } from './StockfishEngine';
 import { terminalScore } from './terminal';
 import { toWhitePov } from './uci';
+import { turnOf } from '@/lib/fen';
 
 /**
  * One-position engine adjudication for book puzzles: "is the position
@@ -31,7 +32,7 @@ function ensureEngine(): StockfishEngine {
     (update) => {
       if (!update.finished) return;
       const top = update.lines[0];
-      const turn: Color = update.fen.split(' ')[1] === 'b' ? 'black' : 'white';
+      const turn: Color = turnOf(update.fen);
       resolveUpdate?.(top ? { cp: top.cp, mate: top.mate } : {}, turn);
     },
     () => resolveUpdate?.({}, 'white'),

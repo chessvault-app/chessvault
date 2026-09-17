@@ -30,3 +30,16 @@ export function pieceAt(fen: string, square: string): string | null {
   }
   return null;
 }
+
+/**
+ * The side to move, read off the FEN's second field.
+ *
+ * A string read rather than a parse: chessops' parseFen returns a Result
+ * whose unwrap() THROWS, and a malformed FEN reaching a launcher or a
+ * board would blank the page rather than draw one thing wrong. This was
+ * written out at nineteen call sites across the board, the engine, the
+ * trainers and the stores, in three spellings that disagreed about a FEN
+ * with no side field at all; anything that is not "b" is White here.
+ */
+export const turnOf = (fen: string): 'white' | 'black' =>
+  fen.split(' ')[1] === 'b' ? 'black' : 'white';

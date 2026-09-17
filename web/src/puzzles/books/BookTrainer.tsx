@@ -67,6 +67,7 @@ import { useWideLayout } from '@/lib/media';
 import { EvidencePeek } from './evidence';
 import { outcomeTone } from '../outcome';
 import { PuzzleGrid } from './PuzzleList';
+import { turnOf } from '@/lib/fen';
 
 // ---------------------------------------------------------------------------
 // Strict trainer, submit-model (lanph3re's design): the answer is a real move
@@ -244,7 +245,7 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
       if (completed) break;
       const move = getNode(tree, id);
       const uci = move.uci!;
-      const mover: Color = fen.split(' ')[1] === 'b' ? 'black' : 'white';
+      const mover: Color = turnOf(fen);
       const verdict = judgeBookMove(
         solution,
         fen,

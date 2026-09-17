@@ -30,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import { SideDot } from '@/components/side-dot';
 import { dialogOpen } from '@/hooks/dialog-focus';
 import { t } from '@/lib/i18n';
+import { turnOf } from '@/lib/fen';
 
 /**
  * The complete board column driven by the analysis store: eval bar, board with
@@ -569,7 +570,7 @@ function PlayerBar({
   };
   const elo = headers?.[side === 'white' ? 'WhiteElo' : 'BlackElo'];
 
-  const turn = getNode(tree, cursorId).fen.split(' ')[1] === 'b' ? 'black' : 'white';
+  const turn = turnOf(getNode(tree, cursorId).fen);
   const toMove = turn === side;
 
   return (

@@ -5,6 +5,7 @@ import { TitleTip } from '@/components/title-tip';
 import { useEngine } from '@/store/engine';
 import { terminalResult, terminalScore } from './terminal.ts';
 import { formatScore, formatScoreCompact, toWhitePov, winningChances } from './uci.ts';
+import { turnOf } from '@/lib/fen';
 
 interface EvalBarProps {
   /** Score from White's point of view, or null when there is no evaluation. */
@@ -195,7 +196,7 @@ export function useEvalReadout(fen: string): {
   const resultFen = useEngine((s) => s.resultFen);
   const settled = useMemo(() => terminalScore(fen), [fen]);
   const top = enabled && resultFen === fen ? lines[0] : undefined;
-  const turn: 'white' | 'black' = fen.split(' ')[1] === 'b' ? 'black' : 'white';
+  const turn: 'white' | 'black' = turnOf(fen);
   if (!enabled) return { score: null, result: null };
   if (settled) {
     // Only a decisive end is written as a result, and a draw keeps its

@@ -18,7 +18,7 @@ import type { Chapter, MoveTree, NodeId } from '@shared/types';
 import { Board, type BoardApi } from '@/board/Board';
 import { MoveBox } from '@/board/MoveBox';
 import { advanceCands, buildPosIndex, deepestNamed, expectedSans, GAP_NOTE_SHARE, openingFamily, replayLine, studyChild, trunkOf, type DrillCand } from './drill';
-import { fenKey } from '@/lib/fen';
+import { fenKey, turnOf } from '@/lib/fen';
 import { consumeMapDrill, type MapDrillTarget } from './mapDrill';
 import { DEFAULT_BAND, fieldDatabases, ONLINE_SOURCE, RATING_BANDS, type FieldDatabase, type FieldMove } from './field';
 import { OpeningPicker, TEMPLATES, type OpeningTemplate } from './OpeningPicker';
@@ -175,7 +175,7 @@ function toUci(tree: MoveTree, cursorId: NodeId, orig: string, dest: string): st
  * game, and the side to move is the one shown in full strength.
  */
 function PlayerSlot({ side, fen }: { side: 'white' | 'black'; fen: string }) {
-  const toMove = (fen.split(' ')[1] === 'b' ? 'black' : 'white') === side;
+  const toMove = turnOf(fen) === side;
   return (
     // Shown at every width, like the Board tab's. These were hidden on
     // phones while the New game panel was being cut off, on the theory that

@@ -5,6 +5,7 @@ import { terminalResult, terminalScore } from '@/engine/terminal';
 import { formatScore, toWhitePov } from '@/engine/uci';
 import { useEngine } from '@/store/engine';
 import { t } from '@/lib/i18n';
+import { turnOf } from '@/lib/fen';
 
 /**
  * The last verdict, kept outside the component.
@@ -92,7 +93,7 @@ export function FinalAssessment({
     if (verdict || !finished || resultFen !== fen) return;
     const best = lines[0];
     if (!best) return;
-    const turn: 'white' | 'black' = fen.split(' ')[1] === 'b' ? 'black' : 'white';
+    const turn: 'white' | 'black' = turnOf(fen);
     const score = toWhitePov({ cp: best.cp, mate: best.mate }, turn);
     lastVerdict = { fen, score };
     setVerdict(score);
@@ -103,7 +104,7 @@ export function FinalAssessment({
     resultFen === fen && lines[0]
       ? toWhitePov(
           { cp: lines[0].cp, mate: lines[0].mate },
-          fen.split(' ')[1] === 'b' ? 'black' : 'white',
+          turnOf(fen),
         )
       : null;
   const score = verdict ?? settled ?? live;

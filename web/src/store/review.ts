@@ -16,6 +16,7 @@ import { inTablebaseRange, probeTablebase, type Category } from '@/explorer/tabl
 import { usePrefs } from './prefs';
 import { useAnalysis } from './analysis';
 import { useEngine } from './engine';
+import { turnOf } from '@/lib/fen';
 
 /**
  * Engine review of the current mainline: a dedicated single-purpose
@@ -170,7 +171,7 @@ export const useReview = create<ReviewState>()((set, get) => ({
         if (get().status !== 'running') return; // cleared or errored mid-run
 
         const top = update.lines[0];
-        const turn: 'white' | 'black' = fen.split(' ')[1] === 'b' ? 'black' : 'white';
+        const turn: 'white' | 'black' = turnOf(fen);
         if (top) {
           scores.push(toWhitePov({ cp: top.cp, mate: top.mate }, turn));
         } else {
@@ -194,7 +195,7 @@ export const useReview = create<ReviewState>()((set, get) => ({
       }
 
       const rootTurn: 'white' | 'black' =
-        getNode(tree, tree.rootId).fen.split(' ')[1] === 'b' ? 'black' : 'white';
+        turnOf(getNode(tree, tree.rootId).fen);
       // Sacrifice detection for brilliancies: material genuinely offered
       // in the position the move created, settled by a capture-only
       // search — not what the opponent happened to take (see

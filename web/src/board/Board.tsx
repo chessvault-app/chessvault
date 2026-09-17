@@ -17,7 +17,7 @@ import { usePrefs } from '@/store/prefs';
 import { moveHaptic } from '@/board/sound';
 import { cn } from '@/lib/utils';
 import { prefersReducedMotion } from '@/lib/motion';
-import { pieceAt } from '@/lib/fen';
+import { pieceAt, turnOf } from '@/lib/fen';
 import { t } from '@/lib/i18n';
 
 /** The underlying chessground handle, for callers that need direct calls
@@ -391,7 +391,7 @@ export function Board({
   useEffect(() => {
     const board = api.current;
     if (!board) return;
-    const sideToMove: Color = turnColor ?? (fen.split(' ')[1] === 'b' ? 'black' : 'white');
+    const sideToMove: Color = turnColor ?? turnOf(fen);
     board.set({
       fen,
       orientation,
@@ -461,7 +461,7 @@ export function Board({
   // better than that and keeps the board out of the tab order. The
   // keyboard path onto the board is the move box under every moves
   // panel (MoveBox.tsx), not square focus, which is why no tabindex.
-  const sideToMove: Color = turnColor ?? (fen.split(' ')[1] === 'b' ? 'black' : 'white');
+  const sideToMove: Color = turnColor ?? turnOf(fen);
   const turnLabel = t(sideToMove === 'white' ? 'White to move' : 'Black to move');
   const label = lastMove
     ? t('Chess board, {turn}, last move {from} to {to}', {

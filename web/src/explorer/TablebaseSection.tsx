@@ -15,6 +15,7 @@ import {
   type TablebaseMove,
   type Tone,
 } from './tablebase';
+import { turnOf } from '@/lib/fen';
 
 /**
  * The exact verdict for an ending, above the game statistics.
@@ -73,7 +74,7 @@ export function TablebaseSection({ fen, onPlay }: { fen: string; onPlay: (uci: s
   // position the tablebase failed at.
   if (!answer && !error && !loading) return null;
 
-  const whiteToPlay = fen.split(' ')[1] !== 'b';
+  const whiteToPlay = turnOf(fen) === 'white';
   const verdict = answer ? distance(answer) : null;
 
   return (

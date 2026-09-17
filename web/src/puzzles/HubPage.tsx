@@ -25,6 +25,7 @@ import { setPendingPuzzle, type HandoffMode } from './handoff';
 import { positionAt, solverColor, type ApiPuzzle } from './puzzle';
 import { themeLabel } from './ThemesPage';
 import { fetchSolvedToday } from './today';
+import { turnOf } from '@/lib/fen';
 
 /**
  * The phone's puzzle page: a launcher, and nothing else.
@@ -93,18 +94,6 @@ interface BookSummary {
   /** When a puzzle in it was last attempted; null if never. */
   lastAt?: string | null;
 }
-
-/**
- * Whose move it is, read off the FEN's own field.
- *
- * A string read rather than a parse: chessops' parseFen returns a Result
- * whose unwrap() THROWS, and a malformed FEN reaching this launcher
- * would blank the page rather than drop one card. Book positions are
- * replay-verified at import so it should never happen — which is exactly
- * the kind of "should never" worth not betting a page on.
- */
-const turnOf = (fen: string): 'white' | 'black' =>
-  fen.split(' ')[1] === 'b' ? 'black' : 'white';
 
 /** The next puzzle in a book, from /puzzlebooks/:slug/next. No solution
     in it, deliberately — this is a board to look at and a place to go,

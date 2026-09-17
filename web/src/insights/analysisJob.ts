@@ -13,6 +13,7 @@ import { api } from '@/lib/api';
 import { isBookPosition, lookupMany, NAMED_PLIES } from '@/lib/opening';
 import { useEngine } from '@/store/engine';
 import { bookPrefix, buildRecord, lineOf } from './gamePass';
+import { turnOf } from '@/lib/fen';
 
 /**
  * The engine pass: every game of the owner's, judged move by move by a
@@ -194,7 +195,7 @@ export const useAnalysisJob = create<PassState>()((set, get) => ({
               void engine.analyse(fen, PASS_DEPTH);
             });
             const top = update.lines[0];
-            const turn: 'white' | 'black' = fen.split(' ')[1] === 'b' ? 'black' : 'white';
+            const turn: 'white' | 'black' = turnOf(fen);
             scores.push(
               top ? toWhitePov({ cp: top.cp, mate: top.mate }, turn) : (terminalScore(fen) ?? { cp: 0 }),
             );
