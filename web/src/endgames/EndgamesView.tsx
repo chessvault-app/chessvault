@@ -37,6 +37,7 @@ import { ListRow } from '@/components/list-row';
 import { PageHeader } from '@/components/page-header';
 import { TrainerBoard, TrainerNavBar, TrainerPanes } from '@/components/trainer-shell';
 import { PageShell } from '@/components/page-shell';
+import { writeEndgameShape } from '@/endgames/reservation';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Skeleton } from '@/components/skeletons';
 import { CustomMaterialWindow } from '@/games/CustomMaterialWindow';
@@ -115,14 +116,28 @@ export function EndgamesView({ params }: { params: string[] }) {
  * tend, so no bar, no count, no history (lanph3re's call). The rows are
  * static and the page waits on nothing.
  */
-function EndgamePicker() {
-  const [editing, setEditing] = useState(false);
-  // By family, in the order the presets first name each one, with the
-  // custom class last on its own: twenty-odd rows read top to bottom
-  // were one list of names, and a list this long is scanned by section.
+// By family, in the order the presets first name each one, with the
+// custom class last on its own: twenty-odd rows read top to bottom were
+// one list of names, and a list this long is scanned by section. At
+// module scope because it is one: DRILL_PRESETS is a filtered constant,
+// so this list is the same on every render and in every window.
+const PICKER_GROUPS = ((): [string, string[]][] => {
   const groups = new Map<string, string[]>();
   for (const p of DRILL_PRESETS) groups.set(p.group, [...(groups.get(p.group) ?? []), p.id]);
   groups.set('Your own', [CUSTOM_CLASS]);
+  return [...groups];
+})();
+
+function EndgamePicker() {
+  const [editing, setEditing] = useState(false);
+
+  // Remembered for the NEXT visit's outline, which cannot compute it:
+  // asking drill.ts for the list would pull chessops, the presets file
+  // and the custom-material editor into the small chunk that stands in
+  // for this page (./reservation).
+  useEffect(() => {
+    writeEndgameShape(PICKER_GROUPS.map(([group, rows]) => [group, rows.length]));
+  }, []);
 
   return (
     <PageShell width="medium">
@@ -133,7 +148,7 @@ function EndgamePicker() {
           'Play a random ending against the tablebase: keep a win, or hold a draw. A move that lets the result slip ends the attempt and shows the move that kept it.',
         )}
       />
-      {[...groups].map(([group, rows]) => (
+      {PICKER_GROUPS.map(([group, rows]) => (
         <section key={group} className="flex flex-col gap-2">
           {/* The count row's voice: the same one a panel's title and a
               group of settings are named in. */}
