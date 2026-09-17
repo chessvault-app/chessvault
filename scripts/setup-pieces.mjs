@@ -15,8 +15,7 @@
  *   node scripts/setup-pieces.mjs   # regenerates web/src/pieces/
  */
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 
 const SETS = [
   'merida',
@@ -37,7 +36,7 @@ const BASE = 'https://raw.githubusercontent.com/lichess-org/lila/master/public/p
 // (store/prefs.ts). Nine sets in one eagerly-imported stylesheet would
 // put ~340 KB of art in the main CSS bundle for a choice most people
 // never change off cburnett.
-const dir = resolve(dirname(fileURLToPath(import.meta.url)), '../web/src/pieces');
+const dir = resolve(import.meta.dirname, '../web/src/pieces');
 mkdirSync(dir, { recursive: true });
 
 /* The knight of each set, on its own, for the set picker's rows (Settings >
@@ -83,7 +82,7 @@ for (const set of SETS) {
    accounted for in THIRD-PARTY.md as part of chessground. */
 const cburnett = readFileSync(
   resolve(
-    dirname(fileURLToPath(import.meta.url)),
+    import.meta.dirname,
     '../node_modules/@lichess-org/chessground/assets/chessground.cburnett.css',
   ),
   'utf8',
