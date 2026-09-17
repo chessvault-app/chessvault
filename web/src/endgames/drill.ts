@@ -1,8 +1,7 @@
 import { Chess } from 'chessops/chess';
 import { chessgroundDests } from 'chessops/compat';
-import { makeFen, parseFen } from 'chessops/fen';
+import { parseFen } from 'chessops/fen';
 import type { Color } from 'chessops/types';
-import { parseUci } from 'chessops/util';
 import { parseMaterialSpec } from '@shared/scanMatch';
 import { drillable } from '@shared/endgameDrill';
 import ENDGAMES from '@/games/endgames.json';
@@ -114,18 +113,3 @@ export function positionOf(fen: string, lastMove?: [string, string]): DrillPosit
 /** The two squares a UCI move names, for the board's last-move mark. */
 export const squaresOf = (uci: string): [string, string] => [uci.slice(0, 2), uci.slice(2, 4)];
 
-/**
- * The position one legal move leaves, or null where the FEN or the move
- * is refused. The server answers a held move with the position after
- * the defender's reply; the bottom bar walks every ply, so the one in
- * between is rebuilt here from the solver's own move.
- */
-export function afterMove(fen: string, uci: string): string | null {
-  const setup = parseFen(fen);
-  if (setup.isErr) return null;
-  const pos = Chess.fromSetup(setup.value);
-  const move = parseUci(uci);
-  if (pos.isErr || !move || !pos.value.isLegal(move)) return null;
-  pos.value.play(move);
-  return makeFen(pos.value.toSetup());
-}

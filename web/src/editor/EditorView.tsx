@@ -15,11 +15,10 @@ import {
 } from 'lucide-react';
 import {
   Fragment,
-  useContext,
+  use,
   useEffect,
   useEffectEvent,
   useId,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -45,6 +44,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { CoverParent } from '@/hooks/cover-parent';
 import { Panel, PanelHeader } from '@/components/panel';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
+import { PhotoImportOpening } from '@/puzzles/photo-import-parts';
 import { WindowOpening, WindowPageOpening } from '@/components/window-opening';
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
@@ -226,7 +226,7 @@ export function EditorView({
    * reader's pane, the puzzle workbench — and everything below then keeps
    * its in-page behaviour.
    */
-  const hostWindow = useContext(CoverParent);
+  const hostWindow = use(CoverParent);
   /**
    * The Position page's Cancel: discard the draft AND leave the window.
    *
@@ -251,14 +251,8 @@ export function EditorView({
   // Declared above tellChain, which its back chevron calls.
   const [photoTemplates, setPhotoTemplates] = useState<Template[] | null>(null);
   // The host window's title row follows the page (see onChainChange).
-  const onChainChangeRef = useRef(onChainChange);
-  // Filled after commit, not in render, which the React Compiler refuses;
-  // tellChain runs later in the same commit and the unmount later still.
-  useLayoutEffect(() => {
-    onChainChangeRef.current = onChainChange;
-  });
   const tellChain = useEffectEvent(() => {
-    const tell = onChainChangeRef.current;
+    const tell = onChainChange;
     if (!tell) return;
     if (!paging || chain.page === 'board') {
       tell(null);
@@ -284,7 +278,8 @@ export function EditorView({
     tellChain();
   }, [paging, chain.page]);
   // The host must not keep a page title for an editor that is gone.
-  useEffect(() => () => onChainChangeRef.current?.(null), []);
+  const clearChain = useEffectEvent(() => onChainChange?.(null));
+  useEffect(() => () => clearChain(), []);
   /**
    * The position as it stood when the Position sheet was opened.
    *
@@ -1119,7 +1114,13 @@ export function EditorView({
             // window here was the chain's last window swap, and it
             // flickered exactly like the ones already retired
             // (lanph3re: pasting an image swaps the window).
-            <Suspense fallback={<WindowPageOpening />}>
+            <Suspense
+              fallback={
+                <WindowPageOpening>
+                  <PhotoImportOpening embedded />
+                </WindowPageOpening>
+              }
+            >
               <PhotoImport
                 embedded
                 templates={photoTemplates ?? []}
@@ -1213,7 +1214,13 @@ export function EditorView({
                       lands on the form you left rather than two pages back at
                       Position. */}
                   {photoTemplates !== null && (
-                    <Suspense fallback={<WindowOpening title={t('Position from an image')} icon={ImageUp} className="sm:max-w-[38rem]" />}>
+                    <Suspense
+                      fallback={
+                        <WindowOpening title={t('Position from an image')} icon={ImageUp} fill className="relative sm:max-w-[38rem]">
+                          <PhotoImportOpening />
+                        </WindowOpening>
+                      }
+                    >
                       <PhotoImport
                         templates={photoTemplates}
                         initialFile={photoFile ?? undefined}

@@ -84,7 +84,7 @@ describe('vault history api', () => {
     await backup!.commitNow();
 
     const before = (await json('/api/history/doc/notes/Ideas')).versions;
-    const good = before[before.length - 1];
+    const good = before.at(-1);
     expect((await restore({ kind: 'notes', id: 'Ideas', sha: good.sha })).status).toBe(200);
     expect(readFileSync(resolve(dir, 'notes/Ideas.md'), 'utf-8')).toBe('the good version\n');
 
@@ -199,7 +199,7 @@ describe('vault history api', () => {
     write('notes/Ideas.md', 'v2\n');
     await backup!.commitNow();
     const versions = (await json('/api/history/doc/notes/Ideas')).versions;
-    await restore({ kind: 'notes', id: 'Ideas', sha: versions[versions.length - 1].sha });
+    await restore({ kind: 'notes', id: 'Ideas', sha: versions.at(-1).sha });
     // A `git checkout` restore would have moved HEAD or left an index
     // that fights the watcher; the blob is written as an ordinary file.
     expect(existsSync(resolve(dir, '.history.git', 'index.lock'))).toBe(false);

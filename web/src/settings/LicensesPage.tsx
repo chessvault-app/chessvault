@@ -91,13 +91,13 @@ export function LicensesPage() {
   const slow = useSlowLoad(!inventory && !failed) || (continuing && !inventory && !failed);
 
   useEffect(() => {
-    let live = true;
-    fetch(`${BASE}index.json`)
+    const ctl = new AbortController();
+    fetch(`${BASE}index.json`, { signal: ctl.signal })
       .then((r) => (r.ok ? (r.json() as Promise<Inventory>) : Promise.reject(new Error(String(r.status)))))
-      .then((data) => live && setInventory(data))
-      .catch(() => live && setFailed(true));
+      .then((data) => !ctl.signal.aborted && setInventory(data))
+      .catch(() => !ctl.signal.aborted && setFailed(true));
     return () => {
-      live = false;
+      ctl.abort();
     };
   }, []);
 

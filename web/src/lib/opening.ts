@@ -227,7 +227,7 @@ export function useLineOpening(fens: string[]): { eco: string; name: string } | 
     re-render once the answers land. */
 function useLineLookup(fens: string[]): void {
   const [, bump] = useState(0);
-  const current = fens[fens.length - 1];
+  const current = fens.at(-1);
 
   // An Effect Event: keyed on the position below, because a different
   // cursor means a different line to name and the array identity changes

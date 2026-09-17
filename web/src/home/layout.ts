@@ -40,7 +40,7 @@ export interface HomeLayout {
 /** Fifteen destinations and six cards exist; the cap is only there so a
     hand-edited value cannot make the page arbitrarily long. */
 export const MAX_HOME_TILES = 40;
-export const MAX_HOME_ID = 64;
+const MAX_HOME_ID = 64;
 
 const ID = new RegExp(`^[a-z0-9-]{1,${MAX_HOME_ID}}$`);
 

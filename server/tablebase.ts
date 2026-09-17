@@ -193,7 +193,7 @@ export function cachePath(dir: string, source: string, fen: string): string {
 /** Which of the three a vault has chosen. Absent in a config written
     before the choice was explicit, which is read below as whichever
     field was filled — the precedence the panel used to only imply. */
-export type TablebaseSource = 'lichess' | 'server' | 'files';
+type TablebaseSource = 'lichess' | 'server' | 'files';
 
 export interface TablebaseConfig {
   source: TablebaseSource;
@@ -270,7 +270,7 @@ export function proberFor(configPath: string): TablebaseProbe {
  * Throws where the prober does — the source could not be reached —
  * because a caller has to tell that from "reached, holds nothing".
  */
-export async function cachedProbeBody(
+async function cachedProbeBody(
   cacheDir: string,
   prober: TablebaseProbe,
   key: string,

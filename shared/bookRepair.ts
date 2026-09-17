@@ -31,7 +31,7 @@ export interface CellCandidates {
 }
 
 /** A repair that replayed: the position, who moved, and the line. */
-export interface Repair {
+interface Repair {
   placement: string;
   side: 'w' | 'b';
   sans: string[];
@@ -176,7 +176,7 @@ export function repairBoard(
   // voted for. A clear single winner is accepted; a tie is not.
   const support = (win: { cells: [number, number][] }): number =>
     win.cells.reduce((sum, [at, label]) => sum + (cells[at]!.votes.get(label) ?? 0), 0);
-  const ranked = [...found].sort((a, b) => support(b) - support(a));
+  const ranked = found.toSorted((a, b) => support(b) - support(a));
   if (support(ranked[0]!) > 0 && support(ranked[0]!) > support(ranked[1]!)) {
     return { repaired: ranked[0]!, ambiguous: [] };
   }

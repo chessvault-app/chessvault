@@ -5,6 +5,7 @@ import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 import { TitleTip } from '@/components/title-tip';
 import { separatorKey } from '@/components/separator-keys';
+import { PaneBoundary } from '@/components/pane-boundary';
 
 interface PanelProps {
   children: ReactNode;
@@ -163,7 +164,7 @@ export function Panel({ children, className, resizeKey, defaultHeight, fit = fal
         className,
       )}
     >
-      {children}
+      <PaneBoundary>{children}</PaneBoundary>
       {resizeKey !== undefined && (
         <TitleTip title={t('Drag to resize · double-click to reset')}>
           <div

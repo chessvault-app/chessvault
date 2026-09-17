@@ -10,7 +10,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   type DialogContentProps,
 } from '@/components/ui/dialog';
 
@@ -25,10 +24,6 @@ import {
  */
 function AlertDialog(props: React.ComponentProps<typeof Dialog>) {
   return <Dialog data-slot="alert-dialog" {...props} />;
-}
-
-function AlertDialogTrigger(props: React.ComponentProps<typeof DialogTrigger>) {
-  return <DialogTrigger data-slot="alert-dialog-trigger" {...props} />;
 }
 
 /**
@@ -174,5 +169,4 @@ export {
   AlertDialogHeader,
   AlertDialogMedia,
   AlertDialogTitle,
-  AlertDialogTrigger,
 };

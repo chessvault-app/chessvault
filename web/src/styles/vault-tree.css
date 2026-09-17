@@ -1,0 +1,76 @@
+/* The Vault card's listing (components/vault-tree). One ruler down the
+   left of the list, an icon per row, and no drawn branches: the ruler is
+   the ul's own left border, so it runs the whole list unbroken instead of
+   being redrawn per row, and it hangs from the middle of the root's own
+   icon (0.5rem, half of a 16px icon). What the elbows and the trailing
+   slashes used to say is now the icon's job.
+
+   An icon takes more room than the elbow it replaces, and this listing
+   had little to give: the longest gloss cleared its row by 2px before
+   this. So the ruler sits 6px off the icons rather than the 8 they take
+   from the name, which buys back the room that keeps that row one line.
+
+   The icon is positioned rather than given a column so the grid stays the
+   two areas it was, and it is offset by the row's top padding and held to
+   the path's 20px line box, which centres it on the first line rather
+   than on a row whose gloss has wrapped under it. Below 30rem each row
+   stacks its gloss under the path, and below 22rem its size too: path
+   and size shared one line by nowrap, and at 320px CSS wide the well's
+   content edge is 274px while "7 files · 130 kB" ended at 328, past the
+   card and the viewport both (five of seven rows past the well in
+   English, three in Korean; at 360 the longest row reached the well's
+   outer edge with no padding left). Real vaults run longer than the
+   demo's, so the size goes under the path there instead of past it. */
+.vault-tree {
+  container-type: inline-size;
+}
+.vault-tree ul {
+  list-style: none;
+  margin: 0 0 0 0.5rem;
+  padding: 0 0 0 0.375rem;
+  border-left: 1px solid var(--border-strong);
+}
+.vault-tree li {
+  --row-pad: 0.3rem;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'path'
+    'size'
+    'gloss';
+  column-gap: 1rem;
+  align-items: baseline;
+  padding: var(--row-pad) 0 var(--row-pad) 1.5rem;
+}
+@container (width >= 22rem) {
+  .vault-tree li {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'path size'
+      'gloss gloss';
+  }
+}
+.vault-tree li > .icon {
+  position: absolute;
+  top: var(--row-pad);
+  left: 0;
+  display: flex;
+  height: 1.25rem;
+  align-items: center;
+}
+.vault-tree li > .path {
+  grid-area: path;
+}
+.vault-tree li > .gloss {
+  grid-area: gloss;
+}
+.vault-tree li > .size {
+  grid-area: size;
+}
+@container (width >= 30rem) {
+  .vault-tree li {
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: 'path gloss size';
+  }
+}

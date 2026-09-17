@@ -1,0 +1,438 @@
+@layer base {
+  * {
+    border-color: var(--border);
+    outline-color: var(--ring);
+  }
+
+  html {
+    /* Prevent iOS Safari from inflating text in landscape. */
+    -webkit-text-size-adjust: 100%;
+    /* iOS standalone (home-screen) mode under-reports the viewport height
+       until the first scroll, exposing the WKWebView's own black canvas
+       below the app. Painting html in the app colour makes any such band
+       invisible on every device. */
+    background-color: var(--background);
+    height: 100%;
+    /* The document never scrolls (the shell is a fixed box, measured 0px
+       of overflow on every route at 375x812), so a scroll that reaches it
+       can only be one that chained out of a page's own list. Stated on
+       html as well as body: the body rule reaches the viewport only by
+       propagation, and the rule that stops the page bouncing should not
+       depend on one. */
+    overscroll-behavior: none;
+  }
+
+  /* Every scroller in the page keeps its own overscroll. A list that hit
+     its end handed the gesture on to the document, and on a home-screen
+     app that is the whole page rubber-banding under a bar that stays
+     put, which is the one motion a native list never makes. Stated on
+     every element under the shell so the next scroller is caught without
+     anyone remembering to. Utilities (overscroll-auto) still win.
+
+     With one class of exception, because "only does anything on a scroll
+     container" was true and not enough: overflow:hidden IS a scroll
+     container, and Chromium ends a wheel's scroll chain at a hidden box
+     that says contain. Every truncated name in a list is such a box, so
+     a mouse resting on a game's opening or a study's title could not
+     scroll the list under it, while the gutter beside it could (measured
+     on the demo at 1280px: a 400px wheel over a games row moved its
+     scroller 0px, the same wheel over the gutter 400px). Hidden boxes
+     hand the gesture on; a box that hides one axis and scrolls the other
+     is re-stated below and keeps its own. */
+  #root * {
+    overscroll-behavior: contain;
+  }
+  #root :is(.truncate, [class*='line-clamp'], [class*='overflow-hidden'], [class*='overflow-x-hidden'], [class*='overflow-y-hidden']) {
+    overscroll-behavior: auto;
+  }
+  #root :is([class*='overflow-auto'], [class*='overflow-scroll'], [class*='overflow-y-auto'], [class*='overflow-y-scroll'], [class*='overflow-x-auto'], [class*='overflow-x-scroll']) {
+    overscroll-behavior: contain;
+  }
+
+  /* A scroller with something pinned over it keeps that much of its own
+     edge free when it scrolls a focused control into view. The numbers are
+     the pinned band's measured height, published here by
+     hooks/use-pinned-band; the attribute comes with them, so a scroller
+     nothing is pinned over carries no rule at all. Without this the
+     browser stops as soon as a control is inside the scrollport, which the
+     band it is hidden under is too. */
+  [data-pinned] {
+    scroll-padding-top: var(--pin-top, 0px);
+    scroll-padding-bottom: var(--pin-bottom, 0px);
+  }
+
+  /* Home-screen launches mis-report the dynamic viewport until the first
+     scroll, so 100dvh (and visualViewport) start too short and the native
+     window shows through below the page. Standalone mode has no browser
+     chrome, which makes the STATIC 100vh the true screen height — pin the
+     shell (h-[var(--app-h,100dvh)]) to it there. */
+  @media (display-mode: standalone) {
+    :root {
+      --app-h: 100vh;
+    }
+  }
+
+  /* Line breaking is the browser's to get right now. A heading that
+     wraps balances its lines instead of leaving one word on the last;
+     a paragraph avoids the orphan. Neither moves a line that fits. */
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  /* Korean breaks between syllables unless told otherwise, which cuts a
+     word in two at the end of a line. keep-all breaks at spaces, as
+     Korean print does; anywhere still lets a string with no space (a
+     file name, a FEN) wrap rather than push its box out. */
+  :lang(ko) {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss03';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior: none;
+    /* Neither a double tap nor a pinch zooms the app. A second tap on a
+       heading, or two fingers on the gap beside the board, zoomed the page
+       in on iOS, which no app does. Pans only: `manipulation` declines the
+       double tap but hands the pinch to the browser, and the viewport's
+       user-scalable=no (index.html) is what a Safari tab ignores, so this
+       rule is the half of the lock that reaches it. The reader's own pinch
+       is untouched: it listens for the touches and gesture events, which
+       touch-action never withholds, and its scroller already declares the
+       same value. Because this holds for the whole app, no surface needs
+       to repeat it to keep its own two-finger gesture. */
+    touch-action: pan-x pan-y;
+  }
+
+  /* A long press on a phone selects the user's own words and nothing
+     else. The rule before this was an allowlist of the elements that had
+     raised the handles - headings, definition lists, coordinates,
+     buttons, the ARIA control roles - scoped to #main, and an allowlist
+     only covers what is on it: measured over the demo at 375x812 with a
+     coarse pointer, 346 of the 1183 visible text leaves across seventeen
+     routes still selected. Every label on the bottom tab bar, because
+     the bar is a sibling of #main and not in it. Every study subtitle
+     and game caption, because a span is none of those tags. Every menu,
+     sheet and dialog, because Base UI portals them to the body.
+
+     So the default is off and the words opt in. `data-user-text` marks
+     text that came out of the vault - a name someone gave a file, words
+     they wrote, an annotation, a header from a PGN they imported, a FEN
+     - and user-select inherits, so one attribute covers a subtree. What
+     the app says on its own account is not marked: labels, headings,
+     counts, sizes, dates it formatted, engine output, the theme names it
+     ships. The line it marks is the record's, not the field's, so where
+     the app annotates a record in place the annotation goes with it: a
+     game row's opening and ECO code come from a book rather than from
+     the PGN, and they select with the names they sit beside, because on
+     that line they are part of what the row says about that game. Fields
+     and editable regions are always on, which keeps a read-only note
+     selectable, since contenteditable="false" still matches the
+     attribute; so is a PDF's text layer. Moves are not marked: they are
+     a row of buttons, a phone cannot drag a selection across them, and
+     what someone wants from a game's notation is the whole of it, which
+     is what Copy gives.
+
+     A drift here fails the safe way round. Content that forgets the
+     attribute does not select, which is a missing convenience; UI text
+     that forgets to be excluded WOULD select, which is the bug this
+     exists to stop, and only a blocklist can have it.
+
+     Nothing is handed back to a long-press menu, because a phone has
+     none. ActionContextMenu answers the platform's `contextmenu` event,
+     and iOS Safari has not fired that since iOS 13 - no long press in
+     this app has ever opened a sheet on an iPhone, only the row's own
+     visible menu button. A carve-out for it was written and removed: on
+     iOS it cost every name in the games list and protected a gesture
+     that was not there, and on Android it would have taken the press off
+     the names to repeat what that button already does, permanently
+     visible on a touch screen.
+
+     The callout is the other half of a long press: on iOS an image or a
+     link raises a Save / Copy sheet that user-select does not withhold.
+     Chromium has no such menu, so that half follows Safari's documented
+     behaviour rather than anything measured here. Coarse pointers only,
+     so a desktop can still drag across a heading. */
+  @media (pointer: coarse) {
+    body {
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+    :is(input, textarea, [contenteditable], .textLayer, [data-user-text]) {
+      user-select: text;
+      -webkit-touch-callout: default;
+    }
+  }
+
+  /* Wiki links in notes ([[Target]]): linky at rest, actionable with
+     Ctrl - the text itself stays literal markdown. */
+  /* No radius here. There was a `border-radius: 3px`, and it drew
+     nothing: this is an inline decoration span with no background and no
+     border, so there is no box for a corner to round — the focus ring
+     reading mode gives it is an outline, which follows the inline box on
+     its own. It was also the only 3px corner in the app, off the ladder
+     every other corner derives from — a rounding rule that cost a reader
+     nothing to obey and told them something untrue about the shape. */
+  .wiki-link {
+    color: var(--primary);
+    cursor: pointer;
+    /* Underlined at REST, not on hover. --primary is a choice of colour
+       and so multiplies by --accent-tint: in Neutral it is the grey
+       ladder's last rung, and in Mono it is grey on purpose — the scheme
+       exists to take the one blue link out. Measured against body text in
+       the default scheme it was 0.060 of lightness apart in both light
+       and dark, which by this app's own rule is one grey. Colour cannot
+       be the signal for a token that is allowed to be colourless, so the
+       underline carries it in every scheme and the colour is whatever a
+       tinted scheme has left over. Hover and focus THICKEN it rather than
+       introduce it, so a phone — which never hovers — is not the one
+       client that sees no links. */
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, currentColor 45%, transparent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+  }
+  .wiki-link:hover,
+  .wiki-link:focus-visible {
+    text-decoration-color: currentColor;
+  }
+  /* A link that names nothing, and one that names two things.
+     Not --destructive: nothing has gone wrong and nothing is at risk. A
+     link written before its note is a normal way to work, and colouring it
+     like a failed save would make writing forward feel like an error. It
+     is a link that does not arrive yet, so it is muted rather than blue,
+     and dotted rather than solid — the underline says "provisional" in a
+     way colour alone cannot, and survives both colour schemes and anyone
+     who cannot separate the two hues. Ambiguity is the one the writer must
+     act on, since only they know which document they meant, so it keeps a
+     colour: --warn, the app's word for "this needs you". */
+  .wiki-link-broken {
+    color: var(--muted-foreground);
+    text-decoration-style: dotted;
+  }
+  .wiki-link-ambiguous {
+    color: var(--warn);
+    text-decoration-style: dotted;
+  }
+  /* No pointer on either: neither one opens anything. */
+  .wiki-link-broken,
+  .wiki-link-ambiguous {
+    cursor: default;
+  }
+  /* Reading mode renders the link text alone, Obsidian-preview style:
+     the brackets, and the `Target|` of a link with display text, are
+     notation rather than words. The markdown on disk keeps all of it. */
+  .note-editor[contenteditable='false'] .wiki-syntax {
+    display: none;
+  }
+  /* An embed is a card while reading and its literal text while editing —
+     the two never both show, so the note reads as one thing in each mode. */
+  .wiki-embed {
+    display: none;
+  }
+  .note-editor[contenteditable='false'] .wiki-embed {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin: 0.5rem 0;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--card);
+    cursor: pointer;
+  }
+  .note-editor[contenteditable='false'] .wiki-embed:hover {
+    border-color: var(--border-strong);
+  }
+  /* While editing, the source text carries the link's own styling; while
+     reading it is hidden and the card speaks instead. */
+  .note-editor[contenteditable='false'] .wiki-embed-source {
+    display: none;
+  }
+  .wiki-embed-name {
+    font-weight: 500;
+  }
+  .wiki-embed-excerpt {
+    color: var(--muted-foreground);
+    font-size: 0.875rem;
+  }
+  .wiki-embed-empty .wiki-embed-name {
+    color: var(--muted-foreground);
+  }
+
+  /* Native <select> popups inherit the control's font — a text-sm mono
+     control makes an unreadable dropdown list. Options get their own size. */
+  option {
+    font-size: 1rem;
+    font-family: var(--font-sans);
+  }
+
+  /* Only show focus rings for keyboard users, but never suppress them
+     entirely. At full alpha, as every component's ring is: the token
+     carries the 3:1 (see --ring), and half of it is half the ratio. */
+  :focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 0;
+  }
+
+  /* Except the box a dialog is, which is not a control.
+     `hooks/dialog-focus` gives every window `tabindex="-1"` and focuses it on
+     open, so the keyboard lands inside rather than in the page behind —
+     scripted focus, on a container nobody is meant to operate. Blink
+     agrees and paints nothing; WebKit rings it, so on an iPhone every
+     sheet opened with a blue rectangle drawn round it. The ring belongs
+     on the control that is tabbed to next, and that one still gets it —
+     this only exempts the container, matched by the two attributes the
+     hook itself sets. */
+  [role='dialog'][tabindex='-1']:focus,
+  [role='dialog'][tabindex='-1']:focus-visible {
+    outline: none;
+  }
+
+  ::selection {
+    background: var(--primary-soft);
+    color: var(--foreground);
+  }
+
+  /* Slim, theme-aware scrollbars: a 6px thumb inside a 12px gutter, so it
+     is easy to grab without crowding the content it scrolls. The colours
+     are tokens rather than fixed greys — the same rule has to look right
+     on the light theme, where a #2f3542 thumb would be a black bar.
+
+     Fine pointers ONLY. Styling ::-webkit-scrollbar turns a phone's
+     overlay bars into classic ones that take layout space — and
+     PageShell's stable both-edges gutter then reserved 12px per side,
+     so the shelf pages sat at 28px insets while Home and Games (their
+     own scrollers, no gutter) sat at 16px — lanph3re saw the two
+     gutters side by side on a phone. Unstyled, a touch device keeps
+     its native overlay bars: no space taken, the gutter reserves
+     nothing, and every page meets the same 16px edge. */
+  @media (pointer: fine) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-strong) transparent;
+    }
+    *::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+    *::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    *::-webkit-scrollbar-thumb {
+      background-color: var(--border-strong);
+      border: 3px solid transparent;
+      border-radius: 9999px;
+      background-clip: content-box;
+    }
+    *::-webkit-scrollbar-thumb:hover {
+      background-color: var(--text-subtle);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+
+    /* Except the two things that are MOVING IN ORDER TO SAY SOMETHING.
+       The rule above is right for the enter/leave and the hover fades,
+       which say nothing when they are gone. It is wrong for a looping
+       indicator, and wrong in a way that looks broken rather than calm:
+       an infinite animation given 0.01ms restarts a few hundred times a
+       frame, so the spinner and the indeterminate bar do not stop, they
+       flicker — and the bar is the ONLY progress signal the puzzle build
+       has, deliberately, because a part-filled static bar would be read
+       as a percentage it does not know (see @keyframes sweep).
+
+       So they keep running, slower: 2s against the spinner's 1s and the
+       sweep's 1.6s. Neither is large-area or parallax motion, which is
+       what the setting is actually protecting against; both are small,
+       local, and the only thing on screen saying the app is still there. */
+    [data-slot='spinner'],
+    [data-motion='status'] {
+      animation-duration: 2s !important;
+    }
+
+    /* And the placeholders stop, which is the other half of that
+       argument. A skeleton is not moving in order to say anything: it
+       says a page is loading by standing where the content will be, and
+       its pulse is the decoration on top. Left to the 0.01ms above it
+       was an infinite animation restarting a few hundred times a frame,
+       so it flickered the same way, on the largest blocks in the app (a
+       board's placeholder is the board). Held at the fill it starts on.
+       It also makes a screenshot of a wait deterministic, which the
+       shot grid takes with this query on. */
+    [data-slot='skeleton'] {
+      animation: none !important;
+    }
+
+    /* And the board's box leaves the clamp altogether, because for it
+       0.01ms is not a cut. The rule above sets a DURATION and leaves
+       `transition-property` at its initial `all`, so under this query
+       every inline write of a size becomes a 10-microsecond transition —
+       and a transition that short is still a transition: a read in the
+       same task returns the size from BEFORE the write, which is what
+       code that writes a size and measures the result gets back.
+
+       chessground resizes exactly that way. Its ResizeObserver writes
+       cg-container's width and height (updateBounds) and then lays all
+       32 pieces out from cg-board's rect (renderResized) in the same
+       callback, so the pieces went onto the grid the board had before it
+       was resized and stayed there: nothing re-renders afterwards, and
+       Board.tsx's settle() finds the container the size it asked for and
+       agrees. Measured on the demo under this query, before this rule:
+       28 of 32 pieces off their squares in the reader's board after "Set
+       up this position", 11 of 32 outside the board when the workspace's
+       engine bar opens, and up to 4 hanging outside a puzzle thumbnail
+       after a phone resize. With motion allowed all of them were 0.
+
+       It costs no motion: nothing in the app transitions the container
+       on purpose, and chessground animates pieces from
+       requestAnimationFrame (see boardAnimMs in board/Board.tsx, which
+       is already 0 here), so what this takes away is only the
+       accidental transition this block was creating. */
+    .cg-wrap cg-container {
+      transition-property: none !important;
+    }
+
+    /* The document's ground leaves it for the same reason. store/theme.ts
+       applies a theme by toggling `.dark` and then READS the colour it has
+       just applied, off the BODY, to pin the next launch: rememberGround,
+       which is what chess-vault:ground stores. Under the clamp that read
+       came back one theme behind. Measured on the demo, driving Settings >
+       Appearance > App theme to Dark with this rule neutralised: the store
+       took `oklab(0.97 0 0)`, the light ground, under its `dark` key, where
+       the page itself settles on `oklch(0.145 0 264)`. The next launch then
+       pinned the previous theme's colour behind the startup image, which is
+       the flash that pin exists to prevent. With motion allowed the same
+       read is already correct. The colour still arrives in one step; what
+       goes is the 10-microsecond fade under it.
+
+       apply() reads the ROOT as well, for the theme-color metas, and this
+       rule does not reach that read. index.html's inline `html {
+       background-color }` is unlayered, so it outranks the layered rule in
+       this file and the metas take the OS scheme's colour rather than the
+       chosen theme's, under either motion setting: across that same switch,
+       with this rule and without it, the metas and the root's computed
+       colour both stayed rgb(245, 245, 245). That is a separate bug, older
+       than this block, and nothing here fixes it. */
+    html,
+    body {
+      transition-property: none !important;
+    }
+  }
+}
+

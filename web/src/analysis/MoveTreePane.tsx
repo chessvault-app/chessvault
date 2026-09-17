@@ -431,7 +431,7 @@ export function MainlineTable({
         );
       }
       for (const variationId of shownVariationIds) {
-        const last = variationId === shownVariationIds[shownVariationIds.length - 1];
+        const last = variationId === shownVariationIds.at(-1);
         out.push(
           <div
             key={`var-${variationId}`}
@@ -629,7 +629,7 @@ function Line({ tree, fromId, cursorId, onSelect, continued = false, keep, bookI
 
     const shown = keep(variationIds);
     for (const variationId of shown) {
-      const last = variationId === shown[shown.length - 1];
+      const last = variationId === shown.at(-1);
       items.push(
         <div
           key={`var-${variationId}`}

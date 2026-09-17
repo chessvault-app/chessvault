@@ -389,7 +389,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /**
  * The demo's own banner: a property of the demo, not of the app.
  *
- * A STYLESHEET rule on the attribute App.tsx marks it with, not an inline
+ * A STYLESHEET rule on the attribute shell/demo-banner.tsx marks it with, not an inline
  * style on whatever element happened to hold the sentence. The old version
  * matched the banner's own text and set `style.display` on the node it
  * found: it broke silently if the wording changed, and an inline style

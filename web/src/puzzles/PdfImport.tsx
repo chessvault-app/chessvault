@@ -9,12 +9,11 @@ import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Spinner } from '@/components/ui/spinner';
-import { FilePicker } from '@/components/file-picker';
 import { Skeleton } from '@/components/skeletons';
 import { canReadPdf, evidencePage, useImportJob, type FoundDiagram } from './importJob';
 import { clearCheckpoint, readCheckpoint } from './importCheckpoint';
+import { EngineOption, ExistingChoice, OwnershipNote, PdfPicker, RepairOption } from './pdf-import-parts';
 import type { Template } from './ocr/classify';
 import { t } from '@/lib/i18n';
 import { announce } from '@/lib/announce';
@@ -463,89 +462,19 @@ export function PdfImport({
           )}
 
           {!mine && !saved && existing > 0 && (
-            <div className="border-card-ring bg-muted flex flex-col gap-2 rounded-lg border p-3">
-              <p className="text-foreground text-sm font-medium">
-                {t('This book already holds {n} puzzles. What should the import do with them?', {
-                  n: existing,
-                })}
-              </p>
-              <RadioGroup value={mode} onValueChange={(v) => setMode(v as typeof mode)}>
-                {(
-                  [
-                    ['update', 'Update in place', 'Re-reads the book and replaces each puzzle with what it finds. Anything the import misses this time is left as it is.'],
-                    ['rebuild', 'Clear and rebuild', 'Empties the book first, so it holds exactly what this import produces. Your attempt history is kept either way.'],
-                  ] as const
-                ).map(([value, label, blurb]) => (
-                  <label key={value} className="flex cursor-pointer items-start gap-2">
-                    <RadioGroupItem value={value} className="mt-0.5" />
-                    <span className="text-base">
-                      {t(label)}
-                      <span className="text-muted-foreground block text-sm">{t(blurb)}</span>
-                    </span>
-                  </label>
-                ))}
-              </RadioGroup>
-            </div>
+            <ExistingChoice existing={existing} mode={mode} onMode={setMode} />
           )}
 
-          {!mine && (
-            <label className="text-muted-foreground flex cursor-pointer items-start gap-2 text-sm">
-              <Checkbox
-                checked={engine}
-                onCheckedChange={(on) => setEngine(on === true)}
-                className="mt-0.5"
-              />
-              <span>
-                {t('Ask the engine where the book cannot be read')}
-                <span className="text-muted-foreground block">
-                  {t(
-                    'Searches positions whose printed solution would not replay, and imports them labelled by how much is known. Adds a few seconds per hundred.',
-                  )}
-                </span>
-              </span>
-            </label>
-          )}
+          {!mine && <EngineOption checked={engine} onChange={setEngine} />}
 
-          {!mine && (
-            <label className="text-muted-foreground flex cursor-pointer items-start gap-2 text-sm">
-              <Checkbox
-                checked={repair}
-                onCheckedChange={(on) => setRepair(on === true)}
-                className="mt-0.5"
-              />
-              <span>
-                {t('Try harder on boards that fail')}
-                <span className="text-muted-foreground block">
-                  {t(
-                    'Re-reads each position whose printed solution would not replay, looking for one misread square. Recovered about 26 more puzzles on a 1,000-puzzle book, and takes longer.',
-                  )}
-                </span>
-              </span>
-            </label>
-          )}
+          {!mine && <RepairOption checked={repair} onChange={setRepair} />}
 
           {!mine && !saved && (
-            <FilePicker
-              accept="application/pdf"
-              onFiles={([file]) => {
-                if (file) void begin(file);
-              }}
+            <PdfPicker
+              onFile={(file) => void begin(file)}
+              dragging={pdfDrop.dragging}
               {...pdfDrop.handlers}
-              className={cn(
-                'grid cursor-pointer place-items-center rounded-lg border border-dashed p-10 text-center',
-                'transition-colors',
-                pdfDrop.dragging
-                  ? 'border-primary bg-muted'
-                  : 'border-border hover:border-border hover:bg-accent',
-              )}
-            >
-              <span className="text-muted-foreground text-base">
-                {t('Choose the book’s PDF')}
-              <span className="text-muted-foreground block text-sm">
-                  {t('every page is scanned for diagrams; nothing leaves this device, and you can keep using the app while it runs')}
-                </span>
-              </span>
-            </FilePicker>
+            />
           )}
 
           {/*
@@ -556,12 +485,7 @@ export function PdfImport({
             rather than only in a README nobody opens on the way here.
           */}
           {!mine && !saved && (
-            <p className="border-card-ring bg-muted text-muted-foreground rounded-lg border p-3 text-sm">
-              <span className="text-muted-foreground font-medium">{t('Import only a book you own.')}</span>{' '}
-              {t(
-                'Crops, page images and solutions stay in your vault and are never published. They remain the publisher’s copyright, and copying or sharing them may not be allowed where you live.',
-              )}
-            </p>
+            <OwnershipNote />
           )}
 
           {preparing && (

@@ -1,0 +1,253 @@
+/* Promotion picker.
+
+   The piece sprites are scoped to `.cg-wrap piece.<role>.<color>`, so the picker
+   hosts itself inside a `.cg-wrap` to inherit them rather than duplicating a
+   whole piece set. These rules undo the board decoration that comes with that
+   class; positioning is left to Tailwind, which now wins thanks to the layer
+   order declared at the top of this file. */
+.cg-wrap.promo-host {
+  border-radius: 0;
+  overflow: visible;
+  box-shadow: none;
+}
+
+.promo-host piece {
+  /* `display: block` is load-bearing: `piece` is an unknown element and so
+     defaults to inline, which ignores width/height. chessground normally gets a
+     block box for free via `position: absolute`, which is overridden here. */
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  z-index: auto;
+  will-change: auto;
+}
+
+/* Promote the piece that is MOVING, not all thirty-two of them.
+
+   chessground's own stylesheet puts `will-change: transform` on every
+   piece, which asks the browser to keep a standing compositor layer for
+   each one — 32 of them, permanently, whether anything is moving or not.
+   That is a hint, not a promise: WebKit budgets layers, and a page that
+   asks for far more than it needs gets fewer than it asked for. A piece
+   that loses the argument is repainted on every frame it moves, and it
+   drags the board under it into the repaint — a checkerboard drawn as a
+   conic gradient, at three device pixels per CSS pixel.
+
+   Which is what "the animation runs at a low frame rate" sounds like, and
+   why the phone sees it and a desktop GPU with headroom to spare does
+   not. So the hint goes where it means something: the pieces chessground
+   has marked as animating or being dragged. Unmeasured here for the same
+   reason as the corner clip above — this machine cannot reproduce it. */
+.cg-wrap piece {
+  will-change: auto;
+}
+
+.cg-wrap piece.anim,
+.cg-wrap piece.dragging {
+  will-change: transform;
+}
+
+/* Dragged piece should float above every pane. */
+.cg-wrap piece.dragging {
+  z-index: 30;
+  cursor: grabbing;
+}
+
+.cg-wrap piece.ghost {
+  opacity: 0.28;
+}
+
+/* ---------------------------------------------------------------------------
+   Board colour themes (Settings > Appearance). The default cream/walnut
+   above adapts to light/dark; a chosen preset is a deliberate fixed
+   palette, so it overrides both modes (`:root[data-board]` outranks the
+   `.dark` token block).
+
+   Each preset is written twice: once for the root, which is how a theme
+   is CHOSEN, and once unanchored, which is how one is SHOWN. The second
+   form lets any element declare `data-board` and paint its subtree in
+   that preset — the theme picker's thumbnails are one swatch per preset,
+   side by side, and a swatch that had to name its own colours would be a
+   second copy of this table to keep in step. The bare selector is a
+   class-level match like `.dark`, so it wins on order alone; `:root` is
+   kept beside it to hold the specificity the paragraph above claims.
+   --------------------------------------------------------------------------- */
+
+/* The adaptive walnut, named. Nothing sets `data-board='default'` on the
+   root — choosing it REMOVES the attribute — so this rule exists for the
+   swatch that has to show it beside the fixed presets. */
+:root[data-board='default'],
+[data-board='default'] {
+  --board-light: var(--board-light-base);
+  --board-dark: var(--board-dark-base);
+}
+
+:root[data-board='green'],
+[data-board='green'] {
+  --board-light: oklch(95% 0.045 105);
+  --board-dark: oklch(65% 0.095 135);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(34% 0.1 250);
+}
+
+:root[data-board='brown'],
+[data-board='brown'] {
+  --board-light: oklch(89% 0.045 85);
+  --board-dark: oklch(66% 0.065 65);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(34% 0.1 250);
+}
+
+:root[data-board='blue'],
+[data-board='blue'] {
+  --board-light: oklch(92% 0.018 240);
+  --board-dark: oklch(62% 0.065 245);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(30% 0.08 250);
+}
+
+:root[data-board='slate'],
+[data-board='slate'] {
+  --board-light: oklch(87% 0.006 260);
+  --board-dark: oklch(55% 0.018 260);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-light), white 90%);
+  --arrow-best: oklch(22% 0.08 250);
+}
+
+:root[data-board='lavender'],
+[data-board='lavender'] {
+  --board-light: oklch(93% 0.02 300);
+  --board-dark: oklch(64% 0.058 300);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(32% 0.1 250);
+}
+
+:root[data-board='rosewood'],
+[data-board='rosewood'] {
+  --board-light: oklch(92% 0.025 30);
+  --board-dark: oklch(61% 0.065 25);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(29% 0.08 250);
+}
+
+/* Paper and ink. The only preset whose two squares are different
+   MATERIALS rather than one material at two lightnesses: a warm, almost
+   colourless rag paper against a cool iron-gall ink, ~160 degrees of hue
+   apart. It reads as a diagram printed on a page, which is what this app
+   is; every other preset reads as a physical board.
+
+   Three numbers were chosen against constraints, not taste:
+
+   - Lightness 93/54 is a 39-point gap, wider than any other preset
+     (wood 33, slate 32, brown 23). The board is drawn at 64px in the
+     hub's thumbnails and in mini-board.tsx, where a narrow gap stops
+     reading as a checker at all.
+   - Hue 250 sits ~140 degrees from the last-move yellow (108), ~100 from
+     the legal-dest green (150) and ~135 from the check red (27), so all
+     three overlays stay unambiguous on it. This is what the green board
+     gets wrong: its dark square is the same hue family as its own dots.
+   - Chroma stays under 0.03 on both squares because the coordinate
+     labels are mixed OUT of these two tokens (see .cg-wrap coords), and
+     because the board should spend no colour of its own — green, red and
+     the eval bar are what colour means here.
+
+   A preset overrides both light and dark mode, so this pair has to sit
+   against a white frame and a near-black one; a cool desaturated ink
+   does, a saturated navy did not. No grain: a laid-paper texture belongs
+   here but has to clear the sampling arithmetic in the note below, so it
+   is a separate, measured change. */
+:root[data-board='ink'],
+[data-board='ink'] {
+  --board-light: oklch(93% 0.014 92);
+  --board-dark: oklch(54% 0.028 250);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-light), white 60%);
+  --arrow-best: oklch(20% 0.06 250);
+}
+
+/* The one textured board: the ChessBase-style rust brown, with the grain
+   drawn rather than photographed.
+
+   feTurbulence, stretched hard along one axis (baseFrequency 0.045 x,
+   0.004 y) so the noise reads as figure running up the square, with three
+   octaves for the fibre on top of it.
+
+   Three, not four, and the reason is the pixel grid rather than taste. A
+   square is 100 units, so octave k has a wavelength of 1/(0.045 * 2^(k-1))
+   units in it, and against real board sizes a fourth octave lands at 3.1
+   device px on a 448px board at dpr 2, 2.0 at 288px, and 1.0 at 288px on a
+   1x screen — at or under the two-px-per-cycle sampling limit, which is
+   aliasing by definition. It shimmered worst right beside the pieces'
+   black outlines, where the eye is least forgiving, and read as though the
+   PIECES were badly drawn. Three octaves puts the finest detail at 6.2 px
+   on that same board, and carries 1/4 the amplitude of the base rather
+   than 1/8, so almost nothing is lost by dropping it. Anything that raises
+   baseFrequency or adds an octave has to be re-checked against this
+   arithmetic.
+
+   The 64 rects are not decoration:
+   turbulence is evaluated in USER space, so each rect's filter region
+   clips a different patch of one noise field — 64 distinct squares from a
+   single rasterisation, breaking at every square edge the way an inlaid
+   board does. One rect would run the grain straight across the seams and
+   read as a painted panel; a smaller tile repeats visibly at 2 squares.
+   474 bytes gzipped (measured: the bundle's CSS is 61592 with it, 61118
+   without), against 138 KB for lichess's wood4, the photograph it stands
+   in for — and no third-party artwork to carry a licence notice for. */
+:root[data-board='wood'],
+[data-board='wood'] {
+  --board-light: oklch(91% 0.042 84);
+  --board-dark: oklch(58% 0.135 49);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 85%);
+  --arrow-best: oklch(25% 0.08 250);
+  --board-grain: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='800'%20height='800'%3E%3Cfilter%20id='v'%20x='0'%20y='0'%20width='100%25'%20height='100%25'%20color-interpolation-filters='sRGB'%3E%3CfeTurbulence%20type='fractalNoise'%20baseFrequency='0.045%200.004'%20numOctaves='3'%20seed='5'/%3E%3CfeColorMatrix%20values='.33%20.33%20.33%200%200%20.33%20.33%20.33%200%200%20.33%20.33%20.33%200%200%200%200%200%200%201'/%3E%3C/filter%3E%3Crect%20x='0'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='0'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='100'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='200'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='300'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='400'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='500'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='600'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='0'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='100'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='200'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='300'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='400'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='500'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='600'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3Crect%20x='700'%20y='700'%20width='100'%20height='100'%20filter='url(%23v)'/%3E%3C/svg%3E");
+}
+
+/* A deliberately dark board — both squares below mid-lightness, for
+   boards that should recede into a dark room. The white pieces carry
+   the contrast. */
+:root[data-board='charcoal'],
+[data-board='charcoal'] {
+  --board-light: oklch(56% 0.008 260);
+  --board-dark: oklch(39% 0.008 260);
+  /* The light square is 56%: black itself is 4.5:1 on it, so the ink
+     goes all the way. */
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 90%);
+  --coord-on-dark: color-mix(in oklch, var(--board-light), white 60%);
+  --arrow-best: oklch(92% 0.04 250);
+}
+
+/* Two boards with a near-white light square (#ececec and #f2f2f2)
+   against a khaki grey (#aca595) and a tan (#d3a36a). The light square
+   is a plain grey both times, so the coordinate labels mixed out of it
+   stay neutral. */
+:root[data-board='khaki'],
+[data-board='khaki'] {
+  --board-light: oklch(94% 0 90);
+  --board-dark: oklch(72% 0.024 87);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(39% 0.12 250);
+}
+
+:root[data-board='tan'],
+[data-board='tan'] {
+  --board-light: oklch(96% 0 90);
+  --board-dark: oklch(75% 0.093 70);
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  --arrow-best: oklch(42% 0.12 250);
+}
+

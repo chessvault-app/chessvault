@@ -132,7 +132,7 @@ function* longName(name: string): Generator<Buffer> {
 }
 
 /** The whole archive as a stream: the entries, then two zero blocks. */
-export function tarVault(vault: string): Readable {
+function tarVault(vault: string): Readable {
   const gen = (async function* () {
     yield* entries(vault, []);
     yield Buffer.alloc(1024);

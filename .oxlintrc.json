@@ -2,9 +2,10 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react"],
   "categories": {
-    "correctness": "off"
+    "correctness": "error"
   },
   "rules": {
+    "react/set-state-in-effect": "warn",
     "react-hooks/exhaustive-deps": "error",
     "react-hooks/rules-of-hooks": "error"
   },

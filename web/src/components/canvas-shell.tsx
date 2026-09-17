@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import {
   createContext,
-  useContext,
+  use,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -30,7 +30,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
  */
 const CanvasInset = createContext(0);
 export function useCanvasInset(): number {
-  return useContext(CanvasInset);
+  return use(CanvasInset);
 }
 
 /**
@@ -249,7 +249,7 @@ export function CanvasShell({
           the overlays and the panel measure themselves against the canvas
           rather than against the page. */}
       <div ref={surface} className="relative min-h-0 w-full flex-1 overflow-hidden">
-        <CanvasInset.Provider value={inset}>{children}</CanvasInset.Provider>
+        <CanvasInset value={inset}>{children}</CanvasInset>
 
         {/* The surface's own controls, floating on it — kept out of the
             header block so the search row has the left edge to itself,

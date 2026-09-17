@@ -1,0 +1,530 @@
+/* ---------------------------------------------------------------------------
+   Design tokens.
+
+   Every colour is OKLCH so that light and dark stay perceptually matched: a
+   pair of themes built by nudging lightness on a fixed hue/chroma reads as one
+   system instead of two. Semantic names only — no `gray-700` at call sites, so
+   re-theming happens here and nowhere else.
+   --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   Density.
+
+   Five numbers, read by every surface in this app that repeats a row: a
+   game row (games/shared.tsx), a panel row (components/list-row.tsx), the
+   card those sit in (components/ui/card.tsx), the move tree
+   (analysis/MoveTreePane.tsx), the explorer's tables
+   (explorer/ExplorerPane.tsx) and the studies chapter list
+   (studies/StudyView.tsx). Written here rather than at the call sites so
+   that a density is five declarations and not a sweep, and so the next
+   rung is five more.
+
+   The book reader is the one place worth naming, because most of it is
+   deliberately absent: it is a PDF canvas beside an analysis board, and
+   its h-9 and h-7 are toolbar bands, not rows. Shrinking a control strip
+   is not what this knob promises, and it would fight the coarse-pointer
+   hit areas besides. Its CHAPTER list is a list, though, and reads the
+   dense rung like every other one. This note used to say the reader had
+   no list at all, which was true when it was written and had quietly
+   stopped being true; a spacing audit measured the knob against every
+   route and found the chapters sitting still with it (2026-09-16).
+
+   Deliberately NOT Tailwind's own `--spacing`. That would be one line and
+   the wrong one: 401 rules in the built stylesheet derive from it, `size-*`
+   included, so squeezing it takes the icons down with the padding. A
+   density control is about whitespace; a glyph is not whitespace.
+
+   `--card-pad` is what components/ui/card.tsx now initialises
+   `--card-spacing` from. The registry's own `data-size=sm` override still
+   sets `--card-spacing` directly and still wins, because a card asked to be
+   small is small at either density.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --row-py: calc(var(--spacing) * 2);
+  --row-py-dense: calc(var(--spacing) * 1.5);
+  /* The tabular rung: a move in the move list, a continuation in the
+     explorer's table, a game under either. These are read in columns
+     rather than scanned as cards, and they were already the tightest
+     rhythm in the app before a density existed. */
+  --row-py-tight: calc(var(--spacing) * 1);
+  /* The fixed rung, for a row whose height is SET rather than left to come
+     out of its padding — the studies chapter list, whose rows carry an
+     inline rename input and a hover tray and so cannot be sized by their
+     text. A height, not a padding, because that is what the row states. */
+  --row-h: calc(var(--spacing) * 8);
+  --card-pad: calc(var(--spacing) * 4);
+
+  /* The move tree's branch elbow, which is NOT free to be chosen: it has
+     to end on the middle of the first line of the row it points at, so it
+     is the row's top padding plus half a text-sm line (1.25rem/2). Derived
+     rather than declared, so it follows the tight rung at every density
+     instead of being a second number to remember. It was h-3.5 — exactly
+     this sum at the comfortable rung — and a density that moved the
+     padding without it would have left every branch guide pointing above
+     or below its own move. */
+  --move-elbow-h: calc(var(--row-py-tight) + 0.625rem);
+
+  /* The games table's row floor. The table row is the one tabular surface
+     that states a height as well as a padding: its cells are not all the
+     same height (the ECO chip sets a 1.5rem line, a game with no ECO sets
+     1.25rem), so without a floor a list of games comes out ragged. The
+     floor is nearly touching — measured 34px against a 33px natural row —
+     which is why it went unnoticed that it was a literal: it changed the
+     comfortable rung by a pixel and pinned the compact one entirely,
+     holding the table at its comfortable height while every other list on
+     the page tightened.
+
+     Derived from the tight rung for the reason --move-elbow-h is: a floor
+     that did not follow the padding would simply re-bind at compact and
+     the knob would go on doing nothing here. 1.625rem is the row's content
+     box at the comfortable rung, kept so that turning this into a token
+     moves nothing at the default density. */
+  --row-h-table: calc(1.625rem + 2 * var(--row-py-tight));
+}
+
+/* Comfortable carries no attribute — it is what :root says above. */
+:root[data-density='compact'] {
+  --row-py: calc(var(--spacing) * 1.25);
+  --row-py-dense: calc(var(--spacing) * 0.75);
+  --row-py-tight: calc(var(--spacing) * 0.5);
+  --row-h: calc(var(--spacing) * 7);
+  --card-pad: calc(var(--spacing) * 3);
+}
+
+:root {
+  color-scheme: light;
+
+  /* The three numbers a colour scheme IS. Everything neutral — page,
+     panels, borders, text — is one hue at a multiplied chroma, and the
+     accent is a hue of its own. The semantic colours (good/bad/warn/info)
+     are deliberately NOT here: green means solved whatever the scheme, and
+     a theme that could recolour them would break the grammar the whole UI
+     reads by. Presets are named triples; a custom theme is the same three
+     numbers chosen with sliders. */
+  --ui-hue: 264;
+  --ui-tint: 1;
+  --accent-hue: 240;
+  /**
+   * How far the ACCENT is from grey, as a multiplier — the same knob
+   * --ui-tint is for the neutrals.
+   *
+   * Added for the greyscale scheme, which needs a grey button as much as
+   * a grey panel: Mono already flattened the surfaces, and left one blue
+   * button, one blue link and one blue nav highlight standing in an
+   * otherwise colourless app. Everything that is a CHOICE of colour
+   * multiplies by this; --good, --destructive, --warn and --info do not, because
+   * a puzzle that cannot say wrong in red has lost something a palette
+   * was never meant to take.
+   */
+  --accent-tint: 1;
+
+  /**
+   * How far the neutrals are pushed towards the ends of the scale, 0–1.
+   *
+   * 0 is every scheme this app has ever had, exactly — each lightness
+   * below is written as a lerp from the value it has always had to a
+   * high-contrast target, so at 0 the second term is multiplied away and
+   * the token resolves to the original number. Nothing about Slate or
+   * Paper or Mono moves.
+   *
+   * 1 is the other end: the dark page reaches true black and the light
+   * page true white, text goes to the opposite extreme, and the borders
+   * — which carry the structure once the fills stop differing much —
+   * move the other way to stay visible. The surface LADDER survives at
+   * both ends; it is compressed, not flattened, or every panel edge in
+   * the app would vanish at once.
+   *
+   * This is a lightness knob only. --ui-tint and --accent-tint decide
+   * how much colour there is; a scheme can be high-contrast and still
+   * be Slate. Greyscale + contrast 1 is the black/white/grey one.
+   */
+  --ui-contrast: 0;
+
+  /* Width of the side column next to the board, and the only place it is
+     written down: components/layout.ts spends it in BOARD_WIDE_SIDE, and the row's
+     own cap below has to know it too. */
+  --board-side: 27rem;
+
+  /* A tonal page: 97%, with the cards and panels white on it. The page
+     was the same white as its cards, so a hairline ring was the only
+     thing separating them (the note under --border). On a tone the
+     surfaces separate by fill, which is how Apple's grouped screens,
+     Material 3's surface containers and both big chess sites draw a
+     light theme, and it lets the chrome recede a rung further, which is
+     what the design asks of everything that is not the board. The
+     contrast knob takes it back to white: High contrast is the scheme
+     chosen for legibility, and its structure is the ring, restored
+     below. lanph3re's call, 2026-09-07, from a mockup over the demo. */
+  --background: oklch(calc(97% + (100% - 97%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  /* The card's edge. Transparent on the tonal page, where the fill is
+     the edge; the full hairline at the top of the contrast knob, where
+     the page is white again and the ring is the only structure. One
+     lerp, so the thirteen schemes keep reaching it; the dark block runs
+     the same lerp, since the mockup showed the eye did not need the
+     second cue there either (see the note beside it). */
+  --card-ring: color-mix(in oklch, var(--border) calc(100% * var(--ui-contrast)), transparent);
+  /* A window's edge: a dialog, popover, menu or toast. In light the scrim
+     or the shadow separates it, so it follows the card's ring; dark keeps
+     the hairline, since a shadow is invisible there and a window's fill
+     is a card's, so the line is the one cue left. Outranks the registry's
+     own ring-border on those files (lanph3re's call, 2026-09-08). */
+  --window-ring: var(--card-ring);
+  --background-accent: oklch(calc(97% + (95% - 97%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));
+  /* Already pure white; the contrast knob has nothing to add here. */
+  --surface: oklch(100% 0 0);
+  --surface-2: oklch(calc(97% + (96% - 97%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  --surface-3: oklch(calc(92.8% + (90% - 92.8%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
+  --surface-inset: oklch(calc(98.5% + (97% - 98.5%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
+
+  /* The registry ships 92.2%, which is 1.26:1 against white — and while
+     the page, the card and the panel were all the same white, a 1px line
+     at 1.26:1 was the ONLY thing separating them. Measured on a phone
+     that line was not there: the board pages' bottom panel and bar read
+     as one unbroken sheet. 88% is 1.44:1 on white and 1.32:1 on the
+     muted rung, a hairline that survives a small bright screen. The page
+     is a tone now and cards separate by fill, but every other stroke
+     (inputs, dividers, the bars' edges) still draws in this, and High
+     contrast puts the page back to white with the card ring on, so the
+     value stays. Dark never had the problem, because there the surface
+     ladder separates panels by fill and the border is a second cue; its
+     values stay the registry's. */
+  --border: oklch(calc(88% + (62% - 88%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
+  /* A rung below --border, kept a real step apart now that --border
+     itself has darkened: 82% is 1.75:1 on white. */
+  --border-strong: oklch(calc(82% + (35% - 82%) * var(--ui-contrast)) calc(0.009 * var(--ui-tint)) var(--ui-hue));
+
+  --foreground: oklch(calc(14.5% + (0% - 14.5%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --muted-foreground: oklch(calc(48% + (24% - 48%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
+  /* The quiet tiers answer to the Four Backgrounds Rule: 4.5:1 on the
+     page, the card, the muted rung AND --surface-3, because the gap is
+     smallest on the pressed/selected fill and that is where a caption
+     fails first. 53% measured 4.25:1 on --surface-3 (92.8%) — under the
+     floor small text needs — and the note that used to sit here claimed
+     52.5% clears all four, which the maths below says it never did
+     (that needs 51.7% or less). 51.5% clears it at 4.55:1 and is 5.6:1
+     on white. Muted at 48% already clears all four (5.3:1 worst case)
+     and stays put; the tiers remain 3.5 points apart. (Grey-on-grey
+     maths: for neutrals, OKLCH L approximates Y^(1/3), so contrast =
+     1.05/(L³+0.05).) */
+  --text-subtle: oklch(calc(51.5% + (30% - 51.5%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
+
+  /* shadcn's neutral primary is near-black on white and near-white on
+     dark — a grey button, which is what the accent knob at 0 means here.
+     With the knob up, a coloured button needs the middle of the scale to
+     read as colour at all (a blue at 20% lightness is navy), so the
+     lightness follows the tint: grey = the registry's value, full colour =
+     the 50% / 73% the app's schemes were drawn at. Contrast then lerps
+     towards the end of the scale as for every other token. */
+  --primary-l: calc(20.5% + 29.5% * var(--accent-tint));
+  --primary-hover-l: calc(34% + 10% * var(--accent-tint));
+  --primary: oklch(calc(var(--primary-l) * (1 - var(--ui-contrast))) calc(0.115 * var(--accent-tint)) var(--accent-hue));
+  --primary-hover: oklch(calc(var(--primary-hover-l) + (22% - var(--primary-hover-l)) * var(--ui-contrast)) calc(0.12 * var(--accent-tint)) var(--accent-hue));
+  --primary-foreground: oklch(calc(98.5% + (100% - 98.5%) * var(--ui-contrast)) 0 0);
+  --primary-soft: oklch(calc(94% + (88% - 94%) * var(--ui-contrast)) calc(0.04 * var(--accent-tint)) var(--accent-hue));
+  /* The focus ring, and the one colour in this file held to a RATIO and
+     not to a look: WCAG 1.4.11 asks 3:1 of the mark that says where the
+     keyboard is, and PRODUCT.md takes 2.2 AA as the yardstick. At the
+     registry's 50% alpha it measured 1.35 to 1.60:1 against whatever it
+     lay on, over 1,636 tabbed stops on 22 routes in four schemes, and
+     High contrast, the scheme chosen for legibility, only reached 2.14.
+     So the wash is gone (`ring-ring`, never `ring-ring/50`, and the
+     global outline below matches) and the lightness moved.
+
+     59%, not 70.8%, and --surface-3 (92.8%) is what binds it: the
+     selected and hovered fill, which an inset ring is drawn straight
+     onto, and where a neutral ring crosses 3:1 at 61.5%. The two points
+     under that are the margin a tinted scheme eats, since an accent at
+     full chroma is lighter than the grey of the same L; they leave the
+     worst shipped scheme at 3.17:1 and the worst corner of the knob
+     grid at 3.13:1. The knob keeps its direction: 50% at the top, where
+     --surface-3 has darkened to 90%. */
+  --ring: oklch(calc(59% + (50% - 59%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
+  /* The halo a text field draws round its focus border: the registry's
+     own --ring lightness (70.8% light, 55.6% dark), at the registry's 50%,
+     because on a field the OPAQUE focus-visible:border-ring is the
+     indicator (scored at 3:1 by check:contrast, like every stroke in the
+     --ring colour) and the halo is decoration round it. Drawn in --ring
+     at 66% dark the same halo read as a thickened stroke (lanph3re,
+     2026-09-13, against the registry's demo side by side), and a halo
+     that carries no contrast has no reason to be lifted with the ring.
+     Its own colour, so the checker scores it as an ordinary stroke: at
+     50% over white it composites to about 1.5:1 against white, over the
+     hairline floor of 1.3. Follows the accent knobs as --ring does. */
+  --field-halo: oklch(70.8% calc(0.1 * var(--accent-tint)) var(--accent-hue));
+
+  /* The semantic four stay out of --ui-tint and --accent-tint, for the
+     reason given at the top of this file. They do NOT stay out of
+     --ui-contrast, and leaving them out of it was a bug: contrast is a
+     LIGHTNESS knob (see its own comment), so a scheme could raise it,
+     move every surface underneath these four, and never move them.
+
+     Which made the one scheme chosen for legibility the worst one to
+     read them on. The surfaces darken as the knob comes up, and light
+     mode's semantic colours sit mid-scale, so the gap CLOSED: measured
+     on --surface-3, the raised panel where it is always tightest,
+     good and warn went 4.36 -> 4.00, info 4.53 -> 4.16, and destructive
+     3.85 -> 3.53. High contrast made all four worse than Neutral did.
+
+     So they lerp too, on lightness alone — same hue, same chroma, green
+     still green at either end. The targets are the lightness each one
+     needs to clear 4.5:1 on --surface-3 at knob 1, with a little margin:
+     4.69 / 4.69 / 4.73 / 4.70 there, and 6.3:1 on the page.
+
+     DARK MODE IS DELIBERATELY ABSENT. Its surfaces darken as the knob
+     rises while these four stay light, so the gap opens rather than
+     closes — the worst of them on --surface-3 is 5.69:1 at knob 1
+     against 4.39:1 at knob 0. A lerp there would be a no-op written out
+     four times. */
+  /* 50 / 52 / 52, not 51 / 53 / 52.5: at knob 0 those three sat at
+     4.36 / 4.36 / 4.48 on --surface-3, which is also --accent, the fill
+     under a hovered or selected row, and a solved chip on the row you
+     are pointing at is exactly where the outcome colour is read. One
+     point of lightness each clears 4.5 there (4.53 / 4.55 / 4.54) and
+     costs nothing anywhere else. Info already cleared at 4.53. */
+  --good: oklch(calc(50% + (47% - 50%) * var(--ui-contrast)) 0.141 150);
+  /* 52.5%, not the registry's 57.7%, and the four points were measured
+     off the one place it actually fails: "Delete all data" in Settings.
+     That button is `bg-destructive/10 text-destructive`, so the red is
+     read against ITSELF at a tenth over the card — rgb(252,229,230), not
+     the white the token was checked against — and the label came to
+     3.97:1. The most destructive control in the app held the only string
+     in it that failed AA. 52.9% is where it crosses; 52.5% is that with
+     a little margin, and it reaches 4.6:1 there and 5.3:1 on the page.
+
+     The wash is why this one moved and --good, --warn and --text-subtle
+     did not, though all four fail the same arithmetic against
+     --surface-3: a live scan of every text node on six pages, in both
+     themes, compositing each background down to the page, found this and
+     nothing else. The others fail only against a fill that appears while
+     a control is pressed, which that scan cannot render. Theory, until
+     someone catches one.
+
+     Someone caught one: the result chip, `bg-good/15 text-good` over rows
+     that fill on hover, failed in both tones once the demo's games
+     carried a side to win or lose from. The answer was not to move these
+     tokens — they cannot reach the floor through a wash that is itself
+     moving. See --good-tint below. */
+  --destructive: oklch(calc(52% + (48% - 52%) * var(--ui-contrast)) 0.245 27.3);
+  --warn: oklch(calc(52% + (49% - 52%) * var(--ui-contrast)) 0.112 75);
+  --info: oklch(calc(51% + (48% - 51%) * var(--ui-contrast)) 0.102 230);
+  /* What reads ON a filled --destructive panel, in both themes: the dark red is
+     dark enough for white in light mode, and the light red of dark mode
+     wants near-black. Only the swipe-to-remove strip fills --bad; every
+     other use is text or a tint, which keeps the page colour behind it. */
+  --destructive-foreground: oklch(98.5% 0 0);
+  /* On --warn, which is a light amber in BOTH themes: white on it is a
+     smear. The swipe-to-bookmark strip is the only thing that fills it.
+
+     That holds at rest and stops holding at knob 1, where --warn above is
+     four points darker: the brown falls from 3.23:1 to 2.16:1 on it, and
+     no brown recovers — 10% lightness only reaches 3.31:1. White does,
+     at 6.38:1. So the smear is kept where it was chosen and given up
+     where it costs legibility, which is the trade the knob exists to
+     make. Chroma goes with it; a tinted white is not white. */
+  --warn-foreground: oklch(calc(22% + (100% - 22%) * var(--ui-contrast))
+    calc(0.04 * (1 - var(--ui-contrast))) 75);
+  /* An outcome tint that a row cannot shine through.
+
+     `bg-good/15 text-good` on the result chip was two variables at once:
+     the tint over whatever the row was painted, and the row's own
+     `--accent` arriving under it on hover. Measured on the games list,
+     the chip fell to 3.58:1 in light and 3.02:1 in dark under the
+     pointer — and the token comment above had called this exact case
+     theory ("a fill that appears while a control is pressed"), because
+     until the demo's games carried a side to win or lose from, nothing
+     rendered it where the check could see it.
+
+     Moving --good and --destructive does not fix it. Swept against the
+     real chip: light needs 43% before hover clears 4.5:1, four to nine
+     points below where those tokens were measured, and dark never clears
+     it at all — 86% still reads 3.83:1, because the fill under the wash
+     is what moved, not the text.
+
+     Opaque is the fix, and 10% is the app's own tint everywhere else
+     (`bg-destructive/10` on the delete button, the destructive badge,
+     the danger menu row); this chip was the one 15%. Composited rather
+     than layered, hover and rest are the same measurement — 4.65:1 and
+     4.78:1 in light, 6.71 and 5.48 in dark, 7.94 and 6.41 in high
+     contrast. Mixed against --card, which is what every list that draws
+     one sits on.
+
+     In oklab, not oklch. A polar mix interpolates the HUE, and --card is
+     written with one (0 in light, --ui-hue in dark) even though its
+     chroma is 0, so the browser did not treat it as missing: 10% of
+     green's 150 landed the "good" tint at hue 15, a faint pink, and
+     dark's at 253, a blue-grey. Measured on the games list's win chip
+     and the puzzle tiles: both tints were the same colour. A rectangular
+     mix keeps the hue of whichever colour has any; the ratios above
+     move by 0.03 or less (4.87 and 4.83 in light, 6.72 and 5.62 in
+     dark). */
+  --good-tint: color-mix(in oklab, var(--good) 10%, var(--card));
+  --destructive-tint: color-mix(in oklab, var(--destructive) 10%, var(--card));
+  /**
+   * The ECO tag: one hue per opening family (A–E), two lightnesses per
+   * theme.
+   *
+   * The hue is picked in JS from the ECO letter, so only the lightness
+   * and chroma can live here — and they have to, because a colour written
+   * for a near-black page is a colour nobody can read on a white one. At
+   * the dark theme's 72% the opening name measured 2.3:1 against the
+   * light page, well under the 4.5:1 a small label needs; 45% measures
+   * 7:1. The chip is the same lightness with more chroma and a wash of
+   * itself behind it.
+   */
+  /* 45% at knob 0, 41% at knob 1: like the semantic four, the tag has to
+     follow --ui-contrast or High contrast closes the gap on it. The
+     contrast walk's light + High contrast row (the one it did not use to
+     have) caught the C family at 4.24:1 on a row filled with --accent.
+     Which row that is depends on the list: on the CARD rows (GameRow) it
+     is the row under the pointer, and on the dense table (GameTableRow)
+     it is the SELECTED row, whose hover lifts to --surface instead. The
+     card row is the case to reproduce, since it is the tighter of the
+     two — a chip on the table's lifted row only gains. */
+  --eco-l: calc(45% + (41% - 45%) * var(--ui-contrast));
+  /* Which way the family step goes (games/shared.tsx): down in light,
+     where a darker chip reads better on the page, up in dark. Each step
+     is 2% of lightness, so the E family sits 8% from the A family and
+     every step has at least the base tag's contrast. */
+  --eco-dir: -1;
+  /* FIXED chroma, not scaled by --accent-tint: the family hue is DATA
+     — which opening this is — not chrome, and the neutral appearance
+     drained it to grey along with the buttons, leaving the games table
+     one wash of monochrome (lanph3re's report). --warn, --info and the
+     result chips already hold their colour through the neutral theme
+     for exactly this reason; the ECO tag now sits on the same side of
+     that line. */
+  --eco-c: 0.12;
+  /* No fill behind the code. The chip wore its own hue at 10% (15% in
+     dark) and was the one tinted surface on a games row: in dark it was
+     the highest-chroma pixel on the table, louder than the result chip
+     beside it, and two cells from the annotated pen's blue, which the
+     colour grammar reserves for "trusted". The letter and the hue still
+     say which family; a tint said it twice. lanph3re's call (2026-09-07):
+     keep the chroma, drop the wash. */
+  --eco-wash: 0%;
+  --eco-name-l: calc(45% + (41% - 45%) * var(--ui-contrast));
+  --eco-name-c: 0.05;
+
+  /**
+   * The opening map's colour-by-hue: the highlighted lines, and the faint
+   * family halo behind a node. Same shape as the ECO tag above, and for
+   * the same reason — the hue is DATA, so only its lightness and chroma
+   * can live here.
+   *
+   * The map spelled both in `hsl(h 70% 58%)`, which holds a lightness
+   * that is not one. Around the twelve-hue wheel it walks, hsl at a fixed
+   * 58% spans SIX TIMES in luminance — 0.689 at hue 60 against 0.115 at
+   * hue 240 — so the yellow line shouted and the blue one whispered, on
+   * a map whose whole point is that no two lines rank above each other.
+   * The same L in oklch spans 1.13x, which is the difference between a
+   * palette and an accident.
+   *
+   * Chroma is what the full wheel can hold at that lightness without
+   * leaving sRGB: 0.09 here, 0.12 on the dark side, checked at every one
+   * of 360 hues rather than the twelve the line wheel happens to use,
+   * because the family hue comes from an ECO letter and can be anything.
+   */
+  --map-line-l: 55%;
+  --map-line-c: 0.09;
+  /* The map's plain threads, and the rim and marks a dot wears: a grey
+     placed at 3:1 on the page with room for the antialiasing of a 1.1px
+     line. The border tone this replaced measured 1.26:1 as drawn (1.31:1
+     dark), which is a thread you infer rather than see, and PRODUCT.md
+     asks 3:1 of a stroke that carries meaning. 60% is 3.6:1 on the 97%
+     page; the contrast knob takes it to 45% (6.8:1). */
+  --map-thread: oklch(calc(60% + (45% - 60%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
+
+  /* The transient chip — the undo offer, and anything else that floats
+     over the page for a few seconds and must not read as part of it.
+     It is the surface INVERTED: dark on a light app, light on a dark one.
+     Distinct by construction rather than by a colour chosen to contrast
+     with today's palette, and the one convention this widget has. */
+  --toast: oklch(calc(24% + (0% - 24%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  --toast-foreground: oklch(calc(98% + (100% - 98%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+
+  /* Board — warm cream/walnut, tuned so pieces stay legible on both squares.
+     Held in a `-base` pair as well, because "the adaptive walnut" is one of
+     the presets a swatch has to be able to ASK for: every other preset
+     overrides --board-light on the element that names it, and a swatch of
+     this one would otherwise show whichever preset the page is wearing. */
+  --board-light-base: oklch(91% 0.035 84);
+  --board-dark-base: oklch(62% 0.072 52);
+  --board-light: var(--board-light-base);
+  --board-dark: var(--board-dark-base);
+  /* The coordinate labels' ink, one per square colour, mixed OUT of the
+     board's own tokens so a preset stays one material. Which way the mix
+     goes is decided per board and measured: a light label on a mid-tone
+     dark square never reaches 4.5:1 (white itself is 3.7:1 on walnut, 2.3
+     on tan), so light boards take dark ink on BOTH squares and dark
+     boards take light ink on their dark square. Every preset below sets
+     its own pair; the numbers are in the commit that added them. */
+  --coord-on-light: color-mix(in oklch, var(--board-dark), black 55%);
+  --coord-on-dark: color-mix(in oklch, var(--board-dark), black 70%);
+  /* The app's own arrow (the engine's best move, the puzzle hint): one
+     ink per preset, placed so that at --arrow-best-alpha it stands at
+     least 3:1 off BOTH squares (WCAG 1.4.11, the mark being the whole of
+     what the engine says on the board). chessground's #003088 at its 60%
+     wash measured 2.2:1 on walnut's dark square and 1.2 on charcoal's,
+     and no colour clears 3:1 through a 60% wash, so the alpha is the
+     app's too (see .cg-shapes below). The numbers are analytic, ink
+     over the square at that alpha, and check:contrast re-derives them
+     for every preset in both modes. */
+  --arrow-best: oklch(30% 0.08 250);
+  --arrow-best-alpha: 0.9;
+  --board-frame: oklch(88% calc(0.01 * var(--ui-tint)) var(--ui-hue));
+  --sq-last-move: oklch(83% 0.16 108 / 55%);
+  --sq-selected: oklch(62% 0.15 150 / 50%);
+  --sq-dest: oklch(45% 0.09 150 / 42%);
+  --sq-check: oklch(58% 0.23 27);
+
+  /* Eval bar: the "white advantage" / "black advantage" fills. */
+  --eval-white: oklch(calc(94% + (100% - 94%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  --eval-black: oklch(calc(30% + (0% - 30%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
+  /* Keeps the bar's dark half readable against a matching background. */
+  /* Scaled by the contrast knob like --card-ring: the bar's two fills are
+     its edge on the toned page, and the hairline returns under High contrast. */
+  --eval-border: oklch(0% 0 0 / calc(20% * var(--ui-contrast)));
+  /* Text sitting ON an eval fill (W/D/B bars, result badges). */
+  --on-eval-white: oklch(0% 0 0 / 75%);
+  --on-eval-black: oklch(100% 0 0 / 85%);
+  /* The result bar's draw segment and its track edge: one mid grey that
+     stands at least 3:1 off both eval fills (3.3 and 3.4 here) and off the
+     card (3.9), so a small draw share is a segment and a one-colour row
+     is a bar. Measured as drawn in components/result-bar. */
+  --result-draw: oklch(60% 0 0);
+
+  /* -------------------------------------------------------------------------
+     Theme-invariant chess colours. These deliberately do NOT flip with the
+     theme: "the colour of the black pieces" is a fact about chess, not about
+     the UI. The -line pairs are opposing-contrast borders so each square
+     stays visible on the background that matches it. */
+  --side-white: oklch(95.5% 0 0);
+  --side-white-line: oklch(0% 0 0 / 40%);
+  --side-black: oklch(21% 0 0);
+  --side-black-line: oklch(100% 0 0 / 50%);
+
+  /* Move-quality NAG badges, chess.com's colour language. */
+  /* The ink for a hatch drawn over a NAG fill: a fixed black at half
+     alpha, because the fill it sits on is a fixed hex and no theme token
+     could hold a ratio against it (progress-bar.tsx has the numbers).
+     Named here so the sanctioned literals stay one list. */
+  --nag-ink: rgb(0 0 0 / 0.5);
+  --nag-good: #3aab3a;
+  --nag-mistake: #ee8b1f;
+  --nag-brilliant: #1baca6;
+  --nag-blunder: #fa412d;
+  --nag-interesting: #c46ad4;
+  --nag-dubious: #f0c15c;
+  --nag-book: #a88865;
+  --nag-foreground: oklch(100% 0 0);
+
+  /* Toggle-switch knob: white on the filled track in both themes. */
+  --knob: oklch(100% 0 0);
+  /* Modal scrim (promotion picker). */
+  --scrim: oklch(0% 0 0 / 45%);
+
+  --shadow-color: var(--ui-hue) 22% 30%;
+  --radius: 0.625rem;
+}
+

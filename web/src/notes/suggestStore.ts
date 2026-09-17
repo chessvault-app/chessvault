@@ -43,7 +43,7 @@ export interface SuggestAnchor {
  * What the popup draws. Replaced whole and never mutated, so a subscriber
  * can tell one snapshot from the next by identity alone.
  */
-export interface SuggestSnapshot {
+interface SuggestSnapshot {
   readonly open: boolean;
   readonly items: readonly string[];
   readonly index: number;
@@ -69,7 +69,7 @@ export interface SuggestStore {
 }
 
 /** Puts `text` in place of [`from`, `to`) in whatever is being typed into. */
-export type ReplaceRange = (from: number, to: number, text: string) => void;
+type ReplaceRange = (from: number, to: number, text: string) => void;
 
 /** The half the editor drives. The component only ever sees `SuggestStore`. */
 export interface OwnedSuggestStore extends SuggestStore {

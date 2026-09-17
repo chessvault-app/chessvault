@@ -95,20 +95,20 @@ export function LinkedMentions({
   const { mentions, unlinked, unlinkedCapped } = answer;
 
   useEffect(() => {
-    let cancelled = false;
+    const ctl = new AbortController();
     // A document with no backlinks is the common case and its answer is an
     // empty list, so a failure here is treated the same way: no icon. The
     // alternative is an error surfaced on a page about something else.
     setLinked(new Set());
-    void api<Answer>(`/api/links/${section}/${encodeURIComponent(id)}`)
+    void api<Answer>(`/api/links/${section}/${encodeURIComponent(id)}`, { signal: ctl.signal })
       .then((r) => {
-        if (!cancelled) setAnswer({ ...NOTHING, ...r });
+        if (!ctl.signal.aborted) setAnswer({ ...NOTHING, ...r });
       })
       .catch(() => {
-        if (!cancelled) setAnswer(NOTHING);
+        if (!ctl.signal.aborted) setAnswer(NOTHING);
       });
     return () => {
-      cancelled = true;
+      ctl.abort();
       // Closed on the way out: the dialog belongs to the document that was
       // open, and leaving it up over the next one would be a list of the
       // wrong thing. The own state only: a caller holding the state

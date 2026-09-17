@@ -55,7 +55,7 @@ import { HOME_ENTRY_IDS, type HomeEntryId } from './layout';
  * that turns to porridge at the size it is used has not been chosen, it
  * has been guessed at.
  *
- * `App.tsx` still keeps its own NAV / TOOLS_SUBNAV / MORE_GROUPS lists.
+ * `shell/shared.ts` still keeps its own NAV / TOOLS_SUBNAV / MORE_GROUPS lists.
  * Folding those in is a bigger change — they carry grouping and
  * active-state predicates this does not — and MorePage is the obvious
  * next consumer if anyone takes it on.

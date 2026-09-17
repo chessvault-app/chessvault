@@ -106,7 +106,7 @@ function meaningfulFen(fen: string | null): string | null {
   return fen.split(' ')[0] === START_FEN.split(' ')[0] ? null : fen;
 }
 
-export interface DocPreview {
+interface DocPreview {
   /** The first line somebody actually wrote. */
   excerpt: string | null;
   /** Where the document's first board ends up. */

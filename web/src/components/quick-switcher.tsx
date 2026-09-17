@@ -132,7 +132,7 @@ const SIDEBAR_ORDER: Record<HomeEntryId, number> = {
   databases: 13,
   settings: 14,
 };
-const GO_TO = [...HOME_DESTINATIONS].sort((a, b) => SIDEBAR_ORDER[a.id] - SIDEBAR_ORDER[b.id]);
+const GO_TO = HOME_DESTINATIONS.toSorted((a, b) => SIDEBAR_ORDER[a.id] - SIDEBAR_ORDER[b.id]);
 
 /** Land on the document a hit names, and on its chapter when it says one. */
 function openHit(hit: NameHit & { chapter?: number }): void {

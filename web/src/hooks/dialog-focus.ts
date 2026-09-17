@@ -56,7 +56,7 @@ const closers: Array<() => void> = [];
 let listening = false;
 
 function onEscape(e: KeyboardEvent): void {
-  if (e.key === 'Escape') closers[closers.length - 1]?.();
+  if (e.key === 'Escape') closers.at(-1)?.();
 }
 
 /**
@@ -291,9 +291,9 @@ export function useDialogFocus(active = true): (node: HTMLElement | null) => voi
       if (e.shiftKey) {
         if (!inside || current === items[0]) {
           e.preventDefault();
-          items[items.length - 1]!.focus();
+          items.at(-1)!.focus();
         }
-      } else if (!inside || current === items[items.length - 1]) {
+      } else if (!inside || current === items.at(-1)) {
         e.preventDefault();
         items[0]!.focus();
       }

@@ -114,7 +114,7 @@ const LOSING = new Set<Category>(['loss', 'maybe-loss', 'blessed-loss']);
  */
 export function rankMoves(moves: TablebaseMove[]): TablebaseMove[] {
   const distance = (m: TablebaseMove): number => m.dtm ?? m.dtz ?? 0;
-  return [...moves].sort((a, b) => {
+  return moves.toSorted((a, b) => {
     if (RANK[a.category] !== RANK[b.category]) return RANK[a.category] - RANK[b.category];
     if (distance(a) !== distance(b)) {
       return LOSING.has(a.category) ? distance(b) - distance(a) : distance(a) - distance(b);

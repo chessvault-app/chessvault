@@ -1,8 +1,7 @@
 import { build } from 'esbuild';
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join, resolve } from 'node:path';
 import pngToIco from 'png-to-ico';
 
 /**
@@ -35,7 +34,7 @@ import pngToIco from 'png-to-ico';
 // CHESS_UPDATE_URL still works for anyone self-hosting a feed — point
 // build.publish back at `generic` and it is read again.
 
-const here = dirname(fileURLToPath(import.meta.url));
+const here = import.meta.dirname;
 const repo = resolve(here, '..');
 const out = join(repo, 'release', 'server');
 

@@ -4,13 +4,13 @@ import { describe, expect, it } from 'vitest';
 import { MAX_V0, springAt, springTrace } from './spring';
 
 /**
- * The motion tokens in index.css are the rest trace of the spring in
+ * The motion tokens in styles/pane-swipe.css are the rest trace of the spring in
  * spring.ts, written down twice because one is CSS and one is a
  * function the swipe hook calls with a velocity. This holds them
  * together the way board-accent.test.ts holds BOARD_ACCENT to the CSS.
  */
 describe('spring', () => {
-  const css = readFileSync(resolve(__dirname, '..', 'index.css'), 'utf-8');
+  const css = readFileSync(resolve(__dirname, '..', 'styles', 'pane-swipe.css'), 'utf-8');
 
   it('is what the tokens hold', () => {
     const rest = springTrace(0);

@@ -49,11 +49,11 @@ export interface Placed {
 }
 
 /** The label rung and the micro rung, in screen px (DESIGN.md typography). */
-export const MOVE_PX = 12;
-export const CAPTION_PX = 10;
+const MOVE_PX = 12;
+const CAPTION_PX = 10;
 /** Baselines below the dot's edge, in screen px, as MapCanvas draws them. */
-export const MOVE_BASELINE = 12;
-export const CAPTION_BASELINE = 24;
+const MOVE_BASELINE = 12;
+const CAPTION_BASELINE = 24;
 /** How much clear air two boxes keep between them, in screen px. */
 const GAP = 2;
 
@@ -113,7 +113,7 @@ function overlaps(a: Box, b: Box): boolean {
 
 /** Decide which of `cands`' labels are drawn. */
 export function placeLabels(cands: readonly LabelCandidate[]): Map<string, Placed> {
-  const order = [...cands].sort((a, b) => {
+  const order = cands.toSorted((a, b) => {
     if (!!a.keep !== !!b.keep) return a.keep ? -1 : 1;
     return b.weight - a.weight;
   });

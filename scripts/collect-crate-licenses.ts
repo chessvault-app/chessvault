@@ -29,7 +29,7 @@ const OUT = resolve(REPO, 'licenses', 'rust-crates.txt');
 /** Our own crate: its licence is the app's, and it is not third-party. */
 const OWN = 'chessvault-core';
 
-export interface Crate {
+interface Crate {
   name: string;
   version: string;
   license: string;

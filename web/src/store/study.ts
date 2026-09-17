@@ -26,7 +26,7 @@ export interface StudyMeta {
  * Which document API the open document belongs to: real studies, or the games
  * collection (same server contract, different directory).
  */
-export type DocBase = 'studies' | 'games/docs';
+type DocBase = 'studies' | 'games/docs';
 
 interface StudyState {
   studies: StudyMeta[];

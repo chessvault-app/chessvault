@@ -67,26 +67,27 @@ export function NoteView({ id }: { id: string }) {
   const [restored, setRestored] = useState(0);
 
   useEffect(() => {
-    let cancelled = false;
+    const ctl = new AbortController();
     setInitialDoc(null);
     setFailed(null);
     setFrontMatter('');
     setRecovery(null);
     void api<{ pgn: string; draft?: string; draftAt?: string }>(
       `/api/notes/${encodeURIComponent(id)}`,
+      { signal: ctl.signal },
     )
       .then(({ pgn, draft, draftAt }) => {
-        if (cancelled) return;
+        if (ctl.signal.aborted) return;
         setFrontMatter(splitFrontMatter(pgn).front);
         setLoaded(pgn);
         setInitialDoc(markdownToDoc(pgn).toJSON() as object);
         if (draft && draftAt) setRecovery({ pgn: draft, at: draftAt });
       })
       .catch(() => {
-        if (!cancelled) setFailed(t('could not open “{id}”', { id }));
+        if (!ctl.signal.aborted) setFailed(t('could not open “{id}”', { id }));
       });
     return () => {
-      cancelled = true;
+      ctl.abort();
     };
   }, [id, restored]);
 

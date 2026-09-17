@@ -182,13 +182,13 @@ export function stateOf(target: string, docs: Documents | null): LinkState {
 }
 
 /** What the unresolved-link dialog draws. Replaced whole, never mutated. */
-export interface UnresolvedSnapshot {
+interface UnresolvedSnapshot {
   readonly target: string;
   readonly why: 'broken' | 'ambiguous';
   readonly candidates: readonly ResolvedLink[];
 }
 
-export interface UnresolvedStore {
+interface UnresolvedStore {
   subscribe(fn: () => void): () => void;
   snapshot(): UnresolvedSnapshot | null;
   show(target: string, why: 'broken' | 'ambiguous', candidates: ResolvedLink[]): void;

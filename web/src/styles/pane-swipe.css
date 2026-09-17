@@ -1,0 +1,161 @@
+/* ---------------------------------------------------------------------------
+   The pane swipe's motion — the CSS half of hooks/use-pane-swipe.
+
+   A turn moves what is INSIDE two panes: the contents of the one being
+   left and of the one arriving, held a gutter apart and dragged as a row
+   across a card that does not move. The hook marks the two panes
+   `data-pane-open` and `data-pane-peek`, switches these rules on with
+   `data-pane-swipe` on the column, and carries every number the pair needs
+   as custom properties there — `--pane-dx` is where the finger has the
+   row, `--pane-span` is the whole trip (a pane's width plus the gutter)
+   and `--pane-side` is which side of the open pane the arriving one
+   stands on.
+
+   The FRAME stays. The open pane's card — its fill, its ring, its corners,
+   and the tab strip drawn as its top edge — is the shell both sets of
+   contents travel inside, and the arriving pane, stood at that same box,
+   gives up its own fill and ring so as not to draw the same edge twice
+   over the top of it. Moving the cards instead was the first cut of this
+   (0.8.5) and it cut the page open: a fixed full-width strip claiming to
+   be the top of a card, and under it two cards a gutter apart with the
+   page showing black between them, the strip's own line running unbroken
+   across the gap. A header cannot belong to a body that has slid out from
+   under it. What a reader is turning is the pane's contents, so that is
+   what moves.
+
+   Everything else in the column is fixed furniture the turn is measured
+   against — the tab strip, the control row at the floor — and it says so
+   with `data-pane-strip`, which is also how the hook knows what is a pane
+   when it goes looking for the one that just arrived.
+
+   The arriving pane is taken out of the column's flow and stood at the open
+   pane's own box, because these columns have never laid out two panes at
+   once and a second one in flow would push the first down the page. The box
+   is measured by the hook: a pane's height here is whatever the layout gave
+   it, not something CSS can restate.
+
+   Unlayered, so a pane's own utility classes cannot outrank the offset,
+   and gone entirely at rest: no attribute on the column means no
+   transform, and no compositing layer on a column that is only being read.
+
+   `clip` rather than `hidden` because these columns disagree about whether
+   they scroll — `overflow-x: hidden` forces a `visible` overflow-y to
+   `auto`, which would hand the repertoire's stacked column a scroll
+   container it has never had. `clip` leaves the other axis alone, and is
+   what keeps the pane waiting off the column's edge from becoming
+   somewhere the page can be dragged sideways.
+
+   The duration is the same wait the hook clears up after (SETTLE_MS). It
+   is a property rather than a literal because the turn is drawn in two
+   places — the panes move here, and the strip's selected pill fills in
+   components/pane-tabs — and those two are one motion. Under
+   `prefers-reduced-motion` the base block above flattens both to nothing,
+   which lands back on the instant swap this gesture had before it
+   moved at all. */
+/* A spring, sampled: stiffness 380, damping ratio 0.92, unit mass, which
+   settles within 0.1% in 337ms with no overshoot (web/src/lib/spring.ts
+   is the spring, scripts/spring-easing prints these from it, and
+   lib/spring.test.ts holds them to it). It reaches 90% of the way at
+   about 180ms, so the arrival feels as it did at 200ms and only the tail
+   is longer and softer. Rest-to-rest: the swipe hook overrides the pair
+   on its column for a release at the finger's speed. */
+:root {
+  --pane-turn: 337ms;
+  --pane-turn-ease: linear(0, 0.0317 4.2%, 0.1075 8.3%, 0.2055 12.5%, 0.3112 16.7%, 0.4154 20.8%, 0.5125 25.0%, 0.5998 29.2%, 0.6759 33.3%, 0.7409 37.5%, 0.7953 41.7%, 0.8401 45.8%, 0.8766 50.0%, 0.9059 54.2%, 0.9290 58.3%, 0.9472 62.5%, 0.9613 66.7%, 0.9720 70.8%, 0.9802 75.0%, 0.9863 79.2%, 0.9907 83.3%, 0.9940 87.5%, 0.9963 91.7%, 0.9979 95.8%, 1);
+  /* The same trace backwards, for an exit: slow off the mark, gone at
+     the spring's own peak speed. A sheet dismissed or a page popped on
+     the entrance curve lingered at the edge; Apple and Material both end
+     an exit at full speed, and this is that on the one physics the app
+     has. Printed by the same script, held by the same test. */
+  --pane-turn-ease-out: linear(0, 0.0021 4.2%, 0.0037 8.3%, 0.0060 12.5%, 0.0093 16.7%, 0.0137 20.8%, 0.0198 25.0%, 0.0280 29.2%, 0.0387 33.3%, 0.0528 37.5%, 0.0710 41.7%, 0.0941 45.8%, 0.1234 50.0%, 0.1599 54.2%, 0.2047 58.3%, 0.2591 62.5%, 0.3241 66.7%, 0.4002 70.8%, 0.4875 75.0%, 0.5846 79.2%, 0.6888 83.3%, 0.7945 87.5%, 0.8925 91.7%, 0.9683 95.8%, 1);
+}
+
+[data-pane-swipe] {
+  overflow-x: clip;
+  position: relative;
+}
+
+/* Both panes clip what they hold to their own box for the length of the
+   turn, which is what makes the shell a shell: contents leave at its edge
+   rather than past it. `clip` in place of the card's own `overflow-hidden`
+   because hidden is a scroll container, and a container holding a child
+   parked a screen to the side is one the browser will scroll to reach it
+   — a focus landing in the arriving pane would scroll the card there and
+   leave it there. */
+[data-pane-swipe] > [data-pane-open],
+[data-pane-swipe] > [data-pane-peek] {
+  overflow: clip;
+}
+
+[data-pane-swipe] > [data-pane-open] > * {
+  transform: translate3d(var(--pane-dx, 0px), 0, 0);
+}
+
+[data-pane-swipe] > [data-pane-peek] {
+  position: absolute;
+  top: var(--pane-top, 0px);
+  left: var(--pane-left, 0px);
+  width: var(--pane-width, 100%);
+  height: var(--pane-height, auto);
+  margin: 0;
+  /* Standing at the open pane's box, over the card that is the shell: its
+     own surface would hide the pane being left, and its ring would draw
+     that card's edge a second time in the same place. */
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-pane-swipe] > [data-pane-peek] > * {
+  transform: translate3d(
+    calc(var(--pane-dx, 0px) + var(--pane-side, 1) * var(--pane-span, 0px)),
+    0,
+    0
+  );
+}
+
+[data-pane-swipe='settle'] > [data-pane-open] > *,
+[data-pane-swipe='settle'] > [data-pane-peek] > * {
+  transition: transform var(--pane-turn) var(--pane-turn-ease);
+}
+
+/* The pane header (components/pane-tabs, variant "header"): the strip is
+   the top of the card under it, so every pane card that follows it in the
+   column meets it with square top corners — the open one, and the
+   neighbour the swipe stands beside it. Below lg only, which is every
+   width the strip is on screen at; above it the strip is hidden and the
+   cards keep their corners. */
+@media (width < 64rem) {
+  [data-pane-strip][data-pane-header] ~ [data-slot='card'] {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+}
+
+/* The header's line moves with the finger (translate, from --pane-dx) and
+   walks to its tab on the pane's clock: a tap moves `left`, a settling
+   swipe moves the transform, and both take the turn's own duration and
+   curve so the line and the pane land together. Mid-drag it is pinned to
+   the finger, so no transition. Reduced motion flattens it to the swap. */
+[data-pane-indicator] {
+  transition:
+    left var(--pane-turn) var(--pane-turn-ease),
+    transform var(--pane-turn) var(--pane-turn-ease);
+}
+[data-pane-swipe='drag'] [data-pane-indicator] {
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-pane-indicator] {
+    transition: none;
+  }
+}
+
+/* The bottom bar's pill while a finger is scrubbing the bar
+   (hooks/use-tab-scrub): it is not settling anywhere, it IS the finger, so
+   it has no clock. Letting go puts the attribute back and the pill walks
+   to the tab it landed on over the app's own turn, which is the same
+   motion a tap has always made. */
+[data-nav-scrub] [data-nav-pill] {
+  transition: none;
+}
+

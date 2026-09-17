@@ -285,6 +285,7 @@ export const ko: Record<string, string> = {
 
   // --- the error boundary --------------------------------------------------
   'Something went wrong': '문제가 발생했습니다',
+  'This panel hit an error. The rest of the page still works.': '이 패널에서 오류가 발생했습니다. 페이지의 나머지 부분은 그대로 사용할 수 있습니다.',
   'This page hit an error it could not recover from. Reloading usually clears it, and nothing in your vault is affected.':
     '이 페이지에서 복구할 수 없는 오류가 발생했습니다. 새로고침하면 대개 해결되며, 보관함은 영향을 받지 않습니다.',
   Reload: '새로고침',

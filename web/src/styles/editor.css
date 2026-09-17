@@ -1,0 +1,193 @@
+/* ---------------------------------------------------------------------------
+   Note editor typography. Tiptap renders semantic HTML; these give it the
+   reading rhythm of a document without pulling in a typography plugin. */
+/* The board row is never wider than the board it holds plus the column
+   beside it.
+   Capping it only at 96rem was right while the board was WIDTH-bound, and
+   wrong the moment it is height-bound: the board's own limit is also
+   `100dvh - 10rem`, so on a wide, short window it cannot spend the extra
+   width — and its column centres what it holds, so half the surplus landed
+   BETWEEN the board and the panels. Measured at 1920x945: row 1536, board
+   785, 135px of nothing on either side of it, where before 0.4.4 the two
+   had touched.
+   The last term is board + side column + the row's gap-4 and p-4. The eval
+   bar needs no allowance: BOARD_MAX_W caps the wrapper that HOLDS it, so
+   the bar comes out of the board's own width rather than the row's — adding
+   for it here only re-opens slack between the two columns. Written
+   as plain CSS because Tailwind strips the outer calc() from an arbitrary
+   value and emits `min(...) + 30rem`, which is invalid and dropped whole.
+
+   This condition is the `wide` variant written out by hand, and the two have
+   to be edited TOGETHER. Changing the variant alone leaves the `wide:`
+   classes laying the row out side by side while these caps stay off, so the
+   board column keeps its `flex-1` and takes whatever it likes: caught at
+   640x360, where the editor's side column ran 2px past the viewport. */
+@media (orientation: landscape) and (min-width: 44rem) {
+  .board-row-cap {
+    max-width: min(
+      96rem,
+      max(76rem, 90vw),
+      calc(min(64rem, max(18rem, 100dvh - 10rem)) + var(--board-side) + 3rem)
+    );
+    /* Whatever the pair cannot spend is margin on BOTH sides of it, not a
+       hole between the two columns. The cap above is what usually leaves
+       nothing over — but it assumes the side column is a whole
+       --board-side, and the side column is min(--board-side, 38%). Once
+       that 38% bites, the row is wider than the pair needs, the board
+       column (flex-1) collects the difference and centres it, and half of
+       it lands in the gap. Measured on the board page at 1920 wide: the
+       gap grew from 16px at a 945px-tall window to 65px at 600px, moving
+       continuously as the window was resized, because the surplus is a
+       function of the height the cap is computed from. */
+    justify-content: center;
+  }
+
+  /* The board's column takes what the board can use and no more.
+     Same expression as the board's own max-width (BOARD_MAX_W in
+     board/boardSize.ts) and as the last term of the cap above — the three
+     have to agree, so two of them are written here, together, where the
+     disagreement would be visible. Without this the column is flex-1 and
+     takes the whole surplus; with it the surplus never enters the pair and
+     justify-content above puts it outside.
+
+     --board-budget, defaulting to the very expression it replaces: unset
+     (every full-viewport board page) this computes what it always did.
+     The workspace sets it to its own board region's measured height,
+     because there the viewport height is NOT the board's to spend — the
+     games band below has the rest. The row cap above deliberately keeps
+     the bare 100dvh form: it exists only for the standalone board pages,
+     which never set the variable, and the workspace lays its own row out
+     without .board-row-cap. */
+  .board-col-cap {
+    max-width: min(64rem, max(18rem, var(--board-budget, calc(100dvh - 10rem))));
+  }
+
+  /* When the cap bites inside a `.force-stacked` region — a wide window
+     laying a board page out phone-style, e.g. the games hunt's "Set up a
+     position" dialog — the column is a cross-axis stretch child of a
+     flex-column shell, and a stretch child clamped by max-width pins to
+     the START edge: measured in that dialog at 1500x900, an 806px shell
+     held the 740px column flush left with all 66px of slack on the right.
+     width:100% + auto margins reproduces stretch exactly until the clamp,
+     then splits the slack. (Not bare auto margins: they turn off stretch,
+     and the shrink-to-fit column measured 514px — the toolbar's wrap
+     width — instead of 740.) Scoped to force-stacked because the true
+     stacked layouts are portrait and never enter this media block. */
+  :where(.force-stacked) .board-col-cap {
+    width: 100%;
+    margin-inline: auto;
+  }
+
+  /* And the column beside it stops where the board stops. --board-col-h is
+     published by the board block itself (board/boardBlock.ts): the height
+     is the end of a min/max chain no sibling selector can read, and the
+     strips around the board differ per page, so it is measured rather than
+     repeated here. Without a value the column is uncapped, which is what it
+     was before — a page with no board block loses nothing. */
+  .board-side-cap {
+    /* height, not max-height: the column has to FILL the board's height as
+       well as stop at it. Capped only, a page whose panels are shorter than
+       the board left them floating with the board running on below — which
+       is half the misalignment and the half a maximum cannot fix. Taller
+       content still scrolls; the column has always had overflow-y-auto. */
+    height: var(--board-col-h, auto);
+  }
+
+}
+
+.note-editor {
+  font-size: 1rem;
+  line-height: 1.7;
+  color: var(--foreground);
+  /* Room to scroll past the last line. Without it a note ends exactly
+     where the page does, so the line being written sits pinned to the
+     bottom edge. The padding is INSIDE the editable box, so clicking
+     the empty space below the text still puts the caret at the end of
+     the document - a spacer element under the editor would not.
+     Box-sizing is border-box, so a short note is still 60vh in total
+     and keeps the click target it already had; only a note long enough
+     to scroll gains the trailing room. */
+  min-height: 60vh;
+  padding-bottom: 40vh;
+}
+.note-editor > * + * {
+  margin-top: 0.6em;
+}
+.note-editor h1 {
+  font-size: 1.5em;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin-top: 1em;
+}
+.note-editor h2 {
+  font-size: 1.25em;
+  font-weight: 600;
+  margin-top: 1em;
+}
+.note-editor h3 {
+  font-size: 1em;
+  font-weight: 600;
+  margin-top: 0.9em;
+}
+.note-editor ul,
+.note-editor ol {
+  padding-left: 1.4em;
+}
+.note-editor ul {
+  list-style: disc;
+}
+.note-editor ol {
+  list-style: decimal;
+}
+.note-editor blockquote {
+  /* A blockquote's rule, not a card accent: un-rounded flow content, and
+     --border-strong is a neutral off the grey ladder rather than a colour.
+     The pattern the detector hunts here is a coloured bar down the side of
+     a CARD, which is a different thing wearing the same declaration. */
+  /* impeccable-disable-next-line side-tab: blockquote rule, not a card accent */
+  border-left: 3px solid var(--border-strong);
+  padding-left: 0.9em;
+  color: var(--muted-foreground);
+}
+.note-editor code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1em 0.3em;
+}
+.note-editor pre {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--surface-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.7em 0.9em;
+  overflow-x: auto;
+}
+.note-editor pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.note-editor a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.note-editor hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.2em 0;
+}
+/* The hint on an empty note; the words come from the Placeholder
+   extension in notes/markdown.ts, so they follow the language. */
+.note-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--text-subtle);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+

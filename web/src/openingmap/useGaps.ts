@@ -253,6 +253,7 @@ export function useGaps(
         const key = keyOf(fen);
         // Neither answered nor recently refused — a failed key waits out
         // its backoff instead of spinning the effect in a retry loop.
+        // oxlint-disable-next-line react/purity -- the backoff is a clock by design
         return !cache.has(key) && Date.now() - (failedAt.get(key) ?? 0) >= RETRY_MS;
       }),
     // Deliberately reads `cache` and not `answers`. Publishing progress
@@ -446,6 +447,7 @@ export function useGaps(
     // when the throttled publishes skipped the last answers.
     const ready = wanted.every(({ fen }) => {
       const key = keyOf(fen);
+      // oxlint-disable-next-line react/purity -- the backoff is a clock by design
       return answers.moves(key) !== undefined || Date.now() - (answers.refusedAt(key) ?? 0) < RETRY_MS;
     });
     return { gaps, shares, ready };

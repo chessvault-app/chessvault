@@ -35,6 +35,7 @@ export function useSlowLoad(active: boolean, delay = 180, minVisible = 400): boo
   // what the commit painted, and an effect's setState is a frame late
   // for that picture. The minimum stay still applies.
   const [shown, setShown] = useState(() => active && routeChanging());
+  // oxlint-disable-next-line react/purity -- a mount timestamp, read only by the effect
   const shownAt = useRef(shown ? Date.now() : 0);
   useEffect(() => {
     if (active) {

@@ -79,7 +79,7 @@ export const DEEP_SEARCH_CAP = 200;
  * match/material/motif request runs on the JS path until the crate
  * catches up.
  */
-export const SCAN_KEYS = ['match', 'material', 'motif'] as const;
+const SCAN_KEYS = ['match', 'material', 'motif'] as const;
 
 export interface NativeCapabilities {
   filters: ReadonlySet<string>;
@@ -119,7 +119,7 @@ export function parseNativeCapabilities(stdout: string): NativeCapabilities | nu
 }
 
 /** The deep-search output contract this server composes frames from. */
-export const NATIVE_DEEP_CONTRACT = 'hits';
+const NATIVE_DEEP_CONTRACT = 'hits';
 
 /**
  * The request keys this search uses that the binary did not declare —
@@ -629,11 +629,11 @@ export const GAMES_WHERE_KEYS = [
  * hurts. Checked at the route, not in gamesWhere: the native binary
  * compiles the same terms, and both sides must see the same list.
  */
-export const MAX_SEARCH_TERMS = 16;
+const MAX_SEARCH_TERMS = 16;
 
 /** How many terms a `terms` key carries. Malformed JSON counts as none,
     which is what gamesWhere makes of it. */
-export function searchTermCount(raw: string | undefined): number {
+function searchTermCount(raw: string | undefined): number {
   if (!raw) return 0;
   try {
     const parsed: unknown = JSON.parse(raw);
@@ -1824,7 +1824,7 @@ export function refGamesApi(
       capped: cursor === null ? capped : undefined,
       // The page after this one starts below the last id sent; a short
       // page is the end of the results.
-      nextCursor: page.length === PAGE ? page[page.length - 1]!.id : null,
+      nextCursor: page.length === PAGE ? page.at(-1)!.id : null,
       // moves ride along to name the openings the source PGN left
       // nameless and to fill the notation preview; the page is 50 rows,
       // so the replay cost is nothing.

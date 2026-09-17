@@ -145,7 +145,7 @@ const findImpossible = (withRaw: { term: SearchTerm; raw: string }[], issues: Se
       qualifier,
       kind: 'impossible',
       value: involved.join(' · '),
-      raw: involved[involved.length - 1] ?? '',
+      raw: involved.at(-1) ?? '',
     });
   };
 
@@ -332,7 +332,7 @@ export function findCrossImpossible(q: string, f: FilterConstraints): SearchIssu
     if (lo <= hi) {
       if (f.from && f.from > lo) lo = f.from;
       if (f.to && f.to < hi) hi = f.to;
-      if (lo > hi) cross('year', years.map((t) => t.raw), years[years.length - 1]!.raw);
+      if (lo > hi) cross('year', years.map((t) => t.raw), years.at(-1)!.raw);
     }
   }
 
@@ -346,7 +346,7 @@ export function findCrossImpossible(q: string, f: FilterConstraints): SearchIssu
     if (lo <= hi) {
       lo = Math.max(lo, f.minElo ?? 0, f.band?.lo ?? 0);
       hi = Math.min(hi, f.band?.hi ?? Infinity);
-      if (lo > hi) cross('elo', elos.map((t) => t.raw), elos[elos.length - 1]!.raw);
+      if (lo > hi) cross('elo', elos.map((t) => t.raw), elos.at(-1)!.raw);
     }
   }
 
@@ -375,7 +375,7 @@ export function findCrossImpossible(q: string, f: FilterConstraints): SearchIssu
     cross(
       qualifier,
       groups.map((g) => g[0]!.raw ?? g[0]!.value),
-      qRaws[qRaws.length - 1]!,
+      qRaws.at(-1)!,
     );
     return true;
   };

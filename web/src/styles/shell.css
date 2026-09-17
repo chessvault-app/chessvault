@@ -1,0 +1,127 @@
+/* An indeterminate progress bar: a segment that sweeps the track.
+   For work whose total is genuinely unknown — the puzzle build knows how
+   many rows it has read, never how many are left. A part-filled static bar
+   would be read as a percentage, which would be a lie. */
+@keyframes sweep {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(410%);
+  }
+}
+
+
+/* The app shell and every floating layer, pinned to the band that can
+   actually be seen — but ONLY while the keyboard is up.
+
+   iOS does two things at once when a field is focused: it shrinks the
+   visual viewport by the keyboard, and it SHIFTS the page up to reveal
+   the field. Anything laid out against the layout viewport is therefore
+   both too tall and in the wrong place, which is a head off the top of
+   the screen and a gap at the bottom.
+
+   Gated on .kb-open because it must be invisible the rest of the time.
+   Applying it always made the shell a fixed box measured in custom
+   properties, and on a home-screen PWA that came out short: a band under
+   the bottom bar, clipping it. At rest these elements keep the plain
+   `h-[var(--app-h,100svh)]` and `inset-0` that have always worked. */
+/* The home-indicator clearance, as a name rather than an env() spelled out
+   in eight places — and, crucially, ZERO while the keyboard is up.
+
+   The inset exists so nothing sits under the indicator at the bottom of
+   the screen. With a keyboard up, a bottom sheet's bottom edge is the top
+   of the keyboard: there is no indicator anywhere near it, and reserving
+   for one left about 100px of empty surface under the buttons. iOS keeps
+   reporting the inset regardless, because the screen still has one. */
+:root {
+  --safe-b: env(safe-area-inset-bottom);
+}
+
+/* How tall a bottom sheet may grow, as a share of the layer it floats
+   in — named here because the answer changes when the keyboard is up.
+   The percentage resolves where it is USED, against the sheet's own
+   containing block, so it can live in a variable.
+
+   At rest the layer is the whole window: a sheet has to keep off the
+   status bar itself, or its title sits behind the clock, and a little
+   air above it says there is a page behind.
+
+   With the keyboard up the layer is the band that can be seen, and
+   `.kb-open .vv-band` below already pads that band by the notch. A
+   sheet subtracting it again lost the inset twice — the sheet came up
+   visibly shorter than the room above the keyboard, which is the one
+   moment a sheet has the least room to spare. */
+:root {
+  --sheet-band: calc(100% - env(safe-area-inset-top) - 0.75rem);
+}
+
+.kb-open {
+  --safe-b: 0px;
+  --sheet-band: 100%;
+}
+
+.kb-open .vv-band {
+  position: fixed;
+  top: var(--vvt, 0px);
+  bottom: auto;
+  left: 0;
+  right: 0;
+  height: var(--vvh, 100dvh);
+  /* The band starts at the top of the SCREEN, and on a phone the top of
+     the screen is the status bar and the notch. A window that fills the
+     band therefore fills that too: the sheet's own title and its close
+     button came out behind the clock. The shell already carried this
+     padding; the floating layers never needed it, because at rest they
+     are bottom-anchored and stop well short of the top. */
+  padding-top: env(safe-area-inset-top);
+}
+
+/* Below the band, the screen is not empty. iOS keeps painting the layout
+   viewport under the keyboard, and shows a strip of it through the
+   translucent accessory bar (the prev/next/done row) and in the gap
+   between that bar and the keys. A window's scrim used to end where its
+   band ends, so whatever poked below the band came through there
+   undimmed: a sheet resting at a low snap point behind an add-move
+   sheet showed its slider and its helper text in that strip (lanph3re's
+   photo, 2026-09-13). The band itself keeps its geometry, because the
+   Drawer's snap points are fractions of the Viewport's own height; the
+   scrim reaches on past it with the page's ground, so the strip reads as
+   the floor the sheets stand on and not as a third window. */
+.kb-open .vv-band[data-slot='dialog-overlay']::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: var(--kb, 0px);
+  background: var(--background);
+  pointer-events: none;
+}
+
+/* Windows Contrast Themes (forced-colors). The system replaces every
+   colour, drops box-shadows, and keeps borders and outlines. Two things
+   in this app are box-shadows that MEAN something: the card's hairline
+   (`ring-1`, the only edge a card has) and the focus ring. Both come back
+   as a real border and a real outline here. The board, the eval bar and
+   the marks whose colour IS the information keep their own paint; the
+   pieces still carry the contrast on any board. */
+@media (forced-colors: active) {
+  [data-slot='card'],
+  [class~='ring-1'],
+  [class~='ring-2'] {
+    border: 1px solid CanvasText;
+  }
+  :focus-visible {
+    outline: 3px solid Highlight;
+  }
+  .cg-wrap,
+  .cg-wrap *,
+  [data-slot='eval-bar'],
+  [data-slot='eval-bar'] *,
+  [data-slot='result-badge'],
+  [class*='-nag-'] {
+    forced-color-adjust: none;
+  }
+}
+

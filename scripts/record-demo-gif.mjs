@@ -41,10 +41,9 @@ import { chromium } from 'playwright';
 import { GIFEncoder, quantize, applyPalette } from 'gifenc/dist/gifenc.esm.js';
 import { PNG } from 'pngjs';
 import { writeFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
 
-const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const REPO = resolve(import.meta.dirname, '..');
 const OUT = resolve(REPO, 'docs/screenshots/book-to-board.gif');
 const BASE = process.env.BASE ?? 'http://localhost:8129';
 const BOOK = 'b5a3e1c07f2d49b8c';

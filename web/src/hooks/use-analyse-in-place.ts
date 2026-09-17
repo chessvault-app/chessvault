@@ -1,5 +1,5 @@
 import { Cpu, Info, ListOrdered } from 'lucide-react';
-import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 import type { MoveTree, NodeId } from '@shared/types';
 import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { t } from '@/lib/i18n';
@@ -68,18 +68,12 @@ export function useAnalyseInPlace({
   const [analysing, setAnalysing] = useState(false);
   const [pane, setPane] = useState<TrainerPane>('info');
   const shownPane = !analysing && pane === 'engine' ? 'info' : pane;
-  // Filled from a layout effect, not in render (the React Compiler refuses
-  // a ref written in render); the unmount cleanup below reads it.
-  const analysingRef = useRef(false);
-  useLayoutEffect(() => {
-    analysingRef.current = analysing;
+  // An Effect Event, so the unmount cleanup reads whether it was still
+  // analysing at the end, not at the mount.
+  const stopOnLeave = useEffectEvent(() => {
+    if (analysing) useEngine.getState().setEnabled(false);
   });
-  useEffect(
-    () => () => {
-      if (analysingRef.current) useEngine.getState().setEnabled(false);
-    },
-    [],
-  );
+  useEffect(() => () => stopOnLeave(), []);
 
   // An Effect Event: seed() and onLeave close over the caller's current
   // state and are read fresh, without a change to either re-running the

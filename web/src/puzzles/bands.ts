@@ -47,7 +47,7 @@ export type { DifficultyId };
  *
  * `any` and `adaptive` are not bands. They are how the trainer PICKS —
  * everything, or a moving window around a hidden skill estimate — rather
- * than how hard the result is, which is why difficultyWord() reads its
+ * than how hard the result is, which is why useDifficultyWord() reads its
  * label from here and not from BANDS.
  */
 export const DIFFICULTIES = [
@@ -67,12 +67,8 @@ export const DIFFICULTIES = [
   // the query builder below narrows on.
 ] as const satisfies readonly { id: DifficultyId; label: string; query: object; hint?: string }[];
 
-/** That setting as the word to show for it — English, as `t()`'s key. */
-export function difficultyWord(): string {
-  return labelOf(storedDifficulty());
-}
-
-/** The same word, re-rendered when the vault's answer arrives. */
+/** That setting as the word to show for it (English, as `t()`'s key),
+    re-rendered when the vault's answer arrives. */
 export function useDifficultyWord(): string {
   return labelOf(useDifficulty());
 }

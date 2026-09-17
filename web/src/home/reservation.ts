@@ -171,7 +171,7 @@ export interface DashShape {
 export const DASH_MAX: DashShape = { training: 3, games: 5, books: 3, docs: 5 };
 
 /** The panels, in the order the grid lays them out. */
-export const DASH_PANELS = ['training', 'games', 'books', 'docs'] as const;
+const DASH_PANELS = ['training', 'games', 'books', 'docs'] as const;
 
 /** Total rows in a shape — what tells a drawn dashboard from an empty one. */
 export const dashRows = (shape: DashShape): number =>
