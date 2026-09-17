@@ -1,12 +1,12 @@
 import {
   CheckCircle2,
   Eraser,
+  FlipHorizontal2,
+  Microscope,
   MousePointer2,
-  Repeat,
   RotateCcw,
-  SlidersHorizontal,
+  Settings2,
   Trash2,
-  Wand2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
@@ -83,54 +83,72 @@ function PalettePlaceholder({ className }: { className?: string }) {
 }
 
 /**
- * The row under the board, in the two shapes the page draws it: labelled
- * verbs in a track on a desktop, and on a phone the same verbs as icons
- * with the Position sheet's own trigger beside them and the press that
- * analyses at the end.
+ * The row under the board: the tools in their pill, then the Position
+ * sheet's trigger and the press that analyses.
+ *
+ * ONE row, not one per width. The page draws a single track whose
+ * buttons gain their labels from `sm` and whose pill takes the whole row
+ * below it, and the row wraps when it does not fit rather than at a
+ * breakpoint guessed from one language (EditorView says what that cost).
+ * A first attempt here drew two rows folded by class and got the pill's
+ * own chrome wrong on a phone: the tools stood bare where the settled
+ * page draws them in a bordered, tinted track.
  */
 function ToolStrip() {
   return (
     <Inert>
-      <div className="bg-muted mx-auto hidden w-fit items-center gap-1 rounded-lg p-1 wide:flex">
-        <Button variant="secondary" size="sm">
-          <MousePointer2 className="glyph" data-icon="inline-start" />
-          {t('Move')}
-        </Button>
-        <Button variant="ghost" size="sm">
-          <Eraser className="glyph" data-icon="inline-start" />
-          {t('Erase')}
-        </Button>
-        <Button variant="ghost" size="sm">
-          <RotateCcw className="glyph" data-icon="inline-start" />
-          {t('Reset')}
-        </Button>
-        <Button variant="ghost" size="sm">
-          <Trash2 className="glyph" data-icon="inline-start" />
-          {t('Clear')}
-        </Button>
-        <Button variant="default" size="sm">
-          {t('Analyse')}
-        </Button>
-      </div>
-      <div className="flex w-full items-center gap-2 wide:hidden">
-        <div className="bg-muted flex items-center gap-1 rounded-lg p-1">
-          {[MousePointer2, Eraser, Repeat, RotateCcw, Trash2].map((Icon, i) => (
-            <Button key={i} variant={i === 0 ? 'secondary' : 'ghost'} size="icon-sm">
-              <Icon className="glyph" />
-            </Button>
-          ))}
+      <div className="flex w-full flex-wrap items-center justify-center gap-2">
+        {/* The pill: the page's own track, its radius nested around the
+            armed tool's own (EditorView's nested-radius note), taking
+            the whole row below sm. */}
+        <div
+          data-ground=""
+          className="bg-muted/60 border-border flex h-9 items-center gap-0.5 rounded-[calc(var(--radius-md)+3px)] border p-0.5 max-sm:flex-1 max-sm:justify-between"
+        >
+          {/* Move is armed on a cold open, drawn as the pill-track idiom
+              draws a chosen segment. */}
+          <Button variant="ghost" size="sm" className="bg-background h-full shadow-sm max-sm:w-10 max-sm:px-0">
+            <MousePointer2 className="glyph" />
+            <span className="hidden sm:inline">{t('Move')}</span>
+          </Button>
+          <Button variant="ghost" size="sm" className="h-full max-sm:w-10 max-sm:px-0">
+            <Eraser className="glyph" />
+            <span className="hidden sm:inline">{t('Erase')}</span>
+          </Button>
+          <Button variant="ghost" size="icon-sm" className="h-full w-8">
+            <FlipHorizontal2 className="glyph" />
+          </Button>
+          <Button variant="ghost" size="sm" className="h-full max-sm:w-10 max-sm:px-0">
+            <RotateCcw className="glyph" />
+            <span className="hidden sm:inline">{t('Reset')}</span>
+          </Button>
+          <Button variant="ghost" size="sm" className="h-full max-sm:w-10 max-sm:px-0">
+            <Trash2 className="glyph" />
+            <span className="hidden sm:inline">{t('Clear')}</span>
+          </Button>
         </div>
-        <Button variant="ghost" size="sm" className="ml-auto">
-          <SlidersHorizontal className="glyph" data-icon="inline-start" />
-          {t('Position')}
-        </Button>
-        <Button variant="default" size="icon-sm">
-          <Wand2 className="glyph" />
-        </Button>
+        <div className="flex h-9 items-center gap-2">
+          {/* Position details are a sheet below the side column's width,
+              so the trigger is there and not above it. */}
+          <Button variant="secondary" size="sm" className="h-full wide:hidden">
+            <Settings2 className="glyph" data-icon="inline-start" />
+            <span>{t('Position')}</span>
+          </Button>
+          <Button variant="default" size="sm" className="h-full">
+            <Microscope className="glyph" />
+            <span className="hidden sm:inline">{t('Analyse')}</span>
+          </Button>
+        </div>
       </div>
+      {/* The line that says why Analyse is locked. It stands at its
+          one-line height whether or not there is a reason, because the
+          column is centred and a row that came and went would move the
+          board every time legality flipped (EditorView). */}
+      <p className="flex min-h-5 w-full items-start justify-center gap-1.5 text-sm wide:hidden" />
     </Inert>
   );
 }
+
 
 /** The Position card's fields, in the page's own order and words. */
 function PositionForm() {
