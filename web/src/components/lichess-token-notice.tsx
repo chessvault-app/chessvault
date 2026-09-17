@@ -105,15 +105,10 @@ export function forgetLichessToken(): void {
  * The invisible inset is the app's own answer to a small target on a
  * touch screen (the statistics table's + does the same): the
  * words keep their size and the thumb gets 40-odd px.
- *
- * `break-keep` on the sentence because Korean breaks between SYLLABLES
- * by default: the map's card split 설정 down the middle and left 정에서
- * to start the next line, which is a word cut in half rather than a line
- * ending. Keep-all breaks at spaces, the way the English does.
  */
 export function LichessTokenNotice({ className }: { className?: string }) {
   return (
-    <p className={cn('text-muted-foreground break-keep text-sm leading-relaxed', className)}>
+    <p className={cn('text-muted-foreground text-sm leading-relaxed', className)}>
       {t('The Lichess database needs an API token.')}{' '}
       <Button
         variant="link"
