@@ -3,6 +3,8 @@ import {
   Eye,
   MoreHorizontal,
   NotebookPen,
+  Play,
+  Plus,
 } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
@@ -801,5 +803,54 @@ export function EcoName({ eco, name, className }: { eco: string; name: string; c
     >
       {name}
     </span>
+  );
+}
+
+/**
+ * The details panel's action pair for a game row, with its own
+ * added-state: the node lives in the page's selection state, so it cannot
+ * read the list's `added` set after the fact. What it CAN do is remember
+ * its own success. The archive and the database lists differ only in what
+ * the primary button is called, so they pass that in.
+ */
+export function GameRowActions({
+  inCollection,
+  openLabel,
+  onOpen,
+  onCollect,
+}: {
+  inCollection: boolean;
+  openLabel: string;
+  onOpen: () => void;
+  onCollect: () => Promise<boolean>;
+}) {
+  const [added, setAdded] = useState(inCollection);
+  return (
+    // Primary rightmost — the app's button order.
+    <>
+      <Button
+        variant="secondary"
+        size="sm"
+        disabled={added}
+        onClick={() => {
+          void onCollect().then((ok) => {
+            if (ok) setAdded(true);
+          });
+        }}
+      >
+        {added ? (
+          t('Added')
+        ) : (
+          <>
+            <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
+            {t('Add to collection')}
+          </>
+        )}
+      </Button>
+      <Button variant="default" size="sm" onClick={onOpen}>
+        <Play className="glyph" data-icon="inline-start" />
+        {openLabel}
+      </Button>
+    </>
   );
 }

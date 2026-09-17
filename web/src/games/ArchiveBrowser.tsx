@@ -27,7 +27,15 @@ import { Inert, Skeleton } from '@/components/skeletons';
 import { forgetMyGames } from '@/openingmap/useGaps';
 
 import { t } from '@/lib/i18n';
-import { GameRow, collectionKey, gameKey, safeLink, type GameSummary, type Preview } from './shared';
+import {
+  GameRow,
+  GameRowActions,
+  collectionKey,
+  gameKey,
+  safeLink,
+  type GameSummary,
+  type Preview,
+} from './shared';
 import { GameListShell, type GameListShape } from './GameListShell';
 import {
   GameTableHeader,
@@ -42,51 +50,6 @@ import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { loadGamePgn } from './CollectionList';
 import { TitleTip } from '@/components/title-tip';
 
-/**
- * The details view's action pair for an archive row, with its own
- * added-state — the node lives in the page's selection state, so it
- * cannot read the browser's `added` set after the fact; what it CAN do
- * is remember its own success (RefRowActions' reasoning).
- */
-function ArchiveRowActions({
-  inCollection,
-  onOpen,
-  onCollect,
-}: {
-  inCollection: boolean;
-  onOpen: () => void;
-  onCollect: () => Promise<boolean>;
-}) {
-  const [added, setAdded] = useState(inCollection);
-  return (
-    // Primary rightmost — the app's button order.
-    <>
-      <Button
-        variant="secondary"
-        size="sm"
-        disabled={added}
-        onClick={() => {
-          void onCollect().then((ok) => {
-            if (ok) setAdded(true);
-          });
-        }}
-      >
-        {added ? (
-          t('Added')
-        ) : (
-          <>
-            <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
-            {t('Add to collection')}
-          </>
-        )}
-      </Button>
-      <Button variant="default" size="sm" onClick={onOpen}>
-        <Play className="glyph" data-icon="inline-start" />
-        {t('Open the game')}
-      </Button>
-    </>
-  );
-}
 import {
   EMPTY_STRUCTURED_FILTERS,
   hasStructuredFilters,
@@ -820,7 +783,8 @@ export function ArchiveBrowser({
       summary: game,
       loadPgn: loadGamePgn(game),
       actions: (
-        <ArchiveRowActions
+        <GameRowActions
+          openLabel={t('Open the game')}
           inCollection={
             added.has(gameKey(game)) ||
             collectionKeys.has(collectionKey(game))

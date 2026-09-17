@@ -2,7 +2,7 @@ import { Eye, FileUp, Pause, Play } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { api, apiErrorMessage } from '@/lib/api';
-import { replaceBookPdf, suggestTitle, uploadBook } from '@/books/data';
+import { MAX_PDF_BYTES, replaceBookPdf, suggestTitle, uploadBook } from '@/books/data';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
@@ -27,7 +27,6 @@ const PEEK_W = 208;
     file in memory while it renders, so a multi-gigabyte pick would go
     straight into the page's heap — and a phone tab is killed far below
     this cap. One sentence at intake beats a dead tab on page three. */
-const MAX_PDF_BYTES = 500 * 1024 * 1024;
 
 /** One shared empty list, so "this job isn't mine" keeps a stable identity
     and the memos downstream of it stay memos. */

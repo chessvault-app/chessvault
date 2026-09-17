@@ -197,19 +197,12 @@ export interface RefDbFilters {
   to?: string;
 }
 
+/** True when anything is narrowing the count, for the "clear" affordance.
+    Asked of the query the filters build, so a filter added to the builder
+    cannot be forgotten here: the two field lists were written out twice
+    and had to agree. */
 export function hasRefFilters(f: RefDbFilters): boolean {
-  return Boolean(
-    f.result ||
-      f.minElo ||
-      f.band ||
-      f.player ||
-      f.side ||
-      f.outcome ||
-      f.opening ||
-      f.event ||
-      f.from ||
-      f.to,
-  );
+  return refFilterQuery(f) !== '';
 }
 
 export function refFilterQuery(f: RefDbFilters): string {
@@ -257,9 +250,9 @@ export function myFilterQuery(f: MyGamesFilters): string {
   return query.toString();
 }
 
-/** True when anything is narrowing the count, for the "clear" affordance. */
+/** True when anything is narrowing the count — see hasRefFilters. */
 export function hasMyFilters(f: MyGamesFilters): boolean {
-  return Boolean(f.side || f.outcome || f.speeds?.length || f.from || f.to || f.collectionOnly);
+  return myFilterQuery(f) !== '';
 }
 
 /** The active source, resolving the persisted choice against what exists. */

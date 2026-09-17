@@ -32,6 +32,7 @@ import {
   type StructuredFilters,
   type ValueSuggestion,
   QUICK_SELECT,
+  hasStructuredFilters,
   useFiltersFolded,
 } from './GameFilters';
 import { Field } from '@/components/ui/field';
@@ -81,7 +82,15 @@ function SetupBoardOpening() {
     </div>
   );
 }
-import { GamePreview, GameRow, collectionKey, gameKey, type GameSummary, type Preview } from './shared';
+import {
+  GamePreview,
+  GameRow,
+  GameRowActions,
+  collectionKey,
+  gameKey,
+  type GameSummary,
+  type Preview,
+} from './shared';
 import {
   GameTableHeader,
   GameTableRow,
@@ -94,51 +103,6 @@ import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
 import { dialogOpen } from '@/hooks/dialog-focus';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 
-/**
- * The details panel's action pair for a reference row, with its own
- * added-state: the node lives in the page's selection state, so it
- * cannot read the pane's `added` set after the fact — what it CAN do is
- * remember its own success.
- */
-function RefRowActions({
-  inCollection,
-  onOpen,
-  onCollect,
-}: {
-  inCollection: boolean;
-  onOpen: () => void;
-  onCollect: () => Promise<boolean>;
-}) {
-  const [added, setAdded] = useState(inCollection);
-  return (
-    // Primary rightmost — the app's button order.
-    <>
-      <Button
-        variant="secondary"
-        size="sm"
-        disabled={added}
-        onClick={() => {
-          void onCollect().then((ok) => {
-            if (ok) setAdded(true);
-          });
-        }}
-      >
-        {added ? (
-          t('Added')
-        ) : (
-          <>
-            <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
-            {t('Add to collection')}
-          </>
-        )}
-      </Button>
-      <Button variant="default" size="sm" onClick={onOpen}>
-        <Play className="glyph" data-icon="inline-start" />
-        {t('Open on the board')}
-      </Button>
-    </>
-  );
-}
 
 interface RefGame {
   id: number;
@@ -431,15 +395,7 @@ export function DatabaseGames({
   /** Whether the filter controls ride the search row rather than a row of their own. */
   const folded = useFiltersFolded();
   const filtersInRow = merged || folded;
-  const structuredOn =
-    structured.player !== '' ||
-    structured.player2 !== '' ||
-    structured.opening !== '' ||
-    structured.event !== '' ||
-    structured.from !== '' ||
-    structured.to !== '' ||
-    structured.side !== 'any' ||
-    structured.outcome !== 'any';
+  const structuredOn = hasStructuredFilters(structured);
   // `query` rides along for the hunt path: the box narrows a hunt the
   // way the filters do, so the hunt request must read the box's CURRENT
   // text from wherever the press happens.
@@ -1049,7 +1005,8 @@ export function DatabaseGames({
       }
     },
     actions: (
-      <RefRowActions
+      <GameRowActions
+        openLabel={t('Open on the board')}
         inCollection={inCollection(g)}
         onOpen={() => void openGame(g)}
         onCollect={() => collect(g)}

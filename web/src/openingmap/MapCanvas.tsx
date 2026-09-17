@@ -12,6 +12,17 @@ import { placeLabels, type LabelCandidate } from './labels';
 import { favouriteChild } from './mainline';
 import { lineOnly, type OpeningMap, type ResolvedMap } from './model';
 import { prefersReducedMotion } from '@/lib/motion';
+import { ZOOM_MAX } from '@/hooks/use-pinch-zoom';
+
+/** FNV-1a over a string, positive. Two things here need a number that is
+    stable across sessions and needs no palette or table to maintain: a
+    node's drift phase and a family's hue. */
+const fnv1a = (text: string): number => {
+  let h = 2166136261;
+  for (const ch of text) h = (h ^ ch.charCodeAt(0)) * 16777619;
+  return Math.abs(h);
+};
+
 
 /**
  * The map as a graph view — dots, springs and labels, the way the
@@ -350,9 +361,7 @@ export function MapCanvas({
   const phases = useMemo(() => {
     const out = new Map<string, { a: number; w1: number; w2: number; p1: number; p2: number }>();
     for (const node of graph.nodes) {
-      let h = 2166136261;
-      for (const ch of node.id) h = (h ^ ch.charCodeAt(0)) * 16777619;
-      h = Math.abs(h);
+      const h = fnv1a(node.id);
       out.set(node.id, {
         // Visible at a glance: a handful of world units on a 4–8 second
         // stroll. The first cut of this was 1–2 screen pixels over
@@ -843,7 +852,7 @@ export function MapCanvas({
       const mx = (now.x + anchor.x) / 2 - box.left;
       const my = (now.y + anchor.y) / 2 - box.top;
       const v = viewRef.current;
-      const k = Math.min(3, Math.max(zoomFloor(), (v.k * d1) / d0));
+      const k = Math.min(ZOOM_MAX, Math.max(zoomFloor(), (v.k * d1) / d0));
       const scale = k / v.k;
       commitView({ k, x: mx - (mx - v.x) * scale, y: my - (my - v.y) * scale });
     }
@@ -886,7 +895,7 @@ export function MapCanvas({
     const box = host.current?.getBoundingClientRect();
     if (!box || box.width === 0) return;
     const v = viewRef.current;
-    const k = Math.min(3, Math.max(zoomFloor(), v.k * factor));
+    const k = Math.min(ZOOM_MAX, Math.max(zoomFloor(), v.k * factor));
     const id = focusedId();
     const p = id ? posNow(id) : null;
     const mx = p ? v.x + p.x * v.k : (box.width - inset) / 2;
@@ -934,7 +943,7 @@ export function MapCanvas({
     const mx = e.clientX - box.left;
     const my = e.clientY - box.top;
     const v = viewRef.current;
-    const k = Math.min(3, Math.max(zoomFloor(), v.k * Math.exp(-e.deltaY * 0.0016)));
+    const k = Math.min(ZOOM_MAX, Math.max(zoomFloor(), v.k * Math.exp(-e.deltaY * 0.0016)));
     const scale = k / v.k;
     commitView({ k, x: mx - (mx - v.x) * scale, y: my - (my - v.y) * scale });
   };
@@ -948,11 +957,6 @@ export function MapCanvas({
   // stays untouched on top. Hue is hashed from the family name: stable
   // across sessions, no palette to maintain.
   const familyHue = useMemo(() => {
-    const hash = (text: string): number => {
-      let h = 2166136261;
-      for (const ch of text) h = (h ^ ch.charCodeAt(0)) * 16777619;
-      return Math.abs(h);
-    };
     // The catalogue's names carry the hierarchy the colours need:
     // "Family: Second Tier, sideline detail". The family sets the hue,
     // the second tier shifts it within a band — every Sicilian stays
@@ -981,8 +985,8 @@ export function MapCanvas({
     for (const id of resolved.nodes.keys()) {
       const tier = resolve(id);
       if (!tier) continue;
-      const base = hash(tier.family) % 360;
-      const shift = tier.second ? (hash(tier.second) % 73) - 36 : 0;
+      const base = fnv1a(tier.family) % 360;
+      const shift = tier.second ? (fnv1a(tier.second) % 73) - 36 : 0;
       out.set(id, (base + shift + 360) % 360);
     }
     return out;

@@ -41,7 +41,7 @@ import { useUndoable } from '@/hooks/use-undoable';
 import { t } from '@/lib/i18n';
 import type { FilterConstraints } from '@shared/searchQuery';
 import { GamePreview, collectionKey, docId, gameKey, type GameSummary, type Preview } from './shared';
-import { CollectionList, customName } from './CollectionList';
+import { CollectionList, customName, loadGamePgn } from './CollectionList';
 import {
   catalogSuggest,
   QueryBox,
@@ -567,17 +567,7 @@ export function GamesBrowser({
         ? {
             key: gameKey(colSelGame),
             summary: colSelGame,
-            loadPgn: async () => {
-              try {
-                return (
-                  await api<{ pgn: string }>(
-                    `/api/games/pgn?file=${encodeURIComponent(colSelGame.file)}&index=${colSelGame.index}`,
-                  )
-                ).pgn;
-              } catch {
-                return null;
-              }
-            },
+            loadPgn: loadGamePgn(colSelGame),
             actions: (
               // One row, primary rightmost — the app's button order
               // (dialog footers end on their primary). The secondary
