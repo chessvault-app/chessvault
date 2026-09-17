@@ -67,12 +67,18 @@ export default function EditorOutline() {
  * row), six on a phone (the opponent's above the board, the player's
  * below). Squares rather than the real pieces, because a piece is drawn
  * from the theme's own sprite sheet and that is the page's chunk.
+ *
+ * Stacked, a square is the palette button's own: `w-11`, `sm:w-14`,
+ * rounded-lg. It was size-9 at every width, and the games hunt's setup
+ * window, which is always stacked, measured the difference: rows of 36
+ * where 56 landed on a desktop and 44 on a phone, and a board that
+ * started 19px high.
  */
-function PalettePlaceholder({ className }: { className?: string }) {
+export function PalettePlaceholder({ className }: { className?: string }) {
   return (
     <div className={cn('flex w-full items-end justify-center gap-1 wide:h-10', className)}>
       {Array.from({ length: 6 }, (_, i) => (
-        <Skeleton key={i} className="size-9 shrink-0 rounded-md" />
+        <Skeleton key={i} className="aspect-square w-11 shrink-0 rounded-lg sm:w-14 wide:size-9 wide:rounded-md" />
       ))}
       <span aria-hidden className="bg-border mx-1 hidden h-6 w-px wide:block" />
       {Array.from({ length: 6 }, (_, i) => (
@@ -94,7 +100,14 @@ function PalettePlaceholder({ className }: { className?: string }) {
  * own chrome wrong on a phone: the tools stood bare where the settled
  * page draws them in a bordered, tinted track.
  */
-function ToolStrip() {
+export function ToolStrip({
+  use,
+}: {
+  /** The primary press where a host renames it (EditorView's `useLabel`):
+      the games hunt's window says Search, under the list glyph. */
+  use?: { label: string; icon: typeof Microscope };
+} = {}) {
+  const UseIcon = use?.icon ?? Microscope;
   return (
     <Inert>
       <div className="flex w-full flex-wrap items-center justify-center gap-2">
@@ -134,9 +147,9 @@ function ToolStrip() {
             <Settings2 className="glyph" data-icon="inline-start" />
             <span>{t('Position')}</span>
           </Button>
-          <Button variant="default" size="sm" className="h-full">
-            <Microscope className="glyph" />
-            <span className="hidden sm:inline">{t('Analyse')}</span>
+          <Button variant="default" size="sm" className="h-full max-sm:w-10 max-sm:px-0">
+            <UseIcon className="glyph" />
+            <span className="hidden sm:inline">{use?.label ?? t('Analyse')}</span>
           </Button>
         </div>
       </div>
