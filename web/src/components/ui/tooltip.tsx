@@ -13,8 +13,43 @@ function TooltipProvider({ delay = 400, ...props }: TooltipPrimitive.Provider.Pr
   return <TooltipPrimitive.Provider delay={delay} {...props} />;
 }
 
-function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
-  return <TooltipPrimitive.Root data-slot="tooltip" {...props} />;
+/**
+ * Whether the page is being driven by a finger. Base UI opens nothing for
+ * a touch POINTER, but a tap is followed by the browser's compatibility
+ * mouse events and, on a focusable trigger, by focus, and either can open
+ * a tip: a tap on a game row raised its opening's name over the list
+ * (lanph3re's report, on an iPhone; Playwright's touch emulation sends no
+ * such events and raised none in 8 taps, so this is unverified there).
+ * iOS also re-sends its sticky hover when a hidden page is shown again,
+ * long after the tap, which is why this is a modality and not a timeout.
+ * A real mouse or a key takes it back, so a laptop with a touchscreen
+ * keeps its mouse's tips and a phone with a keyboard its focus ones.
+ */
+let byTouch = false;
+if (typeof document !== 'undefined') {
+  const onPointer = (e: PointerEvent): void => {
+    byTouch = e.pointerType === 'touch';
+  };
+  const opts = { capture: true, passive: true } as const;
+  document.addEventListener('pointerdown', onPointer, opts);
+  document.addEventListener('pointermove', onPointer, opts);
+  document.addEventListener('keydown', () => (byTouch = false), opts);
+}
+
+function Tooltip({ onOpenChange, ...props }: TooltipPrimitive.Root.Props) {
+  return (
+    <TooltipPrimitive.Root
+      data-slot="tooltip"
+      onOpenChange={(open, details) => {
+        if (open && byTouch) {
+          details.cancel();
+          return;
+        }
+        onOpenChange?.(open, details);
+      }}
+      {...props}
+    />
+  );
 }
 
 function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
