@@ -134,7 +134,7 @@ export function sortDocs<T extends { id: string; bytes: number; updatedAt: strin
 ): T[] {
   const name = (doc: T): string => doc.id.split('/').at(-1)!;
   const flip = dir === 'desc' ? -1 : 1;
-  return [...docs].sort((a, b) => {
+  return docs.toSorted((a, b) => {
     // Ascending comparisons; `flip` turns the whole order over.
     if (sort === 'title')
       return flip * name(a).localeCompare(name(b), undefined, { sensitivity: 'base' });

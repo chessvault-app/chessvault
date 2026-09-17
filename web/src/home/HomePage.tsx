@@ -285,7 +285,7 @@ function docsOf(v: unknown): DocMeta[] {
 
 function latest(v: unknown): DocMeta | null {
   return (
-    [...docsOf(v)].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0] ?? null
+    docsOf(v).toSorted((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0] ?? null
   );
 }
 

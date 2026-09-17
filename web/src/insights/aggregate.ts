@@ -197,7 +197,7 @@ export function openingRows(cells: readonly InsightsCell[]): OpeningRow[] {
 export function earliestExits(rows: readonly OpeningRow[], min = 2): OpeningRow[] {
   const withExits = rows.filter((r) => r.exits > 0 && r.youLeft > 0);
   const chosen = withExits.length >= 8 ? withExits.filter((r) => r.exits >= min) : withExits;
-  return [...chosen].sort(
+  return chosen.toSorted(
     (a, b) => (a.meanExitPly ?? Infinity) - (b.meanExitPly ?? Infinity) || b.games - a.games,
   );
 }

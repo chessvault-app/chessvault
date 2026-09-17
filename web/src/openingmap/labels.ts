@@ -113,7 +113,7 @@ function overlaps(a: Box, b: Box): boolean {
 
 /** Decide which of `cands`' labels are drawn. */
 export function placeLabels(cands: readonly LabelCandidate[]): Map<string, Placed> {
-  const order = [...cands].sort((a, b) => {
+  const order = cands.toSorted((a, b) => {
     if (!!a.keep !== !!b.keep) return a.keep ? -1 : 1;
     return b.weight - a.weight;
   });

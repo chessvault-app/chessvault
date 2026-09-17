@@ -260,7 +260,7 @@ export function assignLabels(pages: PageLayout[]): Map<number, LabelledDiagram> 
   const out = new Map<number, LabelledDiagram>();
   if (!fitted) return out;
   const claimed = new Map<PageLayout, Map<Rect, number>>();
-  for (const page of [...pages].sort((a, b) => a.page - b.page)) {
+  for (const page of pages.toSorted((a, b) => a.page - b.page)) {
     const here = new Map<Rect, number>();
     for (const rect of page.rects) {
       // The window is in fractions of a diagram; the boxes are in pixels.
@@ -282,7 +282,7 @@ export function assignLabels(pages: PageLayout[]): Map<number, LabelledDiagram> 
 
 /** Diagrams in the order a reader meets them: across each row, then down. */
 function readingOrder(rects: Rect[]): Rect[] {
-  const rows = [...rects].sort((a, b) => a.y - b.y);
+  const rows = rects.toSorted((a, b) => a.y - b.y);
   const out: Rect[] = [];
   let band: Rect[] = [];
   for (const rect of rows) {
@@ -367,7 +367,7 @@ export function letterSides(words: Word[], numbers: NumberBox[]): Map<number, 'w
 export function chapterSides(pages: TextPage[]): Map<number, 'w' | 'b'> {
   const out = new Map<number, 'w' | 'b'>();
   let current: 'w' | 'b' | null = null;
-  for (const p of [...pages].sort((a, b) => a.page - b.page)) {
+  for (const p of pages.toSorted((a, b) => a.page - b.page)) {
     const m = /(white|black)\s+to\s+(?:move|play)/i.exec(p.text);
     if (m) current = m[1]!.toLowerCase() === 'white' ? 'w' : 'b';
     if (current) out.set(p.page, current);

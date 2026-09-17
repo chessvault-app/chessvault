@@ -117,7 +117,7 @@ interface BookEvidence {
  * order at the end, where the book page's own grid already puts them.
  */
 const inPrintedOrder = <T extends { number?: number }>(puzzles: T[]): T[] =>
-  [...puzzles].sort(
+  puzzles.toSorted(
     (a, b) => (a.number ?? Number.MAX_SAFE_INTEGER) - (b.number ?? Number.MAX_SAFE_INTEGER),
   );
 

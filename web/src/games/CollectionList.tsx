@@ -476,7 +476,7 @@ export function CollectionList({
   // list has no headings to ask with.
   const visible =
     table && sort
-      ? [...filtered].sort((a, b) => {
+      ? filtered.toSorted((a, b) => {
           const d = compareGames(sort.key)(a, b);
           return sort.dir === 'asc' ? d : -d;
         })

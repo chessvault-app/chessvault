@@ -184,7 +184,7 @@ export function rank(entries: readonly SearchEntry[], query: string): SearchResu
   const bySection = (a: SearchEntry, b: SearchEntry): number =>
     SECTION_ORDER.indexOf(a.section) - SECTION_ORDER.indexOf(b.section);
   if (tokens.length === 0) {
-    const all = [...entries].sort((a, b) => bySection(a, b) || a.title.localeCompare(b.title));
+    const all = entries.toSorted((a, b) => bySection(a, b) || a.title.localeCompare(b.title));
     return { names: all.map(({ section, id, title }) => ({ section, id, title })), content: [] };
   }
 
