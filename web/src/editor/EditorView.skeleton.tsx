@@ -16,6 +16,7 @@ import { ClearableInput } from '@/components/text-fields';
 import { Segmented } from '@/components/segmented';
 import { Inert, Skeleton, SkeletonBoard } from '@/components/skeletons';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
+import { BoardLane } from '@/engine/EvalBar';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
@@ -43,15 +44,28 @@ export default function EditorOutline() {
       // The stacked editor has no pane under the board, so its board runs
       // essentially full width (boardSize, EDITOR_BOARD_MAX_W).
       boardWidth={EDITOR_BOARD_MAX_W}
-      strip={<PalettePlaceholder />}
+      // The page centres its column in a stacked screen's free height
+      // (EditorView, `stacked:my-auto`), so the outline does.
+      centred
+      // In the board's lane, as the page's palettes and tools are: they
+      // align to the board's edges, so they are indented by the eval
+      // bar's reservation too. Out of it the wide row stood 18px left of
+      // where it lands (x 224 and 629 wide against 260 and 593, at 1280).
+      strip={
+        <BoardLane>
+          <PalettePlaceholder />
+        </BoardLane>
+      }
       below={
-        <>
-          {/* A phone puts the opponent's pieces above the board and the
-              player's below it, lichess-editor style; a desktop has one
-              combined row above and nothing under (EditorView). */}
-          <PalettePlaceholder className="wide:hidden" />
-          <ToolStrip />
-        </>
+        <BoardLane>
+          <div className="flex flex-col gap-2">
+            {/* A phone puts the opponent's pieces above the board and the
+                player's below it, lichess-editor style; a desktop has one
+                combined row above and nothing under (EditorView). */}
+            <PalettePlaceholder className="wide:hidden" />
+            <ToolStrip />
+          </div>
+        </BoardLane>
       }
       // The Position card is a sheet on a phone, so there is no column
       // under the board there and an outline of one would be a picture
