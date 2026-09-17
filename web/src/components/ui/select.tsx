@@ -368,7 +368,7 @@ function SelectField({
   ...root
 }: SelectProps & { groups: SelectGroup[] }) {
   // Under a Field the label names the control by id, on both branches.
-  const inField = React.useContext(FieldContext);
+  const inField = React.use(FieldContext);
   const phone = useMediaQuery(PHONE);
   const [ownOpen, setOwnOpen] = React.useState(false);
   const open = openProp ?? ownOpen;

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, use, useEffect, useMemo, useRef, useState } from 'react';
 
 import { announce } from '@/lib/announce';
 import { Progress } from '@/components/ui/progress';
@@ -418,7 +418,7 @@ function Tables({ report }: { report: Report }) {
   const split = exitSplit(cells);
   const [allOpenings, setAllOpenings] = useState(false);
   const shown = allOpenings ? openings : openings.slice(0, OPENING_FOLD);
-  const judged = useContext(AccuracyContext) && report.analysis.games > 0;
+  const judged = use(AccuracyContext) && report.analysis.games > 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -1243,7 +1243,7 @@ function TallyTable({
 }) {
   // The engine pass's column appears once it has reached a row's game,
   // on every tally table alike, the way the openings table shows it.
-  const withAccuracy = useContext(AccuracyContext) && rows.some((r) => r.tally.accN > 0);
+  const withAccuracy = use(AccuracyContext) && rows.some((r) => r.tally.accN > 0);
   return (
     <table className="w-full table-fixed type-row">
       {/* The name a screen reader announces for the table; the visible

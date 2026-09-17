@@ -1,5 +1,5 @@
 import { ClipboardPaste, ImageUp } from 'lucide-react';
-import { useCallback, useContext, useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useCallback, use, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { FilePicker } from '@/components/file-picker';
 import { Button } from '@/components/ui/button';
@@ -70,7 +70,7 @@ export function PhotoImport({
   // Cancel is the X in words: out of the whole chain this page is part of,
   // not back to the form under it (the chevron does that). A picture
   // window with no chain around it closes itself.
-  const chain = useContext(CoverParent);
+  const chain = use(CoverParent);
   const cancel = chain?.dismissAll ?? onClose;
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [corners, setCorners] = useState<Quad | null>(null);

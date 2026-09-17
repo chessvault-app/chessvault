@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import {
   Fragment,
-  useContext,
+  use,
   useEffect,
   useEffectEvent,
   useId,
@@ -227,7 +227,7 @@ export function EditorView({
    * reader's pane, the puzzle workbench — and everything below then keeps
    * its in-page behaviour.
    */
-  const hostWindow = useContext(CoverParent);
+  const hostWindow = use(CoverParent);
   /**
    * The Position page's Cancel: discard the draft AND leave the window.
    *

@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import {
   createContext,
-  useContext,
+  use,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -30,7 +30,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
  */
 const CanvasInset = createContext(0);
 export function useCanvasInset(): number {
-  return useContext(CanvasInset);
+  return use(CanvasInset);
 }
 
 /**
