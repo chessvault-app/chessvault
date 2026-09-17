@@ -1,9 +1,8 @@
-import { ClipboardPaste, ImageUp, ScanSearch } from 'lucide-react';
+import { ClipboardPaste, ImageUp } from 'lucide-react';
 import { useCallback, useContext, useEffect, useEffectEvent, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { FilePicker } from '@/components/file-picker';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { CoverParent, Dialog, DialogContent } from '@/components/ui/dialog';
 import {
   boardFeatures,
@@ -15,6 +14,7 @@ import {
 import { detectBoardQuad } from './ocr/detect';
 import { classifyBoard, labelsToFen, type CellReading, type Template } from './ocr/classify';
 import { classifyBoardNet, loadCellNet } from './ocr/cellnet';
+import { BlackAtBottom, PhotoFooter, QuadHint, ReadButton } from './photo-import-parts';
 import { t } from '@/lib/i18n';
 import { useTheme } from '@/store/theme';
 
@@ -374,9 +374,7 @@ export function PhotoImport({
           </>
         ) : (
           <>
-            <p className="text-muted-foreground text-sm">
-              {t('Drag the four handles onto the corners of the diagram.')}
-            </p>
+            <QuadHint />
             <canvas
               ref={canvasRef}
               className="mx-auto max-w-full touch-none rounded-md"
@@ -387,16 +385,13 @@ export function PhotoImport({
             {/* The one thing here that is a setting rather than a verb, so
                 it stays by the board it describes; the verbs are together
                 in the corner. */}
-            <label className="text-muted-foreground flex items-center gap-1.5 text-sm">
-              <Checkbox
-                checked={blackAtBottom}
-                onCheckedChange={(on) => {
-                  setBlackAtBottom(on === true);
-                  setReading(null);
-                }}
-              />
-              {t('Black at the bottom')}
-            </label>
+            <BlackAtBottom
+              checked={blackAtBottom}
+              onChange={(on) => {
+                setBlackAtBottom(on);
+                setReading(null);
+              }}
+            />
             {pasteHint && <p className="text-nag-dubious text-sm">{pasteHint}</p>}
           </>
         )}
@@ -445,7 +440,7 @@ export function PhotoImport({
           // Embedded, the row follows the content — the host page has
           // spare room and the buttons belong under the last field
           // (lanph3re); the sheet keeps its sink.
-          <div className={cn('flex justify-end gap-2 pt-1', !embedded && 'mt-auto')}>
+          <PhotoFooter embedded={embedded}>
             <Button variant="ghost" size="sm" onClick={cancel}>
               {t('Cancel')}
             </Button>
@@ -464,12 +459,9 @@ export function PhotoImport({
                 {t(reading.fen === null ? 'Set up by hand' : 'Load into the editor')}
               </Button>
             ) : (
-              <Button variant="default" size="sm" onClick={() => void read()}>
-                <ScanSearch className="glyph" data-icon="inline-start" />
-                {t('Read position')}
-              </Button>
+              <ReadButton onClick={() => void read()} />
             )}
-          </div>
+          </PhotoFooter>
         )}
     </>
   );

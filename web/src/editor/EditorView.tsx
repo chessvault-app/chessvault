@@ -45,6 +45,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { CoverParent } from '@/hooks/cover-parent';
 import { Panel, PanelHeader } from '@/components/panel';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
+import { PhotoImportOpening } from '@/puzzles/photo-import-parts';
 import { WindowOpening, WindowPageOpening } from '@/components/window-opening';
 import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
@@ -1119,7 +1120,13 @@ export function EditorView({
             // window here was the chain's last window swap, and it
             // flickered exactly like the ones already retired
             // (lanph3re: pasting an image swaps the window).
-            <Suspense fallback={<WindowPageOpening />}>
+            <Suspense
+              fallback={
+                <WindowPageOpening>
+                  <PhotoImportOpening embedded />
+                </WindowPageOpening>
+              }
+            >
               <PhotoImport
                 embedded
                 templates={photoTemplates ?? []}
@@ -1213,7 +1220,13 @@ export function EditorView({
                       lands on the form you left rather than two pages back at
                       Position. */}
                   {photoTemplates !== null && (
-                    <Suspense fallback={<WindowOpening title={t('Position from an image')} icon={ImageUp} className="sm:max-w-[38rem]" />}>
+                    <Suspense
+                      fallback={
+                        <WindowOpening title={t('Position from an image')} icon={ImageUp} fill className="relative sm:max-w-[38rem]">
+                          <PhotoImportOpening />
+                        </WindowOpening>
+                      }
+                    >
                       <PhotoImport
                         templates={photoTemplates}
                         initialFile={photoFile ?? undefined}
