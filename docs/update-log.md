@@ -48,7 +48,7 @@ drawn once and filled in.
 - **Nothing on a settled page changed.** This is about the seconds
   before a page arrives; every screen looks exactly as it did.
 
-Three smaller things went in beside it, and these do show on a settled
+Eight smaller things went in beside it, and these do show on a settled
 page:
 
 - **A panel that fails no longer takes the page with it.** An error
@@ -62,6 +62,26 @@ page:
 - **Headings and paragraphs wrap more evenly.** A heading that wraps
   balances its lines, and a paragraph no longer leaves one short word
   alone on its last line.
+- **Back from a game lands where you left the list.** Scrolling deep
+  into a database, opening a game and pressing Back used to return you
+  well above where you had been, because the list quietly went back to
+  its first page of rows. It keeps the rows it had now, and stops asking
+  the server for them again on every return.
+- **A game or study no longer stutters as it slides in on a phone.** The
+  page used to draw its board in the middle of the slide, and an iPhone
+  dropped a frame or two of it. The board now arrives once the slide has
+  finished, which is about a third of a second later than before.
+- **The explorer shows its source's whole name.** On a phone the source
+  menu was narrow enough to cut every name but "My games", so two
+  databases with similar names read the same. It is wider, and it no
+  longer draws a box in a row of bare buttons.
+- **Deleting a database waits until the file is free.** On Windows,
+  deleting a database or turning fast search off could fail now and
+  then, because a search still running in the background held the file.
+  Both now wait for it to finish first.
+- **Leaving a page cancels what it was loading.** Home, Insights, the
+  opening map and a few others used to finish downloading answers
+  nobody was waiting for. A page you leave now drops its requests.
 
 ## 0.11.2
 
