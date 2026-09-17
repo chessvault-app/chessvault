@@ -350,6 +350,53 @@ export function SkeletonSubtitle() {
 const NAME_WIDTHS = ['w-2/5', 'w-3/5', 'w-1/2', 'w-2/3', 'w-5/12', 'w-7/12'];
 
 /**
+ * A shelf's grouped frame, which the studies, notes and library shelves
+ * share (gap-4 of gap-2 sections): the root's cards headerless the way
+ * the root draws them, then each collection under ShelfFolderHeader's
+ * fixed 24px row, or, at zero, its one-line "Empty collection." note.
+ * The caller supplies the cards; `stack(n, offset)` draws `n` of them
+ * starting at card `offset` of the whole shelf.
+ */
+function SkeletonShelfGroups({
+  groups,
+  stack,
+  className,
+}: {
+  groups: { root: number; folders: number[] };
+  stack: (n: number, offset?: number) => React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <Loading className={className}>
+      <div className="flex flex-col gap-4">
+        {groups.root > 0 && <section className="flex flex-col gap-2">{stack(groups.root)}</section>}
+        {groups.folders.map((n, f) => (
+          <section key={f} className="flex flex-col gap-2">
+            <div className="flex h-6 items-center gap-1.5">
+              {/* ShelfFolderHeader's own glyph; only the name waits. */}
+              <FolderIcon className="text-muted-foreground glyph shrink-0" aria-hidden />
+              <Skeleton className="h-2.5 w-24" />
+            </div>
+            {n === 0 ? (
+              <div className="flex h-5 items-center px-1">
+                <Skeleton className="h-2.5 w-28" />
+              </div>
+            ) : (
+              // The offset is the cards drawn BEFORE this collection,
+              // not its ordinal: the index reads the caller's per-card
+              // data (SkeletonCards' `heights`), and by the ordinal the
+              // third group took the second's row heights (24px over on
+              // the demo's phone studies shelf).
+              stack(n, groups.root + groups.folders.slice(0, f).reduce((a, b) => a + b, 0))
+            )}
+          </section>
+        ))}
+      </div>
+    </Loading>
+  );
+}
+
+/**
  * Separate bordered cards under a collection heading — what Studies and
  * Notes actually draw. They are not a divided list, and a skeleton shaped
  * like one made the page jump when the real cards arrived.
@@ -463,38 +510,7 @@ export function SkeletonCards({
       {Array.from({ length: n }, (_, i) => card(i + offset))}
     </div>
   );
-  if (groups)
-    return (
-      // The grouped list's own frame (gap-4 of gap-2 sections), the
-      // root's cards headerless the way the root draws them, and each
-      // collection under ShelfFolderHeader's fixed 24px row — or, at
-      // zero, its one-line "Empty collection." note.
-      <Loading className={className}>
-        <div className="flex flex-col gap-4">
-          {groups.root > 0 && <section className="flex flex-col gap-2">{stack(groups.root)}</section>}
-          {groups.folders.map((n, f) => (
-            <section key={f} className="flex flex-col gap-2">
-              <div className="flex h-6 items-center gap-1.5">
-                {/* ShelfFolderHeader's own glyph; only the name waits. */}
-                <FolderIcon className="text-muted-foreground glyph shrink-0" aria-hidden />
-                <Skeleton className="h-2.5 w-24" />
-              </div>
-              {n === 0 ? (
-                <div className="flex h-5 items-center px-1">
-                  <Skeleton className="h-2.5 w-28" />
-                </div>
-              ) : (
-                // The offset is the cards drawn BEFORE this collection,
-                // not its ordinal: the index reads `heights`, and by the
-                // ordinal the third group took the second's row heights
-                // (24px over on the demo's phone studies shelf).
-                stack(n, groups.root + groups.folders.slice(0, f).reduce((a, b) => a + b, 0))
-              )}
-            </section>
-          ))}
-        </div>
-      </Loading>
-    );
+  if (groups) return <SkeletonShelfGroups groups={groups} stack={stack} className={className} />;
   return (
     <Loading className={className}>
       {/* No heading bar over the flat stack. Documents ARE grouped under
@@ -568,35 +584,8 @@ export function SkeletonBookCards({
       {Array.from({ length: n }, (_, i) => card(i + offset))}
     </div>
   );
-  if (groups)
-    return (
-      // The library's grouped frame, exactly as SkeletonCards draws the
-      // studies shelf's: headerless root cards, then each collection
-      // under the 24px header row — or its one-line note when empty.
-      <Loading className={className}>
-        <div className="flex flex-col gap-4">
-          {groups.root > 0 && <section className="flex flex-col gap-2">{stack(groups.root)}</section>}
-          {groups.folders.map((n, f) => (
-            <section key={f} className="flex flex-col gap-2">
-              <div className="flex h-6 items-center gap-1.5">
-                {/* ShelfFolderHeader's own glyph; only the name waits. */}
-                <FolderIcon className="text-muted-foreground glyph shrink-0" aria-hidden />
-                <Skeleton className="h-2.5 w-24" />
-              </div>
-              {n === 0 ? (
-                <div className="flex h-5 items-center px-1">
-                  <Skeleton className="h-2.5 w-28" />
-                </div>
-              ) : (
-                // The cards drawn BEFORE this collection, as SkeletonCards
-                // counts them (its comment says why the ordinal is wrong).
-                stack(n, groups.root + groups.folders.slice(0, f).reduce((a, b) => a + b, 0))
-              )}
-            </section>
-          ))}
-        </div>
-      </Loading>
-    );
+  // The library's grouped frame is the studies shelf's, so one draws both.
+  if (groups) return <SkeletonShelfGroups groups={groups} stack={stack} className={className} />;
   return <Loading className={className}>{stack(cards)}</Loading>;
 }
 
