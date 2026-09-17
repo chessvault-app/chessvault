@@ -1,7 +1,8 @@
 import { PageShell } from '@/components/page-shell';
-import { ShelfHeader } from '@/components/shelf-outline';
+import { OutlineCreate, ShelfHeader } from '@/components/shelf-outline';
+import { readShelfView } from '@/components/shelf-toolbar';
 import { SkeletonCards } from '@/components/skeletons';
-import { readShelfLayout, readShelfShape, shelfHasShape } from '@/components/shelf-reservation';
+import { readShelfShape, shelfHasShape } from '@/components/shelf-reservation';
 import NoteOutline from '@/notes/NoteView.skeleton';
 import { t } from '@/lib/i18n';
 
@@ -33,10 +34,20 @@ export default function NotesOutline({ params = [] }: { params?: string[] }) {
 function ShelfOutline() {
   const groups = readShelfShape('notes');
   const has = shelfHasShape(groups);
+  const view = readShelfView('notes');
   return (
     <PageShell width="wide">
-      <ShelfHeader title={t('Notes')} search={t('Search notes…')} subtitle={has} />
-      {has && <NotesCards layout={readShelfLayout('notes')} groups={groups} />}
+      <ShelfHeader
+        title={t('Notes')}
+        search={t('Search notes…')}
+        subtitle={has}
+        sort={view.sort}
+        dir={view.dir}
+        layout={view.layout}
+        // New note, New folder (CreateMenu).
+        create={<OutlineCreate actions={2} />}
+      />
+      {has && <NotesCards layout={view.layout} groups={groups} />}
     </PageShell>
   );
 }

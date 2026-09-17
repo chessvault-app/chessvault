@@ -52,7 +52,7 @@ export type ShelfSorts<S extends string> = readonly { value: S; label: string }[
     function of its own so its try/catch stays out of the hook, which the
     React Compiler memoises and cannot lower a conditional inside a try
     for. */
-function storedShelfOrder<S extends string>(
+export function readShelfOrder<S extends string>(
   key: string,
   sorts: ShelfSorts<S>,
   natural: Record<S, ShelfDir>,
@@ -88,7 +88,7 @@ export function useShelfOrder<S extends string>(
   layout: ShelfLayout;
   setLayout: (layout: ShelfLayout) => void;
 } {
-  const [state, setState] = useState(() => storedShelfOrder(key, sorts, natural, fallback));
+  const [state, setState] = useState(() => readShelfOrder(key, sorts, natural, fallback));
   useEffect(() => {
     try {
       localStorage.setItem(key, JSON.stringify(state));
@@ -111,6 +111,19 @@ export function useShelfOrder<S extends string>(
 /** The document shelves' view: sortDocs' three orders, and a layout. */
 export function useShelfView(shelf: string): ReturnType<typeof useShelfOrder<ShelfSort>> {
   return useShelfOrder(`chess-vault:shelf-${shelf}`, SORTS, NATURAL, 'recent');
+}
+
+/**
+ * The same view, read once rather than subscribed to: what a shelf's
+ * OUTLINE draws while the page is on the wire (components/shelf-outline).
+ * The outline cannot call the hook — it does not own the preference and
+ * must not write it back — and it cannot guess either, because the
+ * sort's name is printed in the select and the direction decides which
+ * arrow is drawn. Read per render, as the outline reads its card shape:
+ * the wait this stands through cannot change what the last visit chose.
+ */
+export function readShelfView(shelf: string): { sort: ShelfSort; dir: ShelfDir; layout: ShelfLayout } {
+  return readShelfOrder(`chess-vault:shelf-${shelf}`, SORTS, NATURAL, 'recent');
 }
 
 /** Order a shelf. Ids sort by their last segment — the visible name. */

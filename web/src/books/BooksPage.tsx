@@ -9,7 +9,12 @@ import { PageShell } from '@/components/page-shell';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
 import { SkeletonSubtitle, useSlowLoad } from '@/components/skeletons';
-import { LibraryCards } from '@/books/BooksView.skeleton';
+import {
+  LIBRARY_NATURAL,
+  LIBRARY_ORDER_KEY,
+  LIBRARY_SORTS,
+  LibraryCards,
+} from '@/books/BooksView.skeleton';
 import { routePlaceholderShown } from '@/lib/lazyRoute';
 import {
   SHELVES,
@@ -18,7 +23,7 @@ import {
   shelfShapeFromCollections,
   storedShelfShape,
 } from '@/components/shelf-reservation';
-import { ShelfCount, ShelfToolbar, useShelfOrder, type ShelfDir, type ShelfSorts } from '@/components/shelf-toolbar';
+import { ShelfCount, ShelfToolbar, useShelfOrder } from '@/components/shelf-toolbar';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useBookmarks } from '@/hooks/use-bookmarks';
@@ -62,25 +67,9 @@ import { decodeImages } from '@/lib/media';
  * "Move to a collection" on the card.
  */
 
-/**
- * How the library is ordered. Remembered on the device, like the other
- * shelves' view settings; a new sort starts in its own natural direction.
- */
-type LibrarySort = 'title' | 'added' | 'size' | 'read';
-
-const LIBRARY_SORTS: ShelfSorts<LibrarySort> = [
-  { value: 'title', label: 'Title' },
-  { value: 'added', label: 'Added' },
-  { value: 'size', label: 'Size' },
-  { value: 'read', label: 'Last read' },
-];
-
-const NATURAL: Record<LibrarySort, ShelfDir> = {
-  title: 'asc',
-  added: 'desc',
-  size: 'desc',
-  read: 'desc',
-};
+/* How the library is ordered lives beside the outline that prints it
+   (./BooksView.skeleton, LIBRARY_SORTS): the placeholder shows the
+   chosen order before this chunk exists. */
 
 export function BooksPage() {
   const [books, setBooks] = useState<LibraryBook[] | null>(libraryMemory.books);
@@ -96,7 +85,7 @@ export function BooksPage() {
       useSlowLoad's 180ms and the shelf blinks out and back. */
   const [continuing] = useState(routePlaceholderShown);
   const pending = useSlowLoad(books === null) || (continuing && books === null);
-  const view = useShelfOrder('chess-vault:shelf-library', LIBRARY_SORTS, NATURAL, 'added');
+  const view = useShelfOrder(LIBRARY_ORDER_KEY, LIBRARY_SORTS, LIBRARY_NATURAL, 'added');
   // The grouped shape this shelf had last visit, per device
   // (components/shelf-reservation, where this shelf's key and floor sit
   // beside the other two so the route placeholder can read them). The

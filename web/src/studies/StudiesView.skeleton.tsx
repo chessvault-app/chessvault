@@ -1,9 +1,10 @@
 import { PageShell } from '@/components/page-shell';
-import { ShelfHeader } from '@/components/shelf-outline';
+import { OutlineCreate, ShelfHeader } from '@/components/shelf-outline';
+import { readShelfView } from '@/components/shelf-toolbar';
 import { SkeletonCards } from '@/components/skeletons';
 import StudyOutline from '@/studies/StudyView.skeleton';
 import { decodeSegment } from '@/lib/router';
-import { readShelfLayout, readShelfShape, shelfHasShape } from '@/components/shelf-reservation';
+import { readShelfShape, shelfHasShape } from '@/components/shelf-reservation';
 import { t } from '@/lib/i18n';
 
 /**
@@ -36,10 +37,20 @@ export default function StudiesOutline({ params = [] }: { params?: string[] }) {
 function ShelfOutline() {
   const groups = readShelfShape('studies');
   const has = shelfHasShape(groups);
+  const view = readShelfView('studies');
   return (
     <PageShell width="wide">
-      <ShelfHeader title={t('Studies')} search={t('Search studies…')} subtitle={has} />
-      {has && <StudiesCards layout={readShelfLayout('studies')} groups={groups} />}
+      <ShelfHeader
+        title={t('Studies')}
+        search={t('Search studies…')}
+        subtitle={has}
+        sort={view.sort}
+        dir={view.dir}
+        layout={view.layout}
+        // New study, New folder, Import PGN, From Lichess (CreateMenu).
+        create={<OutlineCreate actions={4} />}
+      />
+      {has && <StudiesCards layout={view.layout} groups={groups} />}
     </PageShell>
   );
 }

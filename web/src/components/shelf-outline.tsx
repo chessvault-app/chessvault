@@ -1,31 +1,55 @@
-import { PageHeader } from '@/components/page-header';
-import { SearchInput } from '@/components/text-fields';
+import { Plus } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { CreateControl } from '@/components/fab';
 import { Inert, SkeletonSubtitle } from '@/components/skeletons';
+import { ShelfToolbar, type ShelfDir, type ShelfSorts } from '@/components/shelf-toolbar';
+import type { ShelfLayout } from '@/components/shelf-card';
 
 /**
- * A shelf's header while its page is on the wire: the name, the count
- * line the shelf is about to print, and the search field.
+ * A shelf's toolbar while its page is on the wire: the REAL toolbar,
+ * held inert.
  *
- * The field is the real one, held inert, on the rule the placeholders
- * already follow — a control whose shape is known before the data is is
- * drawn as ITSELF rather than as a grey box of its size (skeletons,
- * `INERT`). ShelfToolbar is PageHeader with this field in its search
- * slot, so this is the toolbar's own geometry rather than an impression
- * of it. What is left out is the row of buttons beside the title (sort,
- * layout, Create), which changes nothing about where the cards start;
- * without the field and the count line, the first card sat 71px high
- * (measured on the demo at 1280).
+ * It used to be a reduced copy — the title, a count bar and a search
+ * field — on the argument that the row of buttons beside the title
+ * "changes nothing about where the cards start". True of the cards, and
+ * false of the picture: the settled shelf draws a bookmark toggle, the
+ * sort select with the order this device chose printed in it, the
+ * direction arrow, the layout switch and the Create button, and a
+ * placeholder that draws none of them is a different screen, not the
+ * same screen waiting. It got the field's own width wrong too, and
+ * silently: PageHeader caps its search slot's first child at `max-w-sm`
+ * from md, the copy wrapped the field in `Inert` (a `display: contents`
+ * span), and a `display: contents` box ignores max-width — so the
+ * outline's field ran the full column where the settled one stops at
+ * 384px. Measured on the demo at 1280: 1003px against 384.
  *
- * Here rather than in each shelf's own outline module because the three
+ * So the outline draws ShelfToolbar itself, with `Inert` OUTSIDE it,
+ * wrapping the whole header rather than one slot. Nothing here can
+ * disagree with the settled shelf about a control's size, because it is
+ * the same control.
+ *
+ * Everything it is given is known before anything is fetched: the
+ * shelf's name, its search placeholder, its sort list, and the order and
+ * layout this device last chose (shelf-toolbar's `readShelfView`, or a
+ * shelf's own reader where its orders are its own). The two things that
+ * are not known are the count line, which is a bar, and the cards, which
+ * are the shelf's own reservation.
+ *
+ * Here rather than in each shelf's outline module because the three
  * shelves hold the same kind of thing and had no business being
  * different sizes (NotesView's own note about the studies shelf). It is
  * reached only from those outline modules, so it rides their chunks and
  * costs the launch nothing.
  */
-export function ShelfHeader({
+export function ShelfHeader<S extends string>({
   title,
   search,
   subtitle,
+  sorts,
+  sort,
+  dir,
+  layout,
+  create,
 }: {
   title: string;
   /** The field's own placeholder, which is also its label. */
@@ -33,24 +57,61 @@ export function ShelfHeader({
   /** Whether a count line is coming. The studies shelf drops it entirely
       on a vault with no studies, so the stored shape is what knows. */
   subtitle: boolean;
+  /** The orders this shelf offers; the document shelves' three unless
+      the shelf says otherwise (the library orders by what a book has). */
+  sorts?: ShelfSorts<S>;
+  /** The order this device last chose, printed in the select. */
+  sort: S;
+  dir: ShelfDir;
+  /** The layout switch's state, or nothing where the shelf has no switch
+      (the library, whose cards are covers). */
+  layout?: ShelfLayout;
+  /** The shelf's own Create control — see `OutlineCreate`. */
+  create: ReactNode;
 }) {
   return (
-    <PageHeader
-      title={title}
-      subtitle={subtitle ? <SkeletonSubtitle /> : undefined}
-      search={
-        <Inert>
-          <SearchInput
-            type="text"
-            inputSize="sm"
-            value=""
-            readOnly
-            placeholder={search}
-            aria-label={search}
-            className="min-w-0 flex-1"
-          />
-        </Inert>
-      }
+    <Inert>
+      <ShelfToolbar<S>
+        title={title}
+        subtitle={subtitle ? <SkeletonSubtitle /> : undefined}
+        query=""
+        onQuery={NOOP}
+        placeholder={search}
+        sorts={sorts}
+        sort={sort}
+        onSort={NOOP}
+        dir={dir}
+        onDir={NOOP}
+        layout={layout}
+        onLayout={layout === undefined ? undefined : NOOP}
+        markedOnly={false}
+        onMarkedOnly={NOOP}
+        create={create}
+      />
+    </Inert>
+  );
+}
+
+/**
+ * The shelf's Create button as an outline draws it.
+ *
+ * Only two things decide that button's face: its label, and whether
+ * there is more than one action behind it, which is what puts the
+ * chevron on it and opens a menu instead of firing (components/fab). The
+ * actions themselves are the page's, with handlers an outline could not
+ * call, so it passes the count and the real control draws itself.
+ */
+export function OutlineCreate({ label = 'Create', actions }: { label?: string; actions: number }) {
+  return (
+    <CreateControl
+      label={label}
+      actions={Array.from({ length: actions }, (_, i) => ({
+        label: String(i),
+        icon: Plus,
+        onSelect: NOOP,
+      }))}
     />
   );
 }
+
+const NOOP = (): void => {};
