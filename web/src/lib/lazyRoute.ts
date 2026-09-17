@@ -6,6 +6,7 @@ import {
   type ComponentType,
   type FunctionComponent,
 } from 'react';
+import { routeChanging, routeSettled } from './router';
 import { useSlowLoad } from './slowLoad';
 
 /**
@@ -76,6 +77,21 @@ import { useSlowLoad } from './slowLoad';
  * placeholder is there from the first frame, as the hook does for every
  * page: the slide is what hides a flash, and a page that slides in blank
  * is the sight this exists to remove.
+ *
+ * And a route that arrives inside a phone's page transition STAYS its
+ * outline until the slide is over, chunk in hand or not. Mounting a page
+ * is the heaviest render it has, and mid-slide it costs the slide its
+ * frames: StudyView found this first and held itself by hand
+ * (lib/router, useRouteSettled, with the iPhone's numbers); lanph3re saw
+ * the same stutter opening the licences, and asked for the hold on every
+ * page. Measured on the demo, phone width, CPU x4, Settings to Licences:
+ * tasks of 84 to 148ms starting 159 to 416ms after the tap, inside the
+ * slide, on four opens of four; held, none. The cost is that the page's
+ * own fetch starts when the slide ends rather than when it begins. Only
+ * with something to hold: a page whose chunk is in hand and whose outline
+ * is not mounts as it always did, since a blank slide is worse than a
+ * dropped frame. Leaves INSIDE a section are not routes of this kind and
+ * hold themselves with the same hook.
  */
 const RELOADED_AT = 'chess-vault:chunk-reload';
 const COOLDOWN_MS = 10_000;
@@ -95,8 +111,9 @@ export type LazyRouteComponent<P> = FunctionComponent<P> & {
    */
   pending: () => Promise<void> | null;
   /**
-   * The same, but resolving as soon as there is anything to draw —
-   * whichever of the page and its outline arrives first.
+   * The same, but resolving as soon as there is what a slide draws: the
+   * outline, where the route has one (it is what stands in until the
+   * slide ends, page in hand or not), and the page where it has none.
    *
    * The router asks this before a phone's page transition (lib/router,
    * swapRoute), and waits CHUNK_WAIT_MS for it: a route that draws blank
@@ -253,7 +270,22 @@ export function lazyRoute<T extends ComponentType<any>>(
     // waiting (or at once inside a page transition) and, once up, stays
     // its minimum even after the module has landed, which is what holds
     // a chunk that arrives just behind it from flashing the placeholder.
-    const placeholder = useSlowLoad(!settled && outline !== undefined, PENDING_MS, MIN_VISIBLE_MS);
+    const waiting = useSlowLoad(!settled && outline !== undefined, PENDING_MS, MIN_VISIBLE_MS);
+    // Arrived mid-slide: the outline stands in until the slide is over
+    // (see the note at the top). Decided once, at mount; a kept page
+    // shown again is already mounted and has nothing to hold.
+    const [held, setHeld] = useState(() => routeChanging() && (sketch !== null || (!ready && outline !== undefined)));
+    useEffect(() => {
+      if (!held) return;
+      let live = true;
+      void routeSettled().then(() => {
+        if (live) setHeld(false);
+      });
+      return () => {
+        live = false;
+      };
+    }, [held]);
+    const placeholder = waiting || held;
     // What is actually on screen: the gate is open AND there is something
     // to put through it. With an outline that may still be on the wire,
     // in which case nothing is drawn yet and this is false.
@@ -288,17 +320,23 @@ export function lazyRoute<T extends ComponentType<any>>(
     return placeholder && drawn ? createElement(drawn, props) : null;
   };
   return Object.assign(Route, {
-    pending: () => (ready || failure ? null : fetchModule()),
+    pending: () => {
+      // The outline rides along with a warmed page: a route warmed without
+      // it has nothing to hold a slide with (`held`, above).
+      if (outline && !sketch) void fetchSketch();
+      return ready || failure ? null : fetchModule();
+    },
     drawable: () => {
-      if (ready || failure) return null;
-      const page = fetchModule();
-      // Whichever can be drawn first. Without the outline in the race the
-      // router would hold its page transition for the whole page and then
-      // slide in a bare ground when CHUNK_WAIT_MS ran out, which is the
-      // sight the outline exists to remove.
-      if (!outline) return page;
+      if (failure) return null;
+      if (!outline) return ready ? null : fetchModule();
       if (sketch) return null;
-      return Promise.race([page, fetchSketch()]);
+      // The page is asked for too, but it is the outline that is waited
+      // on, even with the page in hand: the outline is what slides in
+      // (`held`, above), it is a fraction of the page's size, and the
+      // router caps the wait. Without it the page would mount mid-slide,
+      // or on a slow link a bare ground would slide in.
+      if (!ready) void fetchModule();
+      return fetchSketch();
     },
   });
 }
