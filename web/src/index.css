@@ -1154,6 +1154,14 @@
   p {
     text-wrap: pretty;
   }
+  /* Korean breaks between syllables unless told otherwise, which cuts a
+     word in two at the end of a line. keep-all breaks at spaces, as
+     Korean print does; anywhere still lets a string with no space (a
+     file name, a FEN) wrap rather than push its box out. */
+  :lang(ko) {
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
 
   body {
     background-color: var(--background);
