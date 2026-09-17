@@ -267,7 +267,7 @@ export function lichessExplorerApi(
       {
         error: token
           ? 'Lichess explorer is unreachable and this position is not cached'
-          : 'Lichess explorer needs an API token — add one in Settings (create one with no scopes at lichess.org/account/oauth/token/create)',
+          : 'Lichess explorer needs an API token. Add one in Settings (create one with no scopes at lichess.org/account/oauth/token/create).',
         // Only the first of those two is an outage. Both used to carry
         // this flag, which made a vault that has never had a token look
         // like a network that is down — and the client colours the two
@@ -386,7 +386,7 @@ export function lichessStudiesApi(studiesDir = VAULT_STUDIES, fetcher: typeof fe
         studies,
         note: token
           ? null
-          : 'No Lichess token configured — only public studies are listed. Add a token with study:read in Settings to see private ones.',
+          : 'No Lichess token configured, so only public studies are listed. Add a token with study:read in Settings to see private ones.',
       });
     } catch {
       return c.json({ error: 'Lichess is unreachable' }, 502);

@@ -1141,7 +1141,7 @@ export function refGamesApi(
             try {
               renameRetrying(building, fileFor(name));
             } catch {
-              current.log.push('could not swap in the new database — rebuild after a restart');
+              current.log.push('could not swap in the new database: rebuild after a restart');
             }
           }
           // A stopped rebuild leaves its part-written file beside the
