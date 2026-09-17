@@ -7,12 +7,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-Every page now waits as itself. 0.11.2 gave a loading page an outline
-its content settles into; that outline was still drawn by the app shell,
-from a table that guessed each page's shape, so a slow start drew one
-picture and then replaced it with the page's own. Each page carries its
-own outline now, fetched alongside the page and used for both waits, so
-the screen is drawn once and filled in.
+Every page now waits as itself, and every page has one picture for the
+whole wait. 0.11.2 gave a loading page an outline its content settles
+into; that outline was still drawn by the app shell, from a table that
+guessed each page's shape, so a slow start drew one picture and then
+replaced it with the page's own. Each page carries its own outline now,
+fetched alongside the page and used for both waits, so the screen is
+drawn once and filled in.
 
 - **A page you are waiting for shows its own shape from the start.**
   Tapping Studies on a slow connection drew a list of grey lines, then a
@@ -23,6 +24,27 @@ the screen is drawn once and filled in.
   is the largest thing the app downloads, and while it came down the
   page showed nothing at all: the outline appeared, vanished for the
   length of that download, and came back. It stays.
+- **Five screens that used to show nothing at all now show their
+  shape.** The workspace, the position editor, the repertoire trainer,
+  the opening map and a book you open drew an empty screen for their
+  whole download, and the workspace and the book are the two longest
+  downloads in the app. Each of them draws its own layout now, down to
+  the page shape a book was last read at.
+- **The puzzle pages wait as the page you asked for.** Six pages live
+  behind the Puzzles tab, and every one of them used to wait as the word
+  "Puzzles" over an empty screen; a trainer has no such heading at all,
+  so the whole layout changed underneath you when it arrived. The
+  launcher waits as its three rows and three boards, the themes page as
+  its own wall of themes, a puzzle book as its own tile grid.
+- **The endgame drill list and the games list wait as their rows.** Both
+  used to wait as their name alone and then fill in all at once.
+- **A shelf waits with its own toolbar.** The bookmark switch, the sort,
+  the layout switch and the create button were all missing while a shelf
+  loaded, and the search field was the wrong width.
+- **A window that has to download before it opens opens anyway.**
+  Pressing "Customise home", "Import a book PDF" or the picture flow's
+  button did nothing at all until the download finished. The window is
+  there at once now, with its title, and fills in.
 - **Nothing on a settled page changed.** This is about the seconds
   before a page arrives; every screen looks exactly as it did.
 

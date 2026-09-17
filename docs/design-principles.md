@@ -627,16 +627,37 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   refuses an outline that has drifted into the launch payload, because
   that failure is invisible — the bytes move, the placeholder stops
   appearing, and the app looks the same.
-- **What an outline may not do is guess.** It draws what the page draws,
-  from `components/skeletons` and the page's own reservations, or it
-  draws the shell and the name and leaves the body alone. Where a page's
-  outline sits under real controls in the page's chunk — Games' tab strip
-  and filter rail, the licences page's blurb and chips — reserving the
-  body without them is a promise the page then breaks: measured that way
-  the licence rows stood 145px high and the games rows 86px. The body
-  arrives into empty space below instead and pushes nothing down. The
-  workspace, the editor, the repertoire trainer and the opening map are
-  not shapes `components/skeletons` draws at all, and draw nothing.
+- **What an outline may not do is guess. What it may not do either is
+  refuse to look.** It draws what the page draws, out of the same
+  components and the page's own reservations. "Or it draws the shell and
+  the name and leaves the body alone" was the escape hatch, and it was
+  taken far too often: fifteen routes reduced to a title, four drawing
+  nothing at all, and Puzzles drawing a page heading over a trainer that
+  has none. The test is not whether a shape is easy to reach from here —
+  an outline module can import anything the page can — it is whether the
+  shape is KNOWN before the answers are. Nearly all of it is, and by
+  three routes:
+  - **The real control, held inert** (`skeletons`, `Inert`), wherever a
+    control's shape does not depend on data. A shelf's sort select with
+    the order this device chose in it, the games page's tab strip and
+    filter rail, the editor's Position card, the drill's New game form.
+    A grey box of the control's size is a second statement of its
+    geometry and has to be re-measured every time the control moves.
+  - **The page's own reservation**, wherever a count or a size was seen
+    last visit: the shelves' cards, the themes histogram, a book's page
+    shape, the endgame picker's groups, the licence chips. A paint hint,
+    wrong by at most one visit, corrected by whatever lands.
+  - **The same measurement the page makes**, wherever the page measures.
+    The games outline draws the same tab strip and puts the same
+    ResizeObserver on it, so it folds its toolbar where the page folds
+    it. This is what "reserving rows is guessing at their height" had
+    been standing in for, and it was not true: the rows follow a media
+    query, a stored pin and that one measurement.
+  What is genuinely left to the page is the part that would be a guess
+  and the part that arrives into empty space BELOW everything the
+  outline drew: the games page's details card, the dashboard's lower
+  panels, the workspace's board budget. Say which, in the module, with
+  the reason.
 - **The placeholder is drawn once and filled in, never drawn twice.**
   `lib/lazyRoute` draws the outline as ordinary state through the same
   `useSlowLoad` every page's skeleton uses, with two figures of its own:
@@ -652,7 +673,11 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   1.5 Mbps: the outline is up at 245 ms, the page arrives when it did
   before, and an unthrottled tab never shows it (Studies drew at 88 ms).
   `npm run shots:placeholders` is what photographs all of this; the pixel
-  grid cannot, because on the demo every chunk beats the 200 ms.
+  grid cannot, because on the demo every chunk beats the 200 ms. It takes
+  THREE pictures a route — the chunk held, then the answers held, then
+  settled — because "one picture over both waits" is precisely the claim
+  that the first two are the same picture, and holding the chunk alone
+  cannot tell you.
 - **A section is warmed before it is asked for.** The placeholder covers
   a cold chunk; `lib/prefetch` sees to it that few are cold. Once the app
   has loaded and the browser is idle, the sections' chunks are fetched
