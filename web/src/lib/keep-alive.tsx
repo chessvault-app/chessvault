@@ -112,11 +112,70 @@ export function KeepAlive<T>({
  * lands before the first paint. The scrollers are collected from their
  * own `scroll` events (captured at the slot; they do not bubble), so
  * nothing walks the page.
+ *
+ * A `scrollTop` is only a place while nothing above it changes height,
+ * and while a page is hidden things do: the Games rows are
+ * `content-visibility: auto`, whose offscreen rows stand at a placeholder
+ * height (measured 69px against a real 85 in WebKit) unless the engine
+ * kept their remembered size across `display: none`, and a list that
+ * revalidates on show can gain a row. So each scroller is also saved with
+ * an ANCHOR, the element at its middle and how far down the scroller it
+ * stood, and the restore corrects `scrollTop` until the anchor stands
+ * there again: once in the layout effect, and once a frame later, since
+ * skipped rows take their real size only when they are next rendered.
+ * lanph3re's report was the Games list coming back "moved a bit" on an
+ * iPhone. It did not reproduce on the demo (Chromium and WebKit both
+ * restored exactly), so the cause on the device is not established; what
+ * is measured is the mechanism, with a row above the viewport forced
+ * 115px taller while hidden: the anchor row came back 115px low before
+ * this and in place after.
  */
+interface SavedScroll {
+  el: Element;
+  top: number;
+  left: number;
+  anchor: Element | null;
+  /** The anchor's top, measured from the scroller's. */
+  offset: number;
+}
+
+/**
+ * The element standing across the scroller's middle: down through any
+ * wrapper taller than the view, to the first box that fits in it (a row,
+ * a card). Found by rect and not by `elementFromPoint`, which answers
+ * with the root element while a View Transition is up (measured in
+ * Chromium), and a page is hidden inside one.
+ */
+function anchorOf(el: Element, box: DOMRect): Element | null {
+  const mid = box.top + box.height / 2;
+  let found: Element | null = null;
+  for (let node: Element = el; ; ) {
+    let next: Element | null = null;
+    for (const kid of node.children) {
+      const r = kid.getBoundingClientRect();
+      if (r.height > 0 && r.top <= mid && r.bottom > mid) {
+        next = kid;
+        break;
+      }
+    }
+    if (!next) return found;
+    found = next;
+    if (next.getBoundingClientRect().height <= box.height) return found;
+    node = next;
+  }
+}
+
+/** How far the anchor has drifted from where it stood, put back. */
+function holdAnchor({ el, anchor, offset }: SavedScroll): void {
+  if (!anchor?.isConnected || !el.contains(anchor)) return;
+  const now = anchor.getBoundingClientRect().top - el.getBoundingClientRect().top;
+  if (Math.abs(now - offset) >= 1) el.scrollTop += now - offset;
+}
+
 function Slot({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null);
   const scrolled = useRef(new Set<Element>());
-  const saved = useRef<{ el: Element; top: number; left: number }[]>([]);
+  const saved = useRef<SavedScroll[]>([]);
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
@@ -129,18 +188,28 @@ function Slot({ children }: { children: ReactNode }) {
   useLayoutEffect(() => {
     const root = ref.current;
     const scrollers = scrolled.current;
-    for (const { el, top, left } of saved.current) {
-      if (root?.contains(el)) {
-        el.scrollTop = top;
-        el.scrollLeft = left;
-      }
+    const restored = saved.current.filter(({ el }) => root?.contains(el));
+    for (const s of restored) {
+      s.el.scrollTop = s.top;
+      s.el.scrollLeft = s.left;
+      holdAnchor(s);
     }
     saved.current = [];
+    const again = requestAnimationFrame(() => restored.forEach(holdAnchor));
     return () => {
-      const list: { el: Element; top: number; left: number }[] = [];
+      cancelAnimationFrame(again);
+      const list: SavedScroll[] = [];
       for (const el of scrollers) {
         if (el.isConnected && (el.scrollTop > 0 || el.scrollLeft > 0)) {
-          list.push({ el, top: el.scrollTop, left: el.scrollLeft });
+          const box = el.getBoundingClientRect();
+          const anchor = anchorOf(el, box);
+          list.push({
+            el,
+            top: el.scrollTop,
+            left: el.scrollLeft,
+            anchor,
+            offset: anchor ? anchor.getBoundingClientRect().top - box.top : 0,
+          });
         }
       }
       saved.current = list;
