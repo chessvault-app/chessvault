@@ -155,6 +155,30 @@
   opacity: 1;
   mix-blend-mode: normal;
 }
+/* The phone's bottom bar (shell/mobile-nav): the tabs, or a leaf page's
+   own controls. It stands outside the route slots, so a push or a pop
+   cut it to the new bar on the slide's first frame, under a page still
+   on its way (lanph3re's report, the games list and a game). The strip
+   itself is the same box and the same fill either way, so it stays, and
+   what is in it fades in over the slide. On the live elements, which
+   the root's new image is (see the toasts above), and not as a named
+   snapshot: `view-transition-name` on the bar ended React's transition
+   after 50ms against 396 without it (measured in Chromium, push and
+   pop), which lost the slide itself. */
+html[data-nav='push'] .bottom-bar > *,
+html[data-nav='pop'] .bottom-bar > * {
+  animation: bar-in var(--pane-turn) var(--pane-turn-ease) both;
+}
+@keyframes bar-in {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-nav] .bottom-bar > * {
+    animation: none;
+  }
+}
 /* The shared board (lib/shared-board): the group carrying it moves and
    resizes on the spring, and the two boards do not cross-fade on the
    way, which blurred the pieces mid-flight; the new one is shown as soon

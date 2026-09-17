@@ -23,6 +23,9 @@ export function MobileBottom({ active }: { active: Section }) {
           // frame beneath it, on the phones that can least afford it.
           'bg-card border-border flex items-stretch border-t md:hidden',
           'pb-[env(safe-area-inset-bottom)] keyboard:hidden',
+          // With the tab bar below: what is IN the bar arrives on the
+          // slide's clock during a page change (motion.css, `bar-in`).
+          'bottom-bar',
           !claimed && 'hidden',
         )}
       />
@@ -150,6 +153,8 @@ function MobileNav({ active }: { active: Section }) {
         'bg-card border-border relative flex shrink-0 items-stretch border-t md:hidden',
         // Clear the iOS home indicator.
         'pb-[env(safe-area-inset-bottom)]',
+        // The slot's arrival, shared (see MobileBottom).
+        'bottom-bar',
         // Gone while the keyboard is up. The shell now ends at the top of
         // the keyboard, so a bar pinned to the shell's bottom edge would
         // sit on the keys — which is exactly how the last attempt at this

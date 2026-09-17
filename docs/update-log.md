@@ -17,7 +17,7 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   stays in place under the licences, as a shelf does under a note.
 - **The review offer can be switched off.** Every opened game offered
   its review, as a toast on a phone and a band under the moves on a
-  desktop. Settings › Appearance › Review offer stops both on this
+  desktop. Settings › Appearance › More options › Review offer stops both on this
   device; the review button in the board's toolbar stays.
 - **A tap no longer raises a tooltip.** Tapping a game row on a phone
   could bring up the opening's name over the list. Tooltips now answer a
@@ -26,6 +26,16 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   offset.** A list left scrolled and shown again is held to the row that
   was on screen, so rows that changed height above it while it was hidden
   no longer move it.
+- **Every page waits for its slide to finish before it draws.** On a
+  phone a page that arrived mid-slide drew itself mid-slide, and the
+  slide lost frames to it: opening Licences from Settings stuttered the
+  way opening a game once did. A page now slides in as its outline and
+  fills in when the slide is over, which is what the game page already
+  did for itself.
+- **The phone's bottom bar changes with the page, not ahead of it.**
+  Opening a game swapped the tabs for the move controls on the slide's
+  first frame, and Back swapped them back the same way. What is in the
+  bar now fades in over the slide.
 
 ## 0.11.3
 
