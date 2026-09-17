@@ -232,9 +232,21 @@ export function ExplorerPane({
                 value={book ?? ''}
                 onValueChange={selectBook}
                 ariaLabel={t('Explorer source')}
+                variant="ghost"
                 size="sm"
                 align="end"
-                className="max-w-[8rem]"
+                // Wide enough for the names this list actually holds, and
+                // no wider. Measured on a phone at 440, where the band has
+                // 416px: the two icon buttons, the switch and their gaps
+                // take 116, so a 12rem trigger still leaves the title its
+                // 70. The old cap was 8rem, which left the name 86px and
+                // cut every source but "My games" — 107 for a Lumbras
+                // database, 119 for "Masters · lichess", and two databases
+                // sharing a prefix both came out as "lumbras-o…". A name
+                // longer than this still truncates; it has 107px more to
+                // do it in. Narrow columns are unaffected: the trigger
+                // shrinks, and on the desktop board page it always has.
+                className="max-w-48"
                 groups={[
                   // First, and always present: it needs no build step, so
                   // it is the one source a new vault can already explore.

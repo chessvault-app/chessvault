@@ -85,17 +85,35 @@ export interface SelectGroup {
 /**
  * The registry's trigger, with `pointer-coarse:h-9` on both sizes — a
  * toolbar is a ROW, and Button and Input grow there too.
+ *
+ * Two faces, the way Button has them. `outline` is the registry's own and
+ * what a form field wants: a box, because a field is a box you fill in.
+ * `ghost` is for a select that stands in a TOOLBAR beside icon buttons,
+ * which draw no box: the explorer's header had a bordered 8rem block in a
+ * 44px band whose other three controls were bare, and the block was both
+ * the heaviest thing in the band and, at 86px of room for its name, the
+ * only one that could not finish its sentence. The border is kept and
+ * turned transparent rather than dropped, so the two faces are the same
+ * box to the pixel and a caller can swap them without moving anything;
+ * `bg-clip-padding` keeps the hover fill inside it, as Button's does.
  */
 const selectTriggerVariants = cva(
-  "flex w-fit items-center justify-between gap-1.5 rounded-lg border border-input bg-transparent py-2 pr-2 pl-2.5 text-sm max-md:type-row whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4",
+  "flex w-fit items-center justify-between gap-1.5 rounded-lg border bg-transparent py-2 pr-2 pl-2.5 text-sm max-md:type-row whitespace-nowrap transition-colors outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-placeholder:text-muted-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4",
   {
     variants: {
+      variant: {
+        outline: 'border-input dark:bg-input/30 dark:hover:bg-input/50',
+        // Button's own ghost, verbatim, so a toolbar's select and the
+        // buttons beside it light up alike — the ground rungs included.
+        ghost:
+          'border-transparent bg-clip-padding hover:bg-muted hover:text-foreground pointer-coarse:active:bg-muted pointer-coarse:active:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50 dark:pointer-coarse:active:bg-muted/50 in-data-[ground]:hover:bg-accent in-data-[ground]:pointer-coarse:active:bg-accent in-data-[ground]:aria-expanded:bg-accent dark:in-data-[ground]:hover:bg-accent dark:in-data-[ground]:pointer-coarse:active:bg-accent',
+      },
       size: {
         sm: 'h-7 rounded-[min(var(--radius-md),10px)] pointer-coarse:h-9',
         default: 'h-8 pointer-coarse:h-9',
       },
     },
-    defaultVariants: { size: 'default' },
+    defaultVariants: { variant: 'outline', size: 'default' },
   },
 );
 
@@ -109,6 +127,7 @@ function SelectValue({ ...props }: SelectPrimitive.Value.Props) {
 
 function SelectTrigger({
   className,
+  variant = 'outline',
   size = 'default',
   children,
   ...props
@@ -117,7 +136,7 @@ function SelectTrigger({
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
-      className={cn(selectTriggerVariants({ size }), className)}
+      className={cn(selectTriggerVariants({ variant, size }), className)}
       {...props}
     >
       {children}
@@ -295,6 +314,9 @@ export interface SelectProps
   groups?: SelectGroup[];
   /** The trigger's accessible name; it renders no label of its own. */
   ariaLabel?: string;
+  /** `outline` (the default) for a field, `ghost` for a toolbar — see
+      selectTriggerVariants. */
+  variant?: 'outline' | 'ghost';
   size?: 'sm' | 'md';
   /** Which trigger edge the popover hugs. */
   align?: 'start' | 'end';
@@ -319,6 +341,7 @@ function Select({ groups, ...props }: SelectProps) {
   if (groups) return <SelectField groups={groups} {...props} />;
   const {
     ariaLabel: _a,
+    variant: _v,
     size: _s,
     align: _al,
     inset: _i,
@@ -345,6 +368,7 @@ function SelectField({
   onValueChange,
   groups,
   ariaLabel,
+  variant = 'outline',
   size = 'md',
   align = 'start',
   inset: _inset,
@@ -425,7 +449,11 @@ function SelectField({
           aria-haspopup="dialog"
           aria-expanded={open}
           onClick={() => setOpen(true)}
-          className={cn(selectTriggerVariants({ size: size === 'sm' ? 'sm' : 'default' }), mono && 'font-mono', className)}
+          className={cn(
+            selectTriggerVariants({ variant, size: size === 'sm' ? 'sm' : 'default' }),
+            mono && 'font-mono',
+            className,
+          )}
         >
           {/* Not drawn with a prefix: the value span already reads
               "Status: All", and aria-labelledby reads a hidden node too. */}
@@ -506,6 +534,7 @@ function SelectField({
       <SelectTrigger
         aria-label={label}
         aria-description={description}
+        variant={variant}
         size={size === 'sm' ? 'sm' : 'default'}
         className={cn('w-auto min-w-0 shrink', mono && 'font-mono', className)}
       >
