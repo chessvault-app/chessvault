@@ -5,7 +5,7 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.11.3
 
 Every page now waits as itself, and every page has one picture for the
 whole wait. 0.11.2 gave a loading page an outline its content settles
