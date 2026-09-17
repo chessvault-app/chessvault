@@ -67,7 +67,7 @@ export function lineOnly(root: MapNode, id: string): MapNode {
     return false;
   };
   if (!find(root)) return root;
-  let out = path[path.length - 1]!;
+  let out = path.at(-1)!;
   for (let at = path.length - 2; at >= 0; at -= 1) out = { ...path[at]!, children: [out] };
   return out;
 }

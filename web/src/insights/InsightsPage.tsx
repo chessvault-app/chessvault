@@ -686,7 +686,7 @@ function ActivityCard({ report }: { report: Report }) {
             </div>
             <figcaption className="text-muted-foreground mt-1 flex justify-between type-row-sub tabular-nums">
               <span>{label(series[0]!)}</span>
-              {series.length > 1 && <span>{label(series[series.length - 1]!)}</span>}
+              {series.length > 1 && <span>{label(series.at(-1)!)}</span>}
             </figcaption>
             {/* The pressed month's figures, in print: the one place on a
                 phone they can be read. */}

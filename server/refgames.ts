@@ -1824,7 +1824,7 @@ export function refGamesApi(
       capped: cursor === null ? capped : undefined,
       // The page after this one starts below the last id sent; a short
       // page is the end of the results.
-      nextCursor: page.length === PAGE ? page[page.length - 1]!.id : null,
+      nextCursor: page.length === PAGE ? page.at(-1)!.id : null,
       // moves ride along to name the openings the source PGN left
       // nameless and to fill the notation preview; the page is 50 rows,
       // so the replay cost is nothing.

@@ -105,7 +105,7 @@ function sampleMove(moves: ExplorerMove[]): ExplorerMove | null {
     r -= m.total;
     if (r < 0) return m;
   }
-  return playable[playable.length - 1] ?? null;
+  return playable.at(-1) ?? null;
 }
 
 /**

@@ -83,12 +83,12 @@ export function pageNumbers(words: Word[], book: BookText): NumberBox[] {
     const text = run.map((w) => w.text).join('');
     const value = Number(text);
     if (value >= 1 && value <= book.maxNumber && text.length <= 4) {
-      out.push({ value, x0: run[0]!.x0, x1: run[run.length - 1]!.x1, y1: run[run.length - 1]!.y1 });
+      out.push({ value, x0: run[0]!.x0, x1: run.at(-1)!.x1, y1: run.at(-1)!.y1 });
     }
     run = [];
   };
   for (const d of digits) {
-    const prev = run[run.length - 1];
+    const prev = run.at(-1);
     if (prev && Math.abs(d.y0 - prev.y0) < 3 && d.x0 - prev.x1 < 8 && d.x0 >= prev.x1 - 1) run.push(d);
     else {
       flush();
@@ -598,7 +598,7 @@ const PROMOTION_ROLES = { Q: 'queen', R: 'rook', B: 'bishop', N: 'knight' } as c
 export function tokenPrefix(token: string): string | null {
   const squares = token.match(SQ);
   if (!squares) return null;
-  const dest = squares[squares.length - 1]!;
+  const dest = squares.at(-1)!;
   let prefix = token.slice(0, token.lastIndexOf(dest));
   prefix = prefix.replace(/[x!?+#\s]/g, '');
   if (prefix.length === 0) return null;
@@ -659,7 +659,7 @@ export function resolveToken(
 
   const squares = token.match(SQ);
   if (!squares) return { ok: false, reason: `no square in "${token}"` };
-  const dest = squares[squares.length - 1]!;
+  const dest = squares.at(-1)!;
   const destSq = dest.charCodeAt(0) - 97 + (dest.charCodeAt(1) - 49) * 8;
   const wantsCapture = token.includes('x');
   const claimsMate = token.includes('#');

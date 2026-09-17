@@ -76,7 +76,7 @@ export function KeepAlive<T>({
   render: (key: string, data: T) => ReactNode;
 }) {
   const [slots, setSlots] = useState<Slot<T>[]>(() => [{ key: current, data }]);
-  const last = slots[slots.length - 1]!;
+  const last = slots.at(-1)!;
   if (last.key !== current) {
     const hidden = slots.filter((s) => s.key !== current && (s.key !== last.key || keep(last.key, last.data)));
     while (hidden.length > budget) hidden.shift();

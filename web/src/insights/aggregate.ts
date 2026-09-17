@@ -179,7 +179,7 @@ export function openingRows(cells: readonly InsightsCell[]): OpeningRow[] {
             ? null
             : codes.length === 1
               ? codes[0]!
-              : `${codes[0]}\u2013${codes[codes.length - 1]}`,
+              : `${codes[0]}\u2013${codes.at(-1)}`,
         meanExitPly: row.exits === 0 ? null : exitPlySum / row.exits,
         accuracy: row.accN === 0 ? null : row.accSum / row.accN,
       };
@@ -245,7 +245,7 @@ export function monthSeries(
   const by = new Map(months.map((m) => [m.month, m]));
   const sorted = [...by.keys()].sort();
   const [firstYear, firstMonth] = sorted[0]!.split('-').map(Number) as [number, number];
-  const [lastYear, lastMonth] = sorted[sorted.length - 1]!.split('-').map(Number) as [number, number];
+  const [lastYear, lastMonth] = sorted.at(-1)!.split('-').map(Number) as [number, number];
   const out: MonthTally[] = [];
   let y = firstYear;
   let m = firstMonth;

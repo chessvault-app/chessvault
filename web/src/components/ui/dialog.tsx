@@ -181,7 +181,7 @@ function Dialog({
   React.useEffect(() => {
     if (open) resetSnapPoint();
   }, [open]);
-  const lowered = Boolean(phone && snapPoints && snapPoint !== snapPoints[snapPoints.length - 1]);
+  const lowered = Boolean(phone && snapPoints && snapPoint !== snapPoints.at(-1));
   // The sheet's exit, held here. Nearly every window in the app mounts
   // its Root already open and unmounts it the moment the caller hears
   // onOpenChange(false), so the primitive never sees `open` flip and its
@@ -565,7 +565,7 @@ function DialogContent({
     requestRef.current = request;
   });
   const route = () => {
-    const top = pageRequests.current[pageRequests.current.length - 1];
+    const top = pageRequests.current.at(-1);
     (top ?? requestRef.current)();
   };
 

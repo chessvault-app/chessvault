@@ -109,7 +109,7 @@ export function layoutTree(
         edges.push({ from: node.id, to: child.id });
         return place(child, depth + 1);
       });
-      across = (kids[0]! + kids[kids.length - 1]!) / 2;
+      across = (kids[0]! + kids.at(-1)!) / 2;
     }
     const along = depth * TREE_LEVEL;
     nodes.push({
