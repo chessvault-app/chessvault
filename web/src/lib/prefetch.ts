@@ -36,7 +36,7 @@ interface NetworkInformation {
 }
 
 /** Whether this link should be spared: the user asked, or it is 2G. */
-export function dataConstrained(): boolean {
+function dataConstrained(): boolean {
   const connection = (navigator as Navigator & { connection?: NetworkInformation }).connection;
   if (connection?.saveData) return true;
   if (connection?.effectiveType && /2g/.test(connection.effectiveType)) return true;

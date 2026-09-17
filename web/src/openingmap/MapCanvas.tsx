@@ -651,7 +651,6 @@ export function MapCanvas({
    */
   const nodeCount = graph.nodes.length;
   /** The Align count the last fit answered, so a fit can tell being ASKED from arriving. */
-  const alignSeen = useRef(align);
   /**
    * Bumped when the host gains a size after having none, so the fit runs
    * once there is something to fit into.
@@ -681,10 +680,6 @@ export function MapCanvas({
       watch.observe(el);
       return () => watch.disconnect();
     }
-    // Read only once the fit is going to happen, so an Align pressed while
-    // the host had no size is still "asked" when the retry lands.
-    const asked = align !== alignSeen.current;
-    alignSeen.current = align;
     /**
      * Fit the picture that is actually on screen, not the layout's idea
      * of it. After a drag the dots stand where the reader put them —
@@ -722,7 +717,6 @@ export function MapCanvas({
      * away. The opening view and Align now agree, so pressing Align on
      * arrival does nothing, which is what a reader expects of it.
      */
-    void asked;
     commitView(fitView(box, { minX, minY, maxX, maxY }));
   });
   useLayoutEffect(() => fit(), [nodeCount, map.id, arrangement, align, refit, sized]);

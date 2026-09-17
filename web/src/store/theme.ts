@@ -59,7 +59,7 @@ const resolve = (p: ThemePreference): 'light' | 'dark' =>
  * actually resolves to is stored here whenever it changes, and the next
  * launch pins that.
  */
-export const GROUND_KEY = 'chess-vault:ground';
+const GROUND_KEY = 'chess-vault:ground';
 export function rememberGround(): void {
   // The body, not the root: the root may still wear the launch pin when
   // the scheme is applied, and reading it back would store the pin.

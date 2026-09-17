@@ -119,7 +119,6 @@ export function BooksPage() {
       // Bounded, because a cover is a nicety: if the images are slow or
       // missing the shelf draws anyway.
       await decodeImages(next.filter((b) => b.cover).map((b) => coverUrl(b.id, b.bytes)));
-      libraryMemory.coversDecoded = true;
       setBooks(next);
       setFolders(libraryMemory.folders);
       setError(null);

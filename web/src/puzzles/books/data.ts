@@ -287,7 +287,6 @@ const solutionCache = new Map<string, Record<string, PuzzleSolution>>();
  */
 export const shelfMemory = {
   books: null as BookSummary[] | null,
-  coversDecoded: false,
 };
 
 export function forgetBook(slug?: string): void {

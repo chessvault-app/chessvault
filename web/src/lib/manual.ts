@@ -8,6 +8,6 @@
  * manual picks its language the way the app does, from the same stored
  * choice on its own origin or the browser's language.
  */
-export const SITE_URL = 'https://chessvault-app.github.io';
+const SITE_URL = 'https://chessvault-app.github.io';
 
 export const manualUrl = (page: string): string => `${SITE_URL}/docs.html#${page}`;

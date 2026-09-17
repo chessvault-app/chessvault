@@ -1218,7 +1218,6 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
     // the stream alone: the React Compiler cannot lower a conditional
     // inside one yet.
     const query = new URLSearchParams({ fen, db });
-    const filterQuery = refFilterQuery(refFilters);
     const url = `/api/refgames/deep-search?${query}${filterQuery ? `&${filterQuery}` : ''}`;
     type Frame =
       | ({ type: 'game' } & DeepHit)

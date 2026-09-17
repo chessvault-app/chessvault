@@ -127,7 +127,6 @@ export function Shelf() {
       await decodeImages(
         fresh.map((b) => `/api/puzzlebooks/${encodeURIComponent(b.slug)}/diagrams/cover.jpg`),
       );
-      shelfMemory.coversDecoded = true;
       shelfMemory.books = fresh;
       setBooks(fresh);
       setError(null);

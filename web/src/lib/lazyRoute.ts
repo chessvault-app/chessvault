@@ -82,7 +82,7 @@ const COOLDOWN_MS = 10_000;
 /** How long a chunk may take before its placeholder is drawn. */
 export const PENDING_MS = 200;
 /** How long a drawn placeholder stays, so it cannot flash. */
-export const MIN_VISIBLE_MS = 500;
+const MIN_VISIBLE_MS = 500;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- React's own
 // lazy() was typed this way; narrowing it here would reject valid components.

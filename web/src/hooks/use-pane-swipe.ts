@@ -93,7 +93,7 @@ const SETTLE_SLACK_MS = 16;
  * one end to the other would be the only thing on the page saying the row
  * is a ring.
  */
-export function paneBeside<T extends string>(ids: readonly T[], value: T, dx: number): T | null {
+function paneBeside<T extends string>(ids: readonly T[], value: T, dx: number): T | null {
   const from = ids.indexOf(value);
   if (from < 0) return null;
   return ids[from + (dx < 0 ? 1 : -1)] ?? null;
@@ -106,7 +106,7 @@ export function paneBeside<T extends string>(ids: readonly T[], value: T, dx: nu
  * `span` is the whole trip — the pane's width plus the gutter — so both
  * halves of this are read against the distance the finger could see moving.
  */
-export function swipeCommits(dx: number, span: number, velocity: number): boolean {
+function swipeCommits(dx: number, span: number, velocity: number): boolean {
   if (Math.abs(dx) < SLOP) return false;
   if (span > 0 && Math.abs(dx) >= span * COMMIT_SHARE) return true;
   return Math.sign(velocity) === Math.sign(dx) && Math.abs(velocity) >= FLICK_PX_PER_MS;

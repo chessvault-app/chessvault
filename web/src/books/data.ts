@@ -65,13 +65,10 @@ export const libraryMemory = {
   books: null as LibraryBook[] | null,
   /** Every collection, in use or created empty; with the list. */
   folders: [] as string[],
-  /** The covers were decoded once; coming back need not wait for them. */
-  coversDecoded: false,
 };
 
 export function forgetLibrary(): void {
   libraryMemory.books = null;
-  libraryMemory.coversDecoded = false;
 }
 
 export async function loadBooks(force = false): Promise<LibraryBook[]> {

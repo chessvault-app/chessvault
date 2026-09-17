@@ -34,7 +34,7 @@ const publish = (next: VaultInfo): void => {
 };
 
 /** Starts the fetch on first use; resolves to whatever the server said. */
-export const vaultInfo = (): Promise<VaultInfo> =>
+const vaultInfo = (): Promise<VaultInfo> =>
   (once ??= api<{ vaultPath?: string; name?: string | null }>('/api/settings')
     .then((s) => {
       publish({ path: s.vaultPath ?? null, name: s.name ?? null, loaded: true });

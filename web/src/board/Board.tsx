@@ -100,7 +100,7 @@ function pruneKingCastleDests(
  * mounts afresh at the final position, which is a jump, not a move (see
  * the trainers' solution replays).
  */
-export const BOARD_ANIM_MS = 180;
+const BOARD_ANIM_MS = 180;
 
 /**
  * That duration, or none at all when the user has asked for less motion.
