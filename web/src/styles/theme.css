@@ -1,0 +1,157 @@
+/* Expose the tokens as Tailwind utilities. `inline` makes `bg-surface` compile
+   to `var(--surface)` directly, so flipping `.dark` re-themes without a rebuild
+   and without duplicating every utility behind a `dark:` variant. */
+@theme inline {
+  /* shadcn's vocabulary first — the names every registry component is
+     written against, so one added with `npx shadcn add` is themed the
+     moment it lands. Each is a ROLE; the app's own surface ladder above
+     supplies the values (card and popover are both --surface, the way
+     shadcn's own themes make them both white). */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-card-ring: var(--card-ring);
+  --color-window-ring: var(--window-ring);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-field-halo: var(--field-halo);
+
+  /* The app's extensions — what shadcn has no word for, named in its
+     style. The ladder's extra rungs (surface-3, surface-inset, text-subtle,
+     border-strong, primary-hover, primary-soft) still exist as variables
+     but are no utilities: everything on the page speaks the registry's
+     vocabulary above. */
+  --color-background-accent: var(--background-accent);
+
+  /* The colour grammar (docs/design-principles.md): green, amber and blue
+     each mean one thing; destructive above is the red. */
+  --color-good: var(--good);
+  --color-good-tint: var(--good-tint);
+  --color-destructive-tint: var(--destructive-tint);
+  --color-warn: var(--warn);
+  --color-warn-foreground: var(--warn-foreground);
+  --color-info: var(--info);
+  --color-toast: var(--toast);
+  --color-toast-foreground: var(--toast-foreground);
+
+  --color-eval-white: var(--eval-white);
+  --color-eval-black: var(--eval-black);
+  --color-eval-border: var(--eval-border);
+  --color-on-eval-white: var(--on-eval-white);
+  --color-on-eval-black: var(--on-eval-black);
+  --color-result-draw: var(--result-draw);
+
+  --color-side-white: var(--side-white);
+  --color-side-white-line: var(--side-white-line);
+  --color-side-black: var(--side-black);
+  --color-side-black-line: var(--side-black-line);
+
+  --color-nag-good: var(--nag-good);
+  --color-nag-mistake: var(--nag-mistake);
+  --color-nag-brilliant: var(--nag-brilliant);
+  --color-nag-blunder: var(--nag-blunder);
+  --color-nag-interesting: var(--nag-interesting);
+  --color-nag-dubious: var(--nag-dubious);
+  --color-nag-book: var(--nag-book);
+  --color-nag-foreground: var(--nag-foreground);
+
+  --color-knob: var(--knob);
+  --color-scrim: var(--scrim);
+
+  /* The corner ladder is the registry's: every rung a multiple of the one
+     --radius on :root (6 / 8 / 10 / 14 / 18 px at the default 0.625rem), so
+     moving that number moves the whole app. Bare `rounded` is NOT on the
+     ladder: Tailwind resolves it from a theme key named --radius itself,
+     which this file keeps as a plain :root property on purpose — the
+     badges and move chips that use it want 4px, not the knob. */
+  /* The rung below --text-xs, and the last one there is.
+     The ramp stopped at the 12px label, and seven places needed
+     something smaller than that and wrote it as a magic
+     `text-[10px]`/`text-[0.625rem]` each — a tier nobody had named, which
+     is the shape DESIGN.md forbids. Three of them were the same 10px
+     asking for the same thing: a number or a mark read off a dense
+     surface, never a sentence. That is this.
+
+     It does NOT cover the sizes below it. A glyph fitted to a box it has
+     to sit inside — the heat-map badge in a board square, the result bar
+     inside its 16px track, the ✓/✗ in a tile corner — is sized by the box
+     and is not on the ladder at all; see DESIGN.md. */
+  --text-micro: 0.625rem;
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Three roles, deliberately not two.
+
+     sans  — the whole UI.
+     mono  — anything the eye scans as a COLUMN or copies as a literal:
+             evaluations, clocks, ratings, counts, FEN, PGN. Tabular figures
+             and a fixed advance are the point.
+     moves — SAN. It is prose, not data: "Nf3" read aloud is a word, and the
+             move lists it sits in already align by cell, not by character.
+             Mono made every move list look like a terminal.
+
+     `moves` resolving to the same family as `sans` is not an accident to be
+     collapsed away — the two answer different questions, and a move list is
+     exactly the place someone will want to change one without the other. */
+  --font-sans: 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-moves: var(--font-sans);
+  /* The registry's heading face is Geist; it has no hangul, and the app
+     has one voice — Pretendard, set so its Latin is Inter-shaped. */
+  --font-heading: var(--font-sans);
+  /* Pretendard sits in the mono stack ON PURPOSE, ahead of the generic
+     fallbacks. JetBrains Mono has no hangul, so a Korean word inside a
+     mono element fell through to whatever the OS offered — which is why
+     "엔진" and "깊이" rendered as two different typefaces two centimetres
+     apart, one of them not Pretendard. Latin still hits JetBrains Mono
+     first and keeps its fixed advance; only the characters JetBrains Mono
+     genuinely cannot draw reach Pretendard, and those were never going to
+     be monospaced anyway. */
+  --font-mono: 'JetBrains Mono', 'Pretendard Variable', Pretendard, ui-monospace, 'SF Mono',
+    Menlo, monospace;
+
+  /* Three lifts, all cast in --shadow-color so they agree with each
+     other and with the theme's hue — Tailwind's own shadow-sm/md are
+     fixed black and sat beside these as a different-coloured shadow.
+       control — the slightest lift: a primary button, the active tab
+                 in a pill track, a label chip on the board. Tailwind's
+                 shadow-sm geometry, in the app's colour.
+       panel   — a card or panel resting on the page.
+       pop     — something floating OVER the page: popover, sheet, toast,
+                 fab, a peek card. */
+  --shadow-control: 0 1px 3px 0 hsl(var(--shadow-color) / 10%), 0 1px 2px -1px hsl(var(--shadow-color) / 10%);
+  --shadow-panel: 0 1px 2px -1px hsl(var(--shadow-color) / 12%), 0 4px 16px -6px hsl(var(--shadow-color) / 14%);
+  --shadow-pop: 0 4px 12px -2px hsl(var(--shadow-color) / 18%), 0 16px 40px -12px hsl(var(--shadow-color) / 22%);
+  /* The Tailwind utilities resolve to the three tokens, so a call site
+     cannot cast a fixed-black shadow by habit. An audit counted 31
+     shadow-sm/md/lg in the tree against a record that said five and
+     the tokens consumed once; mapping them here is what makes the One
+     Shadow Colour rule true by construction instead of by review.
+     sm is control, md is panel, lg and above are pop. */
+  --shadow-sm: var(--shadow-control);
+  --shadow-md: var(--shadow-panel);
+  --shadow-lg: var(--shadow-pop);
+  --shadow-xl: var(--shadow-pop);
+  --shadow-2xl: var(--shadow-pop);
+}
+

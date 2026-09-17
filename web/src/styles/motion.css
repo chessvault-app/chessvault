@@ -1,0 +1,180 @@
+/* A phone's page change goes through the browser's own View Transitions
+   (lib/router, swapRoute), in one of two shapes the router stamps on
+   the root as `data-nav`. A tab switch between two top-level pages is
+   a cut and never comes here: it was a fade-through, and the fade read
+   as the screen flickering (lanph3re, 2026-09-13).
+
+   - `push`, down into a leaf: the new page slides in from the right on
+     the spring while the old one slides a third of the way out under it
+     and darkens. No fade on either: this is the platform's own shape on
+     iPhone, where the app is tested.
+   - `pop`, back up: the mirror. The old page slides out to the right on
+     the spring run backwards, over the new one coming back from a third
+     of the way left.
+
+   The UA's default is a 250ms cross-fade with `plus-lighter` blending;
+   the slides set blending back to normal or the two pages add up where
+   they overlap. Reduced motion takes the cut: the router never starts
+   one, and the block at the end covers a transition started by anything
+   else. */
+::view-transition-group(root),
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 150ms;
+  animation-timing-function: var(--pane-turn-ease);
+}
+/* The group too, not only the two images: the UA gives the root's group
+   its own 250ms, and the live page stays hidden under the pseudo-elements
+   until the LAST animation ends, so a shorter animation on the images
+   alone still held the new page back for 250ms plus the frame after.
+   Measured on the demo in phone-emulated Chromium, opening a game from a
+   games row: the transition finished 366ms after the tap before this,
+   and the board and the toast could only appear after it. */
+/* A popup closing while a page turns: no exit animation. The router
+   closes every open popup before it starts the turn (lib/popups), and
+   Base UI reports the close with flushSync when the closing animation
+   ends; an end that lands inside the pending turn is what makes React
+   skip it. With `data-nav` on the root the animation is none, so the
+   end is now, inside the router's own flush. The tooltip does the same
+   by not rendering its content at all (components/title-tip). */
+:root[data-nav]
+  :is(
+    [data-slot='popover-content'],
+    [data-slot='dropdown-menu-content'],
+    [data-slot='context-menu-content'],
+    [data-slot='select-content']
+  )[data-closed] {
+  animation: none !important;
+}
+/* With the pages on snapshots of their own (below), the root's image
+   holds only the shell around them and moves not at all; the root rules
+   that slid the whole page for a push and a pop went when the page turn
+   became React's (2026-09-14). */
+:root[data-nav='push']::view-transition-group(root),
+:root[data-nav='pop']::view-transition-group(root),
+:root[data-nav='push']::view-transition-old(root),
+:root[data-nav='pop']::view-transition-old(root),
+:root[data-nav='push']::view-transition-new(root),
+:root[data-nav='pop']::view-transition-new(root) {
+  animation: none;
+}
+/* The four page-turn animations, on the route slots' own snapshots,
+   named by React's <ViewTransition> classes
+   (lib/keep-alive) rather than on the root. The root then has nothing
+   of the page left in it and takes no animation, or its 250ms default
+   cross-fade would hold the live page back the way it once did. */
+::view-transition-group(.vt-page-in),
+::view-transition-group(.vt-page-out),
+::view-transition-group(.vt-page-under-in),
+::view-transition-group(.vt-page-under-out) {
+  animation-duration: var(--pane-turn);
+  animation-timing-function: var(--pane-turn-ease);
+}
+::view-transition-old(.vt-page-in),
+::view-transition-new(.vt-page-in),
+::view-transition-old(.vt-page-out),
+::view-transition-new(.vt-page-out),
+::view-transition-old(.vt-page-under-in),
+::view-transition-new(.vt-page-under-in),
+::view-transition-old(.vt-page-under-out),
+::view-transition-new(.vt-page-under-out) {
+  /* The UA's default cross-fade blends with plus-lighter; the slides
+     need normal blending or the two pages add up where they overlap. */
+  mix-blend-mode: normal;
+}
+::view-transition-new(.vt-page-in) {
+  animation: vt-slide-in var(--pane-turn) var(--pane-turn-ease) both;
+}
+::view-transition-old(.vt-page-under-out) {
+  animation: vt-under-out var(--pane-turn) var(--pane-turn-ease) both;
+}
+::view-transition-old(.vt-page-out) {
+  animation: vt-slide-out var(--pane-turn) var(--pane-turn-ease-out) both;
+}
+::view-transition-group(.vt-page-out) {
+  /* The leaving page is on top of the one returning under it. */
+  z-index: 1;
+}
+::view-transition-new(.vt-page-under-in) {
+  animation: vt-under-in var(--pane-turn) var(--pane-turn-ease) both;
+}
+@keyframes vt-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+@keyframes vt-slide-out {
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes vt-under-out {
+  to {
+    transform: translateX(-33%);
+    filter: brightness(0.85);
+  }
+}
+/* The content under a page inside a window (components/ui/dialog,
+   `stack`): the same under-out and under-in the router's push and pop
+   give the page below, on the same clock, so a page turning inside a
+   sheet moves like a page turning in the app. */
+@utility page-under-leave {
+  animation: vt-under-out var(--pane-turn) var(--pane-turn-ease) both;
+}
+@utility page-under-return {
+  animation: vt-under-in var(--pane-turn) var(--pane-turn-ease) both;
+}
+@keyframes vt-under-in {
+  from {
+    transform: translateX(-33%);
+    filter: brightness(0.85);
+  }
+}
+/* The toasts (components/ui/toast), on a snapshot of their own rather
+   than the page's. A fixed overlay captured with the page is dragged by
+   the page's animation, and the review offer rode a pop clean off the
+   right edge of a phone. Held still and live instead, so a toast plays
+   its own entrance and exit through a page change, where it stands:
+   `::view-transition-new` is the live element and not a still, which is
+   what makes that work, and the old image is dropped rather than
+   cross-faded, or the toast doubles with itself for the length of the
+   slide. The name is taken only while a toast is up, so a page change
+   over an empty layer pays for no second snapshot. */
+[data-slot='toast-layer']:has([data-slot='toast']) {
+  view-transition-name: toasts;
+}
+::view-transition-group(toasts) {
+  animation: none;
+}
+::view-transition-old(toasts) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(toasts) {
+  animation: none;
+  opacity: 1;
+  mix-blend-mode: normal;
+}
+/* The shared board (lib/shared-board): the group carrying it moves and
+   resizes on the spring, and the two boards do not cross-fade on the
+   way, which blurred the pieces mid-flight; the new one is shown as soon
+   as the group starts. */
+::view-transition-group(board) {
+  animation-duration: var(--pane-turn);
+  animation-timing-function: var(--pane-turn-ease);
+}
+::view-transition-old(board) {
+  animation: none;
+  opacity: 0;
+}
+::view-transition-new(board) {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+

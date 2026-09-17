@@ -4,13 +4,13 @@ import { describe, expect, it } from 'vitest';
 import { BOARD_ACCENT } from './prefs';
 
 /**
- * BOARD_ACCENT mirrors each preset's dark square in index.css. The two are
+ * BOARD_ACCENT mirrors each preset's dark square in styles/board-themes.css. The two are
  * written twice because one is CSS and one is a number the scheme knob
  * needs before any element exists; this holds them together the way
  * media.test.ts holds the layout query to its CSS twin.
  */
 describe('BOARD_ACCENT', () => {
-  const css = readFileSync(resolve(__dirname, '..', 'index.css'), 'utf-8');
+  const css = readFileSync(resolve(__dirname, '..', 'styles', 'board-themes.css'), 'utf-8');
   const darkOf = (id: string): { hue: number; chroma: number } | null => {
     const block = css.match(new RegExp(String.raw`\[data-board='${id}'\]\s*\{([^}]*)\}`));
     const m = block?.[1]?.match(/--board-dark:\s*oklch\([\d.]+%\s+([\d.]+)\s+([\d.]+)\)/);

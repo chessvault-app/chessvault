@@ -1,0 +1,194 @@
+/* Scrolls without showing a bar — for panel columns whose panels make
+   their own scroll affordances (lanph3re: hide it, don't disable it).
+
+   `@utility`, not a plain class in `@layer base`, and it has to be both.
+   As a bare rule Tailwind knew nothing about it, so it could not build
+   `wide:`/`lg:`/`max-lg:` versions — and those are how every board page
+   asks for it. Nothing was emitted for them at all, the `*` rule above
+   kept its thin scrollbar, and the side columns lost 10 px of panel
+   width the moment their content overflowed. Registered as a utility,
+   the variants exist and land in the utilities layer, which outranks
+   base whatever the selectors weigh. */
+@utility scrollbar-hidden {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* The type of a list row and its panel heading, and of the tail beside
+   the row's text (a date, a count, a difficulty word): text-sm and text-xs
+   on a desktop, one rung up on a phone.
+
+   Both platforms put a list row's line at 16 or 17 and its supporting
+   line at 14 or 15 (iOS Body 17 / Subheadline 15; Material 3 Body Large
+   16 / Body Medium 14), and the app's rows sat one rung under each at
+   every width: 14 over 12, which is the desktop convention (macOS 13pt,
+   Windows 14px, dense web tables 13 to 14) and read as fine print beside
+   the phone's boards (lanph3re, 2026-09-14, after the puzzle hub's cards
+   were lifted the same way by hand). Named here rather than written as
+   `text-sm max-md:text-base` at thirty sites, which is a tier nobody had
+   named, the shape this file forbids for the 10px rung below.
+
+   Registered as utilities so the rows keep Tailwind's vocabulary, with
+   the size's own line height, as text-sm and text-xs set it. NOT named
+   `text-row`: twMerge reads any unknown `text-*` as a text colour, so in
+   a cn() that also names a colour the size class was silently dropped
+   (measured: the theme tiles' labels inherited 16px on a desktop). The
+   breakpoint is md, the phone width every page layout turns on. */
+@utility type-row {
+  font-size: var(--text-sm);
+  line-height: var(--tw-leading, var(--text-sm--line-height));
+  @media (width < 48rem) {
+    font-size: var(--text-base);
+    line-height: var(--tw-leading, var(--text-base--line-height));
+  }
+}
+@utility type-row-sub {
+  font-size: var(--text-xs);
+  line-height: var(--tw-leading, var(--text-xs--line-height));
+  @media (width < 48rem) {
+    font-size: var(--text-sm);
+    line-height: var(--tw-leading, var(--text-sm--line-height));
+  }
+}
+
+/* The BOX a placeholder bar waits in where one of those lines is coming:
+   the same line box at the same widths, read from the same variables, so
+   a reservation cannot be left behind when the rung moves.
+
+   The rungs above landed on 2026-09-15 and every placeholder for a row
+   kept the height it had been measured at before them, which is the
+   desktop number. Measured on the demo's themes grid at 390: a
+   placeholder card 58px against the 66px card that replaced it, over the
+   71 cards and 9 group headings that page draws, so its two columns
+   settled about 324px short. Computed the same way from the classes,
+   since neither page can be reached on the static demo: a databases row
+   8px a row over the twelve it reserves, the insights outline about
+   270px on its default shape, a shelf card 4px. The two sites that had
+   noticed wrote `h-5 max-md:h-6` by hand (the dashboard's books panel
+   and its log), which is the unnamed tier the note above forbids, and
+   seven more wrote `h-5` and were simply wrong below md. Put the height
+   on a box that carries no padding of its own: these are border-box, so
+   a padding on the same element comes out of the line rather than adding
+   to it.
+
+   The height is the size TIMES its line height, because `--text-*--line-height`
+   in this theme is a ratio and not a length (`calc(1.25 / .875)` for
+   text-sm). `height: var(--text-sm--line-height)` parses as a number with
+   no unit, so the declaration is dropped and Tailwind emits no rule at
+   all: measured on the themes grid, the cards came out 40px, which is
+   the padding plus the two bars and no line box between them. */
+@utility type-row-box {
+  height: calc(var(--text-sm) * var(--text-sm--line-height));
+  @media (width < 48rem) {
+    height: calc(var(--text-base) * var(--text-base--line-height));
+  }
+}
+@utility type-row-sub-box {
+  height: calc(var(--text-xs) * var(--text-xs--line-height));
+  @media (width < 48rem) {
+    height: calc(var(--text-sm) * var(--text-sm--line-height));
+  }
+}
+
+/* The icon rungs, on the type rungs' bargain: the app's row glyph is 14px
+   (a chevron, a row's leading icon, the icon in a small button) and its
+   mark is 12 (a bookmark on a card, a badge's tick), and both platforms
+   draw a phone's list glyph at 20 to 24 and a toolbar glyph at 20 to 22.
+   One rung up under md: glyph 14 -> 16, glyph-sm 12 -> 14. The icon-only
+   Button variants go further on their own (button.tsx): 20, whatever
+   class the icon carries, because that is a toolbar glyph and not a
+   row's. Every `size-3.5` and `size-3` on an icon was rewritten to these
+   (2026-09-15); a bare `size-3` left in app code is a dot or a swatch. */
+@utility glyph {
+  width: calc(var(--spacing) * 3.5);
+  height: calc(var(--spacing) * 3.5);
+  @media (width < 48rem) {
+    width: calc(var(--spacing) * 4);
+    height: calc(var(--spacing) * 4);
+  }
+}
+@utility glyph-sm {
+  width: calc(var(--spacing) * 3);
+  height: calc(var(--spacing) * 3);
+  @media (width < 48rem) {
+    width: calc(var(--spacing) * 3.5);
+    height: calc(var(--spacing) * 3.5);
+  }
+}
+
+/* The current-section pill, behind the sidebar row and the phone tab bar's
+   icon: 12% of primary over the card, Material 3's tonal indicator. It was
+   --muted with a primary/30 inset ring, and the ring read as a chip's
+   outline, grey on grey under the neutral scheme and the most visible part
+   of the pill in the dark. A tonal fill separates on its own: under a tinted
+   scheme it takes the scheme's colour, under neutral it is a grey a step
+   past --muted, and in the dark, where primary is light, it stands off the
+   card more than --muted did. */
+@utility bg-nav-pill {
+  background-color: color-mix(in oklch, var(--primary) 12%, var(--card));
+}
+
+/* Optical centring, for content that sits alone in a frame-scale box —
+   empty states, the desktop dialog. The perceived middle of a frame is
+   ABOVE its geometric middle (the vertical-bisection illusion; "optical
+   centre" in typography and framing, roughly 3–7% of the frame height up),
+   so truly centred content reads as sagging. The board pages already sit
+   above centre for the same reason — see BOARD_WIDE_COLUMN in
+   components/layout.ts.
+
+   Mechanism: a three-row grid whose pseudo-element spacers split the free
+   space 10:13, which raises the content by 6.5% of that free space — about
+   6% of the frame for a near-empty page, proportionally less as the
+   content grows, and `minmax(0, …)` lets both spacers collapse before tall
+   content is squeezed. One utility rather than a per-site ratio, so every
+   frame in the app is raised by the same rule.
+
+   `grid-template-columns: 100%` and not an auto column: the row's width
+   must be the frame's, so a `w-full` child (the dialog card) has something
+   to be 100% OF and `justify-items` centres the narrower ones. */
+@utility optical-center {
+  display: grid;
+  grid-template-columns: 100%;
+  grid-template-rows: minmax(0, 10fr) auto minmax(0, 13fr);
+  justify-items: center;
+  &::before,
+  &::after {
+    content: '';
+  }
+}
+
+/* The phone sheet's top corners: the xl rung at full height, rounding
+   further as the sheet drops. The drop is what the Drawer publishes, the
+   resting offset of a lower snap point plus whatever a finger has pulled
+   it down by (never up: an overshoot above full height is damped by the
+   engine and squares nothing), and the corner grows by the drop's share
+   of 480px, so a sheet resting a third of a phone down carries a corner
+   about a third rounder than one at the top. The radius the Corners
+   setting chooses (`--radius`, the xl rung of it) is the only length in
+   the sum: Square stays square at every height, and Large grows
+   proportionally. tan(atan2()) is how CSS turns two lengths into a
+   number; calc() will not divide one length by another.
+
+   The sheet also stands in from the edges by the same drop, a sixtieth
+   of it: flush at full height, about 7px in at the half rest, so a sheet
+   resting low reads as a card over the page rather than a page cut
+   short, and its bottom corners round by the drop's share alone (0 at
+   full, where it meets the screen edge and has nothing to be round
+   against). The inset is a margin, not a transform, so the Drawer's
+   swipe arithmetic never sees it. */
+@utility sheet-corners {
+  --sheet-drop: calc(
+    var(--drawer-snap-point-offset, 0px) + max(0px, var(--drawer-swipe-movement-y, 0px))
+  );
+  --sheet-inset: calc(var(--sheet-drop) / 60);
+  margin-inline: var(--sheet-inset);
+  margin-bottom: var(--sheet-inset);
+  border-top-left-radius: calc(var(--radius-xl) * (1 + tan(atan2(var(--sheet-drop), 480px))));
+  border-top-right-radius: calc(var(--radius-xl) * (1 + tan(atan2(var(--sheet-drop), 480px))));
+  border-bottom-left-radius: calc(var(--radius-xl) * tan(atan2(var(--sheet-drop), 480px)));
+  border-bottom-right-radius: calc(var(--radius-xl) * tan(atan2(var(--sheet-drop), 480px)));
+}
+
+

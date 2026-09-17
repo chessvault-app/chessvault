@@ -1,0 +1,246 @@
+/* ---------------------------------------------------------------------------
+   Board theme.
+
+   chessground ships its square colours as a base64 SVG with fixed hex values,
+   which can't respond to CSS variables. Replacing it with a conic-gradient
+   checkerboard makes both square colours token-driven, so the board themes
+   along with the rest of the app for free.
+   --------------------------------------------------------------------------- */
+
+cg-board {
+  background-color: var(--board-light);
+  /* A theme may add a grain layer over the checkerboard (see --board-grain).
+     soft-light leaves the mean of what it covers untouched, so the grain
+     modulates the two tokens rather than replacing them: the squares keep
+     the colour the theme set, and everything derived from those tokens —
+     the coordinate labels below, the mini board, the editor's piece tray —
+     stays correct without knowing a texture is there. */
+  background-image: var(--board-grain, none),
+    repeating-conic-gradient(var(--board-dark) 0% 25%, transparent 0% 50%);
+  background-size: 100% 100%, 25% 25%;
+  background-position: top left;
+  background-blend-mode: soft-light, normal;
+}
+
+cg-board square.last-move {
+  background-color: var(--sq-last-move);
+}
+
+cg-board square.selected {
+  background-color: var(--sq-selected);
+}
+
+/* Empty legal destination: a centred dot. Occupied (`.oc`): a ring, so the
+   piece underneath stays visible. */
+cg-board square.move-dest {
+  background: radial-gradient(var(--sq-dest) 19%, transparent 20%);
+}
+
+cg-board square.oc.move-dest {
+  background: radial-gradient(transparent 0 78%, var(--sq-dest) 78%);
+}
+
+cg-board square.move-dest:hover,
+cg-board square.move-dest.hover {
+  background: var(--sq-dest);
+}
+
+cg-board square.check {
+  background: radial-gradient(
+    ellipse at center,
+    var(--sq-check) 0%,
+    color-mix(in oklch, var(--sq-check), transparent 40%) 32%,
+    transparent 78%
+  );
+}
+
+/* Coordinate labels. */
+.cg-wrap coords {
+  font-family: var(--font-mono);
+  font-size: 0.66em;
+  /* 600, not chessground's 700: the ladder draws three weights and this
+     is the smallest text on the screen, the size both platforms tell you
+     not to set in bold. The size is fitted to the square and stays. */
+  font-weight: 600;
+  /* Lowercase files, as chess prints them and as every SAN in the moves
+     panel already has them; chessground's stylesheet uppercases the
+     labels and the board read "A B C D" under "1. e4". */
+  text-transform: none;
+  /* Full ink. chessground's stylesheet washes coords to 80%, which the
+     per-preset inks below were tuned without: the tokens measure 4.5:1
+     or better on every preset, and as drawn through the wash the
+     dark-square labels were 3.6 to 4.4:1 on ten of the twelve board
+     states (walnut in both modes and the ten presets), under WCAG 1.4.3
+     for text this small. check:contrast measures the label as drawn,
+     ink times this opacity over the square, so the wash cannot come
+     back quietly. */
+  opacity: 1;
+  /* The percentages below put the labels INSIDE the board edge, where
+     chessground paints pieces at z-index 2 — without a layer of their own
+     the a1/h1 corner pieces sit on the labels. Above pieces, still under
+     the drag ghost (9) and the app's overlays (30). */
+  z-index: 3;
+}
+
+/* chessground positions coordinates with fixed pixel offsets (files at
+   bottom:-4px left:24px, ranks at top:-20px), which hang outside the board
+   edge and collide with pieces once squares get small. Percentages scale
+   with the board at every size. The `.left` variant must be restated: the
+   Board always configures ranksPosition: 'left' (so chessground computes
+   the label colours for the edge the labels actually sit on), and the
+   base stylesheet's `.ranks.left { left: -15px }` outranks a plain
+   `.ranks` override. */
+.cg-wrap coords.files {
+  bottom: 0.5%;
+  left: 3%;
+}
+.cg-wrap coords.ranks,
+.cg-wrap coords.ranks.left {
+  top: -2.5%;
+  left: 1%;
+  align-items: flex-start;
+}
+
+/* chessground marks every label with the colour of the square it sits on
+   (coord-light / coord-dark), accounting for orientation, DOM order and
+   ranksPosition — parity arithmetic here got the ranks wrong on all four
+   of those at once. On a light square: go dark; on a dark square: go
+   bright. Both are pushed well past the contrast chessground ships with,
+   which is close to illegible on a themed board. */
+.cg-wrap coords coord.coord-light {
+  color: var(--coord-on-light);
+}
+.cg-wrap coords coord.coord-dark {
+  color: var(--coord-on-dark);
+}
+
+/* Shapes. chessground washes the whole shape layer to 60%, which is the
+   lichess look for a user's own arrows and stays so: each shape group
+   takes that wash itself. The wash moves off the layer and onto the
+   groups because the app's own mark (brush `best`: the engine's best
+   move, the puzzle hint) cannot be read through it. A layer at 60% caps
+   what any colour can reach against a mid-tone square at about 2.2:1;
+   at --arrow-best-alpha, with --arrow-best placed per preset, the shaft
+   and head clear 3:1 on both squares. (Two of a user's arrows crossing
+   now darken where they overlap, which one shared wash did not; the
+   demo has no route that draws two.)
+
+   cgHash is chessground's own attribute, its shape's facts joined by
+   commas with the brush name after the squares, so `,best` is the
+   app's brush and nothing else. The stroke and the head's fill are set
+   as presentation attributes from the brush's colour, which CSS
+   outranks; the brush is registered in board/Board.tsx. */
+.cg-wrap .cg-shapes {
+  opacity: 1;
+}
+.cg-wrap .cg-shapes g[cgHash] {
+  opacity: 0.6;
+}
+.cg-wrap .cg-shapes g[cgHash*=',best'] {
+  opacity: var(--arrow-best-alpha);
+}
+.cg-wrap .cg-shapes g[cgHash*=',best'] line,
+.cg-wrap .cg-shapes g[cgHash*=',best'] circle {
+  stroke: var(--arrow-best);
+}
+.cg-wrap .cg-shapes marker[cgKey='best'] path {
+  fill: var(--arrow-best);
+}
+
+/* Radius/clip/shadow live on cg-container, not .cg-wrap: chessground floors
+   the container to a multiple of 8 device pixels (crisp squares), so it can
+   sit up to 8 device-px short of the wrap — rounding the wrap then leaves
+   the board's own right/bottom corners square.
+
+   The corners are PAINTED by the board rather than clipped by the
+   container, and that is a performance decision, not a cosmetic one:
+   chessground gives every piece `will-change: transform`, so all 32 of
+   them are standing compositor layers, and `overflow: hidden` here put a
+   rounded mask over the lot of them that has to be applied on every frame
+   of every move. A desktop GPU never notices; an iPhone at three device
+   pixels per CSS pixel is where the move animation stopped being smooth.
+
+   What the clip was also doing, and no longer does: hiding a piece
+   dragged past the board's edge. It now follows the finger out over the
+   page, which is the better answer anyway — the editor's drag-off-to-
+   delete used to make the piece vanish at the rail. */
+.cg-wrap cg-container {
+  border-radius: calc(var(--radius) * 0.6);
+  box-shadow: var(--shadow-panel);
+  /* Centre the shortfall instead of dropping it all at the bottom.
+     Chessground floors the container to a multiple of 8 DEVICE pixels
+     (the note above) and then pins it to top-left, so every board in the
+     app is up to 8 device-px short of its box with the whole remainder
+     below it. On a phone at 3x that is under 3 CSS px and nobody sees
+     it; at 112px on a 0.75x display it is 5.3px against 112, and the
+     board visibly sits high in its card.
+
+     Safe to move: coords and pieces are children of the container, so
+     they travel with it, and chessground hit-tests against the
+     container's own rect rather than the wrap's — the squares stay
+     where they are drawn. `translate` rather than `transform` so a
+     future transform here would not silently drop it. */
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+}
+
+/* The board's own box, rounded DOWN to a whole number of squares.
+
+   Chessground floors the board it draws to a whole number of DEVICE
+   pixels per square and we centre the remainder (the two rules above),
+   so the drawn board sat up to 8 device px inside its box — and the side
+   column, which aligns to the BOX because that is the only thing it can
+   measure from the first render, started that far above the board's
+   visible top edge. Two or three pixels at 1x, and lanph3re could see
+   them.
+
+   Rounding the box to the same grid leaves chessground nothing to floor:
+   the box becomes the board you can see, top and bottom, and the panels
+   line up with it. The drawn board does not lose a pixel — it was
+   already floored to exactly this width; what goes is the empty margin
+   that was around it. --cg-quantum is one square's worth of device
+   pixels in CSS px, published by board/pixelGrid.ts, and 8px is the
+   right answer at the 1x and 2x displays where a missing value is most
+   likely.
+
+   This is the cheap half of the alignment: the alternative, publishing
+   the remainder for the column to shift itself down by, was tried twice
+   and reverted, because a wrong measurement there moved the whole column
+   instead of three pixels of it. A wrong quantum here costs at most 8px
+   of board.
+
+   margin-inline keeps the visible board exactly where it has always
+   been: the box is up to a square-quantum narrower than the cell it sits
+   in, and centring it puts back the centring the container was doing.
+   The plain `width` first is the fallback for anything without round(),
+   which then behaves exactly as this app did before.
+
+   Worn by anything that has to start and end where the BOARD does rather
+   than where its cell does — the player bars above and below it (BoardLane
+   in board/AnalysisBoard.tsx) wear the same class inside a cell of the same
+   width, so the three rectangles round and centre identically instead of a
+   name sitting two pixels to the left of the a-file. Reused rather than
+   copied: two spellings of this expression would be two things to keep in
+   step.
+
+   In `components`, NOT unlayered like the .cg-wrap rules above it: those
+   have to beat chessground's own unlayered CSS, this one only has to
+   beat nothing. Left unlayered it beat the Tailwind `utilities` layer as
+   well, and a board sized by a width class — the hub's `w-28` thumbnails
+   — silently became `width: 100%` of the card it sits in, which with
+   `shrink-0` beside it pushed the text off the screen. A board is
+   width: 100% of whatever holds it UNLESS its caller says otherwise, and
+   the caller says so with a utility class, so the utility has to win. */
+@layer components {
+  .board-box {
+    width: 100%;
+    width: round(down, 100%, var(--cg-quantum, 8px));
+    margin-inline: auto;
+  }
+}
+
+.cg-wrap cg-board {
+  border-radius: inherit;
+}
+
