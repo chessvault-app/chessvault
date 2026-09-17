@@ -11,84 +11,22 @@ import { PageShell } from '@/components/page-shell';
 
 import { GameDetailsPanel, type DetailsSelection } from './GameDetails';
 import { GamesBrowser } from './GamesBrowser';
+import {
+  DETAILS_PIN_KEY,
+  DETAILS_RESERVE_PX,
+  DETAILS_RESERVE_WIDE_PX,
+  PANEL_WIDE_MQ,
+  PIN_FREE_MQ,
+  TABLE_MQ,
+  readDetailsPin,
+} from './pane-shape';
 
-/**
- * Whether the details column keeps its place when nothing is selected —
- * a reading preference, per device, the way the table's dragged column
- * widths (vault:game-table-cols) and the panels' heights (vault:panel-h:*)
- * are. Written on every toggle rather than removed when it agrees with
- * the default below, because that default MOVES with the window: a
- * choice erased for matching it would be undone by a resize, which is
- * the one thing an explicit switch must not do.
- */
-const PIN_KEY = 'vault:games-details-pinned';
-
-/**
- * The viewport where the details column is FREE — where the table still
- * shows every column beside it, so keeping the panel open costs nothing
- * and the default stays what it has always been.
- *
- * Arithmetic first: the dense table states its own minimum, and
- * `--gt-min` measures 1026px at the default column widths (GameTable's
- * COLUMNS sum to 930, plus nine 8px gaps and the row's px-3). Beside it
- * the panel's track takes its 23rem max — measured at exactly 368 — the
- * grid's gap is 16, and the page loses the sidebar's 13rem and the
- * shell's md gutters: 1026 + 368 + 16 + 208 + 48 = 1666.
- *
- * Then measured, because 1666 is 10px short: the list scrolls itself,
- * and index.css's thin scrollbar takes its 10px out of the scroller's
- * content box, so at 1666 the table still scrolled sideways by exactly
- * that (clientWidth 1016 against scrollWidth 1026). 1680 is the round
- * number above it, and measures clean — 1030 against 1030.
- *
- * The 208 is the sidebar unfolded. Folded to its rail it gives 140 of
- * that back, so the panel is free from about 1540 — but a media query
- * cannot see the fold, and erring towards "not free" only means a wide
- * window with a folded rail starts unpinned when it could have started
- * pinned, which the switch in the panel's header corrects once.
- *
- * Below that width the panel is paid for in table columns — the table
- * never sheds them, it scrolls sideways to reach them (GameTable) — so a
- * window that narrow starts with the column given back and spends it on
- * the panel only while a game is actually selected.
- */
-const PIN_FREE_MQ = '(min-width: 1680px)';
-
-/**
- * Where the details column stops being 23rem and takes 27rem.
- *
- * The track was `minmax(20rem,23rem)` at every width, so a 1920px window
- * gave the table 1104px and left the panel on the same 368px a 1024px
- * window gets — the one width where the panel costs the table nothing
- * was also the width where it refused the room. 368px is tight for what
- * the panel is for: the opening name, the thing a reader actually wants
- * off it, truncates there ("…: Exchange Variation, Reshevs…") and reads
- * in full on a 390px phone's sheet.
- *
- * The threshold is the same arithmetic PIN_FREE_MQ states, with the
- * panel's new maximum in it: the table's own minimum (`--gt-min`, 1026
- * at the default column widths), the grid's 16px gap, 432 for a 27rem
- * panel, the sidebar's 208 unfolded and the shell's 48 of md gutters,
- * which is 1730 — plus the 10px the thin scrollbar takes out of the
- * scroller's content box, the same 10 that put PIN_FREE_MQ at 1680
- * rather than its arithmetic's 1666. So 1740, and below it the panel
- * stays 23rem, because a wider panel there is paid for in the table's
- * columns and that is exactly what the 1680 line exists to stop.
- */
-const PANEL_WIDE_MQ = '(min-width: 1740px)';
-
-/**
- * What the unpinned details column takes from the pane when it arrives:
- * the track's maximum (23rem, measured at exactly 368; 27rem past
- * PANEL_WIDE_MQ) plus the grid's 16px gap. The browser folds its toolbar
- * against the pane LESS this while no column stands, so a selection
- * cannot re-fold it (GamesBrowser's detailsReservePx). The maximum
- * rather than the 20rem floor, because at lg the track is never
- * squeezed below its maximum (the table's own column is minmax(0,1fr)),
- * and erring wide only ever means a toolbar folded one row earlier.
- */
-const DETAILS_RESERVE_PX = 368 + 16;
-const DETAILS_RESERVE_WIDE_PX = 432 + 16;
+/* The measurements this page and the browser inside it lay out from —
+   the pin's key, the two widths where the details column changes its
+   mind, and what it reserves — live in ./pane-shape, because the
+   outline that stands in for this page while its chunk is on the wire
+   reads the same numbers (GamesView.skeleton).
+*/
 
 /**
  * The Games page: the tabbed games browser (see GamesBrowser, which owns
@@ -104,14 +42,11 @@ export function CollectionView() {
   // below, the same tabs hold card rows and details open as a sheet
   // from a row's own menu. A flag rather than classes because a
   // display-none details panel would still resolve selections.
-  const wide = useMediaQuery('(min-width: 64rem)');
+  const wide = useMediaQuery(TABLE_MQ);
   /** What the browser last selected — the details column's subject. */
   const [selection, setSelection] = useState<DetailsSelection | null>(null);
   // null = nobody has chosen on this device, so the width decides.
-  const [choice, setChoice] = useState<boolean | null>(() => {
-    const stored = localStorage.getItem(PIN_KEY);
-    return stored === null ? null : stored === '1';
-  });
+  const [choice, setChoice] = useState<boolean | null>(readDetailsPin);
   const roomy = useMediaQuery(PIN_FREE_MQ);
   /** Whether the panel's track may take its wider maximum — see PANEL_WIDE_MQ. */
   const roomier = useMediaQuery(PANEL_WIDE_MQ);
@@ -121,7 +56,7 @@ export function CollectionView() {
     setChoice(next);
     const stored = next ? '1' : '0';
     try {
-      localStorage.setItem(PIN_KEY, stored);
+      localStorage.setItem(DETAILS_PIN_KEY, stored);
     } catch {
       /* the session still remembers; it just will not survive a reload */
     }

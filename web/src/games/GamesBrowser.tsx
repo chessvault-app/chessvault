@@ -27,6 +27,7 @@ import { navigate } from '@/lib/router';
 import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/segmented';
 import { GamesTabStrip, type MainTab } from './GamesTabStrip';
+import { MERGED_MIN_PX } from './pane-shape';
 
 import { ClearableInput } from '@/components/text-fields';
 import { Textarea } from '@/components/ui/textarea';
@@ -80,7 +81,7 @@ let heldTab: MainTab | null = null;
  * one. The measurement is the tab strip's own wrapper — full pane
  * width, no extra node.
  */
-const MERGED_MIN_PX = 896;
+/* MERGED_MIN_PX moved to ./pane-shape, which the page's outline reads too. */
 
 /**
  * The browser's box, by frame. A Panel where the host sets the browser
