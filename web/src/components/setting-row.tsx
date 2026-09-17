@@ -8,6 +8,29 @@ import { Switch } from '@/components/ui/switch';
  * here. One component because the identical row was pasted six times
  * across Settings and the home customiser and stayed aligned only by
  * copy-discipline.
+ *
+ * On the row rung, not text-base over text-sm. This was the last row in
+ * the app still pinned at 16 over 14 at every width, the shape the
+ * windows pass (2026-09-17) named and could not reach from here: it is
+ * shared with Settings, so the size is that page's as well as the
+ * customise window's. Both read wrong on a desktop and for the same
+ * reason. In the customise window the card rows drew their title at 16
+ * while every other line in the window — its three group headings, its
+ * eleven destination rows, the paragraph over them — drew 14, so one
+ * list in a window of lists was a size larger than the rest. On Settings
+ * the row's title matched the CARD HEADING above it exactly, both 16 and
+ * both medium, so a card announced itself no louder than the switches
+ * inside it. type-row and type-row-sub put a row at 14 over 12 on a
+ * desktop, which is what macOS System Settings (13pt over 11) and
+ * Windows Settings (14 over 12) draw, and leave the phone at 16 over 14,
+ * exactly where text-base and text-sm already had it. So no phone moves,
+ * which is why the three computed-size sweeps over the phone routes
+ * passed this row every time.
+ *
+ * The blurb takes the same rung the registry's own FieldDescription
+ * takes here (components/ui/field.tsx, `field-hint`), and the title the
+ * one Label takes, so a switch in a row and a control under a label are
+ * lettered alike.
  */
 export function SettingRow({
   title,
@@ -21,8 +44,8 @@ export function SettingRow({
   return (
     <div className="border-card-ring bg-muted flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
       <div className="min-w-0">
-        <div className="text-base font-medium">{title}</div>
-        <div className="text-muted-foreground text-sm">{blurb}</div>
+        <div className="type-row font-medium">{title}</div>
+        <div className="text-muted-foreground type-row-sub">{blurb}</div>
       </div>
       {/* The control keeps its own width and the words give way, not the
           other way round. A row is a label and a control competing for one
