@@ -1007,6 +1007,7 @@ export function SkeletonBoard({
   foot,
   stackedPanel,
   panel,
+  engine = false,
   shell = 'held',
   strip,
   below,
@@ -1073,7 +1074,21 @@ export function SkeletonBoard({
    * panel takes its content's height (`shrink-0`) rather than filling
    * the column, which is what both of those panels do.
    */
-  panel?: { title: React.ReactNode; body: React.ReactNode };
+  panel?: {
+    title: React.ReactNode;
+    /** Omit to keep the move list's own bars, for a page whose column
+        panel IS the moves under another name (the Board prints the
+        line's name there, which before a move is the starting
+        position). With a body the panel takes that body's height. */
+    body?: React.ReactNode;
+  };
+  /**
+   * The Engine block docked on top of that panel, which is what every
+   * board page does from lg (a phone gives the engine its own tab). Its
+   * header is a title and a switch, and it is drawn because it costs the
+   * panel below it 44px that would otherwise arrive with the page.
+   */
+  engine?: boolean;
   /**
    * The SCROLLING board shell instead of the held one: the editor and
    * the repertoire trainer stack into a page that scrolls, where a study
@@ -1340,7 +1355,7 @@ export function SkeletonBoard({
         <div
           className={cn(
             'bg-card flex flex-col overflow-hidden rounded-xl ring-1 ring-card-ring [--card-spacing:var(--card-pad)]',
-            panel ? 'shrink-0' : 'min-h-0 flex-1',
+            panel?.body ? 'shrink-0' : 'min-h-0 flex-1',
           )}
         >
           {/* The panel opens on its header, as the chapters panel above
@@ -1351,6 +1366,17 @@ export function SkeletonBoard({
               instead, which is data, so the panel's own word stands. The
               controls stay as boxes: which ones the row holds depends on
               the document. */}
+          {/* The engine, docked: its own header with the switch that
+              turns it on, and nothing under it, which is what a board
+              page opens with (the block is off until asked). */}
+          {engine && (
+            <div className="max-lg:hidden">
+              <PanelHeader
+                title={t('Engine')}
+                actions={<span aria-hidden className="bg-muted h-5 w-9 shrink-0 rounded-full" />}
+              />
+            </div>
+          )}
           <PanelHeader
             title={
               panel ? (
@@ -1368,7 +1394,7 @@ export function SkeletonBoard({
               panel ? undefined : [0, 1, 2].map((i) => <span key={i} className="size-7" />)
             }
           />
-          {panel ? (
+          {panel?.body ? (
             <div className="flex flex-col gap-3 px-3 pb-3">{panel.body}</div>
           ) : (
             <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pb-3">
