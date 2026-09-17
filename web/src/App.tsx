@@ -77,15 +77,18 @@ import { dialogOpen } from '@/hooks/dialog-focus';
 const AnalysisView = lazyRoute(() => import('@/analysis/AnalysisView').then((m) => ({ default: m.AnalysisView })), {
   outline: () => import('@/analysis/AnalysisView.skeleton'),
 });
-// No outline, and none guessed: the workspace is a grid of panes
-// (WORKSPACE_SHELL), the editor and the repertoire trainer sit on
-// BOARD_SCROLL_SHELL with a palette or a trainer beside the board, and
-// the opening map is a canvas in CanvasShell. None of the four is a
-// shape components/skeletons draws, and inventing one out here is the
-// guessing this work removed. They draw nothing while their chunk comes
-// down, as they did before there was a table to guess from.
-const WorkspaceView = lazyRoute(() => import('@/workspace/WorkspaceView').then((m) => ({ default: m.WorkspaceView })));
-const EditorView = lazyRoute(() => import('@/editor/EditorView').then((m) => ({ default: m.EditorView })));
+// These four drew NOTHING while their chunks came down, on the argument
+// that a shape invented out here would be guessing. True out here, and
+// not true of a module beside the page: each of them now owns its
+// outline like every other route, and between them they are the app's
+// heaviest chunks and its longest blank screens. None of the four waits
+// on a fetch at all, so the whole of that wait was the download.
+const WorkspaceView = lazyRoute(() => import('@/workspace/WorkspaceView').then((m) => ({ default: m.WorkspaceView })), {
+  outline: () => import('@/workspace/WorkspaceView.skeleton'),
+});
+const EditorView = lazyRoute(() => import('@/editor/EditorView').then((m) => ({ default: m.EditorView })), {
+  outline: () => import('@/editor/EditorView.skeleton'),
+});
 const GamesView = lazyRoute(() => import('@/games/GamesView').then((m) => ({ default: m.GamesView })), {
   outline: () => import('@/games/GamesView.skeleton'),
 });
@@ -156,11 +159,15 @@ registerRoutePending((hash) => {
       return null;
   }
 });
-const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })));
+const RepertoireView = lazyRoute(() => import('@/repertoire/RepertoireView').then((m) => ({ default: m.RepertoireView })), {
+  outline: () => import('@/repertoire/RepertoireView.skeleton'),
+});
 const EndgamesView = lazyRoute(() => import('@/endgames/EndgamesView').then((m) => ({ default: m.EndgamesView })), {
   outline: () => import('@/endgames/EndgamesView.skeleton'),
 });
-const OpeningMapView = lazyRoute(() => import('@/openingmap/OpeningMapView').then((m) => ({ default: m.OpeningMapView })));
+const OpeningMapView = lazyRoute(() => import('@/openingmap/OpeningMapView').then((m) => ({ default: m.OpeningMapView })), {
+  outline: () => import('@/openingmap/OpeningMapView.skeleton'),
+});
 const DatabasesPage = lazyRoute(() => import('@/databases/DatabasesPage').then((m) => ({ default: m.DatabasesPage })), {
   outline: () => import('@/databases/DatabasesPage.skeleton'),
 });

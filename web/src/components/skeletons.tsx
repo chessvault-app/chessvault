@@ -29,7 +29,12 @@ import { Select } from '@/components/ui/select';
 import { BOARD_MAX_W } from '@/board/boardSize';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { BoardLane } from '@/engine/EvalBar';
-import { BOARD_HELD_SHELL, BOARD_WIDE_COLUMN, BOARD_WIDE_SIDE } from '@/components/layout';
+import {
+  BOARD_HELD_SHELL,
+  BOARD_SCROLL_SHELL,
+  BOARD_WIDE_COLUMN,
+  BOARD_WIDE_SIDE,
+} from '@/components/layout';
 import { PanelHeader, panelStoredHeight } from '@/components/panel';
 import { VAULT_ROWS, VaultNote, VaultPath, type VaultKind } from '@/components/vault-tree';
 import { GAME_TABLE_GRID, gameTableColumns, type GameColumn } from '@/games/GameTable';
@@ -1001,6 +1006,12 @@ export function SkeletonBoard({
   panes,
   foot,
   stackedPanel,
+  panel,
+  shell = 'held',
+  strip,
+  below,
+  sideColumn = true,
+  boardWidth = BOARD_MAX_W,
   className,
 }: {
   /**
@@ -1033,7 +1044,9 @@ export function SkeletonBoard({
    * The phone switcher's own icons, where they are not a document's.
    * A trainer opens on ITS pane and not on the moves, so the order
    * differs as well as the count, and the tabs divide the width however
-   * many there are.
+   * many there are. An EMPTY list is a page with no switcher at all: the
+   * repertoire trainer draws one only once a game is running, and it is
+   * not running while the page is still arriving.
    */
   panes?: LucideIcon[];
   /** A panel at the foot of the side column, drawn by whoever knows what
@@ -1050,6 +1063,45 @@ export function SkeletonBoard({
    * not an answer.
    */
   stackedPanel?: string;
+  /**
+   * What the column-filling panel is CALLED and what is in it, where it
+   * is not the moves and their bars.
+   *
+   * The editor's column holds Position and the repertoire trainer's
+   * holds New game — forms whose labels are known before anything is
+   * fetched, so those outlines draw the real words. Given a body, the
+   * panel takes its content's height (`shrink-0`) rather than filling
+   * the column, which is what both of those panels do.
+   */
+  panel?: { title: React.ReactNode; body: React.ReactNode };
+  /**
+   * The SCROLLING board shell instead of the held one: the editor and
+   * the repertoire trainer stack into a page that scrolls, where a study
+   * and the puzzle trainers fit the screen exactly (components/layout).
+   * One constant either way, never a copy.
+   */
+  shell?: 'held' | 'scroll';
+  /** The row ABOVE the board, where a page has one of its own (the
+      editor's piece palette). The 40px reserve is drawn when it has not. */
+  strip?: React.ReactNode;
+  /** The row UNDER the board (the editor's tool strip). */
+  below?: React.ReactNode;
+  /**
+   * Whether the side column stands below `wide` as well.
+   *
+   * Every board page but one draws its panes under the board when it
+   * stacks; the editor folds its Position card into a sheet instead and
+   * leaves the board and its tools the whole screen, so drawing a column
+   * there would be a picture of a panel that is not coming.
+   */
+  sideColumn?: boolean;
+  /**
+   * The board block's own width budget, where a page has one of its own.
+   * The editor's stacked board runs essentially full width, because it
+   * has no pane under it (boardSize, EDITOR_BOARD_MAX_W); everything
+   * else takes BOARD_MAX_W, which is the default.
+   */
+  boardWidth?: string;
   className?: string;
 }) {
   // What this device dragged the chapters list to, if it ever has —
@@ -1108,7 +1160,7 @@ export function SkeletonBoard({
     // stacked:overflow-y-auto — so a window short enough to make the real
     // page scroll clipped the placeholder instead. Sharing the string is
     // what the constant exists for; see components/layout.
-    <Loading className={cn(BOARD_HELD_SHELL, className)}>
+    <Loading className={cn(shell === 'scroll' ? BOARD_SCROLL_SHELL : BOARD_HELD_SHELL, className)}>
       {/* data-ground, as StudyView's row: the Edit button's secondary
           fill is the page's own tone there. */}
       <div
@@ -1128,21 +1180,21 @@ export function SkeletonBoard({
       {/* The board's column, and inside it the one width budget every view
           that shows a board shares. */}
       <div className={BOARD_WIDE_COLUMN}>
-        <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', BOARD_MAX_W)}>
+        <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', boardWidth)}>
           {/* 40px on a wide screen whatever it holds, so the board top
               stays put; on a phone only there when there is a game. */}
           <div
             className={cn(
               'w-full items-end wide:flex wide:h-10',
-              players ? 'flex' : 'hidden wide:flex',
+              players || strip ? 'flex' : 'hidden wide:flex',
             )}
           >
-            {players && playerBar}
+            {strip ?? (players && playerBar)}
           </div>
           <BoardLane>
             <Skeleton className="board-box aspect-square rounded-xl" />
           </BoardLane>
-          {players && playerBar}
+          {below ?? (players && playerBar)}
         </div>
       </div>
 
@@ -1159,6 +1211,7 @@ export function SkeletonBoard({
         className={cn(
           'flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2',
           (players || chapters) && 'stacked:min-h-40',
+          !sideColumn && 'stacked:hidden',
           BOARD_WIDE_SIDE,
         )}
       >
@@ -1201,7 +1254,10 @@ export function SkeletonBoard({
             them with the game's three; the boxes are what matter and
             those agree. */}
         <div
-          className="bg-card relative z-10 -mb-[calc(0.75rem+1px)] flex h-8 shrink-0 rounded-t-xl ring-1 ring-card-ring stacked:-mb-[calc(0.5rem+1px)] lg:hidden"
+          className={cn(
+            'bg-card relative z-10 -mb-[calc(0.75rem+1px)] flex h-8 shrink-0 rounded-t-xl ring-1 ring-card-ring stacked:-mb-[calc(0.5rem+1px)] lg:hidden',
+            panes?.length === 0 && 'hidden',
+          )}
           aria-hidden
         >
           {(panes ?? (chapters ? [ListOrdered, Cpu, Files, Table2] : [ListOrdered, Cpu, Table2])).map((Icon, i) => (
@@ -1275,8 +1331,18 @@ export function SkeletonBoard({
         )}
         {/* A panel's own box, filling the column the way the real one
             does — it was a bordered strip that stopped wherever its rows
-            ran out, in a column the page fills to the bottom. */}
-        <div className="bg-card flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl ring-1 ring-card-ring [--card-spacing:var(--card-pad)]">
+            ran out, in a column the page fills to the bottom.
+
+            A named panel with a body of its own takes that body's height
+            instead: the editor's Position card and the repertoire
+            trainer's New game card are forms, and a form stretched to the
+            column's foot is not what either page draws. */}
+        <div
+          className={cn(
+            'bg-card flex flex-col overflow-hidden rounded-xl ring-1 ring-card-ring [--card-spacing:var(--card-pad)]',
+            panel ? 'shrink-0' : 'min-h-0 flex-1',
+          )}
+        >
           {/* The panel opens on its header, as the chapters panel above
               does: the moves title and the row of controls beside it. The
               bars used to start 12px down a panel whose first 44px is that
@@ -1287,7 +1353,9 @@ export function SkeletonBoard({
               the document. */}
           <PanelHeader
             title={
-              stackedPanel === undefined ? (
+              panel ? (
+                panel.title
+              ) : stackedPanel === undefined ? (
                 t('Moves')
               ) : (
                 <>
@@ -1296,15 +1364,19 @@ export function SkeletonBoard({
                 </>
               )
             }
-            actions={[0, 1, 2].map((i) => (
-              <span key={i} className="size-7" />
-            ))}
+            actions={
+              panel ? undefined : [0, 1, 2].map((i) => <span key={i} className="size-7" />)
+            }
           />
-          <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pb-3">
-            {Array.from({ length: 8 }, (_, i) => (
-              <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
-            ))}
-          </div>
+          {panel ? (
+            <div className="flex flex-col gap-3 px-3 pb-3">{panel.body}</div>
+          ) : (
+            <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pb-3">
+              {Array.from({ length: 8 }, (_, i) => (
+                <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
+              ))}
+            </div>
+          )}
         </div>
         {/* Folded to its header, which is where a board page opens it:
             `enabled` is session state and starts off (store/explorer), so a

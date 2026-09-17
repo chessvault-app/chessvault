@@ -21,6 +21,15 @@ import { PageHeader } from '@/components/page-header';
 import { PaneTabs } from '@/components/pane-tabs';
 import { ResizablePane } from '@/components/resizable-pane';
 import { Skeleton, useSlowLoad } from '@/components/skeletons';
+import {
+  READER_BOARD_KEY,
+  READER_PANE_DEFAULT_W,
+  READER_PANE_KEY,
+  pageShapeKey,
+  readReaderBoardShown,
+  parsePageShape,
+  readPageShape,
+} from './reservation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -69,8 +78,10 @@ import { TitleTip } from '@/components/title-tip';
  * away on arrival would be the wrong surprise.
  */
 
-const PANE_KEY = 'vault:panel-w:book-reader';
-const PANE_DEFAULT_W = 560;
+/* The pane's key and default live in ./reservation, which the outline
+   reads to lay the same row out (./BooksView.skeleton). */
+const PANE_KEY = READER_PANE_KEY;
+const PANE_DEFAULT_W = READER_PANE_DEFAULT_W;
 /**
  * The least the board's column may be squeezed to when the book is taking
  * its share of a narrow row.
@@ -92,7 +103,7 @@ const HOTSPOTS_KEY = 'vault:reader:hotspots';
 /** Whether the line strip is drawn under the board at wide; remembered on the device. */
 const STRIP_KEY = 'vault:reader:strip';
 /** Whether the board side is drawn at wide at all; remembered on the device. */
-const BOARD_KEY = 'vault:reader:board';
+const BOARD_KEY = READER_BOARD_KEY;
 /**
  * The page's column once the board is folded away: the pane's own drag
  * ceiling (hardMax), centred. A page fitted to the whole row of a wide
@@ -109,28 +120,9 @@ const FOLDED_PAGE_MAX = 'max-w-[75rem]';
  * strip grows into all of it (flex-1 below), scrolling only past that.
  */
 const STRIP_BUDGET = 'calc(100dvh - 10rem - 7rem)';
-/**
- * What this device learned about a book's pages last time it was open —
- * the first page's height over its width, and how many there are — so
- * the opening treatment can be the page's own shape and the toolbar can
- * say "/ 128" before the file is back. Measured on the demo: a 3:4 guess
- * stood 164px shorter than the page at 1280px and 36px taller at 390px,
- * and the centred toolbar stepped 8px sideways when the count arrived.
- */
-const pageShapeKey = (id: string): string => `vault:book-page:${id}`;
-function parsePageShape(
-  raw: string | null,
-): { aspect: number; pages: number; contents: boolean } | null {
-  if (raw === null) return null;
-  try {
-    const v = JSON.parse(raw) as { aspect?: unknown; pages?: unknown; contents?: unknown };
-    if (typeof v.aspect !== 'number' || !(v.aspect > 0) || typeof v.pages !== 'number' || !(v.pages > 0))
-      return null;
-    return { aspect: v.aspect, pages: v.pages, contents: v.contents === true };
-  } catch {
-    return null;
-  }
-}
+/* A book's page shape moved to ./reservation: the outline that stands
+   in for this reader reads it too, and it is drawn before the chunk
+   pdf.js lives in has landed (./BooksView.skeleton). */
 /**
  * The shelf's row for a book. Not in the remembered shelf: ask again
  * before saying it is gone — a book uploaded from another tab, or a link
@@ -146,7 +138,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   const wide = useWideLayout();
   const [book, setBook] = useState<LibraryBook | null | undefined>(undefined);
   const { doc, error, retry } = useBookPdf(id, book?.bytes ?? null);
-  const [reservedPage] = useState(() => parsePageShape(localStorage.getItem(pageShapeKey(id))));
+  const [reservedPage] = useState(() => readPageShape(id));
   const pages = doc?.numPages ?? book?.pages ?? reservedPage?.pages ?? 0;
   const rememberPage = (aspect: number) => {
     if (!doc) return;
@@ -246,7 +238,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
   // with no diagrams in it: the page then takes the row. Setting a diagram
   // or opening the editor unfolds it, since both put something on the
   // board side to be looked at.
-  const [boardShown, setBoardShown] = useState(() => localStorage.getItem(BOARD_KEY) !== 'off');
+  const [boardShown, setBoardShown] = useState(readReaderBoardShown);
   const showBoard = (on: boolean): void => {
     localStorage.setItem(BOARD_KEY, on ? 'on' : 'off');
     setBoardShown(on);
