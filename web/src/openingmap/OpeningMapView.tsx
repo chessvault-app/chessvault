@@ -740,7 +740,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
             ].map((group, at) => (
               <div key={group.label ?? `group-${at}`} className="flex flex-col gap-1">
                 {group.label && (
-                  <p className="text-muted-foreground px-1 text-sm font-medium">
+                  <p className="text-muted-foreground px-1 type-row font-medium">
                     {group.label}
                   </p>
                 )}
@@ -763,7 +763,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
 
             {databases.length > 0 && (
               <div className="flex flex-col gap-1">
-                <p className="text-muted-foreground px-1 text-sm font-medium">
+                <p className="text-muted-foreground px-1 type-row font-medium">
                   {databases.length === 1 ? t('Reference database') : t('Reference databases')}
                 </p>
                 {/* A list of one is not a list. Most vaults mount a single
@@ -806,7 +806,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
                 it was built, so the choice of database IS the field. */}
             {field.source === ONLINE_SOURCE && (
               <div className="flex flex-col gap-1">
-                <p className="text-muted-foreground px-1 text-sm font-medium">
+                <p className="text-muted-foreground px-1 type-row font-medium">
                   {t('Opponent strength')}
                 </p>
                 <Select
@@ -837,11 +837,17 @@ export function OpeningMapView({ params }: { params: string[] }) {
  */
 /**
  * A Select standing in the coverage dialog's list of PickRows. The
- * registry trigger is toolbar-sized (h-8, text-sm); a row among 42px
- * rows at 36px read as a different kind of control, so the trigger
- * takes the row's own metrics instead.
+ * registry trigger is toolbar-sized (h-8); a row among 42px rows at
+ * 36px read as a different kind of control, so the trigger takes the
+ * row's own height and padding instead.
+ *
+ * Its SIZE is the trigger's own, which is already the row rung
+ * (`text-sm max-md:type-row` in select.tsx). This said `text-base`,
+ * which twMerge kept over the variant's `text-sm` while leaving the
+ * `max-md:` beside it alone: 16px on a phone, where it belongs, and
+ * 16px on a desktop, where a row is 14.
  */
-const ROW_SELECT = 'w-full h-auto pointer-coarse:h-auto px-3 py-(--row-py) text-base';
+const ROW_SELECT = 'w-full h-auto pointer-coarse:h-auto px-3 py-(--row-py)';
 
 const ADD_ROW =
   'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground flex items-center gap-2 ' +
@@ -923,7 +929,7 @@ function PickRow({
       onClick={onPick}
       aria-pressed={picked}
       className={cn(
-        'flex items-center gap-2 rounded-lg border px-3 py-(--row-py) text-left text-base transition-colors duration-100',
+        'flex items-center gap-2 rounded-lg border px-3 py-(--row-py) text-left type-row transition-colors duration-100',
         picked
           ? 'border-primary/40 bg-muted text-primary font-medium'
           : 'border-border text-foreground hover:bg-accent',

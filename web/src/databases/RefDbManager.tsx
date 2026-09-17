@@ -1286,7 +1286,7 @@ function BuildWindow({
             : t('No PGN files are ticked. Pick them on the PGN files tab first.')}
         </p>
         {count > 0 && (
-          <ul className="divide-border max-h-40 divide-y overflow-y-auto rounded-md border text-sm">
+          <ul className="divide-border max-h-40 divide-y overflow-y-auto rounded-md border type-row">
             {files.map((file) => (
               <li key={file} data-user-text className="text-foreground truncate px-3 py-(--row-py-tight)">
                 {file}

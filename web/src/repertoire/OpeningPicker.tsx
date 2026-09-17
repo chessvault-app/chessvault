@@ -200,7 +200,7 @@ export function OpeningPicker({
                       type="button"
                       onClick={() => pick(o)}
                       className={cn(
-                        'flex w-full items-baseline gap-2 rounded-md px-2 py-(--row-py-dense) text-left text-sm',
+                        'flex w-full items-baseline gap-2 rounded-md px-2 py-(--row-py-dense) text-left type-row',
                         'hover:bg-accent transition-colors duration-100 pointer-coarse:py-2.5',
                         value !== null && o.name === value.name && o.eco === value.eco
                           ? 'text-primary font-medium'

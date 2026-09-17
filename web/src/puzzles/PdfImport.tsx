@@ -827,7 +827,7 @@ export function PdfImport({
                         >
                           <Eye className="glyph" />
                         </Button>
-                        <span className={cn('ml-auto shrink-0 text-xs', mark.cls)}>
+                        <span className={cn('ml-auto shrink-0 type-row-sub', mark.cls)}>
                           {t(mark.label)}
                         </span>
                       </div>

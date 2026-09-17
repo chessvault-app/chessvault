@@ -218,7 +218,12 @@ function MoveRow({
           </Badge>
         </TitleTip>
       </td>
-      <td className="text-muted-foreground py-(--row-py-tight) pr-3 text-right font-mono text-xs tabular-nums">
+      {/* No size of its own, as the explorer's count cell has none: the
+          table is `type-row` and the cells inherit it, which is the
+          Insights tables' pattern. It said `text-xs`, so on a phone this
+          number read 12 beside a 16px move while the pane's other list,
+          written to read as one with it, read 16. */}
+      <td className="text-muted-foreground py-(--row-py-tight) pr-3 text-right font-mono tabular-nums">
         {dist?.text ?? ''}
       </td>
     </tr>

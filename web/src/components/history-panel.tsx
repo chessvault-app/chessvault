@@ -208,12 +208,15 @@ function HistorySheet({
           // gap-1.5 the placeholder stood 120px against 108.
           //
           // The row's own padding, not the 36px the three solid blocks
-          // pinned: that number is the comfortable rung (a text-sm line
-          // of 20 plus 2×8), and on a compact vault the rows below come
-          // out at 30, so the placeholder stood 6px over each of them and
-          // the sheet's body shrank by 18 when the versions landed. The
-          // two bars are the row's two spans, the relative time over the
-          // exact one, on the baseline they share.
+          // pinned: that number is the comfortable rung at the desktop
+          // size (a 20px line plus 2×8), and on a compact vault the rows
+          // below come out at 30, so the placeholder stood 6px over each
+          // of them and the sheet's body shrank by 18 when the versions
+          // landed. The line box is `type-row-box` for the same reason:
+          // the rows are `type-row` now, so a flat h-5 would be short by
+          // 4px a row on a phone. The two bars are the row's two spans,
+          // the relative time over the exact one, on the baseline they
+          // share.
           <div className="flex flex-col">
             {/* Two boxes a row: the padding outside, the line box inside.
                 These are border-box, so a height on the same element as
@@ -221,7 +224,7 @@ function HistorySheet({
                 to it. */}
             {[0, 1, 2].map((i) => (
               <div key={i} className="px-2 py-(--row-py)">
-                <div className="flex h-5 items-center gap-2">
+                <div className="type-row-box flex items-center gap-2">
                   <Skeleton className="h-2.5 w-16 shrink-0" />
                   <Skeleton className="h-2 w-24 shrink-0" />
                 </div>
@@ -247,8 +250,8 @@ function HistorySheet({
                 >
                   {/* The relative time answers "is this the one?"; the exact
                       one settles it when two are minutes apart. */}
-                  <span className="text-foreground text-sm">{formatAgo(version.at)}</span>
-                  <span className="text-muted-foreground text-xs">{formatWhen(version.at)}</span>
+                  <span className="text-foreground type-row">{formatAgo(version.at)}</span>
+                  <span className="text-muted-foreground type-row-sub">{formatWhen(version.at)}</span>
                 </button>
               </li>
             ))}

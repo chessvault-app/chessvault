@@ -860,14 +860,14 @@ const HintRow = memo(function HintRow({
             {item.primary}
           </Badge>
         ) : (
-          <span className="text-foreground min-w-0 truncate text-sm font-medium">
+          <span className="text-foreground min-w-0 truncate type-row font-medium">
             {item.primary}
           </span>
         )}
         {item.secondary !== undefined && (
           <span
             className={cn(
-              'text-muted-foreground text-xs',
+              'text-muted-foreground type-row-sub',
               item.kind === 'name' ? 'shrink-0 font-mono' : 'min-w-0 truncate',
             )}
           >

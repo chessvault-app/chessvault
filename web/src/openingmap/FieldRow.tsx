@@ -69,7 +69,7 @@ export function MoveCell({
             // panel this sits inside the button that jumps to the node,
             // where it is not a flex item and an inline box ignores a
             // width outright.
-            'font-moves truncate text-sm font-semibold',
+            'font-moves truncate type-row font-semibold',
             // The app's link colour, because the row IS a link when the
             // move is charted — pressing it goes to that node. It said so
             // in a tooltip and nowhere else, which is a thing you find by
