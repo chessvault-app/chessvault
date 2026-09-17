@@ -108,7 +108,7 @@ function Field({
     if (!children.props.id) control = cloneElement(children, { id: generated });
   }
   return (
-    <FieldContext.Provider value={true}>
+    <FieldContext value={true}>
       <div
         role="group"
         data-slot="field"
@@ -138,7 +138,7 @@ function Field({
         </div>
         {control}
       </div>
-    </FieldContext.Provider>
+    </FieldContext>
   );
 }
 

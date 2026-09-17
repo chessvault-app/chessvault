@@ -266,11 +266,11 @@ function Dialog({
   const resting =
     phone && snapPoints ? { snapPoints, snapPoint, onSnapPointChange: setSnapPoint } : undefined;
   return (
-    <SheetContext.Provider value={phone}>
-      <SheetLoweredContext.Provider value={lowered}>
-      <DialogLeaveContext.Provider value={leave}>
-      <DialogCloseContext.Provider value={close}>
-        <DialogGuardContext.Provider value={setGuards}>
+    <SheetContext value={phone}>
+      <SheetLoweredContext value={lowered}>
+      <DialogLeaveContext value={leave}>
+      <DialogCloseContext value={close}>
+        <DialogGuardContext value={setGuards}>
           <Root
             open={open === undefined ? undefined : open && !leaving}
             onOpenChange={handleOpenChange}
@@ -278,11 +278,11 @@ function Dialog({
             {...resting}
             {...props}
           />
-        </DialogGuardContext.Provider>
-      </DialogCloseContext.Provider>
-      </DialogLeaveContext.Provider>
-      </SheetLoweredContext.Provider>
-    </SheetContext.Provider>
+        </DialogGuardContext>
+      </DialogCloseContext>
+      </DialogLeaveContext>
+      </SheetLoweredContext>
+    </SheetContext>
   );
 }
 
@@ -792,7 +792,7 @@ function DialogContent({
           </div>
         </div>
       )}
-      <CoverParent.Provider value={asParent}>{children}</CoverParent.Provider>
+      <CoverParent value={asParent}>{children}</CoverParent>
     </>
   );
 

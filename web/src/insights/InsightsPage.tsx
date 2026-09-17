@@ -400,9 +400,9 @@ export function InsightsPage() {
           />
         )
       ) : (
-        <AccuracyContext.Provider value={!running}>
+        <AccuracyContext value={!running}>
           <Tables report={report} />
-        </AccuracyContext.Provider>
+        </AccuracyContext>
       )}
     </PageShell>
   );

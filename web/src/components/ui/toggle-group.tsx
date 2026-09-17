@@ -50,7 +50,7 @@ function ToggleGroup({
       )}
       {...props}
     >
-      <ToggleGroupContext.Provider value={context}>{children}</ToggleGroupContext.Provider>
+      <ToggleGroupContext value={context}>{children}</ToggleGroupContext>
     </ToggleGroupPrimitive>
   );
 }
