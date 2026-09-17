@@ -844,18 +844,18 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
 
   useEffect(() => {
     if (state !== 'running') return;
-    let live = true;
+    const ctl = new AbortController();
     const tick = async (): Promise<void> => {
       // Only the request is in the try: the React Compiler cannot lower
       // the `??` reads below inside one yet.
       let s: BuildStatus;
       try {
-        s = await api<BuildStatus>('/api/refgames/build/status');
+        s = await api<BuildStatus>('/api/refgames/build/status', { signal: ctl.signal });
       } catch {
         /* next tick asks again */
         return;
       }
-      if (!live) return;
+      if (ctl.signal.aborted) return;
       setLine(s.log?.at(-1) ?? null);
       setPercent(s.phase?.percent ?? null);
       if (!s.running) {
@@ -868,7 +868,7 @@ function IndexPositionsCta({ name, onDone }: { name: string; onDone: () => void 
     void tick();
     const interval = setInterval(() => void tick(), 1500);
     return () => {
-      live = false;
+      ctl.abort();
       clearInterval(interval);
     };
   }, [state, onDone]);

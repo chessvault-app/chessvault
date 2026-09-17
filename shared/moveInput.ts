@@ -25,7 +25,7 @@ import type { Move } from 'chessops/types';
  * a move, and an ambiguous one (`Nd2` with two knights that can go
  * there) is refused rather than guessed. `pos` is not modified.
  */
-export function readTypedMove(pos: Chess, text: string): Move | undefined {
+function readTypedMove(pos: Chess, text: string): Move | undefined {
   const cleaned = tidy(text);
   if (!cleaned) return undefined;
   if (UCI.test(cleaned)) {

@@ -85,7 +85,7 @@ export async function renderPdfPage(
  * on the puzzle shelf and in the library alike. 480 wide is the widest a
  * shelf card draws one.
  */
-export function thumbnailDataUrl(page: HTMLCanvasElement, width = 480): string {
+function thumbnailDataUrl(page: HTMLCanvasElement, width = 480): string {
   const h = Math.round((page.height / page.width) * width);
   const thumb = document.createElement('canvas');
   thumb.width = width;
@@ -130,7 +130,7 @@ export interface Rect {
 }
 
 /** One diagram as read off a rendered page. */
-export interface PageDiagram {
+interface PageDiagram {
   /** Where on the page, in render pixels of the canvas it was read from. */
   rect: Rect;
   /** The crop, as a data URL. */

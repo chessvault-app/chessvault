@@ -50,7 +50,7 @@ function ToggleGroup({
       )}
       {...props}
     >
-      <ToggleGroupContext.Provider value={context}>{children}</ToggleGroupContext.Provider>
+      <ToggleGroupContext value={context}>{children}</ToggleGroupContext>
     </ToggleGroupPrimitive>
   );
 }
@@ -68,7 +68,7 @@ function ToggleGroupItem({
   title,
   ...props
 }: TogglePrimitive.Props & VariantProps<typeof toggleVariants> & { title?: string }) {
-  const context = React.useContext(ToggleGroupContext);
+  const context = React.use(ToggleGroupContext);
   const item = (
     <TogglePrimitive
       aria-label={props['aria-label'] ?? (hasTextContent(children) ? undefined : title)}

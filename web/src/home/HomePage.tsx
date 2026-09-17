@@ -285,7 +285,7 @@ function docsOf(v: unknown): DocMeta[] {
 
 function latest(v: unknown): DocMeta | null {
   return (
-    [...docsOf(v)].sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0] ?? null
+    docsOf(v).toSorted((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''))[0] ?? null
   );
 }
 
@@ -667,10 +667,10 @@ export function HomePage() {
   }, [attempt]);
 
   useEffect(() => {
-    // Navigating away mid-flight: React 18 makes the setStates no-ops, and
-    // `live` keeps everything after the await from running once the page
-    // is gone.
-    let live = true;
+    // Navigating away mid-flight cancels its requests, and the
+    // aborted check keeps everything after the await from running once
+    // the page is gone.
+    const ctl = new AbortController();
     // A route that fails answers null, and the page reads it as a vault
     // with nothing in it, which is right for one route on an old server
     // and wrong when it is every route: that is the server gone, or a
@@ -683,7 +683,7 @@ export function HomePage() {
       asked += 1;
       let body: unknown;
       try {
-        body = await api(url);
+        body = await api(url, { signal: ctl.signal });
       } catch (e) {
         failures.push(e);
         return null;
@@ -714,7 +714,7 @@ export function HomePage() {
         // Null, not 0, when the history did not answer.
         fetchSolvedToday(),
       ]);
-      if (!live) return;
+      if (ctl.signal.aborted) return;
       if (asked > 0 && failures.length === asked) {
         // The network's own sentence where the network failed (api.ts
         // tells "unreachable" from "no internet"); a server that answered
@@ -806,7 +806,7 @@ export function HomePage() {
       });
     })();
     return () => {
-      live = false;
+      ctl.abort();
     };
   }, [attempt]);
 

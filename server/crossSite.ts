@@ -114,7 +114,7 @@ function originIsOurs(origin: string, expected: string | undefined): boolean {
   return LOOPBACK_HOSTS.has(hostName(originHost)) && LOOPBACK_HOSTS.has(hostName(target));
 }
 
-export function hostVouchedFor(name: string, allowed: readonly string[]): boolean {
+function hostVouchedFor(name: string, allowed: readonly string[]): boolean {
   if (LOOPBACK_HOSTS.has(name)) return true;
   if (IPV4_LITERAL.test(name) || IPV6_LITERAL.test(name)) return true;
   if (VOUCHED_SUFFIXES.some((suffix) => name.endsWith(suffix))) return true;

@@ -62,7 +62,7 @@ export interface MyGamesFilters {
 }
 
 /** Wins, draws and losses from the owner's side, under one key. */
-export interface InsightsTally {
+interface InsightsTally {
   w: number;
   d: number;
   l: number;

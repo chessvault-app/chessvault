@@ -7,6 +7,7 @@ import { Suspense, lazy } from 'react';
 
 const PhotoImport = lazy(() => import('@/puzzles/PhotoImport').then((m) => ({ default: m.PhotoImport })));
 import { FilePicker } from '@/components/file-picker';
+import { PhotoImportOpening } from '@/puzzles/photo-import-parts';
 import { WindowOpening } from '@/components/window-opening';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -106,7 +107,13 @@ export function LoadPositionButton({
               and backing out of a picture therefore dropped you all the
               way to the board, with the FEN you had typed gone with it. */}
           {templates !== null && (
-            <Suspense fallback={<WindowOpening title={t('Position from an image')} icon={ImageUp} className="sm:max-w-[38rem]" />}>
+            <Suspense
+              fallback={
+                <WindowOpening title={t('Position from an image')} icon={ImageUp} fill className="relative sm:max-w-[38rem]">
+                  <PhotoImportOpening />
+                </WindowOpening>
+              }
+            >
               <PhotoImport
                 templates={templates}
                 initialFile={imageFile ?? undefined}

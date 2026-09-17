@@ -49,13 +49,13 @@ export function readingOrder<T extends { x: number; y: number; w: number }>(
   width: number,
 ): T[] {
   const column = (r: T): number => (r.x + r.w / 2 < width / 2 ? 0 : 1);
-  return [...rects].sort((a, b) => column(a) - column(b) || a.y - b.y);
+  return rects.toSorted((a, b) => column(a) - column(b) || a.y - b.y);
 }
 
 /** Consecutive pages belong to one run: they share one gap in the numbering. */
 export function groupRuns(pages: number[]): number[][] {
   const runs: number[][] = [];
-  for (const page of [...pages].sort((a, b) => a - b)) {
+  for (const page of pages.toSorted((a, b) => a - b)) {
     const last = runs.at(-1);
     if (last && page === last.at(-1)! + 1) last.push(page);
     else runs.push([page]);

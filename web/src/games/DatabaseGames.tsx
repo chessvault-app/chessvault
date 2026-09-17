@@ -1,4 +1,4 @@
-﻿import { CornerDownLeft, Database, Grid3x3, Info, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
+﻿import { CornerDownLeft, Database, Grid3x3, Info, ListPlus, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import { Suspense, lazy, memo, useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
@@ -38,7 +38,9 @@ import {
 import { Field } from '@/components/ui/field';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { CustomMaterialWindow, EMPTY_CUSTOM, type CustomDraft, type CustomSpec } from './CustomMaterialWindow';
-import { EDITOR_WINDOW_SIZE } from '@/components/layout';
+import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, EDITOR_WINDOW_SIZE } from '@/components/layout';
+import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
+import { PalettePlaceholder, ToolStrip } from '@/editor/EditorView.skeleton';
 import { cn } from '@/lib/utils';
 import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { EmptyState } from '@/components/empty-state';
@@ -56,29 +58,28 @@ const EditorView = lazy(() =>
 );
 
 /** What that window holds while the editor's chunk is on the wire: the
-    palette's row, the board, and the row of tools under it, at the
-    heights they land at. The window's own size is fixed
-    (EDITOR_WINDOW_SIZE), so nothing here moves when the editor arrives. */
+    stacked editor's own column. The shell, the column and the board's
+    cap are the editor's constants, and the palettes and the tool strip
+    are the editor outline's own pieces, so this is the route's outline
+    folded into the window rather than a second drawing of it. The
+    second drawing had drifted: palette rows of 36 against 56, a board of
+    424 against 400, one bar where two rows of buttons land. */
 function SetupBoardOpening() {
   return (
-    <div
-      role="status"
-      aria-label={t('Loading')}
-      aria-live="polite"
-      className="flex min-h-0 flex-1 flex-col items-center gap-2 p-3"
-    >
-      <div className="flex w-full items-end justify-center gap-1">
-        {Array.from({ length: 6 }, (_, i) => (
-          <Skeleton key={i} className="size-9 shrink-0 rounded-md" />
-        ))}
+    <div role="status" aria-label={t('Loading')} aria-live="polite" className={BOARD_SCROLL_SHELL}>
+      <div className={cn(BOARD_WIDE_COLUMN, 'stacked:my-auto')}>
+        <div className={cn('flex w-full items-stretch gap-2', EDITOR_BOARD_MAX_W)}>
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <PalettePlaceholder />
+            {/* board-box: the width chessground will floor to, as
+                SkeletonBoard draws it. Without it a 334px phone column
+                held a 334px block where a 328px board lands. */}
+            <Skeleton className="board-box aspect-square rounded-xl" />
+            <PalettePlaceholder />
+            <ToolStrip use={{ label: t('Search'), icon: ListPlus }} />
+          </div>
+        </div>
       </div>
-      <Skeleton className="aspect-square w-full max-w-[32rem] rounded-xl" />
-      <div className="flex w-full items-end justify-center gap-1">
-        {Array.from({ length: 6 }, (_, i) => (
-          <Skeleton key={i} className="size-9 shrink-0 rounded-md" />
-        ))}
-      </div>
-      <Skeleton className="h-9 w-64 shrink-0 rounded-lg" />
     </div>
   );
 }

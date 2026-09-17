@@ -67,7 +67,7 @@ export const libraryMemory = {
   folders: [] as string[],
 };
 
-export function forgetLibrary(): void {
+function forgetLibrary(): void {
   libraryMemory.books = null;
 }
 
@@ -259,7 +259,7 @@ export function saveReadingPage(id: string, page: number): void {
  *    contrast out before reading it. Books read before this hold whatever
  *    the blind full-frame warp made of them.
  */
-export const DIAGRAM_READER = 1;
+const DIAGRAM_READER = 1;
 
 /**
  * Every book's read pages, in memory, by page: the diagram job writes here

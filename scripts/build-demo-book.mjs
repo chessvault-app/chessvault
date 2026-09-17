@@ -34,9 +34,8 @@
 import { chromium } from 'playwright';
 import { mkdirSync, readFileSync, writeFileSync, statSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 
-const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const REPO = resolve(import.meta.dirname, '..');
 const OUT = resolve(REPO, 'web/demo-assets/books/sample.pdf');
 /** Page images and their diagram boxes — the puzzle book's evidence. */
 const PAGES = resolve(REPO, 'web/demo-assets/book-pages');

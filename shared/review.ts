@@ -53,7 +53,7 @@ export function reviewDueAt(attempts: readonly ReviewAttempt[]): string | null {
   if (lastLoss === -1) return null;
   const winsSince = attempts.length - 1 - lastLoss;
   if (winsSince >= REVIEW_LADDER_DAYS.length) return null;
-  const at = attempts[attempts.length - 1]!.at;
+  const at = attempts.at(-1)!.at;
   if (!at) return ALWAYS_DUE;
   const base = Date.parse(at);
   if (Number.isNaN(base)) return ALWAYS_DUE;

@@ -30,7 +30,7 @@ export interface BookSolution {
   wildcards?: number[];
 }
 
-export interface PlayedMove {
+interface PlayedMove {
   uci: string;
   san: string;
   /** FEN after this move. */

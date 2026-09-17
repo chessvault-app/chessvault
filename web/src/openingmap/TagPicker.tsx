@@ -71,21 +71,21 @@ export function TagPicker({
 
   useEffect(() => {
     if (rows[kind] !== null) return;
-    let live = true;
+    const ctl = new AbortController();
     void (async () => {
       const { base } = KINDS[kind];
-      const body = await api<{ studies: { id: string; chapters: number }[] }>(`/api/${base}`);
-      if (live) {
+      const body = await api<{ studies: { id: string; chapters: number }[] }>(`/api/${base}`, { signal: ctl.signal });
+      if (!ctl.signal.aborted) {
         setRows((r) => ({
           ...r,
           [kind]: body.studies.map(({ id, chapters }) => ({ id, chapters })),
         }));
       }
     })().catch(() => {
-      if (live) setRows((r) => ({ ...r, [kind]: [] }));
+      if (!ctl.signal.aborted) setRows((r) => ({ ...r, [kind]: [] }));
     });
     return () => {
-      live = false;
+      ctl.abort();
     };
   }, [kind, rows]);
 

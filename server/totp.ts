@@ -52,7 +52,7 @@ function hotp(key: Uint8Array, counter: number): string {
   const msg = Buffer.alloc(8);
   msg.writeBigUInt64BE(BigInt(counter));
   const mac = createHmac('sha1', Buffer.from(key)).update(msg).digest();
-  const offset = mac[mac.length - 1]! & 0xf;
+  const offset = mac.at(-1)! & 0xf;
   const code =
     (((mac[offset]! & 0x7f) << 24) |
       (mac[offset + 1]! << 16) |

@@ -47,16 +47,16 @@ import { DangerCard } from '@/settings/cards/danger-card';
 function useStorage(stamp: number): StorageReport | null {
   const [report, setReport] = useState<StorageReport | null>(null);
   useEffect(() => {
-    let live = true;
-    void api<StorageReport>('/api/storage')
+    const ctl = new AbortController();
+    void api<StorageReport>('/api/storage', { signal: ctl.signal })
       .then((got) => {
-        if (live) setReport(got);
+        if (!ctl.signal.aborted) setReport(got);
       })
       .catch(() => {
-        if (live) setReport((prev) => prev ?? { areas: [] });
+        if (!ctl.signal.aborted) setReport((prev) => prev ?? { areas: [] });
       });
     return () => {
-      live = false;
+      ctl.abort();
     };
   }, [stamp]);
   return report;

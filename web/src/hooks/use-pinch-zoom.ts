@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useLayoutEffect, useRef } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 
 /** The zoom range every zoomable page in the app shares. */
 export const ZOOM_MIN = 0.75;
@@ -53,13 +53,15 @@ export function usePinchZoom(
   rebind?: unknown,
   live?: (pinch: PinchLive | null) => void,
 ): void {
-  // Filled from a layout effect, not in render (the React Compiler refuses
-  // a ref written in render); the listeners below read them later.
-  const applyRef = useRef(apply);
-  const liveRef = useRef(live);
-  useLayoutEffect(() => {
-    applyRef.current = apply;
-    liveRef.current = live;
+  // Effect Events: the listeners below are bound once and call these
+  // later, so they reach the caller's current handlers. tellLive answers
+  // whether there was a live handler to tell, which is what the listeners
+  // branch on.
+  const applyNow = useEffectEvent((factor: number, at?: PinchPoint) => apply(factor, at));
+  const tellLive = useEffectEvent((pinch: PinchLive | null): boolean => {
+    if (!live) return false;
+    live(pinch);
+    return true;
   });
   // An Effect Event, so the effect's list can stay what it means: the
   // element, and whatever the caller says swaps it.
@@ -100,15 +102,13 @@ export function usePinchZoom(
       if (gestures) return;
       const d = dist(e.touches);
       if (d > 0 && last > 0) {
-        if (liveRef.current) liveRef.current({ scale: d / start, ...at });
-        else applyRef.current(d / last);
+        if (!tellLive({ scale: d / start, ...at })) applyNow(d / last);
       }
       last = d;
     };
     const onEnd = (e: TouchEvent): void => {
-      if (!gestures && liveRef.current && last !== null && start !== null && start > 0) {
-        liveRef.current(null);
-        applyRef.current(last / start, at);
+      if (!gestures && last !== null && start !== null && start > 0 && tellLive(null)) {
+        applyNow(last / start, at);
       }
       last = null;
       start = null;
@@ -168,19 +168,15 @@ export function usePinchZoom(
       if (!gLive) return;
       e.preventDefault();
       if (e.scale <= 0) return;
-      if (liveRef.current) liveRef.current({ scale: e.scale, ...gAt });
-      else {
-        applyRef.current(e.scale / gLast);
+      if (!tellLive({ scale: e.scale, ...gAt })) {
+        applyNow(e.scale / gLast);
         gLast = e.scale;
       }
     };
     const onGEnd = (e: SafariGestureEvent): void => {
       if (!gLive) return;
       gLive = false;
-      if (liveRef.current) {
-        liveRef.current(null);
-        if (e.scale > 0) applyRef.current(e.scale, gAt);
-      }
+      if (tellLive(null) && e.scale > 0) applyNow(e.scale, gAt);
       unfreeze();
     };
 

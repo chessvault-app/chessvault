@@ -30,6 +30,7 @@ export function WindowOpening({
   title,
   icon,
   size,
+  fill,
   className,
   lines = 4,
   children,
@@ -37,6 +38,9 @@ export function WindowOpening({
   title: string;
   icon?: ComponentProps<typeof DialogContent>['icon'];
   size?: ComponentProps<typeof DialogContent>['size'];
+  /** As the real window has it: a phone sheet that fills is that tall
+      from its first frame. */
+  fill?: boolean;
   className?: string;
   /** Bars in the body. The default is a short form; a window that opens
       on a file picker or a board wants its own shape (`children`). */
@@ -46,7 +50,7 @@ export function WindowOpening({
 }) {
   return (
     <Dialog open onOpenChange={NOOP}>
-      <DialogContent title={title} icon={icon} size={size} className={className}>
+      <DialogContent title={title} icon={icon} size={size} fill={fill} className={className}>
         <div role="status" aria-label={t('Loading')} aria-live="polite" className="flex flex-col gap-3">
           {children ?? <WindowBody lines={lines} />}
         </div>
@@ -61,10 +65,10 @@ export function WindowOpening({
  * position loader already have open, so a second frame around it would
  * be the window swap those chains exist to remove.
  */
-export function WindowPageOpening({ lines = 4 }: { lines?: number }) {
+export function WindowPageOpening({ lines = 4, children }: { lines?: number; children?: ReactNode }) {
   return (
     <div role="status" aria-label={t('Loading')} aria-live="polite" className="flex flex-col gap-3">
-      <WindowBody lines={lines} />
+      {children ?? <WindowBody lines={lines} />}
     </div>
   );
 }

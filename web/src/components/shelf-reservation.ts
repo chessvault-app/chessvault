@@ -221,7 +221,7 @@ export const SHELVES = {
   library: { key: 'vault:library-shelf', floor: EMPTY_SHELF },
 } as const;
 
-export type ShelfName = keyof typeof SHELVES;
+type ShelfName = keyof typeof SHELVES;
 
 /** The shape a shelf had last visit, from its own key and its own floor. */
 export const readShelfShape = (shelf: ShelfName): ShelfShape =>
@@ -240,15 +240,3 @@ export const readShelfShape = (shelf: ShelfName): ShelfShape =>
 export const shelfLayoutOf = (stored: unknown): 'grid' | 'list' =>
   stored === 'list' ? 'list' : 'grid';
 
-/** How a shelf was last laid out, read from the view its toolbar stores
-    (`useShelfOrder`, components/shelf-toolbar) without going through it. */
-export function readShelfLayout(shelf: ShelfName): 'grid' | 'list' {
-  try {
-    const saved = JSON.parse(localStorage.getItem(`chess-vault:shelf-${shelf}`) ?? '{}') as {
-      layout?: unknown;
-    };
-    return shelfLayoutOf(saved.layout);
-  } catch {
-    return shelfLayoutOf(null);
-  }
-}

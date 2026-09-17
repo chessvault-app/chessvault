@@ -82,7 +82,7 @@ export type Speed = 'bullet' | 'blitz' | 'rapid' | 'classical' | 'correspondence
  * neither explains stays 'unknown' rather than guessed: agreement,
  * repetition and a dead position all look alike from the outside.
  */
-export const ENDINGS = [
+const ENDINGS = [
   'mate',
   'resignation',
   'timeout',

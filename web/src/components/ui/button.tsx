@@ -108,7 +108,7 @@ const buttonVariants = cva(
   },
 );
 
-export interface ButtonProps extends ButtonPrimitive.Props, VariantProps<typeof buttonVariants> {
+interface ButtonProps extends ButtonPrimitive.Props, VariantProps<typeof buttonVariants> {
   /**
    * The lit state of a toggle-like button in a toolbar — the tool that is
    * selected, the panel that is open.

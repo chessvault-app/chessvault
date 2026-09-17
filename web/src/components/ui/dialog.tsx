@@ -144,7 +144,7 @@ const DialogGuardContext = React.createContext<((guards: DialogGuards | null) =>
 
 // `handle` and `render` are omitted where the two primitives brand them
 // differently; nothing in the app uses either.
-export interface DialogProps extends Omit<DialogPrimitive.Root.Props, 'onOpenChange' | 'handle'> {
+interface DialogProps extends Omit<DialogPrimitive.Root.Props, 'onOpenChange' | 'handle'> {
   /** Kept to Radix's one-argument shape: every caller in the app reads only the boolean. */
   onOpenChange?: (open: boolean) => void;
   /**
@@ -181,7 +181,7 @@ function Dialog({
   React.useEffect(() => {
     if (open) resetSnapPoint();
   }, [open]);
-  const lowered = Boolean(phone && snapPoints && snapPoint !== snapPoints[snapPoints.length - 1]);
+  const lowered = Boolean(phone && snapPoints && snapPoint !== snapPoints.at(-1));
   // The sheet's exit, held here. Nearly every window in the app mounts
   // its Root already open and unmounts it the moment the caller hears
   // onOpenChange(false), so the primitive never sees `open` flip and its
@@ -266,11 +266,11 @@ function Dialog({
   const resting =
     phone && snapPoints ? { snapPoints, snapPoint, onSnapPointChange: setSnapPoint } : undefined;
   return (
-    <SheetContext.Provider value={phone}>
-      <SheetLoweredContext.Provider value={lowered}>
-      <DialogLeaveContext.Provider value={leave}>
-      <DialogCloseContext.Provider value={close}>
-        <DialogGuardContext.Provider value={setGuards}>
+    <SheetContext value={phone}>
+      <SheetLoweredContext value={lowered}>
+      <DialogLeaveContext value={leave}>
+      <DialogCloseContext value={close}>
+        <DialogGuardContext value={setGuards}>
           <Root
             open={open === undefined ? undefined : open && !leaving}
             onOpenChange={handleOpenChange}
@@ -278,28 +278,28 @@ function Dialog({
             {...resting}
             {...props}
           />
-        </DialogGuardContext.Provider>
-      </DialogCloseContext.Provider>
-      </DialogLeaveContext.Provider>
-      </SheetLoweredContext.Provider>
-    </SheetContext.Provider>
+        </DialogGuardContext>
+      </DialogCloseContext>
+      </DialogLeaveContext>
+      </SheetLoweredContext>
+    </SheetContext>
   );
 }
 
 function DialogTrigger({ ...props }: Omit<DialogPrimitive.Trigger.Props, 'handle'>) {
-  const Trigger: React.FC<Omit<DialogPrimitive.Trigger.Props, 'handle'>> = React.useContext(SheetContext)
+  const Trigger: React.FC<Omit<DialogPrimitive.Trigger.Props, 'handle'>> = React.use(SheetContext)
     ? (DrawerPrimitive.Trigger as React.FC<Omit<DialogPrimitive.Trigger.Props, 'handle'>>)
     : DialogPrimitive.Trigger;
   return <Trigger data-slot="dialog-trigger" {...props} />;
 }
 
 function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
-  const Portal = React.useContext(SheetContext) ? DrawerPrimitive.Portal : DialogPrimitive.Portal;
+  const Portal = React.use(SheetContext) ? DrawerPrimitive.Portal : DialogPrimitive.Portal;
   return <Portal {...props} />;
 }
 
 function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
-  const Close = React.useContext(SheetContext) ? DrawerPrimitive.Close : DialogPrimitive.Close;
+  const Close = React.use(SheetContext) ? DrawerPrimitive.Close : DialogPrimitive.Close;
   return <Close data-slot="dialog-close" {...props} />;
 }
 
@@ -479,10 +479,10 @@ function DialogContent({
   style,
   ...props
 }: DialogContentProps) {
-  const close = React.useContext(DialogCloseContext);
-  const setGuards = React.useContext(DialogGuardContext);
-  const phone = React.useContext(SheetContext);
-  const lowered = React.useContext(SheetLoweredContext);
+  const close = React.use(DialogCloseContext);
+  const setGuards = React.use(DialogGuardContext);
+  const phone = React.use(SheetContext);
+  const lowered = React.use(SheetLoweredContext);
   const small = size === 'sm';
 
   // The second-page bookkeeping. `covered` counts the pages currently
@@ -495,8 +495,8 @@ function DialogContent({
   const [host, setHost] = React.useState<HTMLElement | null>(null);
   const pageRequests = React.useRef<Array<() => void>>([]);
   const card = React.useRef<HTMLElement | null>(null);
-  const coverParent = React.useContext(CoverParent);
-  const leave = React.useContext(DialogLeaveContext);
+  const coverParent = React.use(CoverParent);
+  const leave = React.use(DialogLeaveContext);
 
   // The X's verb: shut this window, then every window it was opened
   // inside (see CoverParent.dismissAll). Read through refs so the handle
@@ -565,7 +565,7 @@ function DialogContent({
     requestRef.current = request;
   });
   const route = () => {
-    const top = pageRequests.current[pageRequests.current.length - 1];
+    const top = pageRequests.current.at(-1);
     (top ?? requestRef.current)();
   };
 
@@ -792,7 +792,7 @@ function DialogContent({
           </div>
         </div>
       )}
-      <CoverParent.Provider value={asParent}>{children}</CoverParent.Provider>
+      <CoverParent value={asParent}>{children}</CoverParent>
     </>
   );
 
@@ -1097,7 +1097,7 @@ function DialogFooter({
   // means — out of the whole chain, not back one page. Inside the card
   // this context is the window's OWN handle (DialogContent provides it to
   // its children), so `dismissAll` here already starts with this window.
-  const chain = React.useContext(CoverParent);
+  const chain = React.use(CoverParent);
   return (
     <div
       data-slot="dialog-footer"
@@ -1129,7 +1129,7 @@ function DialogFooter({
 }
 
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
-  const Title = React.useContext(SheetContext) ? DrawerPrimitive.Title : DialogPrimitive.Title;
+  const Title = React.use(SheetContext) ? DrawerPrimitive.Title : DialogPrimitive.Title;
   return (
     <Title
       data-slot="dialog-title"
@@ -1140,7 +1140,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
 }
 
 function DialogDescription({ className, ...props }: DialogPrimitive.Description.Props) {
-  const Description = React.useContext(SheetContext)
+  const Description = React.use(SheetContext)
     ? DrawerPrimitive.Description
     : DialogPrimitive.Description;
   return (
@@ -1159,8 +1159,6 @@ export {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogOverlay,
-  DialogPortal,
   DialogTitle,
   DialogTrigger,
 };

@@ -194,7 +194,7 @@ export function openingsBook(): { byKey: OpeningsFile['byKey']; members: Set<str
 }
 
 /** Whether a position is anywhere in the catalogue's lines — the book test. */
-export function isBookKey(hexKey: string): boolean {
+function isBookKey(hexKey: string): boolean {
   return loadIndex()?.members.has(hexKey) ?? false;
 }
 

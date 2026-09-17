@@ -68,24 +68,24 @@ function HistorySheet({
   const path = `/api/history/doc/${kind}/${encodeURIComponent(id)}`;
 
   useEffect(() => {
-    let live = true;
+    const ctl = new AbortController();
     void (async () => {
       // Only the call sits in the try; the answer is read after it (the
       // React Compiler cannot lower a conditional inside a try or a catch).
       let res: { available: boolean; versions?: Version[] } | null = null;
       try {
-        res = await api<{ available: boolean; versions?: Version[] }>(path);
+        res = await api<{ available: boolean; versions?: Version[] }>(path, { signal: ctl.signal });
       } catch {
         // The demo and any deployment without git answer 404 here. That is
         // "no history", not a fault, and must not read as one.
         res = { available: false };
       }
-      if (!live) return;
+      if (ctl.signal.aborted) return;
       if (!res.available) setUnavailable(true);
       else setVersions(res.versions ?? []);
     })();
     return () => {
-      live = false;
+      ctl.abort();
     };
   }, [path]);
 

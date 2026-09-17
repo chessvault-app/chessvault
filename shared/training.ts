@@ -19,7 +19,7 @@
  * without amputating the other.
  */
 
-export const DIFFICULTY_IDS = ['any', 'adaptive', 'easy', 'medium', 'hard', 'expert'] as const;
+const DIFFICULTY_IDS = ['any', 'adaptive', 'easy', 'medium', 'hard', 'expert'] as const;
 export type DifficultyId = (typeof DIFFICULTY_IDS)[number];
 
 export interface DrillPick {

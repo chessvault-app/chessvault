@@ -53,14 +53,14 @@ const KIND_PATTERN = Object.keys(KINDS).join('|');
 
 const SHA = /^[0-9a-f]{7,40}$/;
 
-export interface DocVersion {
+interface DocVersion {
   /** The autosave commit this version was taken from. */
   sha: string;
   /** When it was committed, ISO. */
   at: string;
 }
 
-export interface DeletedDoc {
+interface DeletedDoc {
   kind: DocKind;
   /** Id relative to its kind's directory, without the extension. */
   id: string;

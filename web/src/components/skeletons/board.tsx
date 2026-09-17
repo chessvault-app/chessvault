@@ -47,6 +47,7 @@ export function SkeletonBoard({
   strip,
   below,
   sideColumn = true,
+  centred = false,
   boardWidth = BOARD_MAX_W,
   className,
 }: {
@@ -146,6 +147,14 @@ export function SkeletonBoard({
    */
   sideColumn?: boolean;
   /**
+   * Centre the board's column in the height a stacked page leaves it,
+   * as the editor does (`stacked:my-auto` on its column): with no pane
+   * under the board there is free height, and the page splits it. Left
+   * out, the outline's board stood 93.5px above the page's on a 390x844
+   * phone (palette row 52 against 145.5, board 104 against 197.5).
+   */
+  centred?: boolean;
+  /**
    * The board block's own width budget, where a page has one of its own.
    * The editor's stacked board runs essentially full width, because it
    * has no pane under it (boardSize, EDITOR_BOARD_MAX_W); everything
@@ -229,7 +238,7 @@ export function SkeletonBoard({
 
       {/* The board's column, and inside it the one width budget every view
           that shows a board shares. */}
-      <div className={BOARD_WIDE_COLUMN}>
+      <div className={cn(BOARD_WIDE_COLUMN, centred && 'stacked:my-auto')}>
         <div ref={publishBoardHeight} className={cn('flex w-full flex-col gap-2', boardWidth)}>
           {/* 40px on a wide screen whatever it holds, so the board top
               stays put; on a phone only there when there is a game. */}

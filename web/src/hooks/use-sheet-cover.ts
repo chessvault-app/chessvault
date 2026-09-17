@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { CoverParent } from '@/hooks/cover-parent';
 
 /**
@@ -28,7 +28,7 @@ export function useSheetCover(active: boolean): {
   /** On the sheet's own card — what gets measured against the cap. */
   ref: (node: HTMLElement | null) => void;
 } {
-  const parent = useContext(CoverParent);
+  const parent = use(CoverParent);
   const [cap] = useState(() => (active ? (parent?.height() ?? 0) : 0));
   // State, not a ref: attaching the card is what starts the watching.
   const [card, setCard] = useState<HTMLElement | null>(null);
