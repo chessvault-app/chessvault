@@ -21,7 +21,7 @@ import { Readable } from 'node:stream';
 import { Hono } from 'hono';
 import { DATA } from './paths.ts';
 
-export const NET_SERVER = 'https://tests.stockfishchess.org/api/nn/';
+const NET_SERVER = 'https://tests.stockfishchess.org/api/nn/';
 
 /**
  * The networks the engine knows how to ask for, by file name, with the
@@ -30,12 +30,12 @@ export const NET_SERVER = 'https://tests.stockfishchess.org/api/nn/';
  * fetch inflates it as it streams, so its Content-Length is not the
  * total the bytes count towards; this is.
  */
-export const NETS: readonly { name: string; size: number }[] = [{ name: 'nn-1a298aa575a0.nnue', size: 98_511_183 }];
+const NETS: readonly { name: string; size: number }[] = [{ name: 'nn-1a298aa575a0.nnue', size: 98_511_183 }];
 
-export const DATA_ENGINE_NETS = resolve(DATA, 'engine-nets');
+const DATA_ENGINE_NETS = resolve(DATA, 'engine-nets');
 
 /** `nn-<12 hex>.nnue` names its own sha256 prefix. */
-export const checksumOk = (name: string, data: Uint8Array): boolean =>
+const checksumOk = (name: string, data: Uint8Array): boolean =>
   createHash('sha256').update(data).digest('hex').startsWith(name.slice(3, 15));
 
 export interface NetProgress {

@@ -221,7 +221,7 @@ export const SHELVES = {
   library: { key: 'vault:library-shelf', floor: EMPTY_SHELF },
 } as const;
 
-export type ShelfName = keyof typeof SHELVES;
+type ShelfName = keyof typeof SHELVES;
 
 /** The shape a shelf had last visit, from its own key and its own floor. */
 export const readShelfShape = (shelf: ShelfName): ShelfShape =>

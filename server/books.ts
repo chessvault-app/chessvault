@@ -72,7 +72,7 @@ const BOOKS_DIR = resolve(VAULT, 'books');
  * megabytes, a big one a few hundred, and anything beyond that is not
  * something a browser could open page by page anyway.
  */
-export const PDF_CAP = 500 * 1024 * 1024;
+const PDF_CAP = 500 * 1024 * 1024;
 
 /**
  * The id scheme, and the two questions asked about one, live in

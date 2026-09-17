@@ -124,7 +124,7 @@ export function pawnFilesHash(board: Board): number {
 }
 
 /** Where the streams sit for a pack of `npos` positions. */
-export const PACK_ENV_AT = 2;
+const PACK_ENV_AT = 2;
 export const PACK_KEYS_AT = 14;
 export const packPawnsAt = (npos: number): number => 14 + 4 * npos;
 export const packEventsAt = (npos: number): number => 14 + 5 * npos;

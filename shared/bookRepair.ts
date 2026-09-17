@@ -31,7 +31,7 @@ export interface CellCandidates {
 }
 
 /** A repair that replayed: the position, who moved, and the line. */
-export interface Repair {
+interface Repair {
   placement: string;
   side: 'w' | 'b';
   sans: string[];

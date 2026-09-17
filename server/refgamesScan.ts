@@ -311,7 +311,7 @@ export class BadPack extends Error {}
  * readable spec the loop replaced — the differential tests against the
  * replay reference are what hold that, not this comment.
  */
-export interface CompiledPositionHunt {
+interface CompiledPositionHunt {
   kind: 'position';
   /** 0 = exact (key32 gate), 1 = pawns/files (pawn-hash gate),
       2 = material rung (counts alone are the whole test),
@@ -327,7 +327,7 @@ export interface CompiledPositionHunt {
   c: Int32Array;
 }
 
-export interface CompiledMaterialHunt {
+interface CompiledMaterialHunt {
   kind: 'material';
   stable: number;
   loW: number;

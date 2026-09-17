@@ -144,7 +144,7 @@ const MAX_THEME_CARDS = 24;
 /** The page's own group count plus the leftovers group it may add. */
 const MAX_THEME_GROUPS = 16;
 
-export function parseThemesShape(raw: string | null): number[] | null {
+function parseThemesShape(raw: string | null): number[] | null {
   if (raw === null) return null;
   let stored: unknown;
   try {
@@ -179,7 +179,7 @@ export const readThemesShape = (): number[] | null => {
  */
 export const bookShapeKey = (slug: string): string => `vault:book-shape:${slug}`;
 
-export interface BookShape {
+interface BookShape {
   tiles: number;
   open: boolean;
   nudge: boolean;
@@ -191,7 +191,7 @@ export interface BookShape {
  * pass was open. Unreadable reads as null: nothing was learned, and the
  * blind 48-tile guess stands as it always has.
  */
-export function parseBookShape(raw: string | null): BookShape | null {
+function parseBookShape(raw: string | null): BookShape | null {
   if (raw === null) return null;
   let stored: unknown;
   try {
@@ -227,7 +227,7 @@ export const readBookShape = (slug: string): BookShape | null => {
  */
 export const PUZZLE_SHELF_KEY = 'vault:puzzle-shelf';
 export const PUZZLE_SHELF_ORDER_KEY = 'chess-vault:shelf-books';
-export type PuzzleBookSort = 'title' | 'puzzles' | 'progress';
+type PuzzleBookSort = 'title' | 'puzzles' | 'progress';
 
 /** How the book shelf is ordered. Not sortDocs: a book has no mtime or
     byte size worth ordering by - what it has is a count and a score. */

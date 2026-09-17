@@ -355,7 +355,7 @@ export const MOVE_COUNT_MIN_GAMES = 5;
  * so splitting it from its DELETE would work, but the three statements
  * are one step and there is nothing to report between them.
  */
-export const MOVE_COUNTS_SUMS = `  CREATE TABLE IF NOT EXISTS move_counts AS
+const MOVE_COUNTS_SUMS = `  CREATE TABLE IF NOT EXISTS move_counts AS
     SELECT pos, uci, eb,
            SUM(r = 0) AS w,
            SUM(r = 1) AS d,
@@ -363,12 +363,12 @@ export const MOVE_COUNTS_SUMS = `  CREATE TABLE IF NOT EXISTS move_counts AS
     FROM plies
     GROUP BY pos, uci, eb;
 `;
-export const MOVE_COUNTS_THIN = `  CREATE TEMP TABLE mc_thin AS
+const MOVE_COUNTS_THIN = `  CREATE TEMP TABLE mc_thin AS
     SELECT pos FROM move_counts GROUP BY pos HAVING SUM(w + d + b) < ${MOVE_COUNT_MIN_GAMES};
   DELETE FROM move_counts WHERE pos IN (SELECT pos FROM mc_thin);
   DROP TABLE mc_thin;
 `;
-export const MOVE_COUNTS_INDEX = `  CREATE INDEX IF NOT EXISTS idx_move_counts_pos ON move_counts (pos);
+const MOVE_COUNTS_INDEX = `  CREATE INDEX IF NOT EXISTS idx_move_counts_pos ON move_counts (pos);
 `;
 export const REFGAMES_MOVE_COUNTS = `
 ${MOVE_COUNTS_SUMS}${MOVE_COUNTS_THIN}${MOVE_COUNTS_INDEX}`;

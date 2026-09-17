@@ -89,7 +89,7 @@ const SECTION_ORDER: readonly SearchSection[] = ['studies', 'notes', 'games', 'b
 const fold = (s: string): string => s.normalize('NFC').toLowerCase();
 
 /** The words of a query, folded, empty when there is nothing to search for. */
-export function queryTokens(query: string): string[] {
+function queryTokens(query: string): string[] {
   return fold(query)
     .split(/\s+/)
     .filter((t) => t.length > 0);
@@ -131,7 +131,7 @@ function occurrences(folded: string, tokens: readonly string[]): number {
  * the snippet is cut from the original so it reads as written; otherwise
  * the folded text is shown, which is still the reader's own words.
  */
-export function snippetAt(
+function snippetAt(
   original: string,
   folded: string,
   at: number,
@@ -322,7 +322,7 @@ function booksIn(section: SearchSection, dir: string): Seen[] {
  * opens the right one. A book contributes its title and nothing to
  * search inside, since the title IS its name.
  */
-export function readEntry(seen: Seen): SearchEntry | null {
+function readEntry(seen: Seen): SearchEntry | null {
   let file: string;
   try {
     file = readFileSync(seen.path, 'utf-8');
