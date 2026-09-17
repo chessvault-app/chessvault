@@ -1423,6 +1423,7 @@ class RouteErrorBoundary extends Component<{ at: string; children: ReactNode }, 
   }
 
   override componentDidUpdate(prev: { at: string }): void {
+    // oxlint-disable-next-line react/no-did-update-set-state -- guarded, and the reset is the point
     if (this.state.failed && prev.at !== this.props.at) this.setState({ failed: false });
   }
 
