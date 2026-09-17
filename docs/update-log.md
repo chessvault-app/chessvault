@@ -15,6 +15,17 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 - **Settings comes back where you left it.** Opening Licences from the
   foot of Settings and going back landed at the top of the page. Settings
   stays in place under the licences, as a shelf does under a note.
+- **The review offer can be switched off.** Every opened game offered
+  its review, as a toast on a phone and a band under the moves on a
+  desktop. Settings › Appearance › Review offer stops both on this
+  device; the review button in the board's toolbar stays.
+- **A tap no longer raises a tooltip.** Tapping a game row on a phone
+  could bring up the opening's name over the list. Tooltips now answer a
+  mouse and the keyboard only.
+- **A page comes back to the row you left, not just the same scroll
+  offset.** A list left scrolled and shown again is held to the row that
+  was on screen, so rows that changed height above it while it was hidden
+  no longer move it.
 
 ## 0.11.3
 

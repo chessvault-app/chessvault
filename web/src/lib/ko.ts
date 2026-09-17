@@ -1154,6 +1154,8 @@ export const ko: Record<string, string> = {
   'File and rank labels on the board edge.': '보드 가장자리의 파일·랭크 표시입니다.',
   'Move box': '수 입력 상자',
   'Play moves from the keyboard.': '키보드로 수를 입력해 둘 수 있습니다.',
+  'Review offer': '리뷰 제안',
+  'Offer a review when a game opens.': '게임을 열면 리뷰를 제안합니다.',
   'Two-factor authentication': '2단계 인증',
   'Turning it off needs a current code from your authenticator app.':
     '끄려면 인증 앱의 현재 코드가 필요합니다.',

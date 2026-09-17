@@ -337,6 +337,14 @@ interface PrefsState {
    * screen shows, not of the chess.
    */
   moveBox: boolean;
+  /**
+   * Whether an opened game offers its review (engine/ReviewStrip): the
+   * toast on a phone, the band under the moves on a desktop. On by
+   * default, since the offer exists because nobody found the button; off
+   * for someone who has, and is told again on every game. The button in
+   * the board's toolbar stays either way.
+   */
+  reviewOffer: boolean;
   /** How large a comment is rendered in the move list. */
   annotationSize: AnnotationSize;
   /** One short vibration when a piece lands. Android only — iOS Safari
@@ -391,6 +399,7 @@ interface PrefsState {
   setCastleStyle: (style: CastleStyle) => void;
   setCoordinates: (on: boolean) => void;
   setMoveBox: (on: boolean) => void;
+  setReviewOffer: (on: boolean) => void;
   setAnnotationSize: (size: AnnotationSize) => void;
   setHaptics: (on: boolean) => void;
   setAutosave: (on: boolean) => void;
@@ -500,6 +509,7 @@ export const usePrefs = create<PrefsState>()(
       castleStyle: 'king',
       coordinates: true,
       moveBox: true,
+      reviewOffer: true,
       // What the move list has always rendered a comment at.
       annotationSize: 'medium',
       haptics: true,
@@ -531,6 +541,7 @@ export const usePrefs = create<PrefsState>()(
       setCastleStyle: (castleStyle) => set({ castleStyle }),
       setCoordinates: (coordinates) => set({ coordinates }),
       setMoveBox: (moveBox) => set({ moveBox }),
+      setReviewOffer: (reviewOffer) => set({ reviewOffer }),
       setAnnotationSize: (annotationSize) => set({ annotationSize }),
       setHaptics: (haptics) => set({ haptics }),
       setAutosave: (autosave) => set({ autosave }),

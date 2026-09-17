@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/lib/media';
 import { routeSettled } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
+import { usePrefs } from '@/store/prefs';
 import { useReview, type GraphPoint } from '@/store/review';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -127,7 +128,10 @@ export function ReviewStrip({
    */
   const phone = useMediaQuery('(max-width: 47.9375rem)');
   const offeredFor = useRef<unknown>(null);
-  const offerAsToast = phone && !panel && status === 'idle' && !!gameHeaders && hasMoves;
+  // Settings > Appearance: someone who knows where the button is can say
+  // so once, rather than dismiss the offer on every game.
+  const offers = usePrefs((p) => p.reviewOffer);
+  const offerAsToast = offers && phone && !panel && status === 'idle' && !!gameHeaders && hasMoves;
   useEffect(() => {
     if (!offerAsToast || offeredFor.current === gameHeaders) return;
     offeredFor.current = gameHeaders;
@@ -161,7 +165,9 @@ export function ReviewStrip({
   }, [offerAsToast, gameHeaders, run]);
 
   if (status === 'idle') {
-    if (!gameHeaders || !hasMoves || offerDismissed === gameHeaders) return null;
+    // The workspace's Analysis panel keeps its offer: there it is the
+    // panel's content, not a band over someone's moves.
+    if ((!offers && !panel) || !gameHeaders || !hasMoves || offerDismissed === gameHeaders) return null;
     if (offerAsToast) return null;
     return (
       <div className={cn('border-border flex shrink-0 items-center gap-2 border-t px-3 py-2', className)}>

@@ -54,7 +54,7 @@ export function AppearanceCard() {
   const [moreOpen, setMoreOpen] = useState(false);
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
-  const { boardTheme, pieces, schemeId, radius, density, castleStyle, coordinates, moveBox, annotationSize, setBoardTheme, setPieces, setSchemeId, setRadius, setDensity, setCastleStyle, setCoordinates, setMoveBox, setAnnotationSize } =
+  const { boardTheme, pieces, schemeId, radius, density, castleStyle, coordinates, moveBox, reviewOffer, annotationSize, setBoardTheme, setPieces, setSchemeId, setRadius, setDensity, setCastleStyle, setCoordinates, setMoveBox, setReviewOffer, setAnnotationSize } =
     usePrefs();
 
   return (
@@ -207,6 +207,19 @@ export function AppearanceCard() {
           checked={moveBox}
           onCheckedChange={() => setMoveBox(!moveBox)}
           aria-label={t('Move box')}
+        />
+      </SettingRow>
+
+      {/* Here for the move box's reason: it is on every opened game or on
+          none of them. */}
+      <SettingRow
+        title={t('Review offer')}
+        blurb={t('Offer a review when a game opens.')}
+      >
+        <Switch
+          checked={reviewOffer}
+          onCheckedChange={() => setReviewOffer(!reviewOffer)}
+          aria-label={t('Review offer')}
         />
       </SettingRow>
 
