@@ -127,6 +127,17 @@ export function usePdfSearch(
     announce(t('{k} of {n}, page {page}', { k: i + 1, n: hits.length, page: hits[i]!.page }));
   };
 
+  // Indexed once per result set rather than scanned per call: the reader
+  // asks this for every mounted page inside its render, and that render
+  // runs on every scroll frame, so a common word in a long book was
+  // several passes over a hit list in the tens of thousands per frame.
+  const byPage = new Map<number, SearchHit[]>();
+  for (const h of hits) {
+    const list = byPage.get(h.page);
+    if (list) list.push(h);
+    else byPage.set(h.page, [h]);
+  }
+
   return {
     query,
     hits,
@@ -136,7 +147,7 @@ export function usePdfSearch(
     clear,
     next: () => step(1),
     prev: () => step(-1),
-    onPage: (page) => hits.filter((h) => h.page === page),
+    onPage: (page) => byPage.get(page) ?? NO_HITS,
   };
 }
 
@@ -182,6 +193,8 @@ export function runBox(
   return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
 }
 
+const NO_HITS: SearchHit[] = [];
+
 export async function searchPage(doc: PDFDocumentProxy, n: number, needle: string): Promise<SearchHit[]> {
   const page = await doc.getPage(n);
   const viewport = page.getViewport({ scale: 1 });
@@ -224,5 +237,6 @@ export async function searchPage(doc: PDFDocumentProxy, n: number, needle: strin
     if (rects.length > 0) hits.push({ page: n, rects });
     at = hay.indexOf(needle, end);
   }
+  page.cleanup();
   return hits;
 }

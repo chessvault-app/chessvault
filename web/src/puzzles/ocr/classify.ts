@@ -89,15 +89,21 @@ function distance(a: Float32Array, b: Float32Array): number {
  * Nearest template wins; confidence is 1 − d_best/d_otherLabel (0 when a
  * different label matches just as well, →1 when the winner is unambiguous).
  */
+type ReadyTemplate = { label: CellLabel; vector: Float32Array };
+
+/** The stored templates decoded and normalised once, for a whole board. */
+const readyTemplates = (templates: Template[]): ReadyTemplate[] =>
+  templates.map((t) => ({ label: t.label, vector: normalize(decodeFeature(t.feature)) }));
+
 function classifyCell(
   feature: Uint8Array,
-  templates: Template[],
+  templates: ReadyTemplate[],
 ): CellReading {
   const probe = normalize(feature);
   let best: { label: CellLabel; d: number } | null = null;
   let bestOther = Infinity;
   for (const t of templates) {
-    const d = distance(probe, normalize(decodeFeature(t.feature)));
+    const d = distance(probe, t.vector);
     if (!best || d < best.d) {
       if (best && best.label !== t.label) bestOther = Math.min(bestOther, best.d);
       best = { label: t.label, d };
@@ -111,7 +117,11 @@ function classifyCell(
 }
 
 export function classifyBoard(cells: Uint8Array[], templates: Template[]): CellReading[] {
-  return cells.map((cell) => classifyCell(cell, templates));
+  // Decoded once for the board rather than once per cell: the set does not
+  // change during the call, and at the 16-per-label cap that was up to
+  // 13,312 atob calls and ~26,600 array allocations for 208 templates.
+  const ready = readyTemplates(templates);
+  return cells.map((cell) => classifyCell(cell, ready));
 }
 
 /**

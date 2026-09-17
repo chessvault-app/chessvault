@@ -105,10 +105,13 @@ const ROLE_CODE: Record<Role, number> = {
   king: 0, // never captured, never promoted to — encoded as none
 };
 
+/** Filled afresh at every call below, never read across one. */
+const filesScratch = new Int32Array(16);
+
 /** The pawn-files hash of a board — see the header for the exact
     arithmetic, which the Rust twin repeats digit for digit. */
 export function pawnFilesHash(board: Board): number {
-  const files = new Array<number>(16).fill(0);
+  const files = filesScratch.fill(0);
   for (const square of board.pawn.intersect(board.white)) {
     files[squareFile(square)] = (files[squareFile(square)] ?? 0) + 1;
   }

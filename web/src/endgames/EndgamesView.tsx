@@ -365,8 +365,10 @@ function Drill({ classId }: { classId: string }) {
   };
   const live = positionAtPly(plies);
   const shownPly = review ?? plies;
-  const displayed = positionAtPly(shownPly);
   const reviewing = review !== null;
+  // Only a review looks at another ply, so the live position is not
+  // rebuilt for the ordinary case of looking at the move just played.
+  const displayed = reviewing ? positionAtPly(shownPly) : live;
   const solverSide: Color = start?.side ?? 'white';
   const orientation: Color = flipped ? (solverSide === 'white' ? 'black' : 'white') : solverSide;
 

@@ -152,25 +152,30 @@ function centroids(samples: GlyphSample[], labels: number[]): Float32Array[] {
   });
 }
 
-/** Correlation against each centroid; brightness and contrast cancel out. */
-function bestRole(model: Float32Array[], crop: Float32Array): { role: number; score: number } {
-  const centre = (v: Float32Array): { values: Float32Array; norm: number } => {
-    let mean = 0;
-    for (const x of v) mean += x;
-    mean /= v.length;
-    const values = new Float32Array(v.length);
-    let norm = 0;
-    for (let i = 0; i < v.length; i++) {
-      values[i] = v[i]! - mean;
-      norm += values[i]! * values[i]!;
-    }
-    return { values, norm: Math.sqrt(norm) };
-  };
+type Centred = { values: Float32Array; norm: number };
+
+/** A vector with its mean removed, and the norm of the result. */
+const centre = (v: Float32Array): Centred => {
+  let mean = 0;
+  for (const x of v) mean += x;
+  mean /= v.length;
+  const values = new Float32Array(v.length);
+  let norm = 0;
+  for (let i = 0; i < v.length; i++) {
+    values[i] = v[i]! - mean;
+    norm += values[i]! * values[i]!;
+  }
+  return { values, norm: Math.sqrt(norm) };
+};
+
+/** Correlation against each centroid; brightness and contrast cancel out.
+    The model is centred once per run by the caller, not once per sample. */
+function bestRole(model: Centred[], crop: Float32Array): { role: number; score: number } {
   const a = centre(crop);
   let role = 0;
   let score = -Infinity;
   for (let r = 0; r < model.length; r++) {
-    const b = centre(model[r]!);
+    const b = model[r]!;
     let dot = 0;
     for (let i = 0; i < a.values.length; i++) dot += a.values[i]! * b.values[i]!;
     const sim = dot / (a.norm * b.norm + 1e-6);
@@ -214,7 +219,7 @@ export function learnGlyphHints(
   const seen = new Set(labels);
   if (seen.size < GLYPH_ROLES.length) return new Map();
 
-  const model = centroids(labelled, labels);
+  const model = centroids(labelled, labels).map(centre);
   const votes = new Map<string, Map<number, number>>();
   for (const sample of samples) {
     const { role, score } = bestRole(model, sample.pixels);

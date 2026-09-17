@@ -307,7 +307,7 @@ function NoteEditor({
         saveTimer.current = null;
         // Nothing is going to be written, so the copy parked in the vault
         // is the only record of this outside the tab.
-        schedulePark(docToMarkdown(editor.state.doc, front.current));
+        schedulePark(now);
         return;
       }
       saveTimer.current = setTimeout(() => {

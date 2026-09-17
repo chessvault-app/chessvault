@@ -132,9 +132,11 @@ const parse = (fen: string): Chess | null => {
  * guessed one.
  */
 export function detectSacrifices(fens: string[]): boolean[] {
-  return fens.slice(0, -1).map((fen, i) => {
-    const before = parse(fen);
-    const after = parse(fens[i + 1]!);
+  // Parsed once each: every position but the ends is both an `after` and
+  // the next step's `before`, so parsing per step did it twice.
+  const positions = fens.map(parse);
+  return positions.slice(0, -1).map((before, i) => {
+    const after = positions[i + 1]!;
     if (!before || !after) return false;
     const mover = before.turn;
 

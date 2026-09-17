@@ -772,13 +772,16 @@ export async function catalogSuggest(
   // Names that START with the needle first — "naj" should offer the
   // Najdorf before every line merely containing it. The catalogue's
   // own order (ECO order, families together) carries within each half.
-  const starts = lines.filter((l) => l.name.toLowerCase().startsWith(needle));
-  const contains = needle
-    ? lines.filter(
-        (l) => !l.name.toLowerCase().startsWith(needle) && l.name.toLowerCase().includes(needle),
-      )
-    : [];
-  return [...starts, ...contains].map((l) => ({ v: l.name, desc: l.eco }));
+  // One lowercase per line rather than three: the catalogue is ~3,800
+  // lines and this runs per keystroke while the panel is open.
+  const starts: ValueSuggestion[] = [];
+  const contains: ValueSuggestion[] = [];
+  for (const l of lines) {
+    const name = l.name.toLowerCase();
+    if (name.startsWith(needle)) starts.push({ v: l.name, desc: l.eco });
+    else if (needle && name.includes(needle)) contains.push({ v: l.name, desc: l.eco });
+  }
+  return [...starts, ...contains];
 }
 
 /** One issue line: the offending piece as a badge, the reason beside it. */

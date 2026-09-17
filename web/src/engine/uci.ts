@@ -83,18 +83,11 @@ export function parseInfo(line: string): PvLine | undefined {
   if (result.cp === undefined && result.mate === undefined) return undefined;
   if (result.moves.length === 0) return undefined;
 
-  return {
-    multipv: result.multipv ?? 1,
-    depth: result.depth,
-    ...(result.selDepth !== undefined ? { selDepth: result.selDepth } : {}),
-    ...(result.cp !== undefined ? { cp: result.cp } : {}),
-    ...(result.mate !== undefined ? { mate: result.mate } : {}),
-    moves: result.moves,
-    ...(result.nodes !== undefined ? { nodes: result.nodes } : {}),
-    ...(result.nps !== undefined ? { nps: result.nps } : {}),
-    ...(result.timeMs !== undefined ? { timeMs: result.timeMs } : {}),
-    ...(result.bound ? { bound: result.bound } : {}),
-  };
+  // `result` already has exactly these fields: each is written only when
+  // its token appeared, so the spread-per-field copy below rebuilt the
+  // object it had just built, once per info line.
+  result.multipv ??= 1;
+  return result as PvLine;
 }
 
 /** Extract the move from a `bestmove` line. */

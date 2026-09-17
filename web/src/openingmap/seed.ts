@@ -1,4 +1,4 @@
-import { addSan, createTree, getNode } from '@shared/tree';
+import { addSanOwned, createTree, getNode } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { fenKey } from '@/lib/fen';
 import type { FieldMove } from '@/repertoire/field';
@@ -40,10 +40,9 @@ export async function seedFromGames(opts: SeedOptions): Promise<string[][]> {
   let tree: MoveTree = createTree();
   let start: NodeId = tree.rootId;
   for (const san of opts.startPath) {
-    const added = addSan(tree, start, san);
-    if (!added) return [];
-    tree = added.tree;
-    start = added.nodeId;
+    const added = addSanOwned(tree, start, san);
+    if (added === undefined) return [];
+    start = added;
   }
 
   const lines: string[][] = [];
@@ -69,18 +68,17 @@ export async function seedFromGames(opts: SeedOptions): Promise<string[][]> {
       : field.filter((m) => m.total >= opts.minGames && m.total / games >= minShare);
     for (const move of keep) {
       if (charted >= maxMoves) break;
-      const added = addSan(tree, id, move.san);
-      if (!added) continue;
-      tree = added.tree;
+      const added = addSanOwned(tree, id, move.san);
+      if (added === undefined) continue;
       const line = [...path, move.san];
       lines.push(line);
       charted += 1;
-      const key = fenKey(getNode(tree, added.nodeId).fen);
+      const key = fenKey(getNode(tree, added).fen);
       // A transposition back into charted ground gets its move charted
       // (the map is about YOUR move orders) but is not walked again.
       if (!visited.has(key)) {
         visited.add(key);
-        queue.push({ id: added.nodeId, path: line, ply: ply + 1 });
+        queue.push({ id: added, path: line, ply: ply + 1 });
       }
     }
   }

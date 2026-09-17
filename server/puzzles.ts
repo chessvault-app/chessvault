@@ -541,8 +541,9 @@ export function puzzlesApi(
    */
   const weakestTheme = (
     db: InstanceType<typeof Database>,
+    entries: Attempt[] = historyEntries(),
   ): { theme: string; attempts: number; wins: number } | null => {
-    const attempts = historyEntries().filter((e) => e.counted !== false);
+    const attempts = entries.filter((e) => e.counted !== false);
     if (attempts.length === 0) return null;
     const ids = [...new Set(attempts.map((e) => e.id))];
     const themesById = new Map<string, string[]>();
@@ -837,7 +838,7 @@ export function puzzlesApi(
       // one lands if nothing is. Both derived, like the pool.
       due: queue.filter((q) => q.due <= now).length,
       nextDue: queue.find((q) => q.due > now)?.due ?? null,
-      weakTheme: weakestTheme(db),
+      weakTheme: weakestTheme(db, entries),
       user: publicState(user),
     });
   });

@@ -817,8 +817,9 @@ async function loadKnownDiagrams(id: string): Promise<Map<number, KnownDiagram[]
   const { books } = await api<{ books: BookSummary[] }>('/api/puzzlebooks');
   const linked = books.filter((b) => b.pdfBook === id);
   const map = new Map<number, KnownDiagram[]>();
-  for (const b of linked) {
-    for (const p of await loadPlacements(b.slug)) {
+  const lists = await Promise.all(linked.map((b) => loadPlacements(b.slug)));
+  for (const placements of lists) {
+    for (const p of placements) {
       if (!p.rect) continue;
       const list = map.get(p.page) ?? [];
       list.push({ rect: p.rect, fen: p.fen });

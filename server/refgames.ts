@@ -2228,13 +2228,17 @@ export function refGamesApi(
       let allowed: Set<number> | null = null;
       if (clauses.length > 0) {
         allowed = new Set();
+        // One compile for the full-chunk shape, which every iteration but
+        // the last shares: the candidate list is one id per game in the
+        // bucket run, so a shallow position compiled this thousands of
+        // times over.
+        const idsIn = (n: number): string =>
+          `SELECT id FROM games WHERE id IN (${Array.from({ length: n }, () => '?').join(',')})${sqlAnd}`;
+        const fullChunk = candidates.length >= 500 ? db.prepare(idsIn(500)) : null;
         for (let at = 0; at < candidates.length; at += 500) {
           const chunk = candidates.slice(at, at + 500);
-          const rows = db
-            .prepare(
-              `SELECT id FROM games WHERE id IN (${chunk.map(() => '?').join(',')})${sqlAnd}`,
-            )
-            .all(...chunk, ...binds) as { id: number }[];
+          const stmt = chunk.length === 500 ? fullChunk! : db.prepare(idsIn(chunk.length));
+          const rows = stmt.all(...chunk, ...binds) as { id: number }[];
           for (const row of rows) allowed.add(row.id);
         }
       }

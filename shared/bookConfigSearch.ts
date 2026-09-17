@@ -80,7 +80,9 @@ export function deriveAnchors(pages: TextPage[], maxNumber: number): string[] {
       if (value < 1 || value > maxNumber) continue;
       // The shape is the punctuation around the number, not the number.
       const key = `${m[1]!.trimStart()}|${m[3]!.trimEnd()}`;
-      runs.set(key, [...(runs.get(key) ?? []), value]);
+      const held = runs.get(key);
+      if (held) held.push(value);
+      else runs.set(key, [value]);
     }
   }
 
@@ -117,6 +119,9 @@ export function scoreSettings(
   boards: Map<number, ReadBoard>,
   book: Omit<BookText, 'anchorStyle' | 'moveMarkers'>,
   settings: TextSettings,
+  // Depends on `pages` alone, so the candidate search hands the same map
+  // to every candidate rather than rescanning every page's text per try.
+  sides: Map<number, 'w' | 'b'> = chapterSides(pages),
 ): Score {
   const config: BookText = {
     ...book,
@@ -125,7 +130,6 @@ export function scoreSettings(
     ...(settings.anchorPattern ? { anchorPattern: settings.anchorPattern } : {}),
   };
   const entries = solutionEntries(pages, config);
-  const sides = chapterSides(pages);
   const dialect = new Dialect();
 
   const attempt = (hints?: Map<string, Role>): number => {
@@ -197,8 +201,9 @@ export function searchSettings(
       }
     }
   }
+  const sides = chapterSides(pages);
   return candidates
-    .map((settings) => scoreSettings(pages, boards, book, settings))
+    .map((settings) => scoreSettings(pages, boards, book, settings, sides))
     .sort((a, b) => b.validated - a.validated || b.entries - a.entries);
 }
 
