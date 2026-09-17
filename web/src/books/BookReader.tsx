@@ -1081,7 +1081,7 @@ function PdfPane({
    * The phone asks for the page in a sheet, not in the bar.
    *
    * The bar is hidden the moment a keyboard comes up (`keyboard:hidden`,
-   * App.tsx) because the shell then ends where the keyboard begins and a
+   * shell/mobile-nav.tsx) because the shell then ends where the keyboard begins and a
    * bar pinned to its bottom edge would sit on the keys. That rule was
    * written on the assumption that nothing on a phone asks for typing
    * except a sheet — and this field, alone in the app, sat in the bar. So

@@ -202,7 +202,7 @@ export function TitleBar() {
       className="bg-card text-muted-foreground relative flex shrink-0 items-center"
       style={{ height: shell.height, WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
-      {/* The segment over the sidebar keeps the sidebar's width (App.tsx,
+      {/* The segment over the sidebar keeps the sidebar's width (shell/sidebar.tsx,
           Sidebar) so the controls stand over the column they belong to.
           Unfolded it holds every control; folded, the rail is 68px and
           holds the fold switch alone, left-aligned the way the rail
@@ -214,7 +214,7 @@ export function TitleBar() {
             'flex h-full shrink-0 items-center gap-1 self-stretch',
             // 16px, not the band's 14: the switch is a 36px button, so its
             // glyph then centres 34px in, the line the sidebar's row icons
-            // sit on below it (NAV_ROW in App.tsx; 11px matched the 29px
+            // sit on below it (NAV_ROW in shell/sidebar.tsx; 11px matched the 29px
             // column those rows had before they were left-aligned).
             // Left-aligned in both states, since the width slides in step
             // with the sidebar and a centred switch would drift with it;
@@ -233,7 +233,7 @@ export function TitleBar() {
             onClick={() => setFolded(!folded)}
           >
             {/* One glyph for both states, no arrow: the tip says which way it
-                goes. Drawn as the sidebar's own switch was (App.tsx,
+                goes. Drawn as the sidebar's own switch was (shell/sidebar.tsx,
                 foldButton), a step over the band's 16px so the outlined
                 panel reads as heavy as the solid strokes beside it. */}
             <PanelLeft className="size-[1.15rem]" strokeWidth={2} />

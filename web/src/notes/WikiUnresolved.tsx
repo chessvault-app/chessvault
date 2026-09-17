@@ -31,7 +31,7 @@ import { SECTION_URL, wikiUnresolved } from './wikiDocs';
 
 /**
  * The order the offers are made in: the app's own menu order, from the
- * sidebar in App.tsx.
+ * sidebar in shell/sidebar.tsx.
  *
  * Deliberately NOT the resolution order, which runs notes, studies, games
  * and is about which document a name would find first. Nothing is being
