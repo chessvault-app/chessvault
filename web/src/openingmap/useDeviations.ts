@@ -43,7 +43,7 @@ export function useDeviations(
 
   useEffect(() => {
     if (!map || !resolved) return;
-    let live = true;
+    const ctl = new AbortController();
     void (async () => {
       const chapters = scopedEntries(collectStudyTags(map)).map((e) => e.chapter);
       const keys = [...collectPreparedFens(resolved, chapters)].flatMap((fen) => {
@@ -55,15 +55,16 @@ export function useDeviations(
         const body = await api<{ deviations: Deviation[] }>('/api/mygames/deviations', {
           method: 'POST',
           json: { keys, side: map.color, limit: 300 },
+          signal: ctl.signal,
         });
-        if (live) setAll(body.deviations);
+        if (!ctl.signal.aborted) setAll(body.deviations);
       } catch {
         // No games index is a quiet panel, not an error.
-        if (live) setAll([]);
+        if (!ctl.signal.aborted) setAll([]);
       }
     })();
     return () => {
-      live = false;
+      ctl.abort();
     };
   }, [map, resolved]);
 

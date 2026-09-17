@@ -87,7 +87,7 @@ export function useCoverage(
       setMarks({ review: new Set(), gaps: new Set() });
       return;
     }
-    let live = true;
+    const ctl = new AbortController();
     void (async () => {
       const review = new Set<string>();
       const gaps = new Set<string>();
@@ -95,7 +95,7 @@ export function useCoverage(
         ids.map(async (id) => {
           let body: { review?: { key: string }[]; gaps?: { key: string }[] } | undefined;
           try {
-            body = await api(`/api/repertoire/summary?study=${encodeURIComponent(id)}`);
+            body = await api(`/api/repertoire/summary?study=${encodeURIComponent(id)}`, { signal: ctl.signal });
           } catch {
             // No record is a clean map, not an error.
           }
@@ -103,10 +103,10 @@ export function useCoverage(
           for (const entry of body?.gaps ?? []) gaps.add(entry.key);
         }),
       );
-      if (live) setMarks({ review, gaps });
+      if (!ctl.signal.aborted) setMarks({ review, gaps });
     })();
     return () => {
-      live = false;
+      ctl.abort();
     };
   });
   useEffect(() => readMarks(), [idsKey]);
@@ -117,9 +117,9 @@ export function useCoverage(
       setMissing(new Set());
       return;
     }
-    let live = true;
+    const ctl = new AbortController();
     void (async () => {
-      const listing = await api<{ studies: { id: string; updatedAt: string }[] }>('/api/studies');
+      const listing = await api<{ studies: { id: string; updatedAt: string }[] }>('/api/studies', { signal: ctl.signal });
       const stamps = new Map(listing.studies.map((s) => [s.id, s.updatedAt]));
       const gone = new Set<string>();
       await Promise.all(
@@ -132,21 +132,21 @@ export function useCoverage(
           }
           if (parsed.get(id)?.stamp === stamp) return;
           try {
-            const { pgn } = await api<{ pgn: string }>(`/api/studies/${encodeURIComponent(id)}`);
+            const { pgn } = await api<{ pgn: string }>(`/api/studies/${encodeURIComponent(id)}`, { signal: ctl.signal });
             parsed.set(id, { stamp, chapters: pgnToChapters(pgn) });
           } catch {
             gone.add(id);
           }
         }),
       );
-      if (live) {
+      if (!ctl.signal.aborted) {
         setMissing(gone);
         setSettledFor(idsKey);
         setStudies(parsedStudies());
       }
     })().catch(() => {});
     return () => {
-      live = false;
+      ctl.abort();
     };
   });
   useEffect(() => readStudies(), [idsKey]);

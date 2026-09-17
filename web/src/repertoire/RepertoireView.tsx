@@ -373,12 +373,12 @@ export function RepertoireView() {
   // a dependency, and the guards keep the re-run idempotent.
   useEffect(() => {
     if (mode !== 'drill' || mapDrill !== null || !drillStudy) return;
-    let cancelled = false;
+    const ctl = new AbortController();
     setDrillChapters(null);
     setChapterPick('0');
-    void api<{ pgn?: string } | null>(`/api/studies/${encodeURIComponent(drillStudy)}`)
+    void api<{ pgn?: string } | null>(`/api/studies/${encodeURIComponent(drillStudy)}`, { signal: ctl.signal })
       .then((body) => {
-        if (cancelled) return;
+        if (ctl.signal.aborted) return;
         const chapters = typeof body?.pgn === 'string' ? pgnToChapters(body.pgn) : [];
         setDrillChapters(chapters);
         // The memo names a chapter of THIS study: reopen on it.
@@ -392,10 +392,10 @@ export function RepertoireView() {
         }
       })
       .catch(() => {
-        if (!cancelled) setDrillChapters([]);
+        if (!ctl.signal.aborted) setDrillChapters([]);
       });
     return () => {
-      cancelled = true;
+      ctl.abort();
     };
   }, [mode, mapDrill, drillStudy]);
 
@@ -406,7 +406,7 @@ export function RepertoireView() {
     if (mode !== 'drill' || !drillStudy || !chapter || phase !== 'idle') {
       return;
     }
-    let cancelled = false;
+    const ctl = new AbortController();
     const scope = wholeStudy ? '' : `&chapter=${encodeURIComponent(chapter.name)}`;
     void api<{
       attempted?: number;
@@ -415,9 +415,9 @@ export function RepertoireView() {
       scheduled?: number;
       nextDue?: string | null;
       gaps?: unknown[];
-    } | null>(`/api/repertoire/summary?study=${encodeURIComponent(drillStudy)}${scope}`)
+    } | null>(`/api/repertoire/summary?study=${encodeURIComponent(drillStudy)}${scope}`, { signal: ctl.signal })
       .then((body) => {
-        if (!cancelled) {
+        if (!ctl.signal.aborted) {
           setSummary(
             body
               ? {
@@ -433,10 +433,10 @@ export function RepertoireView() {
         }
       })
       .catch(() => {
-        if (!cancelled) setSummary(null);
+        if (!ctl.signal.aborted) setSummary(null);
       });
     return () => {
-      cancelled = true;
+      ctl.abort();
     };
   }, [mode, drillStudy, drillChapters, chapterIdx, wholeStudy, phase]);
 

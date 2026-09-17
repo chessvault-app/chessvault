@@ -133,32 +133,32 @@ function CompareBody({ databases }: { databases: FieldDatabase[] }) {
   // pass" apart from "there is nothing to read" — see the empty copy.
   const [indexedGames, setIndexedGames] = useState<number | null>(null);
   useEffect(() => {
-    let live = true;
+    const ctl = new AbortController();
     setRows(null);
     setAll(false);
     setFailed(false);
     const query = `side=${color}&db=${encodeURIComponent(db)}${band ? `&band=${band}` : ''}`;
-    void api<{ rows: CompareRow[]; banded?: boolean }>(`/api/mygames/compare?${query}`)
+    void api<{ rows: CompareRow[]; banded?: boolean }>(`/api/mygames/compare?${query}`, { signal: ctl.signal })
       .then((body) => {
-        if (!live) return;
+        if (ctl.signal.aborted) return;
         setRows(body.rows);
         setBanded(body.banded !== false);
         if (body.rows.length === 0) {
-          void api<{ games: number }>('/api/mygames/status')
+          void api<{ games: number }>('/api/mygames/status', { signal: ctl.signal })
             .then((s) => {
-              if (live) setIndexedGames(s.games);
+              if (!ctl.signal.aborted) setIndexedGames(s.games);
             })
             .catch(() => {});
         }
       })
       .catch(() => {
-        if (live) {
+        if (!ctl.signal.aborted) {
           setRows([]);
           setFailed(true);
         }
       });
     return () => {
-      live = false;
+      ctl.abort();
     };
   }, [color, db, band]);
 
