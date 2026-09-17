@@ -927,10 +927,13 @@
                 its buttons hand back to whatever asked it.
               </li>
             </ul>
-            <p data-ko="페이지가 복구 불가능한 오류를 만나면 «문제가 발생했습니다»(Something went wrong) 카드가 <strong>새로고침</strong>(Reload)과 <strong>홈으로</strong>(Go home)를 제시합니다. 보관함의 내용은 영향받지 않습니다.">
+            <p data-ko="페이지가 복구 불가능한 오류를 만나면 «문제가 발생했습니다»(Something went wrong) 카드가 <strong>새로고침</strong>(Reload)과 <strong>홈으로</strong>(Go home)를 제시합니다. 보관함의 내용은 영향받지 않습니다. 패널 하나만 실패하면 그 패널이 제자리에서 «이 패널에서 오류가 발생했습니다. 페이지의 나머지 부분은 그대로 사용할 수 있습니다.»라고 알리고 <strong>다시 시도</strong>(Try again)를 내놓으며, 페이지의 나머지는 그대로 동작합니다.">
               If a page hits an error it cannot recover from, a “Something went wrong” card offers
               <strong>Reload</strong> and <strong>Go home</strong> — nothing in the vault is
               affected.
+              A single panel that fails says so in place (“This panel hit an error. The rest of the
+              page still works.”) and offers <strong>Try again</strong>; everything beside it keeps
+              working.
             </p>
           </div>
         </section>
