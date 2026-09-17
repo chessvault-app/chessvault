@@ -123,4 +123,4 @@ function Input({ className, inputSize, type = 'text', enterKeyHint, name, ...pro
   );
 }
 
-export { Input, inputVariants };
+export { Input };

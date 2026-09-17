@@ -144,7 +144,7 @@ const DialogGuardContext = React.createContext<((guards: DialogGuards | null) =>
 
 // `handle` and `render` are omitted where the two primitives brand them
 // differently; nothing in the app uses either.
-export interface DialogProps extends Omit<DialogPrimitive.Root.Props, 'onOpenChange' | 'handle'> {
+interface DialogProps extends Omit<DialogPrimitive.Root.Props, 'onOpenChange' | 'handle'> {
   /** Kept to Radix's one-argument shape: every caller in the app reads only the boolean. */
   onOpenChange?: (open: boolean) => void;
   /**
@@ -1159,8 +1159,6 @@ export {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogOverlay,
-  DialogPortal,
   DialogTitle,
   DialogTrigger,
 };

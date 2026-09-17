@@ -40,7 +40,7 @@ const NONE = '__none__';
 const toBase = (v: string): string => (v === '' ? NONE : v);
 const fromBase = (v: string): string => (v === NONE ? '' : v);
 
-export interface SelectOption {
+interface SelectOption {
   value: string;
   label: string;
   /** What the CLOSED trigger says, when the full label is more than a
@@ -119,10 +119,6 @@ const selectTriggerVariants = cva(
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return <SelectPrimitive.Group data-slot="select-group" className={cn('scroll-my-1 p-1', className)} {...props} />;
-}
-
-function SelectValue({ ...props }: SelectPrimitive.Value.Props) {
-  return <SelectPrimitive.Value data-slot="select-value" {...props} />;
 }
 
 function SelectTrigger({
@@ -253,16 +249,6 @@ function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Prop
   );
 }
 
-function SelectSeparator({ className, ...props }: SelectPrimitive.Separator.Props) {
-  return (
-    <SelectPrimitive.Separator
-      data-slot="select-separator"
-      className={cn('bg-border pointer-events-none -mx-1 my-1 h-px', className)}
-      {...props}
-    />
-  );
-}
-
 function SelectScrollUpButton({
   className,
   ...props
@@ -301,7 +287,7 @@ function SelectScrollDownButton({
 
 type RootProps = SelectPrimitive.Root.Props<string>;
 
-export interface SelectProps
+interface SelectProps
   extends Omit<RootProps, 'children' | 'onOpenChange' | 'value' | 'defaultValue' | 'onValueChange'> {
   children?: React.ReactNode;
   /** Kept to the app's one-argument shapes: no caller reads Base's eventDetails,
@@ -566,14 +552,4 @@ function SelectField({
 
 export {
   Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectScrollDownButton,
-  SelectScrollUpButton,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-  selectTriggerVariants,
 };
