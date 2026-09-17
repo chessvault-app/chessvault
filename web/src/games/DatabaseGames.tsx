@@ -800,6 +800,15 @@ export function DatabaseGames({
    * deep: nothing was even asked for until the list came back.
    */
   useEffect(() => {
+    // Asked once, when nothing has been asked for yet. This pane stays
+    // mounted under an open game (lib/keep-alive), so every effect in it
+    // runs again when the reader comes back, and re-asking here threw
+    // away every page they had scrolled through: the rows fell back to
+    // the first fifty, and the scroll position restored over them was
+    // clamped to the foot of those. `rowsFor` is a fact rather than a
+    // flag for exactly this reason, so the value that keeps the reconcile
+    // below from re-asking keeps this from re-asking too.
+    if (rowsFor.current !== undefined) return;
     rowsFor.current = null;
     void search('', null, null);
   }, [search]);
@@ -872,16 +881,27 @@ export function DatabaseGames({
 
   // A filter press re-asks from the top, with the query still in the box
   // — or re-runs the hunt, whose results the filters narrow identically.
-  const filtersLive = useRef(false);
+  //
+  // WHAT was last asked for, not WHETHER anything has been: a boolean
+  // "past the first run" reads true on a re-show as well, and this effect
+  // runs again every time the pane comes back from an open game, which
+  // asked for page one again and dropped the reader where the eager
+  // search above did.
+  const asked = useRef<{
+    resultFilter: ResultFilter;
+    minElo: number;
+    structured: StructuredFilters;
+  } | null>(null);
   const reask = useEffectEvent(() => {
     if (huntRows !== null) void runHunt();
     else void search(query, null, curDb);
   });
   useEffect(() => {
-    if (!filtersLive.current) {
-      filtersLive.current = true;
+    const was = asked.current;
+    asked.current = { resultFilter, minElo, structured };
+    if (was === null) return;
+    if (was.resultFilter === resultFilter && was.minElo === minElo && was.structured === structured)
       return;
-    }
     reask();
   }, [resultFilter, minElo, structured]);
 
