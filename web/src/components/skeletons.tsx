@@ -997,6 +997,10 @@ export function SkeletonBoard({
   players = false,
   chapters = false,
   explorer = false,
+  name,
+  panes,
+  foot,
+  stackedPanel,
   className,
 }: {
   /**
@@ -1011,6 +1015,41 @@ export function SkeletonBoard({
   chapters?: boolean;
   /** The explorer, docked at the foot of the column on a wide screen. */
   explorer?: boolean;
+  /**
+   * A TRAINER's title row instead of a document's.
+   *
+   * The three trainers (puzzles, the book trainer, the repertoire drill)
+   * stand on the same shell as a study, and their title row is not a
+   * study's: one word in `text-base font-semibold` with a back chevron
+   * before it on a phone, and no document tools, no Edit and no save
+   * state. The word is known from the address, so it is the real one.
+   *
+   * Without this the Board's own outline drew a document's row over a
+   * page that has none, and its own note admitted as much: the tools
+   * "vanish in place when the page lands".
+   */
+  name?: string;
+  /**
+   * The phone switcher's own icons, where they are not a document's.
+   * A trainer opens on ITS pane and not on the moves, so the order
+   * differs as well as the count, and the tabs divide the width however
+   * many there are.
+   */
+  panes?: LucideIcon[];
+  /** A panel at the foot of the side column, drawn by whoever knows what
+      it holds. The explorer's own fold is `explorer` above. */
+  foot?: React.ReactNode;
+  /**
+   * What the column-filling panel is CALLED, where it is not the moves.
+   *
+   * A phone shows one pane at a time, and a trainer opens on its own
+   * pane, not on the moves — so below lg the panel that fills the column
+   * is the trainer's, and above it the moves panel is back with the
+   * trainer's at the foot (`foot`). The two words are drawn as a pair
+   * and folded by class, because which one is showing is a width and
+   * not an answer.
+   */
+  stackedPanel?: string;
   className?: string;
 }) {
   // What this device dragged the chapters list to, if it ever has —
@@ -1026,7 +1065,16 @@ export function SkeletonBoard({
    * the Skeleton's default is accent now (components/ui/skeleton), which
    * is the same fill, so they draw it like everything else.
    */
-  const titleRow = (
+  const titleRow = name ? (
+    // A trainer's row: the chevron a phone leaves by, and the page's own
+    // word — both known from the address, so neither is a bar.
+    <>
+      <Button variant="ghost" size="icon-sm" className="md:hidden" {...INERT}>
+        <ChevronLeft className="glyph" />
+      </Button>
+      <h1 className="text-foreground text-base font-semibold">{name}</h1>
+    </>
+  ) : (
     // A way back, the name, the edit toggle and the save state. Drawn at
     // the top of the page on a phone and in the side column on a wide
     // screen, which is why it is written once and placed twice.
@@ -1063,7 +1111,17 @@ export function SkeletonBoard({
     <Loading className={cn(BOARD_HELD_SHELL, className)}>
       {/* data-ground, as StudyView's row: the Edit button's secondary
           fill is the page's own tone there. */}
-      <div className="flex shrink-0 items-center gap-2 wide:h-9 wide:hidden pointer-coarse:h-9" data-ground="">
+      <div
+        className={cn(
+          'flex shrink-0 items-center gap-2 wide:hidden',
+          // A trainer's stacked row is a flat h-8 (PuzzlesView,
+          // BookTrainer, the repertoire drill); a document's grows to
+          // the 36px icon rung under a thumb, because its row holds
+          // buttons.
+          name ? 'h-8' : 'wide:h-9 pointer-coarse:h-9',
+        )}
+        data-ground=""
+      >
         {titleRow}
       </div>
 
@@ -1104,7 +1162,16 @@ export function SkeletonBoard({
           BOARD_WIDE_SIDE,
         )}
       >
-        <div className="flex shrink-0 items-center gap-2 wide:h-9 stacked:hidden" data-ground="">
+        <div
+          className={cn(
+            'flex shrink-0 items-center gap-2 wide:h-9 stacked:hidden',
+            // The trainers outdent their title to the column edge but
+            // keep 13px at the right, so the session line beside it
+            // reads down the same edge as every panel's own text.
+            name && 'pr-[13px]',
+          )}
+          data-ground=""
+        >
           {titleRow}
         </div>
         {/* What a phone has instead of the panels: the pane switcher, in
@@ -1137,7 +1204,7 @@ export function SkeletonBoard({
           className="bg-card relative z-10 -mb-[calc(0.75rem+1px)] flex h-8 shrink-0 rounded-t-xl ring-1 ring-card-ring stacked:-mb-[calc(0.5rem+1px)] lg:hidden"
           aria-hidden
         >
-          {(chapters ? [ListOrdered, Cpu, Files, Table2] : [ListOrdered, Cpu, Table2]).map((Icon, i) => (
+          {(panes ?? (chapters ? [ListOrdered, Cpu, Files, Table2] : [ListOrdered, Cpu, Table2])).map((Icon, i) => (
             <div
               key={i}
               className={cn(
@@ -1153,7 +1220,7 @@ export function SkeletonBoard({
           <span
             aria-hidden
             className="bg-foreground absolute bottom-0 left-0 h-0.5 rounded-full"
-            style={{ width: `${100 / (chapters ? 4 : 3)}%` }}
+            style={{ width: `${100 / (panes?.length ?? (chapters ? 4 : 3))}%` }}
           />
         </div>
         {/* The panels below are the wide layout's: a phone shows one pane
@@ -1219,7 +1286,16 @@ export function SkeletonBoard({
               controls stay as boxes: which ones the row holds depends on
               the document. */}
           <PanelHeader
-            title={t('Moves')}
+            title={
+              stackedPanel === undefined ? (
+                t('Moves')
+              ) : (
+                <>
+                  <span className="max-lg:hidden">{t('Moves')}</span>
+                  <span className="lg:hidden">{stackedPanel}</span>
+                </>
+              )
+            }
             actions={[0, 1, 2].map((i) => (
               <span key={i} className="size-7" />
             ))}
@@ -1238,6 +1314,7 @@ export function SkeletonBoard({
             <PanelHeader title={t('Explorer')} />
           </div>
         )}
+        {foot}
       </div>
     </Loading>
   );

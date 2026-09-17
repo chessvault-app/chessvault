@@ -105,3 +105,141 @@ export function parseDashboardShape(raw: string | null): DashboardShape {
 
 /** What a settled page stores for the reader above. */
 export const storedDashboardShape = (shape: DashboardShape): string => JSON.stringify(shape);
+
+/**
+ * Where the dashboard keeps the shape above.
+ *
+ * Here rather than in DashboardPage because the OUTLINE that stands in
+ * for that page reads it too (puzzles/PuzzlesView.skeleton), and it is
+ * drawn before the page that writes it exists.
+ */
+export const DASH_SHAPE_KEY = 'vault:puzzle-dash-shape';
+
+export const readDashboardShape = (): DashboardShape => {
+  try {
+    return parseDashboardShape(localStorage.getItem(DASH_SHAPE_KEY));
+  } catch {
+    // Storage a browser has blocked throws on the read, and a page is
+    // not the place to find that out.
+    return FRESH_DASHBOARD;
+  }
+};
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * The themes page's histogram: how many cards each group drew last
+ * visit. It does not move once the puzzle database is built, so after
+ * one visit the wall of seventy cards is reserved exactly.
+ *
+ * `[]` is a vault seen WITHOUT a database — reserve nothing, because its
+ * settled page is an empty state and a wall of invented groups would be
+ * the jump in the other direction. `null` is a device that has never
+ * been here, and takes SkeletonThemeGroups' own 3x6 guess.
+ */
+export const THEMES_SHAPE_KEY = 'vault:puzzle-themes-shape';
+
+/** Past this a group's tail is below every fold. */
+const MAX_THEME_CARDS = 24;
+/** The page's own group count plus the leftovers group it may add. */
+const MAX_THEME_GROUPS = 16;
+
+export function parseThemesShape(raw: string | null): number[] | null {
+  if (raw === null) return null;
+  let stored: unknown;
+  try {
+    stored = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(stored)) return null;
+  return stored
+    .filter((n): n is number => typeof n === 'number' && Number.isInteger(n) && n > 0)
+    .slice(0, MAX_THEME_GROUPS)
+    .map((n) => Math.min(n, MAX_THEME_CARDS));
+}
+
+export const readThemesShape = (): number[] | null => {
+  try {
+    return parseThemesShape(localStorage.getItem(THEMES_SHAPE_KEY));
+  } catch {
+    return null;
+  }
+};
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * One puzzle book's own shape: how many tiles its grid drew, whether a
+ * cycle was open, and whether this vault has attempted anything in it
+ * (which decides how long the Cycles panel's invitation is).
+ *
+ * Per book, because two books in one vault are not the same size. Here
+ * rather than in BookPage for the reason above: the outline reads it.
+ */
+export const bookShapeKey = (slug: string): string => `vault:book-shape:${slug}`;
+
+export interface BookShape {
+  tiles: number;
+  open: boolean;
+  nudge: boolean;
+}
+
+/**
+ * The stored shape as a shape: a whole tile count clamped to the grid
+ * guess's own 48 (the cap is the fold, not a data fact), and whether a
+ * pass was open. Unreadable reads as null: nothing was learned, and the
+ * blind 48-tile guess stands as it always has.
+ */
+export function parseBookShape(raw: string | null): BookShape | null {
+  if (raw === null) return null;
+  let stored: unknown;
+  try {
+    stored = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof stored !== 'object' || stored === null) return null;
+  const value = stored as { tiles?: unknown; open?: unknown; nudge?: unknown };
+  if (typeof value.tiles !== 'number' || !Number.isInteger(value.tiles) || value.tiles < 0)
+    return null;
+  return { tiles: Math.min(value.tiles, 48), open: value.open === true, nudge: value.nudge === true };
+}
+
+export const readBookShape = (slug: string): BookShape | null => {
+  try {
+    return parseBookShape(localStorage.getItem(bookShapeKey(slug)));
+  } catch {
+    return null;
+  }
+};
+
+/* ------------------------------------------------------------------ */
+
+/**
+ * The puzzle-book shelf's own store and its own orders.
+ *
+ * The shelf is flat, so only `root` of the stored shape means anything
+ * (components/shelf-reservation). The orders are here beside it because
+ * the outline prints the chosen one in the select before Shelf.tsx's
+ * chunk exists, which is the reason the library's list moved beside its
+ * outline too.
+ */
+export const PUZZLE_SHELF_KEY = 'vault:puzzle-shelf';
+export const PUZZLE_SHELF_ORDER_KEY = 'chess-vault:shelf-books';
+export type PuzzleBookSort = 'title' | 'puzzles' | 'progress';
+
+/** How the book shelf is ordered. Not sortDocs: a book has no mtime or
+    byte size worth ordering by - what it has is a count and a score. */
+export const PUZZLE_BOOK_SORTS: readonly { value: PuzzleBookSort; label: string }[] = [
+  { value: 'title', label: 'Title' },
+  { value: 'puzzles', label: 'Puzzles' },
+  { value: 'progress', label: 'Progress' },
+];
+
+/** The direction each sort starts in - the one its name means. */
+export const PUZZLE_BOOK_NATURAL: Record<PuzzleBookSort, 'asc' | 'desc'> = {
+  title: 'asc',
+  puzzles: 'desc',
+  progress: 'desc',
+};

@@ -43,6 +43,7 @@ import type { ShelfLayout } from '@/components/shelf-card';
  */
 export function ShelfHeader<S extends string>({
   title,
+  back,
   search,
   subtitle,
   sorts,
@@ -52,6 +53,12 @@ export function ShelfHeader<S extends string>({
   create,
 }: {
   title: string;
+  /** A shelf reached from a hub rather than from the nav has a way back,
+      and the chevron sits before the title, so an outline without it
+      draws the name 44px left of where it lands. Live, like the two
+      page outlines' (databases, insights): it needs nothing that is
+      still on the wire. */
+  back?: () => void;
   /** The field's own placeholder, which is also its label. */
   search: string;
   /** Whether a count line is coming. The studies shelf drops it entirely
@@ -73,6 +80,7 @@ export function ShelfHeader<S extends string>({
     <Inert>
       <ShelfToolbar<S>
         title={title}
+        back={back}
         subtitle={subtitle ? <SkeletonSubtitle /> : undefined}
         query=""
         onQuery={NOOP}
@@ -100,13 +108,18 @@ export function ShelfHeader<S extends string>({
  * chevron on it and opens a menu instead of firing (components/fab). The
  * actions themselves are the page's, with handlers an outline could not
  * call, so it passes the count and the real control draws itself.
+ *
+ * Every stand-in action carries the SAME label, because a control with
+ * one action prints that action's name on the button rather than the
+ * menu's: numbered placeholders drew the puzzle shelf a button that
+ * read "+ 0".
  */
 export function OutlineCreate({ label = 'Create', actions }: { label?: string; actions: number }) {
   return (
     <CreateControl
       label={label}
-      actions={Array.from({ length: actions }, (_, i) => ({
-        label: String(i),
+      actions={Array.from({ length: actions }, () => ({
+        label,
         icon: Plus,
         onSelect: NOOP,
       }))}

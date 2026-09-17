@@ -1,7 +1,6 @@
-import { Database, Puzzle, RotateCcw } from 'lucide-react';
+import { Database, RotateCcw } from 'lucide-react';
 import { useCallback, useDeferredValue, useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { PageHeader } from '@/components/page-header';
@@ -10,13 +9,14 @@ import { navigate } from '@/lib/router';
 import { ChipRow } from '@/components/chip-row';
 import { SearchInput } from '@/components/text-fields';
 import {
-  Skeleton,
   SkeletonSubtitle,
   SkeletonThemeCard,
   SkeletonThemeGroups,
   useSlowLoad,
 } from '@/components/skeletons';
 import { t } from '@/lib/i18n';
+import { THEMES_SHAPE_KEY, readThemesShape } from './reservation';
+import { ThemeCard } from './PuzzlesView.skeleton';
 
 /**
  * Full-page theme picker — cards grouped the way lichess organises its
@@ -170,47 +170,12 @@ export function describeTheme(themes: readonly string[]): string | null {
   return null;
 }
 
-const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
-
 /** Every theme a GROUPS section claims — what tells a leftover apart. */
 const KNOWN = new Set(GROUPS.flatMap((g) => g.themes));
 
-/**
- * The page's shape last visit, per device: cards per drawn section, the
- * "More" group last. The real counts come from the vault's puzzle
- * database, so 3×6 was wrong in both directions — a full Lichess dump
- * draws ~9 sections and ~70 cards, and a vault with no database draws
- * nothing at all. The histogram does not move once the database is
- * built, which makes it the most stable shape in the app to remember.
- * Same bargain as home/reservation.ts: a paint hint, never the
- * authority, corrected by the answer. Only a successful answer writes
- * it — an outage sets `themes` to [] too, and recording that would
- * reserve nothing at a vault that has plenty.
- */
-const SHAPE_KEY = 'vault:puzzle-themes-shape';
-
-/**
- * The stored shape as counts: positive whole numbers, clamped the way
- * reservation.ts clamps — a count past any real group's size is rounded
- * down, not thrown away, because dropping it would take the reservation
- * from the fullest vault. [] is a vault seen WITHOUT a database (reserve
- * nothing); null is a device that has never been here (guess the
- * default).
- */
-function parseShape(raw: string | null): number[] | null {
-  if (raw === null) return null;
-  let stored: unknown;
-  try {
-    stored = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-  if (!Array.isArray(stored)) return null;
-  return stored
-    .filter((n): n is number => typeof n === 'number' && Number.isInteger(n) && n > 0)
-    .slice(0, GROUPS.length + 1)
-    .map((n) => Math.min(n, 24));
-}
+/* The stored histogram and its reader moved to ./reservation, which
+   the outline reads too: it draws this page's grid before this chunk
+   exists (puzzles/PuzzlesView.skeleton). */
 
 interface ThemeCount {
   theme: string;
@@ -231,7 +196,7 @@ export function ThemesPage() {
   // blocked throws on the read, and a page is not the place to find out.
   const [reserved] = useState(() => {
     try {
-      return parseShape(localStorage.getItem(SHAPE_KEY));
+      return readThemesShape();
     } catch {
       return null;
     }
@@ -266,7 +231,7 @@ export function ThemesPage() {
         const extra = list.filter((t) => !KNOWN.has(t.theme)).length;
         if (extra > 0) counts.push(extra);
         try {
-          localStorage.setItem(SHAPE_KEY, JSON.stringify(counts));
+          localStorage.setItem(THEMES_SHAPE_KEY, JSON.stringify(counts));
         } catch {
           // See above.
         }
@@ -470,57 +435,7 @@ function ThemeGroup({ title, children }: { title: string; children: React.ReactN
   );
 }
 
-function ThemeCard({
-  label,
-  count,
-  onClick,
-  highlight = false,
-  className,
-  icon: Icon = Puzzle,
-  pending,
-}: {
-  label: string;
-  count: number;
-  onClick: () => void;
-  highlight?: boolean;
-  className?: string;
-  icon?: typeof Puzzle;
-  /** The count is not known yet, so it is a bar rather than a 0. */
-  pending?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'group flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left',
-        'transition-colors duration-100',
-        highlight
-          ? 'bg-muted border-primary/30 hover:border-primary/60'
-          : 'bg-card border-card-ring hover:border-card-ring hover:bg-accent',
-        className,
-      )}
-    >
-      <Icon
-        className={cn(
-          'size-4 shrink-0 transition-colors',
-          highlight ? 'text-primary' : 'text-muted-foreground group-hover:text-primary',
-        )}
-      />
-      <span className="min-w-0 flex-1">
-        <span className={cn('block truncate type-row font-medium', highlight ? 'text-primary' : 'text-foreground')}>
-          {label}
-        </span>
-        <span className="text-muted-foreground block font-mono type-row-sub">
-          {pending ? (
-            // A zero that becomes six million is a number the page stated
-            // and then took back; the placeholder says nothing instead.
-            <Skeleton className="my-1 block h-2 w-10" />
-          ) : (
-            compact.format(count)
-          )}
-        </span>
-      </span>
-    </button>
-  );
-}
+/* ThemeCard moved beside the outline that draws the lit "All themes"
+   chip with its own `pending` state (puzzles/PuzzlesView.skeleton), so
+   a chip cannot be two heights.
+*/

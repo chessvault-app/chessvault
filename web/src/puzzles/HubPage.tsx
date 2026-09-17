@@ -11,6 +11,12 @@ import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { Button } from '@/components/ui/button';
 import { Skeleton, useSlowLoad } from '@/components/skeletons';
+import {
+  HUB_BOARD_FILL,
+  HUB_CARD_FILL,
+  HubPlaceRow,
+  HubPuzzleRow,
+} from './PuzzlesView.skeleton';
 import { t } from '@/lib/i18n';
 import { DashboardPage } from './DashboardPage';
 import { KingIcon } from '@/components/king-icon';
@@ -129,8 +135,10 @@ interface BookNext {
 // padding): below it the cards were squares of noise on a 568 phone. A
 // screen that cannot hold three at the floor scrolls, which is the
 // shell's escape hatch, rather than shrinking them past legibility.
-const CARD_FILL = 'min-h-24 max-h-[12.25rem] flex-1';
-const BOARD_FILL = 'h-full max-h-48 w-auto';
+/* The cards' height budget lives beside the outline that draws boxes
+   against it too (puzzles/PuzzlesView.skeleton). */
+const CARD_FILL = HUB_CARD_FILL;
+const BOARD_FILL = HUB_BOARD_FILL;
 
 function PuzzleCard({
   fen,
@@ -286,54 +294,12 @@ function PlaceDetail({ children }: { children: ReactNode }) {
   return <span className="text-muted-foreground truncate text-sm">{children}</span>;
 }
 
-/**
- * The wait, in the shape of what the gate is about to draw.
- *
- * This page can promise its shape before it has its data: three place
- * rows and three cards, always. Whether a card is a puzzle or an empty
- * slot changes what is on it, never its size, so the settled layout is
- * this layout with the content taken out, and the swap moves nothing.
- */
-function HubSkeletonPlace() {
-  return (
-    <div className="bg-card ring-card-ring flex w-full shrink-0 items-center gap-3 rounded-xl ring-1 px-3 py-2.5">
-      <Skeleton className="size-10 shrink-0 rounded-md" />
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        {/* The title's text-base line box (24px) and the detail's text-sm
-            (20px), so the row is the height the real one will be. */}
-        <div className="flex h-6 items-center">
-          <Skeleton className="h-2.5 w-24" />
-        </div>
-        <div className="flex h-5 items-center">
-          <Skeleton className="h-2 w-2/3" />
-        </div>
-      </div>
-      <ChevronRight aria-hidden className="text-muted-foreground size-4 shrink-0" />
-    </div>
-  );
-}
-
-function HubSkeletonCard() {
-  return (
-    <div
-      className={cn(
-        // PuzzleCard's own geometry, ring and all: a ring costs no
-        // layout, so slot and card are the same box.
-        'bg-card ring-card-ring flex w-full items-stretch gap-3 rounded-xl ring-1 px-2.5 py-1.5',
-        CARD_FILL,
-      )}
-    >
-      <Skeleton className={cn('aspect-square shrink-0 rounded-md', BOARD_FILL)} />
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
-        <Skeleton className="h-3 w-1/3" />
-        <Skeleton className="h-2.5 w-1/2" />
-      </div>
-      {/* The chevron every card and empty slot ends with, drawn as the
-          card draws it, so the text column stops where it really stops. */}
-      <ChevronRight aria-hidden className="text-muted-foreground size-4 shrink-0 self-center" />
-    </div>
-  );
-}
+/* The two placeholder rows this page drew moved beside the outline that
+   stands in for the whole page while its chunk is on the wire
+   (puzzles/PuzzlesView.skeleton, HubPlaceRow and HubPuzzleRow), with the
+   cards' height budget. One picture over both waits, which is what every
+   other section settled on; drawn in both places they could only be two
+   statements of the same boxes. */
 
 /**
  * One puzzle drawn ahead of time, for the board that offers it.
@@ -677,9 +643,9 @@ function Hub() {
           rows: the slack below is for the boards. */}
       {skeleton && (
         <>
-          <HubSkeletonPlace />
-          <HubSkeletonPlace />
-          <HubSkeletonPlace />
+          <HubPlaceRow />
+          <HubPlaceRow />
+          <HubPlaceRow />
         </>
       )}
       {settled && (
@@ -737,9 +703,9 @@ function Hub() {
       <div className="flex flex-1 flex-col justify-end gap-2">
         {skeleton && (
           <>
-            <HubSkeletonCard />
-            <HubSkeletonCard />
-            <HubSkeletonCard />
+            <HubPuzzleRow />
+            <HubPuzzleRow />
+            <HubPuzzleRow />
           </>
         )}
 
@@ -751,7 +717,7 @@ function Hub() {
             without choosing, and naming it qualifies the card with the
             absence of a qualifier. */}
         {settled && !nextIn && !unanswered.has('next') ? (
-          <HubSkeletonCard />
+          <HubPuzzleRow />
         ) : settled && ready && unanswered.has('next') && !next ? (
           <EmptySlot title={t('Could not load the next puzzle.')} go={retry} />
         ) : settled && ready && next ? (
@@ -796,7 +762,7 @@ function Hub() {
             is non-empty but a draw that failed anyway — keeps review
             reachable from here, which it would not otherwise be. */}
         {!settled ? null : !reviewIn && !unanswered.has('review') ? (
-          <HubSkeletonCard />
+          <HubPuzzleRow />
         ) : unanswered.has('review') && !review ? (
           <EmptySlot title={t('Could not load the missed puzzle.')} go={retry} />
         ) : review ? (
@@ -843,7 +809,7 @@ function Hub() {
           // The shelf answered and named a book; its position is a second
           // request behind that. Hold the card's place rather than adding
           // one when it lands.
-          <HubSkeletonCard />
+          <HubPuzzleRow />
         ) : null}
         {settled && !bookNext && unanswered.has('book') && (
           <EmptySlot title={t('Could not load the puzzle books.')} go={retry} />

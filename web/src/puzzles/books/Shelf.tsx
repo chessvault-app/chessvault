@@ -16,7 +16,13 @@ import { navigate } from '@/lib/router';
 import { BookCoverCard } from '@/components/book-cover-card';
 import { Button } from '@/components/ui/button';
 import { PageShell } from '@/components/page-shell';
-import { ShelfToolbar, useShelfOrder, type ShelfDir, type ShelfSorts } from '@/components/shelf-toolbar';
+import { ShelfToolbar, useShelfOrder } from '@/components/shelf-toolbar';
+import {
+  PUZZLE_BOOK_NATURAL,
+  PUZZLE_BOOK_SORTS,
+  PUZZLE_SHELF_KEY,
+  PUZZLE_SHELF_ORDER_KEY,
+} from '../reservation';
 
 import { Spinner } from '@/components/ui/spinner';
 import { PromptDialog } from '@/components/prompt-dialog';
@@ -42,20 +48,9 @@ import { decodeImages } from '@/lib/media';
 // ---------------------------------------------------------------------------
 // Shelf
 
-/**
- * How the book shelf is ordered. Not sortDocs: a book has no mtime or
- * byte size worth ordering by — what it has is a count and a score.
- */
-type BookSort = 'title' | 'puzzles' | 'progress';
-
-const BOOK_SORTS: ShelfSorts<BookSort> = [
-  { value: 'title', label: 'Title' },
-  { value: 'puzzles', label: 'Puzzles' },
-  { value: 'progress', label: 'Progress' },
-];
-
-/** The direction each sort starts in — the one its name means. */
-const NATURAL: Record<BookSort, ShelfDir> = { title: 'asc', puzzles: 'desc', progress: 'desc' };
+/* The shelf's orders live in ../reservation beside its stored shape:
+   the outline prints the chosen one in the select before this chunk
+   exists (puzzles/PuzzlesView.skeleton). */
 
 /**
  * Throw away saved scans whose book is gone.
@@ -85,9 +80,6 @@ async function sweepCheckpoints(fresh: BookSummary[]): Promise<void> {
     await clearCheckpoint(scan.slug);
   }
 }
-
-/** See `reservedCards` below: how many book cards, last visit. */
-const PUZZLE_SHELF_KEY = 'vault:puzzle-shelf';
 
 export function Shelf() {
   // Seeded from the last visit, so coming back from a book shows the shelf
@@ -210,7 +202,7 @@ export function Shelf() {
     return saved ? { page: saved.page, pages: saved.pages, live: false } : undefined;
   };
 
-  const view = useShelfOrder('chess-vault:shelf-books', BOOK_SORTS, NATURAL, 'title');
+  const view = useShelfOrder(PUZZLE_SHELF_ORDER_KEY, PUZZLE_BOOK_SORTS, PUZZLE_BOOK_NATURAL, 'title');
   const frac = (b: BookSummary): number => (b.puzzles ? b.solved / b.puzzles : 0);
   const flip = view.dir === 'desc' ? -1 : 1;
   const visibleBooks = (books ?? [])
@@ -262,7 +254,7 @@ export function Shelf() {
           placeholder={t('Search books…')}
           markedOnly={markedOnly}
           onMarkedOnly={setMarkedOnly}
-          sorts={BOOK_SORTS}
+          sorts={PUZZLE_BOOK_SORTS}
           sort={view.sort}
           onSort={view.setSort}
           dir={view.dir}

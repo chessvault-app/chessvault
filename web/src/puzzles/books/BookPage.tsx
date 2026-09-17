@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { SkeletonTiles, useSlowLoad } from '@/components/skeletons';
 import { navigate } from '@/lib/router';
+import { bookShapeKey, readBookShape } from '../reservation';
+import { cyclesProse } from '../PuzzlesView.skeleton';
 
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
@@ -54,42 +56,9 @@ import { PuzzleEntry } from './PuzzleEntry';
 // Book page: numbered grid coloured by result, entry flow
 
 /** This book's shape last visit, per slug — see `reservedBook` below. */
-const bookShapeKey = (slug: string): string => `vault:book-shape:${slug}`;
-
-/**
- * The stored shape as a shape: a whole tile count clamped to the grid
- * guess's own 48 (the cap is the fold, not a data fact), and whether a
- * pass was open. Unreadable reads as null: nothing was learned, and the
- * blind 48-tile guess stands as it always has.
- */
-function parseBookShape(
-  raw: string | null,
-): { tiles: number; open: boolean; nudge: boolean } | null {
-  if (raw === null) return null;
-  let stored: unknown;
-  try {
-    stored = JSON.parse(raw);
-  } catch {
-    return null;
-  }
-  if (typeof stored !== 'object' || stored === null) return null;
-  const value = stored as { tiles?: unknown; open?: unknown; nudge?: unknown };
-  if (typeof value.tiles !== 'number' || !Number.isInteger(value.tiles) || value.tiles < 0)
-    return null;
-  return { tiles: Math.min(value.tiles, 48), open: value.open === true, nudge: value.nudge === true };
-}
-
-/**
- * What the cold Cycles panel says — the invitation, and for someone
- * already solving outside any pass, the nudge that no pass is scoring
- * them (nothing else on the page says so). One function because the
- * panel's placeholder lays the same words out invisibly to reserve
- * exactly their height; two copies of the strings would wrap apart.
- */
-function cyclesProse(nudge: boolean): string {
-  const invite = t('Work the whole book in passes. Every puzzle once per cycle, scored by first attempts, and each pass should come out faster and cleaner.');
-  return nudge ? `${invite} ${t('You are solving already. A cycle gives each pass its own score.')}` : invite;
-}
+/* This book's stored shape and the Cycles panel's cold prose live
+   beside the outline that draws them before this chunk exists
+   (../reservation, and puzzles/PuzzlesView.skeleton for the prose). */
 
 /**
  * Recognise every stored draft again with the book's current font and
@@ -133,7 +102,7 @@ export function BookPage({ slug }: { slug: string }) {
   // a paint hint on home's bargain. A book seen empty reserves nothing
   // (its settle is the empty-book card), and a book never seen keeps
   // the 48-tile guess.
-  const [reservedBook] = useState(() => parseBookShape(localStorage.getItem(bookShapeKey(slug))));
+  const [reservedBook] = useState(() => readBookShape(slug));
   // Remembered for the NEXT visit's reservation, above.
   useEffect(() => {
     if (book === null) return;

@@ -1,5 +1,5 @@
 import { BookMarked, Check, ChevronRight, Eraser, Puzzle, RotateCcw, X } from 'lucide-react';
-import { parseDashboardShape, storedDashboardShape } from './reservation';
+import { DASH_SHAPE_KEY, readDashboardShape, storedDashboardShape } from './reservation';
 import { useCallback, useEffect, useEffectEvent, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { navigate, up } from '@/lib/router';
@@ -65,7 +65,8 @@ interface BookSummary {
 const RECONCILE_NOTE =
   'Training attempts only. Review sessions are not counted, so this can differ from the review pool.';
 
-const DASH_SHAPE_KEY = 'vault:puzzle-dash-shape';
+/* DASH_SHAPE_KEY lives in ./reservation: the outline that stands in for
+   this page's top reads it too (puzzles/PuzzlesView.skeleton). */
 
 /**
  * The empty Books panel's words, named once: the placeholder holds the
@@ -104,7 +105,7 @@ export function DashboardPage() {
   // answers decide, from what it saw last visit (puzzles/reservation.ts)
   // — a paint hint on home's bargain, corrected below. Read once; the
   // wait it stands through cannot change it.
-  const [reserved] = useState(() => parseDashboardShape(localStorage.getItem(DASH_SHAPE_KEY)));
+  const [reserved] = useState(readDashboardShape);
 
   const [error, setError] = useState<string | null>(null);
   const refresh = useCallback(() => {
