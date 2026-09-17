@@ -46,6 +46,8 @@ const DEMO = resolve(REPO_ROOT, 'dist-demo');
 const PORT = Number(process.env.GRID_PORT ?? 8135);
 const OUT = resolve(REPO_ROOT, process.env.OUT ?? '.shots/current');
 const BASE_DIR = process.env.BASE_DIR ? resolve(REPO_ROOT, process.env.BASE_DIR) : null;
+/** `GRID_LOCALE=ko-KR` walks the grid in Korean; the app follows the browser. */
+const LOCALE = process.env.GRID_LOCALE ?? 'en-US';
 /** `ROUTES=#/games,#/studies` narrows a run while iterating. */
 const ONLY = process.env.ROUTES?.split(',').map((r) => r.trim()).filter(Boolean);
 
@@ -226,7 +228,7 @@ try {
       const context: BrowserContext = await browser.newContext({
         viewport: { width: state.width, height: state.height },
         deviceScaleFactor: 1,
-        locale: 'en-US',
+        locale: LOCALE,
         reducedMotion: 'reduce',
         // The demo registers a precaching worker; a fresh context has none,
         // and blocking keeps a re-run from ever serving the previous build.
