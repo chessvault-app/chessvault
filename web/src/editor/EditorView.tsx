@@ -19,7 +19,6 @@ import {
   useEffect,
   useEffectEvent,
   useId,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -252,14 +251,8 @@ export function EditorView({
   // Declared above tellChain, which its back chevron calls.
   const [photoTemplates, setPhotoTemplates] = useState<Template[] | null>(null);
   // The host window's title row follows the page (see onChainChange).
-  const onChainChangeRef = useRef(onChainChange);
-  // Filled after commit, not in render, which the React Compiler refuses;
-  // tellChain runs later in the same commit and the unmount later still.
-  useLayoutEffect(() => {
-    onChainChangeRef.current = onChainChange;
-  });
   const tellChain = useEffectEvent(() => {
-    const tell = onChainChangeRef.current;
+    const tell = onChainChange;
     if (!tell) return;
     if (!paging || chain.page === 'board') {
       tell(null);
@@ -285,7 +278,8 @@ export function EditorView({
     tellChain();
   }, [paging, chain.page]);
   // The host must not keep a page title for an editor that is gone.
-  useEffect(() => () => onChainChangeRef.current?.(null), []);
+  const clearChain = useEffectEvent(() => onChainChange?.(null));
+  useEffect(() => () => clearChain(), []);
   /**
    * The position as it stood when the Position sheet was opened.
    *
