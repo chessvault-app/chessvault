@@ -5,6 +5,17 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **A window that loads on first use rises once.** On a phone, the first
+  time Customise home was opened its sheet slid up, then slid up again
+  when its contents arrived. The same went for the book PDF importer and
+  the position-from-an-image window. The loaded window now takes over
+  from its outline in place.
+- **Settings comes back where you left it.** Opening Licences from the
+  foot of Settings and going back landed at the top of the page. Settings
+  stays in place under the licences, as a shelf does under a note.
+
 ## 0.11.3
 
 Every page now waits as itself, and every page has one picture for the

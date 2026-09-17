@@ -1,5 +1,5 @@
-import type { ComponentProps, ReactNode } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { useLayoutEffect, type ComponentProps, type ReactNode } from 'react';
+import { Dialog, DialogContent, handOverWindow } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
@@ -18,7 +18,9 @@ import { t } from '@/lib/i18n';
  * So the frame opens at once with its own title, and the body is bars.
  * The frame is the real Dialog with the real DialogContent, so the
  * window that replaces it is the same window, at the same width, with
- * the same title row: only its body changes.
+ * the same title row: only its body changes. To React they are still
+ * two mounts, so this one says it is leaving (`handOverWindow`) and the
+ * real window skips the entrance this one already played.
  *
  * `onOpenChange` is a no-op on purpose. A window drawn for a chunk that
  * has not arrived cannot be cancelled meaningfully — the caller's own
@@ -48,6 +50,7 @@ export function WindowOpening({
   /** A body of the window's own shape, where one is worth drawing. */
   children?: ReactNode;
 }) {
+  useLayoutEffect(() => handOverWindow, []);
   return (
     <Dialog open onOpenChange={NOOP}>
       <DialogContent title={title} icon={icon} size={size} fill={fill} className={className}>

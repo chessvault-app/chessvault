@@ -119,6 +119,25 @@ const DialogLeaveContext = React.createContext<{
 const reducedMotion = (): boolean =>
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/**
+ * A window standing in for another (WindowOpening, for a lazy window's
+ * chunk) says so as it unmounts, and the window mounted in that same
+ * commit skips its entrance: it IS the window already on screen. Without
+ * this the two were separate mounts, each with the mount animation, and
+ * on a cold cache a phone's sheet rose twice (lanph3re's report).
+ *
+ * The stand-in's layout cleanup runs in the commit's mutation phase and
+ * the new card's ref attaches in its layout phase, so the flag is read in
+ * the commit that set it. The timeout only clears one nobody read.
+ */
+let handedOver = false;
+export function handOverWindow(): void {
+  handedOver = true;
+  window.setTimeout(() => {
+    handedOver = false;
+  }, 0);
+}
+
 /** How a DialogContent closes itself; the wrapper hands onOpenChange down. */
 const DialogCloseContext = React.createContext<() => void>(() => {});
 
@@ -343,7 +362,7 @@ function DialogOverlay({
       }}
       className={cn(
         'vv-band fixed inset-0 isolate z-50 flex justify-center bg-black/10 duration-100 supports-backdrop-filter:backdrop-blur-xs',
-        enter && 'sm:data-open:animate-in sm:data-open:fade-in-0',
+        enter && 'sm:data-open:animate-in sm:data-open:fade-in-0 data-handover:animate-none!',
         className,
       )}
       {...props}
@@ -670,6 +689,14 @@ function DialogContent({
     coverRef(node);
     if (node && node !== armed.current) {
       armed.current = node;
+      if (handedOver) {
+        // Taking over from a stand-in: no entrance, for the card or for
+        // the scrim around it (the Viewport, or a desktop's Backdrop).
+        handedOver = false;
+        node.dataset.handover = '';
+        const scrim = node.closest<HTMLElement>('[data-slot=dialog-overlay]');
+        if (scrim) scrim.dataset.handover = '';
+      }
       if (!node.contains(document.activeElement)) {
         const field = soleTextField(node);
         if (field) {
@@ -930,6 +957,8 @@ function DialogContent({
               // (below): the dim and the blur used to snap on with it.
               'transition-opacity duration-(--pane-turn) ease-(--pane-turn-ease) animate-in fade-in-0',
               'data-ending-style:opacity-0 data-ending-style:duration-200 data-ending-style:ease-(--pane-turn-ease-out)',
+              // Taking over from a stand-in (handOverWindow): no entrance.
+              'data-handover:animate-none!',
             )}
             // Inline, because `hidden` has to beat `flex` whatever order
             // the stylesheet emitted them in.
@@ -1023,6 +1052,7 @@ function DialogContent({
                 // The keyboard sheet: the same rise, from a length the
                 // keyboard cannot change.
                 'data-no-enter:[--tw-enter-translate-y:100dvh]',
+                'data-handover:animate-none!',
               )}
               {...props}
             >
@@ -1072,7 +1102,7 @@ function DialogContent({
             'h-auto max-h-full rounded-xl',
             small ? 'max-w-sm' : size === 'full' ? 'max-w-4xl' : 'max-w-lg',
             // The desktop card arrives the stock way.
-            'duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95',
+            'duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-handover:animate-none!',
           )}
           {...props}
         >
