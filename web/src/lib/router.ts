@@ -342,6 +342,42 @@ export function routeChanging(): boolean {
 }
 
 /**
+ * Whether the page change this component arrived in has finished
+ * drawing: false from the mount until the slide ends, true from then on
+ * (and from the start where nothing slid).
+ *
+ * For a leaf whose record lands while it is still sliding in. The page
+ * arrives as its placeholder, the record lands a few tens of
+ * milliseconds later, and swapping the whole page in right then is the
+ * heaviest render the app has, in the middle of the animation. Measured
+ * on the demo, phone width, CPU x4, a game opened from the games list:
+ * one task of 305 to 322ms on the first open after a launch (the code
+ * is compiled and the styles matched for the first time) and 114 to
+ * 118ms on every later one, starting 30 to 45ms into a 337ms slide.
+ * Chromium's slide runs off the main thread and hides it; an iPhone's
+ * does not. Sampled on one (120Hz, a real vault, 2026-09-17), three of
+ * four opens mounted the page 130 to 240ms after the tap and lost one
+ * frame of 41 to 73ms out of the slide, five to nine refreshes; held,
+ * three of three kept every frame under 18ms. A page holds its
+ * placeholder on this and mounts when the slide is over, which on that
+ * phone put the board on screen about 430ms after the tap.
+ */
+export function useRouteSettled(): boolean {
+  const [settled, setSettled] = useState(() => !routeChanging());
+  useEffect(() => {
+    if (settled) return;
+    let live = true;
+    void routeSettled().then(() => {
+      if (live) setSettled(true);
+    });
+    return () => {
+      live = false;
+    };
+  }, [settled]);
+  return settled;
+}
+
+/**
  * How the current route was arrived at: an in-app navigate, or the
  * browser's own history (Back, Forward, the back chevron's history.back).
  *

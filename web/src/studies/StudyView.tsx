@@ -24,7 +24,7 @@ import { LoadPositionButton } from '@/analysis/PositionLoader';
 import { MoveTreePane, SidelinesToggle } from '@/analysis/MoveTreePane';
 import { cn } from '@/lib/utils';
 import { isCoarsePointer, useTabbedPanes } from '@/lib/media';
-import { navigate, navigateNow } from '@/lib/router';
+import { navigate, navigateNow, useRouteSettled } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { useSlowLoad } from '@/components/skeletons';
 import StudyOutline, { playersKey } from '@/studies/StudyView.skeleton';
@@ -71,7 +71,10 @@ export function StudyView({
   chapter?: number;
 }) {
   const openId = useStudy((s) => s.openId);
-  const pending = useSlowLoad(openId !== id);
+  // The document is drawn once the page has stopped sliding in, not the
+  // moment it lands (lib/router, useRouteSettled).
+  const arrived = useRouteSettled();
+  const pending = useSlowLoad(openId !== id || !arrived);
   const open = useStudy((s) => s.open);
   const close = useStudy((s) => s.close);
   const save = useStudy((s) => s.save);
@@ -250,7 +253,7 @@ export function StudyView({
     );
   }
 
-  if (openId !== id) {
+  if (openId !== id || !arrived) {
     // A study is a board beside its moves, so the wait is that shape —
     // the columns settle before the position arrives instead of snapping
     // into place when it does.
