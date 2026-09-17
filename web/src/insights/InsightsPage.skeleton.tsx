@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select } from '@/components/ui/select';
 import { Inert, Skeleton, SkeletonSubtitle } from '@/components/skeletons';
 import { FilterRow, SideSelect, type SideFilter } from '@/games/GameFilters';
+import { navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 const exact = new Intl.NumberFormat('en');
@@ -84,6 +85,11 @@ export function readFilters(): InsightsFilters {
  * The header's Analyse button is the one thing left out: it is live, it
  * reports a running pass, and it sits on the title row where its absence
  * moves nothing.
+ *
+ * The back chevron is live and is not left out. A phone reaches this
+ * page from More and the settled header draws one, so without it the
+ * title sat 44px left of where it lands; live because it needs nothing
+ * that is still on the wire.
  */
 export default function InsightsOutline() {
   const [shape] = useState(readShape);
@@ -92,6 +98,7 @@ export default function InsightsOutline() {
     <PageShell width="medium">
       <PageHeader
         title={t('Insights')}
+        back={() => navigate('more')}
         subtitle={<SkeletonSubtitle />}
         description={t(
           'Your results by colour, time control and opening, and where each game left the opening catalogue.',

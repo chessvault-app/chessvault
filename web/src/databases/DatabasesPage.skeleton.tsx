@@ -8,6 +8,7 @@ import { SearchInput } from '@/components/text-fields';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/skeletons';
 import { readDatabasesShape } from '@/databases/reservation';
+import { navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
@@ -23,6 +24,13 @@ import { t } from '@/lib/i18n';
  * The header is drawn in full because none of it waits on anything: the
  * page's name, its way back, and the paragraph that says what a
  * reference database is.
+ *
+ * The back chevron is LIVE rather than held inert, alone among this
+ * outline's parts, and it was missing altogether: a phone reaches this
+ * page from More and the settled header draws one, so without it the
+ * title sat 44px left of where it lands. Live because it needs nothing
+ * that is still on the wire, and because the one thing a reader on a
+ * slow link may want is out.
  */
 export default function DatabasesOutline() {
   const [reserved] = useState(readDatabasesShape);
@@ -31,6 +39,7 @@ export default function DatabasesOutline() {
       <PageHeader
         className="shrink-0"
         title={t('Databases')}
+        back={() => navigate('more')}
         description={t(
           'A reference database is built from uploaded PGN files. It serves whole games to the Databases browser on the Games page, and a filterable position index to the explorer and the repertoire trainer.',
         )}
