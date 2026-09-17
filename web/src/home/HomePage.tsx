@@ -35,6 +35,7 @@ import { Skeleton } from '@/components/skeletons';
 import { useDifficultyWord } from '@/puzzles/bands';
 import { fetchSolvedToday } from '@/puzzles/today';
 import { t } from '@/lib/i18n';
+import { CustomiseOpening } from './customise-parts';
 import { HOME_DESTINATIONS, type Destination, type HomeCount } from './destinations';
 import {
   cardOn,
@@ -1823,7 +1824,13 @@ export function HomePage() {
             not on screen behind it at all. The card switches apply at
             whichever width draws the card. */}
         {editing && (
-          <Suspense fallback={<WindowOpening title={t('Customise home')} size="sm" lines={6} />}>
+          <Suspense
+            fallback={
+              <WindowOpening title={t('Customise home')} size="sm">
+                <CustomiseOpening layout={effective} />
+              </WindowOpening>
+            }
+          >
             <CustomiseDialog
               layout={effective}
               onChange={save}
