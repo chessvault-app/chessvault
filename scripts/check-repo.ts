@@ -496,16 +496,28 @@ if (existsSync(DOCS)) {
       String.fromCharCode(parseInt(hex, 16)),
     );
   let hay = '';
+  // Only the files that actually spell an escape are appended decoded.
+  // Decoding the whole source doubled the haystack to find what nine of
+  // the ~390 files can contain, since the decoded text of a file with no
+  // \uXXXX in it is that file. The two forms therefore find exactly the
+  // same quotes. Measured end to end over three runs this did not move
+  // the check's wall time (14.2 s before, 14.1 s after, inside the noise)
+  // — it is here because half the haystack was answering nothing, not
+  // because it was measured faster.
+  let escaped = '';
   for (const file of tracked) {
     if (!/^(?:web\/src\/.*\.(?:ts|tsx|json)|desktop\/.*\.(?:html|mjs))$/.test(file)) continue;
     if (file === DICTIONARY) continue;
+    let text: string;
     try {
-      hay += readFileSync(file, 'utf-8') + '\n';
+      text = readFileSync(file, 'utf-8');
     } catch {
       continue;
     }
+    hay += text + '\n';
+    if (/\\u[0-9a-fA-F]{4}/.test(text)) escaped += text + '\n';
   }
-  hay = collapse(hay + '\n' + decodeEscapes(hay));
+  hay = collapse(hay + '\n' + decodeEscapes(escaped));
   const docsText = readFileSync(DOCS, 'utf-8');
   // A Korean-side «quote» may be the Korean label itself (나뭇결, 게임 리뷰),
   // which lives only in the dictionary; those are checked against its values.
@@ -648,6 +660,18 @@ if (existsSync(DICTIONARY)) {
       });
     }
   }
+  // The reverse pass — a dictionary entry no longer reachable from the
+  // app — was tried here and taken out again. It cannot be decided by
+  // reading the source. Requiring a literal `t('…')` call site reported
+  // 673 of the 1,484 entries, because a termination reason, a NAG name
+  // and a move-quality band all sit in a table and reach t() as
+  // `t(row.label)`. Widening it to "the English appears anywhere in
+  // web/src" still reported 176, because the app also translates strings
+  // the SERVER composes and puzzle themes that arrive from the puzzle
+  // database — "Zugzwang" and "Vukovic mate" are live entries whose text
+  // is in no source file at all. A check that cannot tell those from a
+  // dead key would cry wolf, which is the one thing this file's header
+  // says a tripwire must not do.
 }
 
 /**
@@ -710,6 +734,42 @@ const blankComments = (src: string): string => {
   const blank = (m: string): string => m.replace(/[^\n]/g, ' ');
   return src.replace(/\/\*[\s\S]*?\*\//g, blank).replace(/^\s*\/\/.*$/gm, blank);
 };
+/**
+ * Every string a server route hands the user: the value of an `error`,
+ * `note` or `reason` key, including one reached through a ternary or sat
+ * on the next line. The first form of this matched `error:` followed
+ * immediately by a literal, and so saw neither of the two live em-dashes
+ * it was meant to catch: both were the second arm of a `token ? … : '…'`,
+ * and one was keyed `note`. The scan is quote-aware because pairing off
+ * ' with a regex is thrown by an apostrophe inside a "…" earlier in the
+ * file, which is what hid them from a grep too.
+ */
+const serverMessages = (code: string): { text: string; index: number }[] => {
+  const out: { text: string; index: number }[] = [];
+  for (const key of code.matchAll(/\b(?:error|note|reason):/g)) {
+    // A window rather than a parse: the value ends at its own comma or at
+    // the object's brace, and only an em-dash is ever reported, so
+    // reaching a little too far costs nothing.
+    const from = key.index! + key[0].length;
+    const window = code.slice(from, from + 600).split(/\n\s*[}\]]/)[0]!;
+    for (let i = 0; i < window.length; i++) {
+      if (window[i] !== "'") continue;
+      let text = '';
+      i++;
+      while (i < window.length && window[i] !== "'" && window[i] !== '\n') {
+        if (window[i] === '\\') {
+          text += window[i + 1] ?? '';
+          i += 2;
+          continue;
+        }
+        text += window[i];
+        i++;
+      }
+      if (window[i] === "'") out.push({ text, index: from });
+    }
+  }
+  return out;
+};
 if (existsSync(DICTIONARY)) {
   blankComments(readFileSync(DICTIONARY, 'utf-8'))
     .split('\n')
@@ -729,9 +789,7 @@ for (const file of tracked) {
   } catch {
     continue;
   }
-  const spots: { text: string; index: number }[] = isApp
-    ? tCallKeys(code)
-    : [...code.matchAll(/error:\s*'((?:[^'\\]|\\.)*)'/g)].map((m) => ({ text: m[1]!, index: m.index! }));
+  const spots: { text: string; index: number }[] = isApp ? tCallKeys(code) : serverMessages(code);
   for (const { text, index } of spots) {
     if (!UI_DASH.test(text)) continue;
     findings.push({ file, line: code.slice(0, index).split('\n').length, text: text.slice(0, 120), why: DASH_WHY });
