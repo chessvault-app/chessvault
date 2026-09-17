@@ -210,19 +210,6 @@ export function AppearanceCard() {
         />
       </SettingRow>
 
-      {/* Here for the move box's reason: it is on every opened game or on
-          none of them. */}
-      <SettingRow
-        title={t('Review offer')}
-        blurb={t('Offer a review when a game opens.')}
-      >
-        <Switch
-          checked={reviewOffer}
-          onCheckedChange={() => setReviewOffer(!reviewOffer)}
-          aria-label={t('Review offer')}
-        />
-      </SettingRow>
-
       {/* The card was nine controls in one flat column, and a flat column
           says every row is worth the same glance. These two are not: they
           are how the app is DRAWN rather than what it draws. What stays
@@ -262,6 +249,20 @@ export function AppearanceCard() {
               groups={[{ options: ANNOTATION_SIZES.map(({ id, label }) => ({ value: id, label })) }]}
             />
           </Field>
+
+          {/* Under the fold (lanph3re's call, 2026-09-18): it is set once,
+              by someone the offer has started to bother, and is nothing a
+              vault is set up with. */}
+          <SettingRow
+            title={t('Review offer')}
+            blurb={t('Offer a review when a game opens.')}
+          >
+            <Switch
+              checked={reviewOffer}
+              onCheckedChange={() => setReviewOffer(!reviewOffer)}
+              aria-label={t('Review offer')}
+            />
+          </SettingRow>
         </div>
       </Disclosure>
     </Card>
