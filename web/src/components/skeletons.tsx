@@ -272,8 +272,12 @@ export function SkeletonRows({
  * divided box itself, the border came out of the row and every one was a
  * pixel short.
  */
-/** Leading inventory rows that print no version; see the row below. */
-const VERSIONLESS_LICENCE_ROWS = 9;
+/**
+ * Whether inventory row `i` prints a version; see the row below. The
+ * asset rows' answers come from the build (web/vite.licenses.ts), and
+ * every row past them is a package, which always has one.
+ */
+const licenceRowHasVersion = (i: number): boolean => __LICENCE_ASSET_VERSIONS__[i] ?? true;
 
 export function SkeletonLicenceRows({ rows = 10, className }: { rows?: number; className?: string }) {
   return (
@@ -306,13 +310,13 @@ export function SkeletonLicenceRows({ rows = 10, className }: { rows?: number; c
               </div>
               {/* The version, on the rows that have one. The inventory
                   opens with the copied assets (web/vite.licenses.ts
-                  ASSETS), which carry no version, and the first installed
-                  package is the tenth row: checked against the built
-                  index.json, entries 0-8 print none and entry 9 is the
-                  first that does. A bar on all ten stood where nine
-                  settled rows have nothing. Add an asset and this number
-                  moves with it. */}
-              {i >= VERSIONLESS_LICENCE_ROWS && (
+                  ASSETS), most of which carry no version: checked against
+                  the built index.json, entries 0-8 print none and entry 9
+                  is the first that does. A bar on all ten stood where
+                  nine settled rows have nothing. Which rows those are is
+                  the build's own list, so an added asset moves this with
+                  it. */}
+              {licenceRowHasVersion(i) && (
                 <div className="type-row-sub-box flex shrink-0 items-center">
                   <Skeleton className="h-2.5 w-10" />
                 </div>

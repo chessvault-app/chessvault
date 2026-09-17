@@ -757,7 +757,20 @@ export function licenses(desktop = true): Plugin {
 
     // One source of truth for the repository URL, injected the same way
     // `__DEMO__` is.
-    config: () => ({ define: { __REPO_URL__: JSON.stringify(REPO_URL) } }),
+    //
+    // `__LICENCE_ASSET_VERSIONS__` is which of this build's asset rows
+    // print a version, in the order the page lists them. The page's rows
+    // placeholder (components/skeletons) draws a version bar only where
+    // one is coming, and it held the answer as a counted literal that an
+    // added asset would have made wrong without anything saying so.
+    config: () => ({
+      define: {
+        __REPO_URL__: JSON.stringify(REPO_URL),
+        __LICENCE_ASSET_VERSIONS__: JSON.stringify(
+          ASSETS.filter((a) => desktop || !a.desktopOnly).map((a) => a.version !== '—'),
+        ),
+      },
+    }),
 
     configResolved(config) {
       outDir = resolve(config.root, config.build.outDir);

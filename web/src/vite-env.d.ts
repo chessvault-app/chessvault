@@ -10,6 +10,13 @@ declare const __LAG__: boolean;
 declare const __REPO_URL__: string;
 
 /**
+ * Whether each bundled-asset row of the licence inventory prints a
+ * version, in the inventory's order — see web/vite.licenses.ts. Every row
+ * after them is a package, and a package always has one.
+ */
+declare const __LICENCE_ASSET_VERSIONS__: readonly boolean[];
+
+/**
  * What the demo's /api/health reports, stamped at build time. Defined by
  * the demo config alone: every other build folds the demo server away
  * before these are reached, so they exist exactly where they are used.
