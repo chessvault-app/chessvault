@@ -54,7 +54,7 @@
          where it did not: --muted-foreground is the one that differs, and
          copying the registry there rather than the app is what put four of
          this page's text tiers under 4.5:1. Take a token from
-         web/src/index.css, not from the registry, when the two disagree. The
+         web/src/styles/tokens.css, not from the registry, when the two disagree. The
          page follows the system's light/dark setting because the app does
          too: the OLD page was dark and only dark, which was continuous with
          an app whose default theme was dark, and is not any more.
@@ -77,7 +77,7 @@
         --card: oklch(100% 0 0);
         --muted: oklch(97% 0 0);
         /* 48%, NOT the registry's 55.6%, because the app does not use the
-           registry's either (web/src/index.css, --ui-contrast at 0). The
+           registry's either (web/src/styles/tokens.css, --ui-contrast at 0). The
            registry's value is 4.74:1 on the page and 4.35:1 on --muted,
            and --muted is where this page puts its quietest text: the whole
            caption layer of the vault listing sat under the floor. Measured
@@ -188,7 +188,7 @@
       /* One focus ring, the app's: 3px of --ring at FULL alpha, and no
          outline of its own. The registry's 50% wash measured about 1.5:1
          against this page where WCAG 1.4.11 asks 3, so the ring token
-         carries the ratio and nothing thins it (web/src/index.css). */
+         carries the ratio and nothing thins it (web/src/styles/tokens.css). */
       :focus-visible { outline: none; box-shadow: 0 0 0 3px var(--ring); }
       .btn:focus-visible { border-color: var(--ring); }
       /* AND THE SAME RING BACK AS AN OUTLINE UNDER FORCED COLOURS, because

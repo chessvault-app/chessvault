@@ -198,8 +198,9 @@ A neutral grey ladder with one near-black accent, plus a small fixed set
 of semantic hues that never change with the theme.
 
 Colour names in this document are the token names in
-`web/src/index.css`. There is no second vocabulary: what you read here is
-what you grep for.
+`web/src/styles/tokens.css` (`tokens-dark.css` beside it for the dark
+palette). There is no second vocabulary: what you read here is what you
+grep for.
 
 ### Primary
 
@@ -337,7 +338,7 @@ forbidden. It would collide with outcome colours in the same rows.
 
 **The Knobs Are The Palette Rule.** Never write a fixed colour at a call
 site and never paste a preset theme over `:root`. A new colour is a new
-token in `index.css`, expressed as a lerp on the same knobs, or it is not
+token in `styles/tokens.css`, expressed as a lerp on the same knobs, or it is not
 a colour this app can wear.
 
 **The Four Backgrounds Rule.** Contrast is measured against every
@@ -1020,7 +1021,7 @@ give a hover a 337ms fade. It says so where it is written.
 
 - **Do** express a new colour as a lerp on the existing knobs
   (`--ui-hue`, `--ui-tint`, `--ui-contrast`, `--accent-hue`,
-  `--accent-tint`) in `web/src/index.css`, so Settings → Appearance keeps
+  `--accent-tint`) in `web/src/styles/tokens.css`, so Settings → Appearance keeps
   reaching it.
 - **Do** use the registry's vocabulary at call sites — `bg-card`,
   `text-muted-foreground`, `border-input`, `bg-destructive` — with the

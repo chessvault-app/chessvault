@@ -244,7 +244,7 @@ is the knob a tool has and this app did not: it could recolour itself
 thirteen ways and round its corners four, and had nothing to say about a
 page that is four hundred games.
 
-Five numbers in `index.css`, one per kind of repeating row, and
+Five numbers in `styles/tokens.css`, one per kind of repeating row, and
 `Settings → Appearance → Density` moves all of them by putting
 `data-density="compact"` on the root. Comfortable carries no attribute —
 it is what `:root` already says, so nobody's app moves until they ask.
@@ -1008,7 +1008,7 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   a component added tomorrow is themed the moment it lands. The default
   scheme, Neutral, IS shadcn's neutral theme (white page, grey surfaces,
   a near-black primary; 14.5 / 20.5 / 26.9 % on the dark side); the
-  values are written as the app's OKLCH ladder in `index.css` with the
+  values are written as the app's OKLCH ladder in `styles/tokens.css` with the
   hue, tint and contrast knobs as lerps, so Settings → Appearance keeps
   tinting them (Blue is the app's previous look) and there is no second
   palette. Several roles depart from the registry's numbers, every one of
