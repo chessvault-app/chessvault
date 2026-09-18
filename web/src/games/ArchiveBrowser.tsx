@@ -1,4 +1,4 @@
-import { ExternalLink, Globe, Info, ListChecks, Play, Plus, Search, X } from 'lucide-react';
+import { ExternalLink, Globe, Info, ListChecks, Play, Plus, Search } from 'lucide-react';
 import {
   memo,
   useEffect,
@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { CloudBoardArt } from '@/components/cloud-board-art';
 
 import { Select } from '@/components/ui/select';
-import { SearchInput, searchRowClass } from '@/components/text-fields';
+import { SearchInput, searchRowClass, TitleSearchContext } from '@/components/text-fields';
 import { Field } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
 
@@ -1396,18 +1396,12 @@ export function ArchiveBrowser({
     )}
     {titleSearch && (
       <InGamesHeader slot="search">
-        {handleField}
-        {/* Closing keeps the handle: it is what the list is OF, not a
-            narrowing to take off, and the subtitle goes on naming it. */}
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          title={t('Close')}
-          className="shrink-0 group-has-[input:focus]/title-search:hidden"
-          onClick={() => header.setSearching(false)}
-        >
-          <X className="glyph" />
-        </Button>
+        {/* Cancel closes and KEEPS the handle: it is what the list is OF,
+            not a narrowing to take off, and the subtitle goes on naming
+            it. */}
+        <TitleSearchContext.Provider value={{ keep: true, onCancel: () => header.setSearching(false) }}>
+          {handleField}
+        </TitleSearchContext.Provider>
       </InGamesHeader>
     )}
     {lifted && <InGamesHeader slot="filters">{waitingFilters}</InGamesHeader>}

@@ -1,4 +1,4 @@
-import { Bookmark, Pencil, Play, Plus, Search, Trash2, X } from 'lucide-react';
+import { Bookmark, Pencil, Play, Plus, Search, Trash2 } from 'lucide-react';
 import {
   useCallback,
   useDeferredValue,
@@ -29,7 +29,7 @@ import { Segmented } from '@/components/segmented';
 import { GamesTabStrip, type MainTab } from './GamesTabStrip';
 import { MERGED_MIN_PX } from './pane-shape';
 
-import { ClearableInput } from '@/components/text-fields';
+import { ClearableInput, TitleSearchContext } from '@/components/text-fields';
 import { Textarea } from '@/components/ui/textarea';
 
 import { Panel } from '@/components/panel';
@@ -705,19 +705,9 @@ export function GamesBrowser({
       )}
       {searching && tab === 'collection' && (
         <InGamesHeader slot="search">
-          {finderBox('min-w-0 flex-1')}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={t('Close')}
-            className="shrink-0 group-has-[input:focus]/title-search:hidden"
-            onClick={() => {
-              setQuery('');
-              header.setSearching(false);
-            }}
-          >
-            <X className="glyph" />
-          </Button>
+          <TitleSearchContext.Provider value={{ onCancel: () => { setQuery(''); header.setSearching(false); } }}>
+            {finderBox('min-w-0 flex-1')}
+          </TitleSearchContext.Provider>
         </InGamesHeader>
       )}
       {/* The source chips again, in the bar a scroll up reveals, so a

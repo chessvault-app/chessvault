@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Search } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -14,6 +14,21 @@ import { t } from '@/lib/i18n';
  *   ClearableInput — an X that empties it, while there is something to empty.
  *   SearchInput    — the magnifier, the X, and on touch a Cancel beside it.
  */
+
+/**
+ * A search field that has taken a page's title row over (PageHeader's
+ * `searchCollapse`, the Games page's lent row) says so here, and the
+ * field's Cancel becomes the row's ONE way out: always shown, not only
+ * while the field has focus, on every pointer, and closing the row after
+ * it has done what Cancel does. There was an X beside it for the moments
+ * Cancel was put away, and the two stood side by side on a phone
+ * whichever was meant to be hidden (lanph3re's screenshot, 2026-09-19).
+ * One button that is always there cannot disagree with itself.
+ *
+ * `keep`: close without emptying, for a field whose words are not a
+ * narrowing to take off (an archive tab's handle is what the list is OF).
+ */
+export const TitleSearchContext = createContext<{ onCancel: () => void; keep?: boolean } | null>(null);
 
 function emptyField(el: HTMLInputElement, then: 'stay' | 'leave'): void {
   // The native setter, so React sees the change as typing and fires
@@ -188,6 +203,9 @@ export function SearchInput({
   // that is not there. Focus must never sit inside an aria-hidden subtree,
   // so the state Cancel is drawn in is the one that includes Cancel.
   const [within, setWithin] = useState(false);
+  // In a title row Cancel is standing furniture (TitleSearchContext).
+  const titleSearch = useContext(TitleSearchContext);
+  const cancelShown = within || titleSearch !== null;
   // For an uncontrolled caller, which the X still has to know about.
   const [typed, setTyped] = useState('');
   const self = useRef<HTMLInputElement | null>(null);
@@ -330,15 +348,22 @@ export function SearchInput({
           which a field with text in it had no way to reach at all. */}
       <button
         type="button"
-        tabIndex={within ? 0 : -1}
-        aria-hidden={!within}
+        tabIndex={cancelShown ? 0 : -1}
+        aria-hidden={!cancelShown}
         onPointerDown={(e) => e.preventDefault()}
-        onClick={() => empty('leave')}
+        onClick={() => {
+          if (titleSearch?.keep) self.current?.blur();
+          else empty('leave');
+          titleSearch?.onCancel();
+        }}
         // Named for the iOS chrome rule (styles/shell.css): in a page's
         // title row it is a glass capsule like the buttons beside it.
         data-search-cancel=""
         className={cn(
-          'pointer-fine:hidden text-muted-foreground hover:text-foreground grid shrink-0 place-items-center overflow-hidden',
+          // Touch only, except in a title row, where it is the way back
+          // to the title on any pointer (a narrow desktop window).
+          !titleSearch && 'pointer-fine:hidden',
+          'text-muted-foreground hover:text-foreground grid shrink-0 place-items-center overflow-hidden',
           'whitespace-nowrap rounded-full text-sm font-medium',
           // The same glass the sheets close with: a translucent disc that
           // takes its colour from whatever it sits on, with a hairline of
@@ -347,7 +372,7 @@ export function SearchInput({
           'bg-foreground/8 hover:bg-foreground/14 ring-border ring-1 ring-inset backdrop-blur-md',
           'transition-[max-width,margin,padding,opacity] duration-150',
           cancelSizes[inputSize ?? 'md'],
-          within ? 'ml-1.5 max-w-24 px-2.5 opacity-100' : 'ml-0 max-w-0 px-0 opacity-0',
+          cancelShown ? 'ml-1.5 max-w-24 px-2.5 opacity-100' : 'ml-0 max-w-0 px-0 opacity-0',
         )}
       >
         {t('Cancel')}

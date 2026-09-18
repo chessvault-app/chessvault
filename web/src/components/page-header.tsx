@@ -1,8 +1,8 @@
-import { ChevronLeft, Search, X } from 'lucide-react';
+import { ChevronLeft, Search } from 'lucide-react';
 import { useRef, useState, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { Button } from '@/components/ui/button';
-import { searchRowClass } from '@/components/text-fields';
+import { TitleSearchContext, searchRowClass } from '@/components/text-fields';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 import { useMediaQuery } from '@/lib/media';
 import { scrollParent } from '@/lib/scroll';
@@ -168,7 +168,7 @@ export function PageHeader({
   ) : null;
   const ownTitleRow = fieldShown ? (
     <div
-      className="group/title-search flex min-w-0 flex-1 items-center gap-2"
+      className="flex min-w-0 flex-1 items-center gap-2"
       // Left empty, the row gives the title back. That is what the app's
       // search field's own Cancel does to it (empties it and blurs,
       // components/text-fields), and what tapping away from a field
@@ -182,24 +182,19 @@ export function PageHeader({
         }, 0);
       }}
     >
-      {/* The field fills the row whatever width its page gave it. */}
-      <div className="min-w-0 flex-1 [&>*]:w-full">{search}</div>
-      {/* The way out while the field is NOT focused (a query standing,
-          the keyboard put away). Focused, the field shows its own Cancel
-          in this very spot, and two ways out side by side was one too
-          many (photographed). */}
-      <Button
-        variant="ghost"
-        size="icon-sm"
-        title={t('Close')}
-        className="shrink-0 group-has-[input:focus]/title-search:hidden"
-        onClick={() => {
-          searchCollapse!.onClear();
-          setSearchOpen(false);
+      {/* The field fills the row whatever width its page gave it, and its
+          own Cancel, standing (TitleSearchContext), is the one way out:
+          it empties the query and gives the title back. */}
+      <TitleSearchContext.Provider
+        value={{
+          onCancel: () => {
+            searchCollapse!.onClear();
+            setSearchOpen(false);
+          },
         }}
       >
-        <X className="glyph" />
-      </Button>
+        <div className="min-w-0 flex-1 [&>*]:w-full">{search}</div>
+      </TitleSearchContext.Provider>
     </div>
   ) : undefined;
   const row = titleRow ?? ownTitleRow;

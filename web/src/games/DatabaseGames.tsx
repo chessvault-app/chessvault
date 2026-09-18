@@ -14,7 +14,7 @@ import { useAnalysis } from '@/store/analysis';
 import { Button } from '@/components/ui/button';
 
 import { Select } from '@/components/ui/select';
-import { ClearableInput, searchRowClass } from '@/components/text-fields';
+import { ClearableInput, searchRowClass, TitleSearchContext } from '@/components/text-fields';
 import { InputGroupButton } from '@/components/ui/input-group';
 import ENDGAMES from './endgames.json';
 import MOTIFS from './motifs.json';
@@ -1754,19 +1754,9 @@ export function DatabaseGames({
         <InGamesHeader slot="filters">{filters}</InGamesHeader>
         {titleSearch && (
           <InGamesHeader slot="search">
-            {queryBox('min-w-0 flex-1')}
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              title={t('Close')}
-              className="shrink-0 group-has-[input:focus]/title-search:hidden"
-              onClick={() => {
-                onQuery('');
-                header.setSearching(false);
-              }}
-            >
-              <X className="glyph" />
-            </Button>
+            <TitleSearchContext.Provider value={{ onCancel: () => { onQuery(''); header.setSearching(false); } }}>
+              {queryBox('min-w-0 flex-1')}
+            </TitleSearchContext.Provider>
           </InGamesHeader>
         )}
       </>
