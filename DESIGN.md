@@ -906,7 +906,8 @@ hit areas, `title` as a tooltip. Composites live in
   card's fill where the browser cannot blur, where the reader asked for
   reduced transparency, or where the debug card switched it off; the
   compact page header, the menus and the toast take the same glass on
-  iOS, the sheet not yet. The
+  iOS, the sheet not: tried as glass and
+  reverted the same day, since it looked worse on the phone. The
   docked face is `bg-card` (its fill is its
   edge; `border-card-ring` draws the line only under High contrast) and
   the home-indicator inset, gone while the keyboard is up. On iOS the back chevron and a
