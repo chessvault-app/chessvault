@@ -1147,8 +1147,11 @@ drawn, and what one has to prove.
   registry wrote, in the registry's vocabulary, which is how the phone
   sheet and the coarse-pointer hit areas already ride on those files.
   A component branches on the platform in TypeScript only where the
-  geometry differs (a bar that floats needs a height variable the docked
-  one does not), never to pick a colour.
+  geometry differs, never to pick a colour. The bar's own geometry is
+  already shared: it is an overlay on the shell's row that measures
+  itself, and `main` pads by `--bottom-bar-h` on every platform
+  (`hooks/use-bottom-bar`, `styles/shell.css`), so a floating bar
+  changes what is drawn in that band, not how the page is laid out.
 - **Detection is one file's problem, and it is a guess kept honest.**
   `main.tsx` said for a year that nothing sniffed a user agent, so there
   was nothing to keep correct as devices changed; that sentence is now

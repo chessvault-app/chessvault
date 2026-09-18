@@ -4,20 +4,37 @@ import { atRoute, navigate, sectionHref, type Section } from '@/lib/router';
 import { scrollPageToTop } from '@/lib/scroll';
 import { useTabScrub } from '@/hooks/use-tab-scrub';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/components/mobile-action-bar';
+import { useBottomBarMeasure } from '@/hooks/use-bottom-bar';
 import { t } from '@/lib/i18n';
 import { MORE_SECTIONS, NAV, openSection } from '@/shell/shared';
 
 /** The phone bottom row: global tabs, or a page's contextual action bar
     when one is claimed (see MobileActionBar). The slot is always mounted so
-    a page's portal has a target; it only shows while claimed. */
+    a page's portal has a target; it only shows while claimed.
+
+    Both are overlays on the shell's row, pinned to its bottom edge, and
+    `main` pads by their measured height (hooks/use-bottom-bar,
+    styles/shell.css) rather than sharing the column with them as flex
+    siblings. A page still ends where the bar begins, so nothing looks
+    different at rest; what changed is that the band under the bar is now
+    `main`'s, which is what lets a page's content scroll under it and the
+    bar hide on a scroll without reflowing the page above, the two things
+    a flex sibling could never do. */
+
+/** Pinned to the row's bottom edge, over the page. z-20: over a page's
+    own pinned bands (z-10) and under the Fab (z-30) and every window. */
+const OVERLAY = 'absolute inset-x-0 bottom-0 z-20';
 
 export function MobileBottom({ active }: { active: Section }) {
   const claimed = useMobileBarClaimed();
+  const measure = useBottomBarMeasure();
   return (
     <>
       <div
         id={MOBILE_BAR_SLOT_ID}
+        ref={measure}
         className={cn(
+          OVERLAY,
           // Opaque, not bg-card/85 over backdrop-blur-xl: a 24px blur
           // across a full-width strip was re-blurred on every scrolled
           // frame beneath it, on the phones that can least afford it.
@@ -48,6 +65,7 @@ export function MobileBottom({ active }: { active: Section }) {
  * bottom padding where they were.
  */
 function MobileNav({ active }: { active: Section }) {
+  const measure = useBottomBarMeasure();
   const inMore = active === 'more' || MORE_SECTIONS.some((m) => m.section === active);
   // Desktop reaches home through the sidebar's logo; the bottom bar needs
   // its own entry or a phone can never get back to the landing page.
@@ -144,13 +162,15 @@ function MobileNav({ active }: { active: Section }) {
       // Home heard the app's navigation announced as controls of a page
       // it does not control.
       aria-label={t('Sections')}
+      ref={measure}
       className={cn(
+        OVERLAY,
         // Opaque for the same reason as the page-control slot above.
         // border-border, not the card ring: the ring is transparent on the
         // toned page, and a bar with no edge merged into a page whose
         // bottom was the same white, so the hairline is drawn at rest
         // (lanph3re's call, 2026-09-13). The slot above matches.
-        'bg-card border-border relative flex shrink-0 items-stretch border-t md:hidden',
+        'bg-card border-border flex shrink-0 items-stretch border-t md:hidden',
         // Clear the iOS home indicator.
         'pb-[env(safe-area-inset-bottom)]',
         // The slot's arrival, shared (see MobileBottom).

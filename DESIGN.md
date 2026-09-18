@@ -880,7 +880,9 @@ hit areas, `title` as a tooltip. Composites live in
 - A section list of icon-plus-label rows; the active section takes the
   primary treatment, everything else is quiet until hovered.
 - The phone's bottom bar: five tabs (Home, Games, Studies, Puzzles,
-  More), docked and pinned, `bg-card` on the toned page (its fill is its
+  More), docked and pinned, an overlay on the shell's row that `main`
+  pads by the bar's measured height (`--bottom-bar-h`, so a page ends
+  where the bar begins), `bg-card` on the toned page (its fill is its
   edge; `border-card-ring` draws the line only under High contrast) and
   the home-indicator inset, gone while the keyboard is up. Each tab is a
   28px-tall, 56px-wide pill track over a `text-xs` label; the current

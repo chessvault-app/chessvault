@@ -38,6 +38,36 @@
   --safe-b: env(safe-area-inset-bottom);
 }
 
+/* How much of the shell's row the phone's bottom bar covers.
+
+   The bar (shell/mobile-nav) is an overlay on the row, not a flex sibling
+   of `main`: `main` runs to the bottom of the screen and pads by this,
+   so a page still ends where the bar begins and nothing it lays out has
+   moved. The bar measures itself (hooks/use-bottom-bar) because it is
+   not one height: 56px plus the home indicator as the tab bar, a page's
+   own controls when one claims it, nothing at all under an edited note.
+   The fallback is the tab bar's height, for the frames before the first
+   measurement lands. Zero from md, where the bar is not drawn, and zero
+   while the keyboard is up, when it is hidden: the shell ends at the
+   keyboard then and a page is already entirely above it.
+
+   A page that wants its content to scroll UNDER the bar (the platform
+   chrome, "Platform-specific design" in docs/design-principles.md)
+   reclaims this band with a negative bottom margin and pads its own
+   scroller by the same amount; `main`'s clip is at its padding edge, so
+   the band is inside it. */
+:root {
+  --bottom-bar-h: 0px;
+}
+@media (max-width: 47.9375rem) {
+  :root {
+    --bottom-bar-h: var(--bottom-bar-measured, calc(3.5rem + var(--safe-b)));
+  }
+  .kb-open {
+    --bottom-bar-h: 0px;
+  }
+}
+
 /* The top clearance, named for the same reason, and because on iOS 27 the
    env() is not the whole of it. The system lays a blur and dim band over
    the top of an installed app, reaching below the status bar, and reports

@@ -256,10 +256,18 @@ function Shell() {
       {/* The sidebar/main row. Separated from the shell so a full-width
           strip (the demo notice) can sit above BOTH rather than becoming a
           third column beside the sidebar. */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
+      {/* `relative`: the phone's bottom bar is positioned on this row
+          (shell/mobile-nav), and `main` pads by its measured height
+          (styles/shell.css, --bottom-bar-h) so a page still ends where
+          the bar begins. */}
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
       <Sidebar active={section} params={params} />
 
-      <main id="main" tabIndex={-1} className="min-h-0 min-w-0 flex-1 overflow-hidden outline-none">
+      <main
+        id="main"
+        tabIndex={-1}
+        className="min-h-0 min-w-0 flex-1 overflow-hidden pb-(--bottom-bar-h) outline-none"
+      >
         {/*
           A safety net, no longer the route loader. Sections are fetched by
           lib/lazyRoute, which draws its own blank box while the chunk is on
