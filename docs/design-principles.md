@@ -1125,6 +1125,93 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   the telling, until the disc itself went to the header and the room
   with it.
 
+## Platform-specific design
+
+The app drew one UI on every platform until 2026-09-18, and the phone
+chrome was judged by what both platforms would accept: the iOS 26
+floating tab bar was rejected in 2026-09 as "iOS-only form for a
+cross-platform app", and hide-on-scroll and the capsule with it. That
+rule is retired (lanph3re's call, 2026-09-18). The phone shell may now
+take the idioms of the platform it is running on, and a proposal is
+judged against that platform's own guidance rather than against the
+other's. What follows is which platform owns what, how a variant is
+drawn, and what one has to prove.
+
+- **Three platforms, one attribute.** `lib/platform.ts` decides once at
+  launch, before the first render, and writes `data-platform` on the
+  root: `ios`, `android` or `desktop`. The desktop shell, a browser on a
+  desktop and anything unrecognised are `desktop`. Two custom variants
+  read it, `ios:` and `android:` (`styles/variants.css`), and they stack
+  on every existing class the way `md:` and `keyboard:` do. There is no
+  second component tree: an iOS look is a variant on the shadcn file the
+  registry wrote, in the registry's vocabulary, which is how the phone
+  sheet and the coarse-pointer hit areas already ride on those files.
+  A component branches on the platform in TypeScript only where the
+  geometry differs (a bar that floats needs a height variable the docked
+  one does not), never to pick a colour.
+- **Detection is one file's problem, and it is a guess kept honest.**
+  `main.tsx` said for a year that nothing sniffed a user agent, so there
+  was nothing to keep correct as devices changed; that sentence is now
+  false in exactly one place. iOS is read from the platform string plus
+  touch points, because an iPad has reported itself as a Mac since iPadOS
+  13; Android from `userAgentData` where a browser has it and the user
+  agent string where it does not. Every other reading in the app stays
+  a feature test. A wrong guess costs a phone the other platform's
+  chrome, not a broken page, since neither variant removes a control the
+  cross-platform layout has. `localStorage` `chess-vault:platform`
+  overrides the guess; it exists for the screenshot grid and the
+  Settings debug card, not for users, and nothing else reads it.
+- **iOS owns its chrome; the content is the same everywhere.** On iOS
+  the chrome may follow iOS 26: the tab bar as a floating capsule inset
+  from the edges over scrolling content, and shrinking to the current
+  tab on a scroll down; the compact page header, the contextual action
+  bar, the toast, the sheets and the menus as glass over what is under
+  them; the back chevron and a header's trailing action in circles
+  rather than on a strip; grouped inset lists with a chevron on every
+  navigable row; the platform's own switch. Android keeps what ships
+  today: the docked opaque bar with the M3 pill, the flat full-bleed
+  rows, the registry switch. Desktop is untouched by any of this. What
+  is INSIDE a card follows the tonal rule on every platform: a card
+  resting on the page is separated by its fill, so no material that
+  samples the ground goes behind it, and a segmented control or a chip
+  row inside a card is drawn the same on both phones. The board, its
+  overlays and the pane strip are the same on every platform by the
+  rules that already govern them.
+- **Glass is one surface, gated three ways.** A translucent surface is
+  a card fill at high alpha over a small backdrop blur with a saturate,
+  the window ring, and a one-pixel inset highlight from the foreground,
+  all from existing tokens, defined once as a utility and never as a
+  per-component recipe. It is drawn only under `@supports
+  (backdrop-filter)`, only under `prefers-reduced-transparency:
+  no-preference`, and only on a phone; under any of the three it falls
+  back to the opaque card. The alpha and the blur radius are the two
+  numbers a glass surface has, and both are set by measurement (below),
+  not by eye.
+- **What a platform variant has to prove.** The screenshot grid
+  (`npm run shots:grid`) walks a `phone-ios` state beside `phone`,
+  with the override set, so a change that means to be iOS-only shows a
+  diff in the `phone-ios` pictures and none in `phone` or `desktop`,
+  and a neutral change shows none anywhere. A glass surface owes two
+  more numbers. Frame time while scrolling under it, on the phone, Low
+  Power Mode off, from the on-device probe in the Settings debug card:
+  the bottom bar was made opaque in 2026-09 because a full-width 24px
+  blur was re-blurred on every scrolled frame, and that is the reading
+  a glass bar has to beat. And contrast: text over glass has no fixed
+  ground, so `check:contrast`'s theme reading proves nothing about it,
+  and the surface is sampled over a dark board square, a diagram and a
+  dark note before its alpha is settled.
+- **What did not reopen.** Five tabs with Notes under More: iOS also
+  stops at five. The radius ladder: iOS 26's continuous corners cannot
+  be drawn in CSS, and a glass surface takes the `2xl` rung or a true
+  pill from the ladder rather than a hand-written number. Swipe rows and
+  the edge-swipe back, the push and pop slides, the keyboard rules: all
+  already the platform's behaviour, measured on the device. Swipe to
+  page between tabs: rejected on Material's rule before, and iOS does
+  not do it either. Haptics: Safari has no vibration API, so the move
+  buzz the sound module sends is Android's only, and that is a known gap
+  rather than a choice. The pane strip: out of scope by the rule in
+  CLAUDE.md, on every platform.
+
 ## The mark
 
 A knight's head as one open line, from the base of the throat, out
