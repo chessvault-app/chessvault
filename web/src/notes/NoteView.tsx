@@ -21,7 +21,7 @@ import { WikiSuggest } from './WikiSuggest';
 import { wikiSuggestStore } from './wikiLink';
 import { readAliases, writeAliases } from '@shared/frontMatter';
 import { MobileActionBar } from '@/components/mobile-action-bar';
-import { useScrollCollapse } from '@/hooks/use-scroll-collapse';
+import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 import { usePinnedBand } from '@/hooks/use-pinned-band';
 import { t } from '@/lib/i18n';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -414,8 +414,11 @@ function NoteEditor({
     headerRef.current = el;
     pinHeader(el);
   };
-  // Whether the note has scrolled under the header at all, for its fill.
-  const scrolled = useScrollCollapse(headerRef, true);
+  // Whether the note has scrolled under the header at all, for its fill,
+  // and whether the header should be off the screen: it steps up out of
+  // the way while the note is read downwards and comes back on the first
+  // move up (hooks/use-scroll-reveal).
+  const { scrolled, hidden } = useScrollReveal(headerRef);
 
   return (
     // No padding on the TOP of the scroll container: `sticky top-0` pins to
@@ -449,8 +452,11 @@ function NoteEditor({
           // bars' fill with the card's edge once the note has scrolled
           // under it, so the line returns under High contrast. A standing
           // rule on the page tone was the one sticky header that did not.
-          'transition-colors duration-(--pane-turn) ease-(--pane-turn-ease)',
+          'transition-[transform,background-color,border-color] duration-(--pane-turn) ease-(--pane-turn-ease)',
           scrolled ? 'bg-card border-card-ring' : 'bg-background border-transparent',
+          // Off the top of the scrollport while the note is read down;
+          // the sticky box keeps its place, so nothing below moves.
+          hidden && '-translate-y-full',
           // The palette is what the small bottom padding was for: it sits
           // right above the rule and does not want a gap of its own. In
           // reading mode it renders nothing, and the header was left with

@@ -275,6 +275,7 @@ export function ThemesPage() {
         <PageHeader
           title={t('Puzzle themes')}
           back={() => navigate('puzzles', 'hub')}
+          pinned
           subtitle={
             // The placeholder stays up through an outage: the count is
             // not known, and a zero would be a count.

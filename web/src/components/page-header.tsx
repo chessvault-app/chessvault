@@ -1,7 +1,8 @@
 import { ChevronLeft } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { searchRowClass } from '@/components/text-fields';
+import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
@@ -47,6 +48,20 @@ export const pageTitleClass = 'text-2xl font-semibold tracking-tight md:text-xl'
  * one shell gap under the heading, where every other page's first row
  * sits. It was the same two rows written out by hand on five pages before
  * it was a prop.
+ *
+ * `pinned` adds the bar the large title turns into once it has scrolled
+ * away: a compact row (chevron, the name at text-base, the same actions)
+ * in the card's fill over a rule, pinned to the top of the scroller and
+ * shown ONLY on a scroll up (hooks/use-scroll-reveal). The list keeps the
+ * whole screen while it is read down, and the controls are one flick
+ * back, which is the platform's own shape for a long list and what the
+ * note page does with its header. The shelves take it (lanph3re,
+ * 2026-09-18). It is drawn as a second row rather than by pinning the
+ * large title, so nothing in the flow moves: the wrapper is a zero-height
+ * sticky box (its -mb-4 cancels the column gap a zero box still costs)
+ * and the bar hangs out of it, translated off the top while hidden. The
+ * bar is inert while it is off screen, so its copies of the actions are
+ * not a second set of tab stops.
  */
 export function PageHeader({
   title,
@@ -58,6 +73,7 @@ export function PageHeader({
   meta,
   actions,
   search,
+  pinned = false,
   className,
 }: {
   title: string;
@@ -86,10 +102,56 @@ export function PageHeader({
   actions?: ReactNode;
   /** The page's search or filter field. The row's first child; see searchRowClass. */
   search?: ReactNode;
+  /** A compact copy of the title row, pinned and shown on a scroll up. */
+  pinned?: boolean;
   className?: string;
 }) {
+  const pinRef = useRef<HTMLDivElement>(null);
+  const { scrolled, hidden } = useScrollReveal(pinRef, pinned);
+  const barShown = pinned && scrolled && !hidden;
   return (
     <>
+      {pinned && (
+        <div
+          ref={pinRef}
+          // At the column's very top, above its padding, so the bar
+          // translated off by its own height is wholly off: hung at the
+          // padding's foot its last 32px showed at rest. The top margin
+          // cancels PageShell's padding and the bottom margin puts the
+          // header back where it was (padding less the column's gap).
+          className="sticky top-0 z-30 -mx-4 -mt-[calc(1rem+var(--page-t))] mb-(--page-t) h-0 md:-mx-6 md:-mt-6 md:mb-2"
+          aria-hidden={!barShown}
+          inert={!barShown}
+        >
+          <div
+            className={cn(
+              'bg-card border-card-ring flex items-center gap-2 border-b px-4 pb-2 md:px-6',
+              // The phone's status-bar inset is the bar's own, as the
+              // note header's is: its fill runs up behind the status bar.
+              'pt-[calc(0.5rem+var(--page-t))]',
+              // visibility rides the transition: it stays visible for
+              // the slide out and flips at its end, so a bar that is off
+              // is also not there for a hit test.
+              'transition-[transform,visibility] duration-(--pane-turn) ease-(--pane-turn-ease)',
+              barShown ? 'translate-y-0' : 'invisible -translate-y-full',
+            )}
+          >
+            {back && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className={backVisible === 'phone' ? 'md:hidden' : undefined}
+                title={t('Back')}
+                onClick={back}
+              >
+                <ChevronLeft className="glyph" />
+              </Button>
+            )}
+            <span className="min-w-0 flex-1 truncate text-base font-semibold">{title}</span>
+            {actions && <div className="ml-auto flex min-w-0 items-center justify-end gap-2">{actions}</div>}
+          </div>
+        </div>
+      )}
       <header
         // data-ground: a page's chrome stands on the page, not in a card
         // (docs/design-principles.md), and the muted and secondary fills

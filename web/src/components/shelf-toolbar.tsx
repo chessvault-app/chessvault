@@ -261,6 +261,9 @@ export function ShelfToolbar<S extends string = ShelfSort>({
     <PageHeader
       title={title}
       back={back}
+      // The shelves are the long lists: the title row comes back as a
+      // bar on a scroll up (see PageHeader).
+      pinned
       subtitle={subtitle}
       search={
         <SearchInput
