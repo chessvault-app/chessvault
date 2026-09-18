@@ -130,6 +130,31 @@
   background-color: color-mix(in oklch, var(--primary) 12%, var(--card));
 }
 
+/* A surface over content: the card's fill at --glass-fill over a blur of
+   what is under it, with a line of light along the top edge and the
+   panel shadow below. The one recipe for every translucent surface the
+   platform chrome draws ("Platform-specific design" in
+   docs/design-principles.md); nothing composes its own. Drawn only where
+   the browser can blur, only when the reader has not asked for reduced
+   transparency, and only while the root does not carry data-glass="off",
+   which the Settings debug card sets for the A/B on the phone
+   (lib/platform.ts reads it back at launch). Under any of the three the
+   element keeps whatever opaque fill it declared, so the capsule falls
+   back to the card. -webkit-backdrop-filter beside the unprefixed one:
+   iOS 26 takes either, older Safari only the prefixed. */
+@utility glass {
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    @media (prefers-reduced-transparency: no-preference) {
+      :root:not([data-glass='off']) & {
+        background-color: color-mix(in oklch, var(--card) var(--glass-fill), transparent);
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+        backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+        box-shadow: inset 0 1px 0 0 var(--glass-highlight), var(--shadow-panel);
+      }
+    }
+  }
+}
+
 /* Optical centring, for content that sits alone in a frame-scale box —
    empty states, the desktop dialog. The perceived middle of a frame is
    ABOVE its geometric middle (the vertical-bisection illusion; "optical

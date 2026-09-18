@@ -36,13 +36,23 @@ import { MORE_SECTIONS, NAV, openSection } from '@/shell/shared';
     showing). A true pill, so the corner answers no radius knob; the
     window ring in place of the docked bar's top hairline, and the panel
     shadow, since the box is now a thing over the page rather than the
-    page's edge. Still opaque: the material is the next step and is
-    measured on the phone first. The safe-area padding comes off: the
-    capsule floats above the indicator instead of reaching under it. */
+    page's edge. The safe-area padding comes off: the capsule floats
+    above the indicator instead of reaching under it.
+
+    And it is glass (utilities.css, `glass`): the card's fill at 85% over
+    a 12px blur of the page scrolling under it. The docked bar was made
+    opaque in 2026-09 because a 24px blur across a full-width strip was
+    re-blurred on every scrolled frame; the capsule is 335px of a 375px
+    row, blurs at half the radius, and its fill hides most of what the
+    blur would show, which is the bargain the phone has to confirm: the
+    on-device probe in the Settings debug card A/Bs it against the
+    opaque capsule (data-glass="off"), and if frames go, the fill goes
+    back to 100%. The class after `bg-card`, so the utility's fill wins
+    where the gates pass and the card's fill stays where they do not. */
 const OVERLAY = cn(
   'absolute inset-x-0 bottom-0 z-20',
   'ios:inset-x-5 ios:bottom-[max(1.25rem,var(--safe-b))] ios:rounded-full ios:border-0 ios:pb-0',
-  'ios:ring-1 ios:ring-window-ring ios:shadow-md',
+  'ios:ring-1 ios:ring-window-ring ios:shadow-md ios:glass',
 );
 
 export function MobileBottom({ active }: { active: Section }) {
@@ -55,9 +65,11 @@ export function MobileBottom({ active }: { active: Section }) {
         ref={measure}
         className={cn(
           OVERLAY,
-          // Opaque, not bg-card/85 over backdrop-blur-xl: a 24px blur
-          // across a full-width strip was re-blurred on every scrolled
-          // frame beneath it, on the phones that can least afford it.
+          // Opaque as the docked bar, not bg-card/85 over backdrop-blur-xl:
+          // a 24px blur across a full-width strip was re-blurred on every
+          // scrolled frame beneath it, on the phones that can least
+          // afford it. The iOS capsule is glass (OVERLAY says on what
+          // terms); this fill is what it falls back to.
           'bg-card border-border flex items-stretch border-t md:hidden',
           'pb-[env(safe-area-inset-bottom)] keyboard:hidden',
           // With the tab bar below: what is IN the bar arrives on the

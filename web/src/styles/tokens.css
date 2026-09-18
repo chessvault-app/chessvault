@@ -170,6 +170,18 @@
      is a card's, so the line is the one cue left. Outranks the registry's
      own ring-border on those files (lanph3re's call, 2026-09-08). */
   --window-ring: var(--card-ring);
+  /* The glass surface (utilities.css, `glass`): how much of the card's
+     fill it keeps, how far it blurs what is under it, and the light
+     along its top edge. The fill and the blur are the two numbers a
+     glass surface has, and both are placed by measurement ("Platform-
+     specific design", docs/design-principles.md): 85% is where the
+     inactive tab label still clears 4.5:1 over black content under
+     it, and 12px is a quarter of the 24px blur that cost the docked bar
+     its frames in 2026-09. The highlight is white at both ends of the
+     theme, since it stands for light on the edge, not for ink. */
+  --glass-fill: 85%;
+  --glass-blur: 12px;
+  --glass-highlight: oklch(100% 0 0 / 0.6);
   --background-accent: oklch(calc(97% + (95% - 97%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));
   /* Already pure white; the contrast knob has nothing to add here. */
   --surface: oklch(100% 0 0);

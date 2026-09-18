@@ -7,7 +7,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toast';
 import { startKeyboardTracking } from './lib/keyboardInset';
 import { startInstallTracking } from './lib/install';
-import { startPlatform } from './lib/platform';
+import { applyGlassOverride, startPlatform } from './lib/platform';
 import { startPixelGridTracking } from './board/pixelGrid';
 import { initLang } from './lib/i18n';
 import { sweepStorage } from './lib/storageSweep';
@@ -33,6 +33,7 @@ initPrefs();
 // the first render for the same reason as the theme: the phone chrome is
 // decided by it, and a paint without it would be the desktop's.
 startPlatform();
+applyGlassOverride();
 // NOT awaited, unlike the three above. Those decide the first paint, so
 // the frame waits for them; the difficulty word does not — the echo in
 // localStorage already draws it, and this only replaces that with the

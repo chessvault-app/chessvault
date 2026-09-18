@@ -888,8 +888,12 @@ hit areas, `title` as a tooltip. Composites live in
   none), a true pill with the window ring and the panel shadow, and
   the page scrolls under it, its foot clearing `--page-b`; on a scroll
   down it closes to the current tab and opens again on a scroll up or
-  at the top, and a tap on the closed capsule opens it. Both faces
-  are `bg-card` (its fill is its
+  at the top, and a tap on the closed capsule opens it. The capsule is
+  glass (`utilities.css`, `glass`: the card's fill at 85% over a 12px
+  blur, a line of light on its top edge), falling back to the card's
+  fill where the browser cannot blur, where the reader asked for
+  reduced transparency, or where the debug card switched it off. The
+  docked face is `bg-card` (its fill is its
   edge; `border-card-ring` draws the line only under High contrast) and
   the home-indicator inset, gone while the keyboard is up. Each tab is a
   28px-tall, 56px-wide pill track over a `text-xs` label; the current

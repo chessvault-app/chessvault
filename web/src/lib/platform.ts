@@ -69,6 +69,28 @@ export function startPlatform(): Platform {
   return platform;
 }
 
+/**
+ * The glass kill switch for the on-device A/B (utilities.css, `glass`):
+ * `chess-vault:glass` = "off" puts data-glass="off" on the root and every
+ * glass surface falls back to its opaque fill. Set from the Settings
+ * debug card, read here at launch so the choice survives a reload; no
+ * user setting writes it.
+ */
+export const GLASS_OVERRIDE_KEY = 'chess-vault:glass';
+
+export function applyGlassOverride(off?: boolean): void {
+  let value = off;
+  if (value === undefined) {
+    try {
+      value = localStorage.getItem(GLASS_OVERRIDE_KEY) === 'off';
+    } catch {
+      value = false;
+    }
+  }
+  if (value) document.documentElement.dataset.glass = 'off';
+  else delete document.documentElement.dataset.glass;
+}
+
 /** What the root says. Read, not recomputed, so the whole app agrees with the stylesheet. */
 export function currentPlatform(): Platform {
   const on = document.documentElement.dataset.platform;

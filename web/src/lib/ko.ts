@@ -342,6 +342,10 @@ export const ko: Record<string, string> = {
 
   // --- settings, artificial latency ----------------------------------------
   'Artificial latency': '인위적 지연',
+  'Bottom bar material': '아래 바 재질',
+  'For the frame probe on an iPhone. This device only.': 'iPhone에서 프레임을 재기 위한 것입니다. 이 기기에서만 적용됩니다.',
+  Glass: '유리',
+  Opaque: '불투명',
   'Delay every request': '모든 요청 지연',
   'For looking at the loading placeholders. This device only.':
     '로딩 자리표시자를 확인하기 위한 설정입니다. 이 기기에만 적용됩니다.',

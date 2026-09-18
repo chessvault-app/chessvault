@@ -11,8 +11,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   own controls when they take its place, sit in a rounded capsule lifted
   off the bottom edge, and the page scrolls under it, which is the shape
   iOS 26 gives its own apps. Scrolling down closes the tab bar to the
-  tab you are on; scrolling up, or tapping it, opens it again. Android
-  and the desktop keep the docked bar.
+  tab you are on; scrolling up, or tapping it, opens it again. The
+  capsule is translucent, the page showing through it softened, unless
+  the phone asks for reduced transparency. Android and the desktop keep
+  the docked bar.
 - **A window that loads on first use rises once.** On a phone, the first
   time Customise home was opened its sheet slid up, then slid up again
   when its contents arrived. The same went for the book PDF importer and
