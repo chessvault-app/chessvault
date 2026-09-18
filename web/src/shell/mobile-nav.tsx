@@ -84,11 +84,17 @@ export function MobileBottom({ active }: { active: Section }) {
           // terms); this fill is what it falls back to.
           'bg-card border-border flex items-stretch border-t md:hidden',
           'pb-[env(safe-area-inset-bottom)] keyboard:hidden',
-          // iOS: the same row as the tab bar's, whatever a page puts in
-          // it: 48px tall, its controls centred, and every glyph in it at
-          // the tab bar's 24px (the board controls draw 22px on a coarse
-          // pointer, and read small beside the tabs; lanph3re, 2026-09-18).
-          'ios:min-h-15 ios:items-center ios:[&_svg]:size-7',
+          // The same row as the tab bar's, whatever a page puts in it:
+          // 60px tall, its controls centred, and every glyph in it at the
+          // tab bar's size, 24px docked and 28px in the iOS capsule (the
+          // board controls draw 22px on a coarse pointer, and read small
+          // beside the tabs; lanph3re, 2026-09-18). 24px was tried on the
+          // board controls alone on 2026-09-07 and read loud; that was
+          // beside 18px tabs, and the tabs are 24px now.
+          // Important, because an icon Button sets its own glyph under md
+          // (ui/button, max-md:[&_svg]:size-5) and a media variant sorts
+          // after this one; the iOS variant sorts after both and needs none.
+          'min-h-15 items-center [&_svg]:size-6! ios:[&_svg]:size-7!',
           // With the tab bar below: what is IN the bar arrives on the
           // slide's clock during a page change (motion.css, `bar-in`).
           'bottom-bar',
