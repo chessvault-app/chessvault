@@ -366,7 +366,7 @@ function PuzzleShelfOutline() {
         sort={view.sort}
         dir={view.dir}
         // One action, so the button says it rather than opening a menu.
-        create={<OutlineCreate label="New book" actions={1} compact />}
+        create={<OutlineCreate label="New book" actions={1} />}
       />
       {cards > 0 && <SkeletonBookCards cards={cards} />}
     </PageShell>

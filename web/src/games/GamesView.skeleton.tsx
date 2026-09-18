@@ -140,13 +140,10 @@ function CollectionOutline() {
                   {showFilters && <MoreFiltersButton on={false} onClick={NOOP} />}
                 </>
               )}
-              <Button variant="default" size="sm">
+              <Button variant="default" size="sm" data-chrome-circle="" className="max-md:aspect-square max-md:px-0!">
                 <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
-                {/* Read out but not drawn under 360px: beside the three lent
-                  switches the word pushed the row onto a second line at
-                  320px (photographed), and the plus says it. */}
-              <span className="md:hidden max-[22.4rem]:sr-only">{t('Import')}</span>
-                <span className="max-md:hidden">{t('Import a game')}</span>
+                {/* Read out, not drawn, under md: the plus alone (see CreateControl). */}
+              <span className="max-md:sr-only">{t('Import a game')}</span>
               </Button>
             </>
           }

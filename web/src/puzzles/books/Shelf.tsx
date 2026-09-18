@@ -260,7 +260,6 @@ export function Shelf() {
           onDir={view.setDir}
           create={
             <CreateControl
-              compact
               actions={[{ label: 'New book', icon: BookMarked, onSelect: () => void create() }]}
             />
           }

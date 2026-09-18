@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useMediaQuery } from '@/lib/media';
 import { t } from '@/lib/i18n';
@@ -93,6 +93,23 @@ export function CollectionView() {
   // (./header-slots, `search`): no row is added anywhere.
   const [searchEl, setSearchEl] = useState<HTMLElement | null>(null);
   const [searching, setSearching] = useState(false);
+  // The shelves' rule (PageHeader, `searchCollapse`): a field left empty
+  // gives the title back, read off the DOM a task after the blur. A
+  // NATIVE listener: the field is drawn into this row through a portal,
+  // and React's onBlur bubbles up the component tree (to the list that
+  // drew it), not up the DOM to this row, so a prop here never fired
+  // (caught by the driven check: the row stayed open on Games alone).
+  useEffect(() => {
+    if (!searchEl) return;
+    const onFocusOut = (): void => {
+      setTimeout(() => {
+        if (!searchEl.isConnected || searchEl.contains(document.activeElement)) return;
+        if ((searchEl.querySelector('input')?.value ?? '') === '') setSearching(false);
+      }, 0);
+    };
+    searchEl.addEventListener('focusout', onFocusOut);
+    return () => searchEl.removeEventListener('focusout', onFocusOut);
+  }, [searchEl]);
   const slots = useMemo(
     () =>
       lend
@@ -111,13 +128,16 @@ export function CollectionView() {
     [lend, subtitleEl, findersEl, filtersEl, barFindersEl, barFiltersEl, barChipsEl, searchEl, searching],
   );
   const importButton = (
-    <Button variant="default" size="sm" onClick={() => openImport.current?.()}>
+    <Button
+      variant="default"
+      size="sm"
+      data-chrome-circle=""
+      className="max-md:aspect-square max-md:px-0!"
+      onClick={() => openImport.current?.()}
+    >
       <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
-      {/* Read out but not drawn under 360px: beside the three lent
-          switches the word pushed the row onto a second line at
-          320px (photographed), and the plus says it. */}
-      <span className="md:hidden max-[22.4rem]:sr-only">{t('Import')}</span>
-      <span className="max-md:hidden">{t('Import a game')}</span>
+      {/* Read out, not drawn, under md: the plus alone (see CreateControl). */}
+              <span className="max-md:sr-only">{t('Import a game')}</span>
     </Button>
   );
 
@@ -190,18 +210,7 @@ export function CollectionView() {
             <div
               ref={setSearchEl}
               data-games-search=""
-              // The shelves' rules (PageHeader, `searchCollapse`): the X
-              // hides while the field is focused, where the field's own
-              // Cancel stands, and a field left empty gives the title
-              // back, read off the DOM a task after the blur.
-              className="group/title-search flex min-w-0 flex-1 items-center gap-2"
-              onBlur={(e) => {
-                const box = e.currentTarget;
-                setTimeout(() => {
-                  if (!box.isConnected || box.contains(document.activeElement)) return;
-                  if ((box.querySelector('input')?.value ?? '') === '') setSearching(false);
-                }, 0);
-              }}
+              className="flex min-w-0 flex-1 items-center gap-2"
             />
           ) : undefined
         }

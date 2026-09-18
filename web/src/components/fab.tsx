@@ -37,32 +37,28 @@ export interface FabAction {
  * scrolling back to the header. The row's own verbs, which are the ones
  * reached from the middle of a list, are unchanged.
  */
-export function CreateControl({
-  actions,
-  label = 'Create',
-  compact = false,
-}: {
-  actions: FabAction[];
-  label?: string;
-  /**
-   * Read the label out but do not draw it under sm: for a header that
-   * also holds a back chevron, a long title and two switches, where the
-   * word put the actions on a second line at 390px (the puzzle books
-   * shelf, photographed) and the title row then changed height whenever
-   * its search opened. The plus says it.
-   */
-  compact?: boolean;
-}) {
+export function CreateControl({ actions, label = 'Create' }: { actions: FabAction[]; label?: string }) {
   const single = actions.length === 1 ? actions[0] : null;
-  const words = single ? t(single.label) : t(label);
   const button = (
-    <Button variant="default" size="sm" onClick={single ? single.onSelect : undefined}>
+    <Button
+      variant="default"
+      size="sm"
+      // Under md the button is its plus alone: a square here, and on iOS
+      // the filled circle among the chrome's glass ones (styles/shell.css,
+      // data-chrome-circle, whose rules are under md too). A phone's
+      // title row holds a magnifier and a switch or two beside it, and
+      // the word was what wrapped that row, first under 360px and then
+      // under 640 on the puzzle books shelf, each patched with a
+      // breakpoint of its own. The platform's own apps make this button
+      // a bare plus, and one rule replaces the patches (lanph3re,
+      // 2026-09-19). The word is still read out.
+      data-chrome-circle=""
+      className="max-md:aspect-square max-md:px-0!"
+      onClick={single ? single.onSelect : undefined}
+    >
       <Plus className="glyph" data-icon="inline-start" />
-      {/* Under 360px every shelf's word goes too: beside the title row's
-          magnifier and bookmark switch it wrapped the row at 320px
-          (photographed), as Import did on the Games page. */}
-      <span className={compact ? 'max-sm:sr-only' : 'max-[22.4rem]:sr-only'}>{words}</span>
-      {!single && <ChevronDown className="ml-1 glyph-sm" />}
+      <span className="max-md:sr-only">{single ? t(single.label) : t(label)}</span>
+      {!single && <ChevronDown className="ml-1 glyph-sm max-md:hidden" />}
     </Button>
   );
 
