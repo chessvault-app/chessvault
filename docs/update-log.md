@@ -7,6 +7,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **On a phone the shelves search from the title row.** Studies, Notes,
+  Books, puzzle books and puzzle themes no longer stand a search row
+  under their title. A magnifier in the title row turns that row into the
+  field, with the keyboard up at once; Cancel, the X beside a query that
+  is standing, or tapping away from an empty field gives the title back.
+  The magnifier is in the bar a scroll up reveals, too. The puzzle books
+  header is one line now: its New book button is a plus under 640 pixels.
 - **The open pane on a phone's board page is a filled tab.** The strip
   over the pane marked its open tab with a thin line under a small icon.
   The icons are larger now and the open one sits on a filled segment,
