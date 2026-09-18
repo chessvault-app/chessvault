@@ -34,10 +34,36 @@ import { useRef } from 'react';
 const heights = new Map<Element, number>();
 let observer: ResizeObserver | null = null;
 
+let zeroPending = 0;
+
+/**
+ * A non-zero footprint is published at once. A ZERO waits a frame: when
+ * a page claims the edge, the tab bar unmounts in one commit and the
+ * slot that replaces it is still display:none until that commit's
+ * classes land, so for one frame the largest measurement is nothing at
+ * all, and main's padding collapsed by the bar's height and the whole
+ * page jumped for that frame at the start of every push (measured on
+ * the demo, 2026-09-18: pad 80px, 0px, 80px across three samples). A
+ * zero that is still the answer a frame later (an edited note claiming
+ * the edge with nothing; the keyboard and md are the stylesheet's zero
+ * anyway) is published then.
+ */
 function publish(): void {
   let h = 0;
   for (const v of heights.values()) if (v > h) h = v;
-  document.documentElement.style.setProperty('--bottom-bar-measured', `${Math.round(h)}px`);
+  if (h > 0) {
+    if (zeroPending) cancelAnimationFrame(zeroPending);
+    zeroPending = 0;
+    document.documentElement.style.setProperty('--bottom-bar-measured', `${Math.round(h)}px`);
+    return;
+  }
+  if (zeroPending) return;
+  zeroPending = requestAnimationFrame(() => {
+    zeroPending = 0;
+    let again = 0;
+    for (const v of heights.values()) if (v > again) again = v;
+    if (again === 0) document.documentElement.style.setProperty('--bottom-bar-measured', '0px');
+  });
 }
 
 function measure(el: Element): void {

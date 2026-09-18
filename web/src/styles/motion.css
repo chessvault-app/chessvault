@@ -169,6 +169,33 @@ html[data-nav='push'] .bottom-bar > *,
 html[data-nav='pop'] .bottom-bar > * {
   animation: bar-in var(--pane-turn) var(--pane-turn-ease) both;
 }
+/* Not on iOS. The fade was written for the docked strip, whose fill is
+   the page's edge and stays while what is in it changes. The iOS capsule
+   is a thing of its own over the page, and its contents fading in from
+   nothing left an empty capsule standing for the first third of every
+   push (lanph3re's recording, 2026-09-18, frames 3 to 5 of the turn),
+   which read as the bar breaking. The contents cut over instead; the
+   capsule itself never moves. */
+html[data-platform='ios'][data-nav] .bottom-bar > * {
+  animation: none;
+}
+/* The page snapshots clip to their box on the way. On iOS a page's
+   scroller reaches under the capsule (PageShell and the pages that scroll
+   themselves, --bottom-bar-h), and a snapshot carries its element's ink
+   overflow, so the sliding page carried that band with it and painted
+   it OVER the capsule, which sits in the root's image underneath every
+   named group (the same recording: the capsule cut off and travelling
+   with the list on a pop). Clipped, the slide stops at the slot's foot
+   and the band under the capsule shows the root's live image, the new
+   page's foot and the capsule standing still on it. Nothing on the
+   docked bar's platforms overflows the slot, so this changes nothing
+   there. */
+::view-transition-image-pair(.vt-page-in),
+::view-transition-image-pair(.vt-page-out),
+::view-transition-image-pair(.vt-page-under-in),
+::view-transition-image-pair(.vt-page-under-out) {
+  overflow: clip;
+}
 @keyframes bar-in {
   from {
     opacity: 0;

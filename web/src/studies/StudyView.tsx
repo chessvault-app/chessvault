@@ -264,10 +264,17 @@ export function StudyView({
             mounts: the global tabs stood there through the wait and were
             swapped for the move controls as the document landed. The
             controls themselves at their own height, invisible, so the
-            bar is the right size and nothing in it can be pressed. */}
+            bar is the right size and nothing in it can be pressed. On
+            iOS they show, dimmed and inert: the docked strip is the
+            page's edge and stands empty without remark, but the capsule
+            is a thing of its own, and an empty one through the wait read
+            as the bar broken (lanph3re's recording, 2026-09-18). */}
         {pending && (
           <MobileActionBar>
-            <BoardControls className="py-1.5 ios:py-0 ios:justify-evenly ios:gap-0 invisible" aria-hidden />
+            <BoardControls
+              className="py-1.5 ios:py-0 ios:justify-evenly ios:gap-0 invisible ios:visible ios:opacity-40 ios:pointer-events-none"
+              aria-hidden
+            />
           </MobileActionBar>
         )}
       </div>
