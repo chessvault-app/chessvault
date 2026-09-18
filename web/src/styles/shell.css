@@ -96,8 +96,15 @@
    is; an iPad from md keeps the docked platforms' shape here. */
 @media (max-width: 47.9375rem) {
   :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-variant='ghost'][data-size='icon-sm'],
-  :root[data-platform='ios'] [data-chrome] button[data-chrome-circle] {
+  :root[data-platform='ios'] [data-chrome] button[data-chrome-circle]:not([data-variant='default']) {
     @apply glass size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring active:opacity-70;
+  }
+  /* The Edit button while editing is the primary fill, the button's own:
+     the shape of a circle, not the glass, or its primary-foreground ink
+     sat on the card's fill and the pencil vanished in dark (lanph3re,
+     2026-09-18). A filled circle among glass ones is the editing state. */
+  :root[data-platform='ios'] [data-chrome] button[data-chrome-circle][data-variant='default'] {
+    @apply size-10 shrink-0 rounded-full px-0 shadow-md active:opacity-70;
   }
 }
 

@@ -1149,7 +1149,11 @@ function MoveRow({
         </button>
       </td>
       <TitleTip title={t('{n} games', { n: exact.format(move.total) })}>
-        <td className="text-muted-foreground w-14 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+        {/* whitespace-nowrap: a count with a decimal ("425.6K") is wider
+            than the column at the phone's row size, and it broke into two
+            lines, the row with it (lanph3re, 2026-09-18). The column grows
+            for the widest count instead; w-14 is its floor. */}
+        <td className="text-muted-foreground w-14 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums whitespace-nowrap">
           {compact.format(move.total)}
         </td>
       </TitleTip>
