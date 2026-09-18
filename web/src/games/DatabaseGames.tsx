@@ -1261,11 +1261,6 @@ export function DatabaseGames({
           draftResult={quickDraft.result}
           extraFields={
             <>
-            {lifted && dbControls && (
-              <Field label="Reference database">
-                <div className="flex items-center gap-2">{dbControls}</div>
-              </Field>
-            )}
             <Field label="Result and strength">
               <div className="flex gap-2">
                 <ResultSelect
@@ -1384,11 +1379,9 @@ export function DatabaseGames({
   // The count leads the band in the archive's own voice; the picker and
   // the manager sit with it.
   // Lifted there is no band at rest at all: the count is the subtitle,
-  // Select… is in each card's menu, and the database picker and its
-  // manager, which were the last things keeping a row here, are the first
-  // field of the filter sheet (lanph3re, 2026-09-19). Which database is
-  // open is a thing chosen once, not a control to keep on screen; the
-  // subtitle names it where there is more than one.
+  // Select… is in each card's menu, and the database picker, the last
+  // thing keeping a row here, is the database's name in that subtitle
+  // (below, by the portal).
   const countBand = lifted ? undefined : (
     <>
       <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
@@ -1731,7 +1724,28 @@ export function DatabaseGames({
       <>
         <InGamesHeader slot="subtitle">
           {count}
-          {dbs && dbs.length > 1 && curDb ? ` · ${curDb}` : null}
+          {/* Which database, said where the count is said, and the name
+              is the control that changes it: "3,000 games · lumbras-otb".
+              It spent a day in the filter sheet, where it did not belong
+              (lanph3re, 2026-09-19): choosing what you are looking at is
+              not narrowing it. The trigger keeps the 36px a thumb needs
+              and gives 16 of them back to the line in negative margin, so
+              the subtitle stays one line of text tall. The manager's
+              shortcut is not repeated here: the Databases page is in More. */}
+          {dbs && dbs.length > 1 && (
+            <>
+              {' · '}
+              <Select
+                value={curDb ?? ''}
+                onValueChange={setCurDb}
+                ariaLabel={t('Reference database')}
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground -mx-1 -my-2 inline-flex h-9 max-w-[12rem] px-1 align-middle text-sm font-normal"
+                groups={[{ options: dbs.map((d) => ({ value: d.name, label: d.name })) }]}
+              />
+            </>
+          )}
         </InGamesHeader>
         <InGamesHeader slot="finders">
           {searchSwitch}
