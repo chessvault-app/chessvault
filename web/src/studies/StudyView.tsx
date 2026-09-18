@@ -298,6 +298,8 @@ export function StudyView({
       // On the page ground in both layouts: the Edit button's secondary
       // fill is the light page's own tone (index.css, `[data-ground]`).
       data-ground=""
+      // Page chrome: on iOS its icon buttons are glass circles (shell.css).
+      data-chrome=""
     >
       <Button
         variant="ghost"
@@ -332,7 +334,7 @@ export function StudyView({
           Notes uses. There is no separate pencil for the title (double-click
           it, as in a note) and none inside the moves panel: editing a
           document is one mode, not two. */}
-      <Button
+      <Button data-chrome-circle=""
         variant={editing ? 'default' : 'secondary'}
         size="sm"
         className="shrink-0"

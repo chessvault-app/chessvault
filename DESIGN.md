@@ -909,7 +909,9 @@ hit areas, `title` as a tooltip. Composites live in
   iOS, the sheet not yet. The
   docked face is `bg-card` (its fill is its
   edge; `border-card-ring` draws the line only under High contrast) and
-  the home-indicator inset, gone while the keyboard is up. Each tab is a
+  the home-indicator inset, gone while the keyboard is up. On iOS the back chevron and a
+  header's icon actions stand in 40px glass circles (`shell.css`, on
+  rows marked `data-chrome`). Each tab is a
   28px-tall, 56px-wide pill track over a `text-xs` label; the current
   tab fills the track `bg-muted` with a `primary/30` inset ring and
   goes semibold, the sidebar's current-row treatment. 56px tall.

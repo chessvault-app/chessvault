@@ -124,6 +124,7 @@ export function PageHeader({
           inert={!barShown}
         >
           <div
+            data-chrome=""
             className={cn(
               'bg-card border-card-ring flex items-center gap-2 border-b px-4 pb-2 md:px-6',
               // iOS: glass over the list scrolling under it (utilities.css,
@@ -163,6 +164,7 @@ export function PageHeader({
         // step a rung up under it (index.css, `[data-ground]`). The search
         // row below takes it too.
         data-ground=""
+        data-chrome=""
         className={cn(
           'flex items-center gap-x-3 gap-y-2',
           truncate ? 'flex-nowrap' : 'flex-wrap',

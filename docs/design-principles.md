@@ -1174,8 +1174,10 @@ drawn, and what one has to prove.
   sheet stays opaque until it is measured: a swipe drags a near
   full-screen layer, which a blur re-samples every frame, and its
   pinned title band and the pages stacked inside it are opaque layers
-  of their own); the back chevron and a header's trailing action in circles
-  rather than on a strip; grouped inset lists with a chevron on every
+  of their own); the back chevron and a header's trailing actions in glass
+  circles rather than bare on the page (one rule in `styles/shell.css`
+  on the rows marked `data-chrome`, reaching the registry button by
+  its own attributes); grouped inset lists with a chevron on every
   navigable row; the platform's own switch. Android keeps what ships
   today: the docked opaque bar with the M3 pill, the flat full-bleed
   rows, the registry switch. Desktop is untouched by any of this. What

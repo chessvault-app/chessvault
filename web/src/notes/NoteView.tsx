@@ -470,6 +470,8 @@ function NoteEditor({
         // the Edit button's secondary fill separates on its own
         // (index.css, `[data-ground]`).
         data-ground={scrolled ? undefined : ''}
+        // Page chrome: on iOS its icon buttons are glass circles (shell.css).
+        data-chrome=""
         className="flex shrink-0 items-center gap-2"
       >
         <Button variant="ghost" size="icon-sm" title={t('All notes')} onClick={() => navigate('notes')}>
@@ -498,7 +500,7 @@ function NoteEditor({
           mentions={{ section: 'notes', id }}
           history={{ kind: 'notes', id, name: id.split('/').at(-1)!, onRestored }}
         />
-        <Button
+        <Button data-chrome-circle=""
           variant={editable ? 'default' : 'secondary'}
           size="sm"
           title={editable ? t('Back to reading') : t('Edit this note')}

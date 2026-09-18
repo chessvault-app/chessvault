@@ -428,7 +428,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           out of it, so a header saying both again cost the editor a row of
           board for nothing. */}
       {wide && (
-        <div className="flex shrink-0 items-center gap-2 wide:h-9 wide:px-4 wide:mt-4 wide:mb-3 wide:md:px-6">
+        <div className="flex shrink-0 items-center gap-2 wide:h-9 wide:px-4 wide:mt-4 wide:mb-3 wide:md:px-6" data-chrome="">
           <Button variant="ghost" size="icon-sm" title={t('Back to the board')} onClick={() => setEditing(null)}>
             <ChevronLeft className="glyph" />
           </Button>

@@ -14,7 +14,8 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   makes it smaller, and scrolling up, or tapping it, brings it back. The
   capsule is translucent, the page showing through it softened, unless
   the phone asks for reduced transparency; the compact page header,
-  menus and toasts take the same material. Android and the desktop keep
+  menus and toasts take the same material, and a page's back arrow and
+  header buttons stand in glass circles. Android and the desktop keep
   the docked bar.
 - **A window that loads on first use rises once.** On a phone, the first
   time Customise home was opened its sheet slid up, then slid up again

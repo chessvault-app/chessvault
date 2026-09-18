@@ -759,7 +759,7 @@ export function EditorView({
           otherwise lives only in the wide-only side column). Suppressed when
           embedded (onUse) — the host page carries its own header. */}
       {!onUse && (
-        <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
+        <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden" data-chrome="">
           <Button
             variant="ghost"
             size="icon-sm"

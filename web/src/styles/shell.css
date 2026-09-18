@@ -76,20 +76,29 @@
   --page-b: max(var(--bottom-bar-h), var(--safe-b));
 }
 
-/* What a page that scrolls under the bar clears at its foot: the bar's
-   footprint, or the home indicator where there is no bar (an edited note
-   on iOS claims the edge with nothing, and its last line still has to
-   clear the indicator). The bottom twin of --page-t. */
-:root {
-  --page-b: max(var(--bottom-bar-h), var(--safe-b));
-}
+/* iOS: a page's chrome buttons stand in glass circles.
 
-/* What a page that scrolls under the bar clears at its foot: the bar's
-   footprint, or the home indicator where there is no bar (an edited note
-   on iOS claims the edge with nothing, and its last line still has to
-   clear the indicator). The bottom twin of --page-t. */
-:root {
-  --page-b: max(var(--bottom-bar-h), var(--safe-b));
+   The back chevron and a header's trailing actions are ghost icon buttons
+   on the page's ground, which is the docked-bar platforms' shape. iOS 26
+   floats them in circles of the same material as the tab bar
+   ("Platform-specific design", docs/design-principles.md). One rule, on
+   the rows that are page chrome (data-chrome: PageHeader's title row and
+   its compact bar, and the board and document pages' own title rows),
+   reaching the registry button by the attributes it already carries, so
+   no page composes a circle of its own. 40px, the coarse-pointer floor
+   with room, and the button's icon stays where it was. The press feedback
+   is a dip in opacity, since the glass fill outranks the ghost's hover
+   wash here. A document's Edit button too, by data-chrome-circle on the
+   button: it is a small text button whose label shows from md, so on a
+   phone it is an icon alone, and one square among circles read as a
+   mistake; Save, which carries its word on a phone, keeps its shape.
+   Under md only, which is where the label is off and the phone chrome
+   is; an iPad from md keeps the docked platforms' shape here. */
+@media (max-width: 47.9375rem) {
+  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-variant='ghost'][data-size='icon-sm'],
+  :root[data-platform='ios'] [data-chrome] button[data-chrome-circle] {
+    @apply glass size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring active:opacity-70;
+  }
 }
 
 /* The top clearance, named for the same reason, and because on iOS 27 the
