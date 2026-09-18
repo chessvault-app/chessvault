@@ -439,7 +439,7 @@ function NoteEditor({
     // ends at the keyboard now (lib/keyboardInset, index.css), so this box
     // is already entirely above it and padding again pushed the last lines
     // of the note up out of a container that had nothing under it.
-    <div className="mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto px-4 pb-[calc(1rem+var(--safe-b))] md:px-6 md:pb-6">
+    <div className="mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto px-4 pb-[calc(1rem+var(--safe-b))] md:px-6 md:pb-6 ios:h-[calc(100%+var(--bottom-bar-h))] ios:pb-[calc(1rem+var(--page-b))]">
       {/* Header AND palette pin together. Pinning only the palette left the
           title scrolling away above it, and the negative margins let the
           bar span the column's full width — inset by the page padding it

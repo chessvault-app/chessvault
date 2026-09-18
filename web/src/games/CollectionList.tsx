@@ -860,7 +860,9 @@ export function CollectionList({
             )
           : undefined
       }
-      listClassName="flex-1 overflow-y-auto"
+      // On iOS the rows scroll under the floating bar and the last one
+      // clears its footprint (styles/shell.css, --page-b).
+      listClassName="flex-1 overflow-y-auto ios:pb-(--page-b)"
       tail={
         !loaded ? undefined : /* Nothing to show and nothing narrowing the list. Two ways to get
             here: the collection really is empty, or its last rows were just

@@ -76,6 +76,13 @@ export function PageShell({
       data-page-scroll={scroll ? '' : undefined}
       className={cn(
         'h-full min-h-0',
+        // On iOS the page scrolls UNDER the floating bar: the scroller
+        // reaches through main's padding band to the bottom of the screen
+        // (main clips at its padding edge, so the band is inside it) and
+        // the column below clears the bar's footprint instead of the
+        // indicator. Only a scroller: a page that manages its own
+        // scrolling does the same in its own file.
+        scroll && 'ios:h-[calc(100%+var(--bottom-bar-h))]',
         // The gutter is a WIDE, fine-pointer fix: the 5px centring
         // artifact above needs a drawn scrollbar and a centred column
         // with room around it to exist. At phone widths — real phones
@@ -95,6 +102,7 @@ export function PageShell({
           // shell.css): the column starts under it, and what scrolls
           // passes through it, as the bottom does the home indicator.
           'mx-auto flex w-full flex-col gap-4 px-4 pt-[calc(1rem+var(--page-t))] pb-[calc(2rem+var(--safe-b))] md:px-6 md:pt-6',
+          scroll && 'ios:pb-[calc(1rem+var(--page-b))]',
           WIDTHS[width],
           className,
         )}

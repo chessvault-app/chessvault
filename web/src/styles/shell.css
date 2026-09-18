@@ -68,6 +68,30 @@
   }
 }
 
+/* What a page that scrolls under the bar clears at its foot: the bar's
+   footprint, or the home indicator where there is no bar (an edited note
+   on iOS claims the edge with nothing, and its last line still has to
+   clear the indicator). The bottom twin of --page-t. */
+:root {
+  --page-b: max(var(--bottom-bar-h), var(--safe-b));
+}
+
+/* What a page that scrolls under the bar clears at its foot: the bar's
+   footprint, or the home indicator where there is no bar (an edited note
+   on iOS claims the edge with nothing, and its last line still has to
+   clear the indicator). The bottom twin of --page-t. */
+:root {
+  --page-b: max(var(--bottom-bar-h), var(--safe-b));
+}
+
+/* What a page that scrolls under the bar clears at its foot: the bar's
+   footprint, or the home indicator where there is no bar (an edited note
+   on iOS claims the edge with nothing, and its last line still has to
+   clear the indicator). The bottom twin of --page-t. */
+:root {
+  --page-b: max(var(--bottom-bar-h), var(--safe-b));
+}
+
 /* The top clearance, named for the same reason, and because on iOS 27 the
    env() is not the whole of it. The system lays a blur and dim band over
    the top of an installed app, reaching below the status bar, and reports

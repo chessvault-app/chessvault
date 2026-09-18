@@ -1704,7 +1704,9 @@ export function DatabaseGames({
       // it never shows the skeleton at all.
       listLoading={!inHunt && searching}
       listBusy={!inHunt && refreshing}
-      listClassName="flex-1 overflow-y-auto"
+      // On iOS the rows scroll under the floating bar and the last one
+      // clears its footprint (styles/shell.css, --page-b).
+      listClassName="flex-1 overflow-y-auto ios:pb-(--page-b)"
       more={
         // "more", not "older": this list is in insertion order (id DESC),
         // which is no promise about dates. A hunt has no pages: the scan

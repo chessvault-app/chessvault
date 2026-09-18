@@ -883,6 +883,11 @@ hit areas, `title` as a tooltip. Composites live in
   More), docked and pinned, an overlay on the shell's row that `main`
   pads by the bar's measured height (`--bottom-bar-h`, so a page ends
   where the bar begins), `bg-card` on the toned page (its fill is its
+  edge). On iOS the same box is the platform's capsule: 20px in from
+  the sides, lifted by the home indicator's inset (20px where there is
+  none), a true pill with the window ring and the panel shadow, and
+  the page scrolls under it, its foot clearing `--page-b`. Both faces
+  are `bg-card` (its fill is its
   edge; `border-card-ring` draws the line only under High contrast) and
   the home-indicator inset, gone while the keyboard is up. Each tab is a
   28px-tall, 56px-wide pill track over a `text-xs` label; the current

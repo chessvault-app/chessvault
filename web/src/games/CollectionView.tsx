@@ -90,7 +90,7 @@ export function CollectionView() {
       // last row and the bottom bar, which on a dark theme read as a
       // black band under the list (lanph3re, 2026-09-18). The rows now
       // run to the bar, as a native list does.
-      className="h-full overflow-hidden pb-0 sm:pb-4 md:pb-6"
+      className="h-full overflow-hidden pb-0 sm:pb-4 md:pb-6 ios:h-[calc(100%+var(--bottom-bar-h))]"
     >
       {/* Import on the title line, where Studies, Notes and Books put
           theirs: the page is a shelf of the reader's own games, and it

@@ -39,7 +39,7 @@ export function SkeletonDocument({ className }: { className?: string }) {
   return (
     <Loading
       className={cn(
-        'mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto px-4 pb-[calc(1rem+var(--safe-b))] md:px-6 md:pb-6',
+        'mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto px-4 pb-[calc(1rem+var(--safe-b))] md:px-6 md:pb-6 ios:h-[calc(100%+var(--bottom-bar-h))] ios:pb-[calc(1rem+var(--page-b))]',
         className,
       )}
     >

@@ -48,6 +48,8 @@ function ToastViewport({ className, ...props }: ToastPrimitive.Viewport.Props) {
         "[--toast-clear:1rem]",
         // Above the phone's bottom bar, where the Fab floats (components/fab).
         "max-md:[--toast-clear:calc(4.5rem+env(safe-area-inset-bottom))]",
+        // On iOS the bar is a capsule with a taller footprint (components/fab).
+        "max-md:ios:[--toast-clear:calc(var(--bottom-bar-h)+1rem)]",
         className
       )}
       {...props}

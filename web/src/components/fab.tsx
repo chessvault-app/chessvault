@@ -117,6 +117,10 @@ export function Fab({
       // out of the band the ring is drawn in.
       className={cn(
         'fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30',
+        // On iOS the bar is a capsule lifted off the edge, and its
+        // footprint reaches higher than the docked bar's: the disc clears
+        // the measured footprint by 1rem instead (styles/shell.css).
+        'ios:bottom-[calc(var(--bottom-bar-h)+1rem)]',
         'bg-primary text-primary-foreground hover:bg-primary-hover grid size-14 place-items-center rounded-full',
         'border border-primary-foreground/30',
         'shadow-lg transition-opacity duration-100 active:opacity-80',

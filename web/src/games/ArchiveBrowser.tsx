@@ -1363,7 +1363,9 @@ export function ArchiveBrowser({
       // flex-1 at every width: the 24rem cap below sm was the old side
       // column's share; in the all-widths tabbed pane the list owns the
       // panel's height on a phone like every other tab's.
-      listClassName="flex-1 overflow-y-auto"
+      // On iOS the rows scroll under the floating bar and the last one
+      // clears its footprint (styles/shell.css, --page-b).
+      listClassName="flex-1 overflow-y-auto ios:pb-(--page-b)"
       // The end of the list asks for the next months. Older play is
       // reached by scrolling towards it, which is the same gesture that
       // used to be a minute of waiting before anything showed.

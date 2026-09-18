@@ -11,8 +11,12 @@ import { useRef } from 'react';
  * a page that claims it (components/mobile-action-bar) fills it with
  * its own controls at their own height, and an edited note claims it
  * with nothing at all. So the bar measures itself, the way a pinned
- * band does (hooks/use-pinned-band), and publishes the border-box
- * height on the root as `--bottom-bar-measured`; the stylesheet turns
+ * band does (hooks/use-pinned-band), and publishes its FOOTPRINT on the
+ * root as `--bottom-bar-measured`: from its top edge to the bottom of
+ * the row it is pinned in, which is its height for the docked bar and
+ * height plus the lift for the capsule iOS floats above the home
+ * indicator (shell/mobile-nav, "Platform-specific design" in
+ * docs/design-principles.md). The stylesheet turns
  * that into `--bottom-bar-h` under md and zero elsewhere, and zero while
  * the keyboard is up, when the bar is display:none anyway.
  *
@@ -32,7 +36,11 @@ function publish(): void {
 }
 
 function measure(el: Element): void {
-  heights.set(el, el.getBoundingClientRect().height);
+  const rect = el.getBoundingClientRect();
+  const row = el.parentElement?.getBoundingClientRect();
+  // A hidden bar measures a zero box at the origin, and the row's bottom
+  // minus that would be the whole screen.
+  heights.set(el, rect.height === 0 || !row ? 0 : row.bottom - rect.top);
 }
 
 export function useBottomBarMeasure(): (el: HTMLElement | null) => void {

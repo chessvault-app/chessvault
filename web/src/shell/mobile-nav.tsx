@@ -22,8 +22,26 @@ import { MORE_SECTIONS, NAV, openSection } from '@/shell/shared';
     a flex sibling could never do. */
 
 /** Pinned to the row's bottom edge, over the page. z-20: over a page's
-    own pinned bands (z-10) and under the Fab (z-30) and every window. */
-const OVERLAY = 'absolute inset-x-0 bottom-0 z-20';
+    own pinned bands (z-10) and under the Fab (z-30) and every window.
+
+    On iOS the same box is the platform's capsule ("Platform-specific
+    design", docs/design-principles.md): lifted off the edges and floating
+    over the page, which scrolls under it (PageShell and the pages that
+    scroll themselves clear its footprint, --page-b). 20px in from the
+    sides, which is Apple's 21pt as near as the rem ladder goes; the lift
+    is the home indicator's inset, so the capsule rests just above the
+    indicator, and 20px where there is none (Safari with its own bar
+    showing). A true pill, so the corner answers no radius knob; the
+    window ring in place of the docked bar's top hairline, and the panel
+    shadow, since the box is now a thing over the page rather than the
+    page's edge. Still opaque: the material is the next step and is
+    measured on the phone first. The safe-area padding comes off: the
+    capsule floats above the indicator instead of reaching under it. */
+const OVERLAY = cn(
+  'absolute inset-x-0 bottom-0 z-20',
+  'ios:inset-x-5 ios:bottom-[max(1.25rem,var(--safe-b))] ios:rounded-full ios:border-0 ios:pb-0',
+  'ios:ring-1 ios:ring-window-ring ios:shadow-md',
+);
 
 export function MobileBottom({ active }: { active: Section }) {
   const claimed = useMobileBarClaimed();
@@ -44,6 +62,11 @@ export function MobileBottom({ active }: { active: Section }) {
           // slide's clock during a page change (motion.css, `bar-in`).
           'bottom-bar',
           !claimed && 'hidden',
+          // A page that claims the edge with nothing (an edited note, so
+          // the tab bar steps aside) would float an empty capsule on
+          // iOS: a ring around no height. Nothing to show, nothing drawn,
+          // and the note clears the indicator on its own (--page-b).
+          'ios:empty:hidden',
         )}
       />
       {!claimed && <MobileNav active={active} />}
