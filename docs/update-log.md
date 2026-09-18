@@ -11,7 +11,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   count is the line under the title, as the shelves put theirs. Search,
   the bookmark switch and the filters are icons in the title row beside
   Import, and the search field is a row only while it is open or holds
-  a query. The four sources are chips rather than an underlined strip.
+  a query. The Databases tab keeps its switches in the same places:
+  search, the position search, the filters. The four sources are chips
+  rather than an underlined strip.
   Select… has moved into each game's ⋯ menu, and starts the selection
   with that game in it. The first game starts about 60 pixels higher.
   On the Databases tab the search by position, material or motif opens
