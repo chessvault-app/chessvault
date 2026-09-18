@@ -919,7 +919,13 @@ export function CollectionList({
             // border-t stands in for the filter row's old bottom rule
             // when that row is above; with no filters there is no line,
             // as before.
-            className={cn('min-h-0 flex-1', games.length > 0 && 'border-border border-t')}
+            // Solid and square, said out loud: the registry's Empty is
+            // `rounded-xl border-dashed` for the dashed CARD it can be, and a
+            // lone top border inherited both, so the list's rule came out as
+            // a dotted line curling down at each end (lanph3re's phone,
+            // 2026-09-19). The four below and the databases tab's two say
+            // the same.
+            className={cn('min-h-0 flex-1', games.length > 0 && 'border-border rounded-none border-t border-solid')}
             icon={Folder}
             title="Your collection is empty"
             body="The games worth keeping, each annotatable like a study. Import one, or add games from your online archive."
@@ -940,7 +946,7 @@ export function CollectionList({
              something else" leaves the reader looking at dead space. */
           markedOnly && !needle && !filtersOn ? (
             <EmptyState
-              className="border-border min-h-0 flex-1 border-t"
+              className="border-border min-h-0 flex-1 rounded-none border-t border-solid"
               icon={Bookmark}
               title="No bookmarked games yet"
               body="Bookmark a game from the list and it is kept here, one press from wherever you are."
@@ -953,7 +959,7 @@ export function CollectionList({
             />
           ) : filtersOn && !needle ? (
             <EmptyState
-              className="border-border min-h-0 flex-1 border-t"
+              className="border-border min-h-0 flex-1 rounded-none border-t border-solid"
               icon={SearchX}
               title="Nothing matches those filters"
               body="No game in your collection gets through the filters above. Clearing them shows the whole collection again."
@@ -966,7 +972,7 @@ export function CollectionList({
             />
           ) : (
             <EmptyState
-              className="border-border min-h-0 flex-1 border-t"
+              className="border-border min-h-0 flex-1 rounded-none border-t border-solid"
               icon={SearchX}
               title="Nothing matches that search"
               body={

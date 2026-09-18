@@ -1849,7 +1849,7 @@ export function DatabaseGames({
         // empty bordered box under a count of 0 read as a broken pane.
         inHunt && !hunting && (huntRows?.length ?? 0) === 0 ? (
           <EmptyState
-            className="border-border min-h-0 flex-1 border-t"
+            className="border-border min-h-0 flex-1 rounded-none border-t border-solid"
             icon={SearchX}
             title={huntFailed ? 'The search failed' : 'No games found'}
             body={
@@ -1867,7 +1867,7 @@ export function DatabaseGames({
           />
         ) : !inHunt && !loading && rows.length === 0 ? (
           <EmptyState
-            className="border-border min-h-0 flex-1 border-t"
+            className="border-border min-h-0 flex-1 rounded-none border-t border-solid"
             icon={SearchX}
             title="No games match"
             body="No game in this database gets through the search and filters above."
