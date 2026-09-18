@@ -16,8 +16,8 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   the phone asks for reduced transparency; the compact page header,
   menus and toasts take the same material, and a page's back arrow and
   header buttons stand in glass circles, and the More page's rows sit
-  in grouped lists with a chevron on each. Android and the desktop keep
-  the docked bar.
+  in grouped lists with a chevron on each, and switches are the
+  platform's own. Android and the desktop keep the docked bar.
 - **A window that loads on first use rises once.** On a phone, the first
   time Customise home was opened its sheet slid up, then slid up again
   when its contents arrived. The same went for the book PDF importer and

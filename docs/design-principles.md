@@ -1179,7 +1179,9 @@ drawn, and what one has to prove.
   on the rows marked `data-chrome`, reaching the registry button by
   its own attributes); grouped inset lists with a chevron on every
   navigable row (the More page's groups, one card per group with a
-  hairline between rows; the docked platforms keep a card per row); the platform's own switch. Android keeps what ships
+  hairline between rows; the docked platforms keep a card per row); the platform's own switch (the registry's switch under `ios:` variants:
+  a 51 by 31px track, green when on from a `--switch-on` token that is
+  the platform's colour and not the app's `good`, a 27px white thumb). Android keeps what ships
   today: the docked opaque bar with the M3 pill, the flat full-bleed
   rows, the registry switch. Desktop is untouched by any of this. What
   is INSIDE a card follows the tonal rule on every platform: a card

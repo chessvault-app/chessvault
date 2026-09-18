@@ -190,6 +190,10 @@
      over WHITE content, where the wash of white ink lightens its own
      ground (measured 2.60:1 at 55% and 2.97:1 at 60%; tokens-dark.css). */
   --glass-fill-capsule: 55%;
+  /* The iOS switch's on colour (components/ui/switch): the platform's
+     own green, drawn only under the ios: variant. Not the app's `good`,
+     which is an outcome, not a state. */
+  --switch-on: oklch(72% 0.19 145);
   --glass-blur: 12px;
   /* The hairline a glass surface draws inside its edge (utilities.css):
      the foreground at 12%, dark here and light in dark, where the

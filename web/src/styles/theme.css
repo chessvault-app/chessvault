@@ -25,6 +25,7 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-card-ring: var(--card-ring);
+  --color-switch-on: var(--switch-on);
   --color-window-ring: var(--window-ring);
   --color-input: var(--input);
   --color-ring: var(--ring);

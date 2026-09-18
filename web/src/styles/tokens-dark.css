@@ -26,6 +26,7 @@
      fill is ten points more than light's (tokens.css says why): 60%
      still read 2.97:1 for the active icon over white, 65% clears it. */
   --glass-fill-capsule: 65%;
+  --switch-on: oklch(70% 0.19 145);
   --border-strong: oklch(calc(40% + (72% - 40%) * var(--ui-contrast)) calc(0.024 * var(--ui-tint)) var(--ui-hue));
 
   --foreground: oklch(calc(98.5% + (100% - 98.5%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
