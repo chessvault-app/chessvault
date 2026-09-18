@@ -456,7 +456,11 @@ function NoteEditor({
           scrolled ? 'bg-card border-card-ring' : 'bg-background border-transparent',
           // Off the top of the scrollport while the note is read down;
           // the sticky box keeps its place, so nothing below moves.
-          hidden && '-translate-y-full',
+          // Not while editing: pressing Edit focuses the editor, the browser
+          // scrolls the caret into view, and that scroll read as a scroll
+          // down and slid the bar, and the formatting toolbar in it, off
+          // the screen the moment it was needed (lanph3re, 2026-09-18).
+          hidden && !editable && '-translate-y-full',
           // The palette is what the small bottom padding was for: it sits
           // right above the rule and does not want a gap of its own. In
           // reading mode it renders nothing, and the header was left with
