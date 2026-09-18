@@ -126,6 +126,11 @@ export function PageHeader({
           <div
             className={cn(
               'bg-card border-card-ring flex items-center gap-2 border-b px-4 pb-2 md:px-6',
+              // iOS: glass over the list scrolling under it (utilities.css,
+              // `glass`, on the capsule's terms: bg-card is what it falls
+              // back to). The title is foreground ink, which clears the
+              // 4.5:1 the capsule's muted label was measured to clear.
+              'ios:glass',
               // The phone's status-bar inset is the bar's own, as the
               // note header's is: its fill runs up behind the status bar.
               'pt-[calc(0.5rem+var(--page-t))]',

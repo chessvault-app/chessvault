@@ -1168,8 +1168,11 @@ drawn, and what one has to prove.
   the chrome may follow iOS 26: the tab bar as a floating capsule inset
   from the edges over scrolling content, and shrinking to the current
   tab on a scroll down; the compact page header, the contextual action
-  bar, the toast, the sheets and the menus as glass over what is under
-  them; the back chevron and a header's trailing action in circles
+  bar, the toast and the menus as glass over what is under them (the
+  sheet stays opaque until it is measured: a swipe drags a near
+  full-screen layer, which a blur re-samples every frame, and its
+  pinned title band and the pages stacked inside it are opaque layers
+  of their own); the back chevron and a header's trailing action in circles
   rather than on a strip; grouped inset lists with a chevron on every
   navigable row; the platform's own switch. Android keeps what ships
   today: the docked opaque bar with the M3 pill, the flat full-bleed

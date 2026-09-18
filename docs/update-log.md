@@ -13,7 +13,8 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   iOS 26 gives its own apps. Scrolling down closes the tab bar to the
   tab you are on; scrolling up, or tapping it, opens it again. The
   capsule is translucent, the page showing through it softened, unless
-  the phone asks for reduced transparency. Android and the desktop keep
+  the phone asks for reduced transparency; the compact page header,
+  menus and toasts take the same material. Android and the desktop keep
   the docked bar.
 - **A window that loads on first use rises once.** On a phone, the first
   time Customise home was opened its sheet slid up, then slid up again
