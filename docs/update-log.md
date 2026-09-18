@@ -17,9 +17,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   Import, and pressing the magnifier turns the title row itself into
   the search field, with an X to give it back: no tab gains a row for
   searching. The Databases tab keeps its switches in the same places
-  (search, the position search, the filters), its database picker has
-  moved into its filter sheet, and the line under the title names the
-  database where there is more than one. On the Chess.com and Lichess
+  (search, the position search, the filters), and where there is more
+  than one database its picker is the database's name in the line under
+  the title: tap the name to change it. On the Chess.com and Lichess
   tabs the username field opens the same way, and the line under the
   title says whose games are showing. The four sources are chips rather
   than an underlined strip.
