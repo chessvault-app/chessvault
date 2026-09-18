@@ -1172,10 +1172,11 @@ drawn, and what one has to prove.
   empty control on the phone; lanph3re's call, 2026-09-18); the compact page header, the contextual action
   bar, the toast and the menus as glass over what is under them (the
   sheet stays opaque: built as glass and tried on the phone, it looked
-  worse than the opaque card, and it went back the same day, 2026-09-18); the back chevron and a header's trailing actions in glass
-  circles rather than bare on the page (one rule in `styles/shell.css`
-  on the rows marked `data-chrome`, reaching the registry button by
-  its own attributes); grouped inset lists with a chevron on every
+  worse than the opaque card, and it went back the same day, 2026-09-18); the back chevron and a header's icon actions in glass circles, and
+  its text buttons (a shelf's Create, Import) in pills of the same
+  height, the primary one in its own fill, rather than bare on the page
+  (one rule in `styles/shell.css` on the rows marked `data-chrome`,
+  reaching the registry button by its own attributes); grouped inset lists with a chevron on every
   navigable row (the More page's groups, one card per group with a
   hairline between rows; the docked platforms keep a card per row); the platform's own switch (the registry's switch under `ios:` variants:
   a 51 by 31px track, green when on from a `--switch-on` token that is

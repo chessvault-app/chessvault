@@ -95,16 +95,36 @@
    Under md only, which is where the label is off and the phone chrome
    is; an iPad from md keeps the docked platforms' shape here. */
 @media (max-width: 47.9375rem) {
-  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-variant='ghost'][data-size='icon-sm'],
+  /* Icon buttons of any face but the primary: glass circles. */
+  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
+  :root[data-platform='ios'] [data-chrome] button[data-slot='toggle'],
   :root[data-platform='ios'] [data-chrome] button[data-chrome-circle]:not([data-variant='default']) {
     @apply glass size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring active:opacity-70;
   }
-  /* The Edit button while editing is the primary fill, the button's own:
-     the shape of a circle, not the glass, or its primary-foreground ink
-     sat on the card's fill and the pencil vanished in dark (lanph3re,
-     2026-09-18). A filled circle among glass ones is the editing state. */
-  :root[data-platform='ios'] [data-chrome] button[data-chrome-circle][data-variant='default'] {
+  /* A pressed toggle keeps its own fill (the bookmark filter on a shelf):
+     the shape of a circle over the toggle's on state. */
+  :root[data-platform='ios'] [data-chrome] button[data-slot='toggle'][aria-pressed='true'] {
+    @apply bg-accent;
+  }
+  /* The primary-filled icon button (a note's Edit while editing) keeps the
+     primary fill, the button's own: the shape of a circle, not the glass,
+     or its primary-foreground ink sat on the card's fill and the pencil
+     vanished in dark (lanph3re, 2026-09-18). A filled circle among glass
+     ones is the active state. */
+  :root[data-platform='ios'] [data-chrome] button[data-chrome-circle][data-variant='default'],
+  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='icon-sm'][data-variant='default'] {
     @apply size-10 shrink-0 rounded-full px-0 shadow-md active:opacity-70;
+  }
+  /* Text buttons in the chrome are pills of the same height: the shelves'
+     Create and Import (a primary pill, its own fill) and any secondary or
+     outline button beside them (a glass pill). A rounded rectangle with a
+     word in it beside glass circles read as two vocabularies on one row
+     (lanph3re, 2026-09-18); iOS 26 draws its bar buttons as capsules. */
+  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']) {
+    @apply glass h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-window-ring active:opacity-70;
+  }
+  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='sm'][data-variant='default']:not([data-chrome-circle]) {
+    @apply h-10 shrink-0 rounded-full px-4 shadow-md active:opacity-70;
   }
 }
 
