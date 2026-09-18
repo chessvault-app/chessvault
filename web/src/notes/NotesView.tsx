@@ -15,6 +15,7 @@ import { KeepAlive } from '@/lib/keep-alive';
 import { decodeSegment, navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
+import { LetterTile } from '@/components/letter-tile';
 import { TitleTip } from '@/components/title-tip';
 import { ShelfFolderHeader } from '@/components/shelf-folder-header';
 import { ShelfCount, ShelfToolbar, sortDocs, useShelfView, type ShelfDir, type ShelfSort } from '@/components/shelf-toolbar';
@@ -634,6 +635,9 @@ const NoteCard = memo(function NoteCard({
       // first sentence, its tags and the board it opens with do.
       preview={note.excerpt}
       fen={note.fen}
+      // A note with no board wears its initial instead, so the shelf is
+      // not a column of one grey glyph (components/letter-tile).
+      thumb={<LetterTile name={name} />}
       marked={marked}
       onToggleMark={() => onToggleMark(note.id)}
       layout={layout}

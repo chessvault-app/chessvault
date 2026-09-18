@@ -27,6 +27,7 @@ export function ShelfCard({
   meta,
   preview,
   fen,
+  thumb,
   marked = false,
   onToggleMark,
   layout = 'grid',
@@ -47,6 +48,8 @@ export function ShelfCard({
   preview?: ReactNode;
   /** Where the document's first embedded board starts, if it has one. */
   fen?: string | null;
+  /** A grid card's picture where it has no board (components/letter-tile). */
+  thumb?: ReactNode;
   marked?: boolean;
   /** Omitted where bookmarking does not apply. */
   onToggleMark?: () => void;
@@ -78,7 +81,10 @@ export function ShelfCard({
     nameSharedBoard(boardRef.current);
     onOpen();
   };
-  const board = layout === 'grid' && fen ? <MiniBoard ref={boardRef} fen={fen} size={64} /> : null;
+  // The picture on a grid card: its board, else whatever the shelf offers
+  // in a board's place (the notes shelf's letter tile), else the icon.
+  const board =
+    layout !== 'grid' ? null : fen ? <MiniBoard ref={boardRef} fen={fen} size={64} /> : (thumb ?? null);
 
   return (
     // h-full through both: in a two-column grid a card with a preview line
