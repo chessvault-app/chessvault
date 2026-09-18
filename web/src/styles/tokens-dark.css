@@ -21,13 +21,11 @@
      knob is the reader asking for every cue. */
   --card-ring: color-mix(in oklch, var(--border) calc(100% * var(--ui-contrast)), transparent);
   --window-ring: var(--border);
-  /* The glass surface's edge light, fainter in dark (tokens.css says
-     what the three are). Fill and blur are the same numbers. */
-  --glass-highlight: oklch(100% 0 0 / 0.14);
-  /* Ten points more than light (tokens.css says why): 60% still read
-     2.97:1 for the active icon over white, 65% clears it. */
+  /* The glass surface's fill and blur are tokens.css's numbers, and its
+     edge follows the foreground, which is white here. The capsule's
+     fill is ten points more than light's (tokens.css says why): 60%
+     still read 2.97:1 for the active icon over white, 65% clears it. */
   --glass-fill-capsule: 65%;
-  --glass-edge: color-mix(in oklch, var(--foreground) 10%, transparent);
   --border-strong: oklch(calc(40% + (72% - 40%) * var(--ui-contrast)) calc(0.024 * var(--ui-tint)) var(--ui-hue));
 
   --foreground: oklch(calc(98.5% + (100% - 98.5%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));

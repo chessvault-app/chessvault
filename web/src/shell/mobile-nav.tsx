@@ -55,7 +55,7 @@ const OVERLAY = cn(
   // (measured off lanph3re's screenshots, 2026-09-18: its foot about
   // 20pt off the screen's edge against a 34pt inset), so the capsule
   // stands 8px lower than the inset, and 20px where there is none.
-  'ios:inset-x-5 ios:bottom-[max(1.25rem,calc(var(--safe-b)-0.5rem))] ios:rounded-full ios:border-0 ios:pb-0',
+  'ios:inset-x-6 ios:bottom-[max(1.25rem,calc(var(--safe-b)-0.5rem))] ios:rounded-full ios:border-0 ios:pb-0',
   'ios:ring-1 ios:ring-window-ring ios:shadow-md ios:glass',
   // Clearer than the text surfaces' 70% (tokens.css, --glass-fill): the
   // capsule carries icons only on iOS, and an icon is held to 3:1 where
@@ -88,7 +88,7 @@ export function MobileBottom({ active }: { active: Section }) {
           // it: 48px tall, its controls centred, and every glyph in it at
           // the tab bar's 24px (the board controls draw 22px on a coarse
           // pointer, and read small beside the tabs; lanph3re, 2026-09-18).
-          'ios:min-h-12 ios:items-center ios:[&_svg]:size-6',
+          'ios:min-h-14 ios:items-center ios:[&_svg]:size-7',
           // With the tab bar below: what is IN the bar arrives on the
           // slide's clock during a page change (motion.css, `bar-in`).
           'bottom-bar',
@@ -119,7 +119,7 @@ export function MobileBottom({ active }: { active: Section }) {
  * bottom padding where they were.
  */
 function MobileNav({ active }: { active: Section }) {
-  // iOS: icons only, a 48px row, and it gets smaller while the page is
+  // iOS: icons only, a 56px row, and it gets smaller while the page is
   // read: on a scroll down the capsule scales to 85% from its bottom
   // edge, and a scroll up, the top of the page or a tap brings it back
   // (hooks/use-bar-minimize); the pinned page header comes back on the
@@ -205,8 +205,11 @@ function MobileNav({ active }: { active: Section }) {
       className={cn(
         // min-h-11: the bar's own coarse-pointer floor (DESIGN.md, Buttons).
         'flex min-h-11 flex-1 flex-col items-center justify-center gap-1 py-1 text-xs font-medium',
-        // iOS: the icon row's height, with no label under the icon.
-        'ios:min-h-12',
+        // iOS: the icon row's height, with no label under the icon; and
+        // min-w-0, so a tab is a fifth of the capsule and never its
+        // track's width (an 84px track in a 65px tab pushed the fifth
+        // tab out of the capsule).
+        'ios:min-h-14 ios:min-w-0',
         'transition-colors duration-150',
         isActive ? 'text-primary font-semibold' : 'text-muted-foreground',
         // On the glass capsule the inactive tabs draw foreground ink, not
@@ -220,11 +223,14 @@ function MobileNav({ active }: { active: Section }) {
       {/* The pill's footprint; the pill itself is the sliding element
           above, drawn once for the bar. */}
       {/* iOS: Instagram's glyphs and track, measured off lanph3re's
-          screenshots (2026-09-18): a 24px glyph in a 40px-tall, 64px-wide
-          track that nearly fills the 48px row. The docked bar keeps its
-          18px glyph under a label. */}
-      <span className="relative grid h-7 w-14 place-items-center rounded-full ios:h-10 ios:w-16">
-        <Icon className="size-[1.15rem] ios:size-6" strokeWidth={isActive ? 2.4 : 2} />
+          screenshots at 3x (2026-09-18, second pair: a 56pt bar, a 24pt
+          glyph, an 84 by 48pt pill, 26pt insets): a 28px glyph box (its
+          drawn strokes about 24px) in a 48px-tall track that is the tab's
+          own width less 4px, which on a 327px capsule is 61px (Instagram's
+          84pt pill sits on a 387pt bar; the proportion is what carries).
+          The docked bar keeps its 18px glyph under a label. */}
+      <span className="relative grid h-7 w-14 place-items-center rounded-full ios:h-12 ios:w-full">
+        <Icon className="size-[1.15rem] ios:size-7" strokeWidth={isActive ? 2.4 : 2} />
       </span>
       {/* Six labels overprinted under 320px (a 390 phone zoomed to 200%)
           and went screen-reader-only there; five fit at 320 with 20px to
@@ -291,7 +297,7 @@ function MobileNav({ active }: { active: Section }) {
           // the pill as it does through the rest of the capsule; an opaque
           // pill on a translucent capsule read as a block stuck to it
           // (lanph3re, 2026-09-18). --pill-half is the left calc's term.
-          'ios:h-10 ios:w-16 ios:bg-foreground/12 ios:[--pill-half:2rem]',
+          'ios:h-12 ios:w-[calc(20%-0.25rem)] ios:bg-foreground/12 ios:[--pill-half:calc(10%-0.125rem)]',
         )}
         // Its resting place is the current tab's slot; while a finger is
         // scrubbing the bar (hooks/use-tab-scrub) the bar carries the

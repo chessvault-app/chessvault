@@ -171,8 +171,8 @@
      own ring-border on those files (lanph3re's call, 2026-09-08). */
   --window-ring: var(--card-ring);
   /* The glass surface (utilities.css, `glass`): how much of the card's
-     fill it keeps, how far it blurs what is under it, and the light
-     along its top edge. The fill and the blur are the two numbers a
+     fill it keeps, how far it blurs what is under it, and the hairline
+     at its edge. The fill and the blur are the two numbers a
      glass surface has, and both are placed by measurement ("Platform-
      specific design", docs/design-principles.md). It was 85%, the fill
      at which a MUTED tab label still cleared 4.5:1 over black content,
@@ -182,9 +182,7 @@
      one told by its pill and weight as Apple's are, and 70% is where
      THAT ink clears 4.5:1 over black in light and over white in dark
      (shell/mobile-nav has the numbers). 12px is half the 24px blur that
-     cost the docked bar its frames in 2026-09. The highlight is white at
-     both ends of the theme, since it stands for light on the edge, not
-     for ink. */
+     cost the docked bar its frames in 2026-09. */
   --glass-fill: 70%;
   /* The capsule's fill (shell/mobile-nav): icons only, held to 3:1. In
      light 55% is where the active icon on its 12% wash of ink still
@@ -193,11 +191,10 @@
      ground (measured 2.60:1 at 55% and 2.97:1 at 60%; tokens-dark.css). */
   --glass-fill-capsule: 55%;
   --glass-blur: 12px;
-  --glass-highlight: oklch(100% 0 0 / 0.6);
-  /* The hairline of ink outside a glass surface (utilities.css), the
-     edge that shows where the rim of light does not: a light capsule
-     over light content. */
-  --glass-edge: color-mix(in oklch, var(--foreground) 10%, transparent);
+  /* The hairline a glass surface draws inside its edge (utilities.css):
+     the foreground at 12%, dark here and light in dark, where the
+     foreground is white; no separate token for dark. */
+  --glass-edge: color-mix(in oklch, var(--foreground) 12%, transparent);
   --background-accent: oklch(calc(97% + (95% - 97%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));
   /* Already pure white; the contrast knob has nothing to add here. */
   --surface: oklch(100% 0 0);
