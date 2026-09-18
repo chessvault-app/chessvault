@@ -6,13 +6,19 @@
  * makes the browser morph it instead. The page's board carries the name
  * statically (board/Board.tsx), and a thumbnail takes it for one moment,
  * when it is tapped to open the document it shows, so the small board
- * on the card grows into the big board on the page. The card is gone
- * with its page once the route changes, so the name never lingers, and
- * a browser without the API ignores the property.
+ * on the card grows into the big board on the page. A browser without
+ * the API ignores the property.
  *
  * Only at tap time, never at rest: a name has to be unique among the
  * elements on screen while a transition captures them, and a shelf shows
- * a dozen boards.
+ * a dozen boards. The tapped card KEEPS the name afterwards, for the
+ * flight back (armReturnFlight), since its shelf stays mounted under the
+ * document (lib/keep-alive); so the next tap takes it off whichever card
+ * had it. It did not, and the second document opened from a shelf left
+ * two cards named: the browser skips a transition whose snapshot holds a
+ * name twice ("Multiple elements found with view-transition-name: board"
+ * in WebKit), so that push and every turn on that shelf after it was a
+ * cut. Seen on an iPhone, Studies into a study, 2026-09-18.
  */
 export const SHARED_BOARD = 'board';
 
@@ -33,8 +39,14 @@ export const sharedBoardArmed = (): boolean => armed;
 export function disarmSharedBoard(): void {
   armed = false;
 }
+/** Every element carrying the name inline, hidden pages' included. */
+const namedBoards = (): HTMLElement[] =>
+  [...document.querySelectorAll<HTMLElement>('[style*="view-transition-name"]')].filter(
+    (el) => el.style.viewTransitionName === SHARED_BOARD,
+  );
 export function nameSharedBoard(el: HTMLElement | null): void {
   if (!el) return;
+  for (const other of namedBoards()) if (other !== el && other !== pageBoard) other.style.viewTransitionName = '';
   el.style.viewTransitionName = SHARED_BOARD;
   armed = true;
 }
@@ -58,9 +70,7 @@ export function registerPageBoard(el: HTMLElement | null): void {
 }
 export function armReturnFlight(): void {
   if (!pageBoard) return;
-  const thumbnails = [...document.querySelectorAll<HTMLElement>('[style*="view-transition-name"]')].filter(
-    (el) => el !== pageBoard && el.style.viewTransitionName === SHARED_BOARD,
-  );
+  const thumbnails = namedBoards().filter((el) => el !== pageBoard);
   if (thumbnails.length !== 1) return;
   pageBoard.style.viewTransitionName = SHARED_BOARD;
   armed = true;
