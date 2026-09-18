@@ -1741,7 +1741,13 @@ export function DatabaseGames({
                 ariaLabel={t('Reference database')}
                 variant="ghost"
                 size="sm"
-                className="text-muted-foreground -mx-1 -my-2 inline-flex h-9 max-w-[12rem] px-1 align-middle text-sm font-normal"
+                // The line's own size and baseline, both said with force: the
+                // trigger's phone type rung (type-row, 16px under md) outranked
+                // a plain text-sm, and centred on the line the name sat a pixel
+                // or two under the count beside it (lanph3re's phone,
+                // 2026-09-19). An inline-flex box's baseline is its first
+                // line of text, so align-baseline puts the name on the count's.
+                className="text-muted-foreground -mx-1 -my-2 inline-flex h-9 max-w-[12rem] px-1 align-baseline text-sm! leading-5! font-normal"
                 groups={[{ options: dbs.map((d) => ({ value: d.name, label: d.name })) }]}
               />
             </>
