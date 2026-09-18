@@ -88,7 +88,7 @@ export function MobileBottom({ active }: { active: Section }) {
           // it: 48px tall, its controls centred, and every glyph in it at
           // the tab bar's 24px (the board controls draw 22px on a coarse
           // pointer, and read small beside the tabs; lanph3re, 2026-09-18).
-          'ios:min-h-14 ios:items-center ios:[&_svg]:size-7',
+          'ios:min-h-15 ios:items-center ios:[&_svg]:size-7',
           // With the tab bar below: what is IN the bar arrives on the
           // slide's clock during a page change (motion.css, `bar-in`).
           'bottom-bar',
@@ -119,7 +119,7 @@ export function MobileBottom({ active }: { active: Section }) {
  * bottom padding where they were.
  */
 function MobileNav({ active }: { active: Section }) {
-  // iOS: icons only, a 56px row, and it gets smaller while the page is
+  // iOS: icons only, a 60px row, and it gets smaller while the page is
   // read: on a scroll down the capsule scales to 85% from its bottom
   // edge, and a scroll up, the top of the page or a tap brings it back
   // (hooks/use-bar-minimize); the pinned page header comes back on the
@@ -209,7 +209,7 @@ function MobileNav({ active }: { active: Section }) {
         // min-w-0, so a tab is a fifth of the capsule and never its
         // track's width (an 84px track in a 65px tab pushed the fifth
         // tab out of the capsule).
-        'ios:min-h-14 ios:min-w-0',
+        'ios:min-h-15 ios:min-w-0',
         'transition-colors duration-150',
         isActive ? 'text-primary font-semibold' : 'text-muted-foreground',
         // On the glass capsule the inactive tabs draw foreground ink, not
@@ -223,13 +223,13 @@ function MobileNav({ active }: { active: Section }) {
       {/* The pill's footprint; the pill itself is the sliding element
           above, drawn once for the bar. */}
       {/* iOS: Instagram's glyphs and track, measured off lanph3re's
-          screenshots at 3x (2026-09-18, second pair: a 56pt bar, a 24pt
-          glyph, an 84 by 48pt pill, 26pt insets): a 28px glyph box (its
-          drawn strokes about 24px) in a 48px-tall track that is the tab's
-          own width less 4px, which on a 327px capsule is 61px (Instagram's
-          84pt pill sits on a 387pt bar; the proportion is what carries).
-          The docked bar keeps its 18px glyph under a label. */}
-      <span className="relative grid h-7 w-14 place-items-center rounded-full ios:h-12 ios:w-full">
+          screenshots at 3x (2026-09-18, third pair, scanned by pixel: a
+          60pt bar, a 43pt pill 8pt off the bar's top and bottom and 85pt
+          wide on a 392pt bar, flush with the bar's end): a 28px glyph box
+          (its drawn strokes about 24px) in a 44px track a fifth of the
+          capsule wide. The docked bar keeps its 18px glyph under a
+          label. */}
+      <span className="relative grid h-7 w-14 place-items-center rounded-full ios:h-11 ios:w-full">
         <Icon className="size-[1.15rem] ios:size-7" strokeWidth={isActive ? 2.4 : 2} />
       </span>
       {/* Six labels overprinted under 320px (a 390 phone zoomed to 200%)
@@ -274,12 +274,14 @@ function MobileNav({ active }: { active: Section }) {
         // iOS: the shrink, a transform from the bottom edge on the
         // pane-turn clock, so no layout moves with it.
         'ios:origin-bottom ios:scale-(--bar-scale) ios:transition-transform ios:duration-(--pane-turn) ios:ease-(--pane-turn-ease)',
-        // iOS: 8px of capsule before the first tab and after the last,
-        // as Instagram's bar has, so an end tab's pill stands off the
-        // capsule's edge instead of 2px from it (lanph3re, 2026-09-18).
-        // --bar-pad is the same number for the pill's arithmetic below,
-        // and the scrub reads the padding off the element itself.
-        'ios:px-2 ios:[--bar-pad:0.5rem]',
+        // iOS: 4px of capsule before the first tab and after the last:
+        // the pill overhangs its tab by 4px a side (below), so an end
+        // tab's pill lands exactly on the capsule's edge, as Instagram's
+        // does (lanph3re, 2026-09-18, after 8px stood it 10px off, which
+        // read as a pill floating loose). --bar-pad is the same number
+        // for the pill's arithmetic, and the scrub reads the padding off
+        // the element itself.
+        'ios:px-1 ios:[--bar-pad:0.25rem]',
         'motion-reduce:transition-none',
       )}
       data-minimized={minimized ? '' : undefined}
@@ -298,12 +300,16 @@ function MobileNav({ active }: { active: Section }) {
         data-nav-pill
         className={cn(
           'bg-nav-pill pointer-events-none absolute top-1 h-7 w-14 rounded-full transition-[left] duration-(--pane-turn) ease-(--pane-turn-ease)',
-          // iOS: the track's size (above), and a wash of the ink rather
-          // than the docked bar's opaque tint, so the glass shows through
-          // the pill as it does through the rest of the capsule; an opaque
+          // iOS: 44px tall, 8px off the capsule's top and bottom, and a
+          // tab's width plus 8px, so on an end tab its edge meets the
+          // capsule's own at the pill's middle height and the two curves
+          // read as nested, which is Instagram's pill (its left edge sat
+          // on the bar's at 3x, 85pt wide against 77pt tabs). A wash of
+          // the ink rather than the docked bar's opaque tint, so the
+          // glass shows through the pill as through the rest; an opaque
           // pill on a translucent capsule read as a block stuck to it
           // (lanph3re, 2026-09-18). --pill-half is the left calc's term.
-          'ios:h-12 ios:w-[calc((100%-2*var(--bar-pad))/5-0.25rem)] ios:bg-foreground/12 ios:[--pill-half:calc((100%-2*var(--bar-pad))/10-0.125rem)]',
+          'ios:top-2 ios:h-11 ios:w-[calc((100%-2*var(--bar-pad))/5+0.5rem)] ios:bg-foreground/12 ios:[--pill-half:calc((100%-2*var(--bar-pad))/10+0.25rem)]',
         )}
         // Its resting place is the current tab's slot; while a finger is
         // scrubbing the bar (hooks/use-tab-scrub) the bar carries the
