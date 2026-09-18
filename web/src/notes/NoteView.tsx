@@ -23,7 +23,6 @@ import { readAliases, writeAliases } from '@shared/frontMatter';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { useScrollCollapse } from '@/hooks/use-scroll-collapse';
 import { usePinnedBand } from '@/hooks/use-pinned-band';
-import { useMediaQuery } from '@/lib/media';
 import { t } from '@/lib/i18n';
 import { api, apiErrorMessage } from '@/lib/api';
 
@@ -176,9 +175,6 @@ function NoteEditor({
   // switches the TipTap editor live.
   const opensEditable = useState(() => window.matchMedia('(min-width: 48rem) and (pointer: fine)').matches)[0];
   const [editable, setEditable] = useState(opensEditable);
-  // Whether the note's first block is a level-one heading; read at load
-  // and on every edit, since the bar's title depends on it (see below).
-  const [leadsWithHeading, setLeadsWithHeading] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
   // The armed autosave. Owned here, where it is set and cleared: it used
   // to come down from NoteView as a prop, which the React Compiler refuses
@@ -288,7 +284,6 @@ function NoteEditor({
     // badge announced 저장 중… over an unedited note.
     onCreate: ({ editor }) => {
       takeBaseline(docToMarkdown(editor.state.doc, front.current));
-      setLeadsWithHeading(firstBlockIsHeading(editor.state.doc));
     },
     onUpdate: ({ editor }) => {
       // Compare rather than trust the event: only a real difference is an
@@ -298,7 +293,6 @@ function NoteEditor({
       // cannot be an edit: the note opens read-only and this fires before
       // anyone has been offered a way to change anything.
       if (takeBaseline(now)) return;
-      setLeadsWithHeading(firstBlockIsHeading(editor.state.doc));
       if (now === lastSaved.current) return;
       setSaveState('dirty');
       if (saveTimer.current) clearTimeout(saveTimer.current);
@@ -404,18 +398,14 @@ function NoteEditor({
   }, [editor, editable]);
 
   /**
-   * A phone's bar names the note once the note's own name has scrolled
-   * under it, and not before. Most notes open with a level-one heading
-   * that IS the name (the seed's do; Obsidian's convention does), and at
-   * rest the bar was printing "Notes on th…" 60px above "Notes on the
-   * Catalan" at 24px: the same words twice, the small copy cut. The bar
-   * title now waits for the heading to go, the way PageHeader's large
-   * title becomes the bar. Desktop keeps both: a wide bar has room, and
-   * the bar's copy is the one that renames. A note that does not lead
-   * with a heading keeps its bar title at rest, since nothing else on
-   * screen names it.
+   * The bar names the note at rest on every device. For a while a phone's
+   * bar held its title back until the note's own level-one heading had
+   * scrolled under it, so the same words were not printed twice, 60px
+   * apart; lanph3re took that out (2026-09-18): a header with a blank in
+   * it read as a header that had not loaded, which is exactly what the
+   * note's outline draws there while it loads, so the finished page
+   * looked like its own placeholder.
    */
-  const phone = useMediaQuery('(max-width: 47.9375rem)');
   // The header is measured twice over: once for whether the note has
   // scrolled under it, once for how much of the note it covers, so a Tab or
   // a Shift+Tab onto a board's controls lands below it rather than behind it.
@@ -424,10 +414,8 @@ function NoteEditor({
     headerRef.current = el;
     pinHeader(el);
   };
-  const compact = useScrollCollapse(headerRef, phone && leadsWithHeading);
   // Whether the note has scrolled under the header at all, for its fill.
   const scrolled = useScrollCollapse(headerRef, true);
-  const barTitleHidden = phone && leadsWithHeading && !compact;
 
   return (
     // No padding on the TOP of the scroll container: `sticky top-0` pins to
@@ -481,7 +469,7 @@ function NoteEditor({
         <Button variant="ghost" size="icon-sm" title={t('All notes')} onClick={() => navigate('notes')}>
           <ChevronLeft className="glyph" />
         </Button>
-        <NoteTitle id={id} hidden={barTitleHidden} />
+        <NoteTitle id={id} />
         {/* What links here, then History, then Edit, then Save — see
             StudyView's header. */}
         <DocumentTools
@@ -561,13 +549,7 @@ function NoteEditor({
   );
 }
 
-/** Whether the document opens with a level-one heading (see the bar title). */
-function firstBlockIsHeading(doc: { firstChild: { type: { name: string }; attrs: Record<string, unknown> } | null }): boolean {
-  const first = doc.firstChild;
-  return first?.type.name === 'heading' && first.attrs.level === 1;
-}
-
-function NoteTitle({ id, hidden = false }: { id: string; hidden?: boolean }) {
+function NoteTitle({ id }: { id: string }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
@@ -622,14 +604,10 @@ function NoteTitle({ id, hidden = false }: { id: string; hidden?: boolean }) {
         }}
         // The name the note was given, so a long press selects it.
         data-user-text
-        // Hidden, not removed: it keeps its place in the row so the
-        // buttons stay put, and fades in over the bar's own duration.
         className={cn(
-          'min-w-0 flex-1 truncate text-base font-semibold transition-opacity duration-150',
+          'min-w-0 flex-1 truncate text-base font-semibold',
           failure ? 'text-destructive' : 'text-foreground',
-          hidden && 'opacity-0',
         )}
-        aria-hidden={hidden || undefined}
       >
         {folder && <span className="text-muted-foreground">{folder} / </span>}
         {name}

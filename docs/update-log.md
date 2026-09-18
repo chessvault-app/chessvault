@@ -46,6 +46,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   stopped dead at its lower edge. Each page now carries that room itself,
   so its content passes under the status bar as it scrolls, and a pinned
   header, the note's, runs up behind the status bar as one surface.
+- **The note's header names the note at rest.** On a phone the name
+  waited until the note's own heading had scrolled under the header, and
+  the blank read as a header still loading. It is there from the start
+  again, on every device.
 
 ## 0.11.3
 
