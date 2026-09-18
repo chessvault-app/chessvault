@@ -46,6 +46,17 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   stopped dead at its lower edge. Each page now carries that room itself,
   so its content passes under the status bar as it scrolls, and a pinned
   header, the note's, runs up behind the status bar as one surface.
+- **Pinned headers step aside while you read down.** The note's header,
+  and now a bar for the shelves' titles and actions (Studies, Notes,
+  Books, puzzle books, puzzle themes), leaves the screen as a page is
+  read downwards and comes back on the first scroll up. At the top of a
+  page nothing has changed.
+- **A note with no board shows its initial.** On the notes shelf a note
+  that opens with no board wore the same grey glyph as every other; it
+  now wears its first letter on a tinted square, the tint picked by its
+  name, so two such notes can be told apart at a glance.
+- **The Games list reaches the phone's bottom bar.** A strip of page
+  ground stood between the last row and the bar, black on a dark theme.
 - **The note's header names the note at rest.** On a phone the name
   waited until the note's own heading had scrolled under the header, and
   the blank read as a header still loading. It is there from the start
