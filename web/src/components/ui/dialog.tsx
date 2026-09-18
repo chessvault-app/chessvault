@@ -751,7 +751,7 @@ function DialogContent({
         // 14px, not the full 16: a Card's hairline is a ring drawn 1px
         // OUTSIDE its box, and a strip reaching the card's very edge
         // paints over it.
-        <div className="bg-popover sticky top-0 z-10 -mx-4 -mb-3.5 px-4 pt-3 pb-3.5 max-sm:touch-none max-sm:select-none">
+        <div className="bg-popover sticky top-0 z-10 -mx-4 -mb-3.5 px-4 pt-3 pb-3.5 max-sm:touch-none max-sm:select-none max-md:ios:glass max-md:ios:rounded-none max-md:ios:shadow-none">
           <div className="bg-border mx-auto h-1 w-9 cursor-grab rounded-full" aria-hidden />
         </div>
       )}
@@ -765,7 +765,7 @@ function DialogContent({
         // and get clipped flush against the title's baseline, which read
         // as the title stamped over the content. 14px, not the full 16,
         // so a first-child Card's outside ring stays visible.
-        <div className="bg-popover sticky top-0 z-10 -mx-4 -mb-3.5 px-4 pt-4 pb-3.5 max-sm:touch-none max-sm:select-none">
+        <div className="bg-popover sticky top-0 z-10 -mx-4 -mb-3.5 px-4 pt-4 pb-3.5 max-sm:touch-none max-sm:select-none max-md:ios:glass max-md:ios:rounded-none max-md:ios:shadow-none">
           {/* The grabber, phones only. */}
           <div className="bg-border mx-auto mb-3 h-1 w-9 cursor-grab rounded-full sm:hidden" aria-hidden />
           <div className="flex items-center gap-2">
@@ -833,6 +833,16 @@ function DialogContent({
   // make that a horizontal scroll range for as long as it did.
   const cardClass = cn(
     'bg-popover text-popover-foreground ring-window-ring flex w-full flex-col gap-4 overflow-x-hidden overflow-y-auto overscroll-contain px-4 pb-4 text-sm ring-1 outline-none [&>*]:shrink-0',
+    // iOS: the phone's sheet is glass (utilities.css, `glass`, at the
+    // text surfaces' 70% fill), the page it rose over showing through
+    // it softened. The layers inside it (the pinned title band, the
+    // content under a page, a page sliding in) each carried the card's
+    // own fill so that what moves is a whole surface; on the glass sheet
+    // the content layer goes clear, so the card's glass is what shows,
+    // and the band and a page take the glass themselves, since each has
+    // content passing under it. The desktop window and the iPad's stay
+    // opaque: a window over a scrim gains nothing from the material.
+    phone && 'ios:glass',
     title !== undefined ? 'pt-0' : 'pt-4 max-sm:pt-0',
     className,
   );
@@ -877,6 +887,7 @@ function DialogContent({
         }}
         className={cn(
           'bg-popover col-start-1 row-start-1 -mx-4 flex min-w-0 flex-col gap-4 px-4 [&>*]:shrink-0',
+          phone && 'ios:bg-transparent',
           under === 'leaving' && 'page-under-leave',
           under === 'returning' && 'page-under-return',
           under === 'hidden' && 'invisible',
@@ -908,6 +919,7 @@ function DialogContent({
             // Over the content it covers, whose title row is sticky and
             // z-10: a stacking context of its own, above that.
             'bg-popover relative z-20 col-start-1 row-start-1 -mx-4 flex min-w-0 flex-col gap-4 px-4 outline-none [&>*]:shrink-0',
+            phone && 'ios:glass',
             // The router's push and pop on a phone (index.css, data-nav):
             // in from the right on the spring, out to the right on the
             // spring run backwards. A desktop card has no push; the page

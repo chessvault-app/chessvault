@@ -1170,11 +1170,12 @@ drawn, and what one has to prove.
   smaller on a scroll down and whole again on a scroll up (Instagram's
   shape; Apple's own closes to the current tab alone, which read as an
   empty control on the phone; lanph3re's call, 2026-09-18); the compact page header, the contextual action
-  bar, the toast and the menus as glass over what is under them (the
-  sheet stays opaque until it is measured: a swipe drags a near
-  full-screen layer, which a blur re-samples every frame, and its
-  pinned title band and the pages stacked inside it are opaque layers
-  of their own); the back chevron and a header's trailing actions in glass
+  bar, the toast, the menus and the phone's sheet as glass over what is
+  under them (the sheet came last, once the capsule's frame number was
+  in from the phone: a swipe drags a near full-screen layer, which a
+  blur re-samples every frame, and its pinned title band and the pages
+  stacked inside it take the glass themselves while its content layer
+  goes clear); the back chevron and a header's trailing actions in glass
   circles rather than bare on the page (one rule in `styles/shell.css`
   on the rows marked `data-chrome`, reaching the registry button by
   its own attributes); grouped inset lists with a chevron on every

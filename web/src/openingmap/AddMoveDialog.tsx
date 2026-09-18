@@ -240,6 +240,8 @@ export function AddMoveDialog({
             'max-sm:bottom-[calc(-1.25rem-var(--safe-b))] max-sm:-mb-[calc(1.25rem+var(--safe-b))]',
             'max-sm:pb-[calc(0.5rem+var(--safe-b))]',
             'sm:bottom-[-0.75rem] sm:-mb-3 sm:pb-2',
+            // iOS: glass, as the sheet it is the foot of (components/ui/dialog).
+            'max-md:ios:glass max-md:ios:rounded-none',
           )}
           onSubmit={(e) => {
             e.preventDefault();

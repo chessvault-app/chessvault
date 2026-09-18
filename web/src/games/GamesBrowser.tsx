@@ -1025,6 +1025,9 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
         <div
           className={cn(
             'bg-card border-border sticky z-10 -mx-4 flex justify-end gap-2 border-t px-4 pt-2',
+            // iOS: the sheet is glass (components/ui/dialog), and so is the
+            // bar pinned to its foot, which content passes under.
+            'max-md:ios:glass max-md:ios:rounded-none',
             // The bar reaches the window's own bottom edge and carries the
             // home-indicator clearance itself. Left to the window, that
             // clearance was a strip of empty surface UNDER the bar — about
