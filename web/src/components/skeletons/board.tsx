@@ -13,7 +13,7 @@ import {
 import { PanelHeader, panelStoredHeight } from '@/components/panel';
 import { t } from '@/lib/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
-import { INERT, InertDocumentTools, InertEditButton, Loading } from './primitives';
+import { INERT, InertDocumentTools, InertEditButton, InertSaveState, Loading } from './primitives';
 
 /**
  * A board beside its panel — the shape every playing surface takes.
@@ -219,7 +219,7 @@ export function SkeletonBoard({
           and Edit, inert, then the save state. */}
       <InertDocumentTools />
       <InertEditButton />
-      <Skeleton className="h-2.5 w-10 shrink-0" />
+      <InertSaveState />
     </>
   );
   const playerBar = (

@@ -2,7 +2,7 @@ import { ChevronLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { INERT, InertDocumentTools, InertEditButton, Loading } from './primitives';
+import { INERT, InertDocumentTools, InertEditButton, InertSaveState, Loading } from './primitives';
 
 /**
  * A written document: the note's sticky header, then paragraphs of ragged
@@ -81,7 +81,7 @@ export function SkeletonDocument({ className }: { className?: string }) {
           <Skeleton className="h-3.5 min-w-0 flex-1" />
           <InertDocumentTools />
           <InertEditButton />
-          <Skeleton className="h-2.5 w-10 shrink-0" />
+          <InertSaveState />
         </div>
         {/* EditorPalette's row, on the same rule: ten icon-sm buttons at
             gap-0.5, drawn only where the note will open editable. The

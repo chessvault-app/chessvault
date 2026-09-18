@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
+import { SaveControl } from '@/components/save-control';
 
 /**
  * The box a placeholder and the content it stands for share: once a
@@ -103,6 +104,23 @@ export function InertEditButton() {
       <Pencil className="glyph md:mr-1" />
       <span className="max-md:hidden">{t('Edit')}</span>
     </Button>
+  );
+}
+
+const NOOP = (): void => {};
+
+/**
+ * The header's save state, as the real control draws it: a document
+ * opens saved, so what stands there is a check and the word, whose width
+ * is the language's and not a number. A 40px bar stood in for it and the
+ * two buttons before it landed 16px to its left in Korean (56px of
+ * "Saved" against the bar, measured on the demo at 390px).
+ */
+export function InertSaveState() {
+  return (
+    <span aria-hidden className="contents">
+      <SaveControl state="saved" onSave={NOOP} />
+    </span>
   );
 }
 
