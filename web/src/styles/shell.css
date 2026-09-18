@@ -44,7 +44,7 @@
    of `main`: `main` runs to the bottom of the screen and pads by this,
    so a page still ends where the bar begins and nothing it lays out has
    moved. The bar measures itself (hooks/use-bottom-bar) because it is
-   not one height: 56px plus the home indicator as the tab bar, a page's
+   not one height: 60px plus the home indicator as the tab bar, a page's
    own controls when one claims it, nothing at all under an edited note.
    The fallback is the tab bar's height, for the frames before the first
    measurement lands. Zero from md, where the bar is not drawn, and zero
@@ -61,7 +61,7 @@
 }
 @media (max-width: 47.9375rem) {
   :root {
-    --bottom-bar-h: var(--bottom-bar-measured, calc(3.5rem + var(--safe-b)));
+    --bottom-bar-h: var(--bottom-bar-measured, calc(3.75rem + var(--safe-b)));
   }
   .kb-open {
     --bottom-bar-h: 0px;

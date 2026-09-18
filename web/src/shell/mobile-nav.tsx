@@ -112,11 +112,12 @@ export function MobileBottom({ active }: { active: Section }) {
  * fill with a primary/30 inset ring behind the icon, so the two
  * navigations speak one vocabulary, and its label goes semibold with it.
  *
- * The pill is 28px tall in a 56px track and the vertical padding came
- * down from 8px to 4px to pay for it: py-1 + 28 + gap-1 + a 16px label
- * line is 56px against 54.4px before. Within 2px, which is what keeps
- * the Fab, the toast offset (both 4.5rem up) and the board shells'
- * bottom padding where they were.
+ * The pill is 32px tall around a 24px glyph, Material 3's pair, up from
+ * 28 and 18 when the iOS capsule's glyphs grew and the docked bar read
+ * small beside it (2026-09-18): py-1 + 32 + gap-1 + a 16px label line is
+ * a 60px row, 4px over the old one. `main` pads by the measured height;
+ * the Fab and the toast offset are fixed and went up with it, 4.5rem to
+ * 4.75rem, so both still clear the bar by 16px.
  */
 function MobileNav({ active }: { active: Section }) {
   // iOS: icons only, a 60px row, and it gets smaller while the page is
@@ -227,10 +228,10 @@ function MobileNav({ active }: { active: Section }) {
           through the pill's middle: a 60pt bar, a 50pt pill 4pt off the
           bar's top and bottom, a tab wide, 6pt in from the bar's end): a
           28px glyph box (its drawn strokes about 24px) in a 52px track a
-          fifth of the capsule wide. The docked bar keeps its 18px glyph
-          under a label. */}
-      <span className="relative grid h-7 w-14 place-items-center rounded-full ios:h-13 ios:w-full">
-        <Icon className="size-[1.15rem] ios:size-7" strokeWidth={isActive ? 2.4 : 2} />
+          fifth of the capsule wide. The docked bar draws Material 3's
+          pair under a label: a 24px glyph in a 32 by 64px pill. */}
+      <span className="relative grid h-8 w-16 place-items-center rounded-full ios:h-13 ios:w-full">
+        <Icon className="size-6 ios:size-7" strokeWidth={isActive ? 2.4 : 2} />
       </span>
       {/* Six labels overprinted under 320px (a 390 phone zoomed to 200%)
           and went screen-reader-only there; five fit at 320 with 20px to
@@ -297,7 +298,7 @@ function MobileNav({ active }: { active: Section }) {
         aria-hidden
         data-nav-pill
         className={cn(
-          'bg-nav-pill pointer-events-none absolute top-1 h-7 w-14 rounded-full transition-[left] duration-(--pane-turn) ease-(--pane-turn-ease)',
+          'bg-nav-pill pointer-events-none absolute top-1 h-8 w-16 rounded-full transition-[left] duration-(--pane-turn) ease-(--pane-turn-ease)',
           // iOS: 52px tall, 4px off the capsule's top and bottom, a tab
           // wide, and 6px in from the capsule's end on an end tab, which
           // is Instagram's pill scanned through its middle (a 50pt pill
@@ -318,7 +319,7 @@ function MobileNav({ active }: { active: Section }) {
         style={{
           // The tab's slot, inside the capsule's padding where it has any
           // (--bar-pad, zero on the docked bar).
-          left: `var(--nav-pill-left, calc(var(--bar-pad, 0px) + (100% - 2 * var(--bar-pad, 0px)) * ${(activeIndex + 0.5) / slots.length} - var(--pill-half, 1.75rem)))`,
+          left: `var(--nav-pill-left, calc(var(--bar-pad, 0px) + (100% - 2 * var(--bar-pad, 0px)) * ${(activeIndex + 0.5) / slots.length} - var(--pill-half, 2rem)))`,
         }}
       />
       {slots.map(({ key, label, icon, on, go }, i) =>

@@ -131,7 +131,7 @@ export function Fab({
       // against its shadow on #/openingmap, 3.776 once the shadow is
       // out of the band the ring is drawn in.
       className={cn(
-        'fixed bottom-[calc(4.5rem+env(safe-area-inset-bottom))] right-4 z-30',
+        'fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom))] right-4 z-30',
         // On iOS the bar is a capsule lifted off the edge, and its
         // footprint reaches higher than the docked bar's: the disc clears
         // the measured footprint by 1rem instead (styles/shell.css).

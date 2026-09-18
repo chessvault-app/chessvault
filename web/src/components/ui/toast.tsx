@@ -3,7 +3,7 @@
  * this app's physics on top:
  *
  * - On a phone the viewport sits above the bottom bar, at the height the
- *   Fab floats (4.5rem plus the home indicator), so a toast never lands
+ *   Fab floats (4.75rem plus the home indicator), so a toast never lands
  *   on the page's controls.
  * - The viewport's region is named in the app's language: Base UI's own
  *   default is "Notifications" in English on every page.
@@ -47,7 +47,7 @@ function ToastViewport({ className, ...props }: ToastPrimitive.Viewport.Props) {
         // 35px of 74 still showing for the last 300ms of an undo).
         "[--toast-clear:1rem]",
         // Above the phone's bottom bar, where the Fab floats (components/fab).
-        "max-md:[--toast-clear:calc(4.5rem+env(safe-area-inset-bottom))]",
+        "max-md:[--toast-clear:calc(4.75rem+env(safe-area-inset-bottom))]",
         // On iOS the bar is a capsule with a taller footprint (components/fab).
         "max-md:ios:[--toast-clear:calc(var(--bottom-bar-h)+1rem)]",
         className
