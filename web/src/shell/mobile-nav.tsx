@@ -274,6 +274,12 @@ function MobileNav({ active }: { active: Section }) {
         // iOS: the shrink, a transform from the bottom edge on the
         // pane-turn clock, so no layout moves with it.
         'ios:origin-bottom ios:scale-(--bar-scale) ios:transition-transform ios:duration-(--pane-turn) ios:ease-(--pane-turn-ease)',
+        // iOS: 8px of capsule before the first tab and after the last,
+        // as Instagram's bar has, so an end tab's pill stands off the
+        // capsule's edge instead of 2px from it (lanph3re, 2026-09-18).
+        // --bar-pad is the same number for the pill's arithmetic below,
+        // and the scrub reads the padding off the element itself.
+        'ios:px-2 ios:[--bar-pad:0.5rem]',
         'motion-reduce:transition-none',
       )}
       data-minimized={minimized ? '' : undefined}
@@ -297,7 +303,7 @@ function MobileNav({ active }: { active: Section }) {
           // the pill as it does through the rest of the capsule; an opaque
           // pill on a translucent capsule read as a block stuck to it
           // (lanph3re, 2026-09-18). --pill-half is the left calc's term.
-          'ios:h-12 ios:w-[calc(20%-0.25rem)] ios:bg-foreground/12 ios:[--pill-half:calc(10%-0.125rem)]',
+          'ios:h-12 ios:w-[calc((100%-2*var(--bar-pad))/5-0.25rem)] ios:bg-foreground/12 ios:[--pill-half:calc((100%-2*var(--bar-pad))/10-0.125rem)]',
         )}
         // Its resting place is the current tab's slot; while a finger is
         // scrubbing the bar (hooks/use-tab-scrub) the bar carries the
@@ -305,7 +311,9 @@ function MobileNav({ active }: { active: Section }) {
         // property rather than this style prop, so a render that lands
         // mid-gesture cannot fight the finger for it.
         style={{
-          left: `var(--nav-pill-left, calc(${(activeIndex + 0.5) * (100 / slots.length)}% - var(--pill-half, 1.75rem)))`,
+          // The tab's slot, inside the capsule's padding where it has any
+          // (--bar-pad, zero on the docked bar).
+          left: `var(--nav-pill-left, calc(var(--bar-pad, 0px) + (100% - 2 * var(--bar-pad, 0px)) * ${(activeIndex + 0.5) / slots.length} - var(--pill-half, 1.75rem)))`,
         }}
       />
       {slots.map(({ key, label, icon, on, go }, i) =>

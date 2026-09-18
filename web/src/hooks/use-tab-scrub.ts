@@ -140,6 +140,7 @@ export function useTabScrub({
   const bar = useRef<HTMLElement | null>(null);
   const pill = useRef<HTMLElement | null>(null);
   const box = useRef<DOMRect | null>(null);
+  const padLeft = useRef(0);
   const start = useRef<{ x: number; y: number } | null>(null);
   const axis = useRef<'x' | 'y' | null>(null);
   /** The same number as `at`, for the handlers to read. Two touchmoves in
@@ -204,7 +205,14 @@ export function useTabScrub({
         if (touch.clientX < EDGE_PX || touch.clientX > window.innerWidth - EDGE_PX) return;
         bar.current = e.currentTarget;
         pill.current = e.currentTarget.querySelector<HTMLElement>('[data-nav-pill]');
-        box.current = e.currentTarget.getBoundingClientRect();
+        // The tabs' box, which is the bar's content box: the iOS capsule
+        // pads 8px inside its ends (shell/mobile-nav), and the docked
+        // bar none. The pill's `left` is measured from the padding edge,
+        // so the padding is added back when it is written below.
+        const rect = e.currentTarget.getBoundingClientRect();
+        const pad = parseFloat(getComputedStyle(e.currentTarget).paddingLeft) || 0;
+        padLeft.current = pad;
+        box.current = new DOMRect(rect.left + pad, rect.top, rect.width - 2 * pad, rect.height);
         still.current = prefersReducedMotion();
         start.current = { x: touch.clientX, y: touch.clientY };
       },
@@ -234,7 +242,7 @@ export function useTabScrub({
         if (pill.current)
           node.style.setProperty(
             '--nav-pill-left',
-            `${pillAt(touch.clientX, rect.left, rect.width, pill.current.offsetWidth)}px`,
+            `${padLeft.current + pillAt(touch.clientX, rect.left, rect.width, pill.current.offsetWidth)}px`,
           );
       },
       onTouchEnd: (e) => {
