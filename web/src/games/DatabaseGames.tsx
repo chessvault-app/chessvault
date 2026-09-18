@@ -1,4 +1,4 @@
-﻿import { CornerDownLeft, Database, Grid3x3, Info, ListChecks, ListPlus, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
+﻿import { CornerDownLeft, Database, Grid3x3, Info, ListChecks, ListPlus, Play, Plus, ScanSearch, Search, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import { Suspense, lazy, memo, useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
@@ -102,6 +102,7 @@ import {
 } from './GameTable';
 import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
 import { InGamesHeader, useGamesHeader } from './header-slots';
+import { scrollParent } from '@/lib/scroll';
 import { dialogOpen } from '@/hooks/dialog-focus';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 
@@ -441,6 +442,10 @@ export function DatabaseGames({
   // above the early returns. The key is refGameKey's, written out: that
   // helper is declared below them.
   const lifted = useGamesHeader() !== null && shape === 'page';
+  const [searchOpen, setSearchOpen] = useState(false);
+  // A handle on the page's scroller, for the press that opens the field
+  // from the compact bar and has to go up to meet it.
+  const topRef = useRef<HTMLSpanElement>(null);
   const startSelectingWith = useCallback(
     (game: RefGame): void => {
       setPicked(new Set([`${curDb ?? ''}:${game.id}`]));
@@ -1642,12 +1647,74 @@ export function DatabaseGames({
     </div>
   );
 
+  // The hunt's toggle, a value because it stands in two places: the search
+  // row, and on a phone's page the title row (./header-slots).
+  const huntSwitch = (
+    <Button
+      variant="secondary"
+      size="icon-sm"
+      active={huntOpen || (lifted && inHunt)}
+      title={t('Search by position, material or motif')}
+      className="shrink-0"
+      onClick={() => {
+        // A sheet is opened, never toggled: it closes itself, and
+        // its own Clear is what drops a hunt (below).
+        if (lifted) {
+          setHuntOpen(true);
+        } else if (huntOpen) {
+          setHuntOpen(false);
+          if (huntRows !== null) clearHunt();
+        } else {
+          setHuntOpen(true);
+        }
+      }}
+    >
+      <ScanSearch className="glyph" />
+    </Button>
+  );
+  // The magnifier that opens the text search on a phone's page, where the
+  // field is a row only while it is open or holds a query: the same shape,
+  // in the same place, as the collection's (GamesBrowser).
+  const searchShown = searchOpen || query.trim() !== '';
+  const searchSwitch = (
+    <Button
+      variant="secondary"
+      size="icon-sm"
+      active={searchShown}
+      aria-pressed={searchShown}
+      title={t('Search database…')}
+      className="shrink-0"
+      onClick={() => {
+        if (searchShown) onQuery('');
+        setSearchOpen(!searchShown);
+        if (!searchShown && topRef.current) scrollParent(topRef.current)?.scrollTo({ top: 0 });
+      }}
+    >
+      <Search className="glyph" />
+    </Button>
+  );
   return (
     <>
-    {lifted && <InGamesHeader slot="subtitle">{count}</InGamesHeader>}
+    {lifted && (
+      <>
+        <InGamesHeader slot="subtitle">{count}</InGamesHeader>
+        <InGamesHeader slot="finders">
+          {searchSwitch}
+          {huntSwitch}
+        </InGamesHeader>
+        <InGamesHeader slot="filters">{filters}</InGamesHeader>
+      </>
+    )}
+    <span ref={topRef} hidden />
     <GameListShell
       shape={shape}
       toolbar={
+        // On a phone's page the switches are in the title row and the
+        // field is a row only while it is in use, the collection's shape
+        // exactly (lanph3re: the two tabs kept their buttons in different
+        // places). An empty query has no issues to say, so with the field
+        // shut there is no row at all.
+        lifted && !searchShown ? undefined : (
         <div className="flex w-full flex-col gap-2">
           {/* At table density this one WRAPPING row is the whole chrome:
               search, the filters and the count band folded together.
@@ -1674,28 +1741,8 @@ export function DatabaseGames({
                 verbs that navigate away (the manage button at the row's
                 end) stay quiet. The collection's bookmark filter already
                 dresses this way. */}
-            <Button
-              variant="secondary"
-              size="icon-sm"
-              active={huntOpen || (lifted && inHunt)}
-              title={t('Search by position, material or motif')}
-              className="shrink-0"
-              onClick={() => {
-                // A sheet is opened, never toggled: it closes itself, and
-                // its own Clear is what drops a hunt (below).
-                if (lifted) {
-                  setHuntOpen(true);
-                } else if (huntOpen) {
-                  setHuntOpen(false);
-                  if (huntRows !== null) clearHunt();
-                } else {
-                  setHuntOpen(true);
-                }
-              }}
-            >
-              <ScanSearch className="glyph" />
-            </Button>
-            {filtersInRow && filters}
+            {!lifted && huntSwitch}
+            {filtersInRow && !lifted && filters}
             {merged && (
               <span
                 ref={tailRef}
@@ -1729,6 +1776,7 @@ export function DatabaseGames({
               2026-09-18): there the same controls open as a sheet. */}
           {!lifted && huntControls}
         </div>
+        )
       }
       filters={filtersInRow ? undefined : filters}
       countBand={selecting ? selectionBar : merged ? undefined : countBand}

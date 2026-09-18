@@ -794,11 +794,17 @@ export function GamesBrowser({
                 never renders below md, so the phone FAB below is the Games
                 page's alone. */
             searchIssues={
-              <SearchQueryIssues
-                query={query}
-                pending={searchHintsOpen}
-                filters={colConstraints}
-              />
+              // Issues come from the query's own terms, so with the
+              // lifted field shut (an empty query) there are none, and an
+              // element here, even one that draws nothing, made the list
+              // stand an empty 20px toolbar band the databases tab did not.
+              lifted && !searchShown ? undefined : (
+                <SearchQueryIssues
+                  query={query}
+                  pending={searchHintsOpen}
+                  filters={colConstraints}
+                />
+              )
             }
             onSelect={selectCollectionGame}
             selectedKey={colSelKey}

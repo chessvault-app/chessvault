@@ -1248,7 +1248,9 @@ export function ArchiveBrowser({
               the filters button ending the row the way the collection's
               does. With the select in the row the field was 108px at
               375px, too narrow to read a username back. */}
-          {filtersInRow && waitingFilters}
+          {/* On a phone's page the filters button stands in the title
+              row, where the other tabs keep theirs (./header-slots). */}
+          {filtersInRow && !lifted && waitingFilters}
           {/* The count's end of the merged row, held open through the
               wait. The group is the tally and the Select… button, and it
               arrives with the games: the field beside it is `flex-1
@@ -1360,6 +1362,7 @@ export function ArchiveBrowser({
         onClose={() => setDetails(null)}
       />
     )}
+    {lifted && <InGamesHeader slot="filters">{waitingFilters}</InGamesHeader>}
     {lifted && (
       <InGamesHeader slot="subtitle">
         {listLoading ? (
