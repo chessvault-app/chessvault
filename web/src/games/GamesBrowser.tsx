@@ -710,7 +710,7 @@ export function GamesBrowser({
             variant="ghost"
             size="icon-sm"
             title={t('Close')}
-            className="shrink-0"
+            className="shrink-0 group-has-[input:focus]/title-search:hidden"
             onClick={() => {
               setQuery('');
               header.setSearching(false);

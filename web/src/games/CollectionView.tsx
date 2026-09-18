@@ -187,7 +187,22 @@ export function CollectionView() {
         // changed from anywhere in a long list.
         titleRow={
           lend && searching ? (
-            <div ref={setSearchEl} data-games-search="" className="flex min-w-0 flex-1 items-center gap-2" />
+            <div
+              ref={setSearchEl}
+              data-games-search=""
+              // The shelves' rules (PageHeader, `searchCollapse`): the X
+              // hides while the field is focused, where the field's own
+              // Cancel stands, and a field left empty gives the title
+              // back, read off the DOM a task after the blur.
+              className="group/title-search flex min-w-0 flex-1 items-center gap-2"
+              onBlur={(e) => {
+                const box = e.currentTarget;
+                setTimeout(() => {
+                  if (!box.isConnected || box.contains(document.activeElement)) return;
+                  if ((box.querySelector('input')?.value ?? '') === '') setSearching(false);
+                }, 0);
+              }}
+            />
           ) : undefined
         }
         pinned={lend}

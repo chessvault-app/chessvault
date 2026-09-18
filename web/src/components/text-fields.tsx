@@ -334,6 +334,9 @@ export function SearchInput({
         aria-hidden={!within}
         onPointerDown={(e) => e.preventDefault()}
         onClick={() => empty('leave')}
+        // Named for the iOS chrome rule (styles/shell.css): in a page's
+        // title row it is a glass capsule like the buttons beside it.
+        data-search-cancel=""
         className={cn(
           'pointer-fine:hidden text-muted-foreground hover:text-foreground grid shrink-0 place-items-center overflow-hidden',
           'whitespace-nowrap rounded-full text-sm font-medium',

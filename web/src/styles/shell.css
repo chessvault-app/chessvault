@@ -126,6 +126,15 @@
   :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='sm'][data-variant='default']:not([data-chrome-circle]) {
     @apply h-10 shrink-0 rounded-full px-4 shadow-md active:opacity-70;
   }
+  /* A search field's own Cancel, where the field has taken a title row
+     over (PageHeader, `searchCollapse`; the Games page): the same glass
+     capsule. It is a raw button with a wash of its own, a grey pill
+     beside glass circles (lanph3re, 2026-09-19). Only while it is shown:
+     put away it is collapsed to no width, and this rule's padding would
+     stand an empty capsule in its place. */
+  :root[data-platform='ios'] [data-chrome] button[data-search-cancel]:not([aria-hidden='true']) {
+    @apply glass text-foreground h-10 rounded-full px-4 shadow-md ring-1 ring-window-ring active:opacity-70;
+  }
 }
 
 /* The top clearance, named for the same reason, and because on iOS 27 the
