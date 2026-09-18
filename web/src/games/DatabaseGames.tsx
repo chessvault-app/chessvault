@@ -1,4 +1,4 @@
-﻿import { CornerDownLeft, Database, Grid3x3, Info, ListPlus, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
+﻿import { CornerDownLeft, Database, Grid3x3, Info, ListChecks, ListPlus, Play, Plus, ScanSearch, SearchX, SlidersHorizontal, X } from 'lucide-react';
 import { Suspense, lazy, memo, useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
@@ -101,6 +101,7 @@ import {
   type TableNav,
 } from './GameTable';
 import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
+import { InGamesHeader, useGamesHeader } from './header-slots';
 import { dialogOpen } from '@/hooks/dialog-focus';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 
@@ -144,9 +145,14 @@ const RefRow = memo(function RefRow({
   onPreview,
   loadPreview,
   onDetails,
+  onSelectMode,
   standing,
 }: {
   game: RefGame;
+  /** Given where Select… has no button of its own (a phone's page, see
+      ./header-slots): the card menu's entry starts a selection with this
+      game in it. */
+  onSelectMode?: (game: RefGame) => void;
   /** False while a details panel stands beside the table, so the
       Notation column is not drawn — see GameTable. */
   withNotation?: boolean;
@@ -204,6 +210,9 @@ const RefRow = memo(function RefRow({
           onSelect: () => onCollect(game),
         },
         { label: 'Game details', icon: Info, onSelect: () => onDetails(game) },
+        ...(onSelectMode
+          ? [{ label: 'Select…', icon: ListChecks, disabled: inCollection, onSelect: () => onSelectMode(game) }]
+          : []),
       ]}
       showLink={false}
       // Already in the collection: the edge down the row's left,
@@ -426,6 +435,19 @@ export function DatabaseGames({
   // then posting it, so the button counts them up as they land.
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  // On a phone's page the count is the page's subtitle and Select… is an
+  // entry in each card's menu (./header-slots), so the count band stands
+  // only for the database picker and its manager. Up here with the state,
+  // above the early returns. The key is refGameKey's, written out: that
+  // helper is declared below them.
+  const lifted = useGamesHeader() !== null && shape === 'page';
+  const startSelectingWith = useCallback(
+    (game: RefGame): void => {
+      setPicked(new Set([`${curDb ?? ''}:${game.id}`]));
+      setSelecting(true);
+    },
+    [curDb],
+  );
   const [adding, setAdding] = useState<{ done: number; total: number } | null>(null);
   const stopSelecting = (): void => {
     setSelecting(false);
@@ -1336,12 +1358,20 @@ export function DatabaseGames({
       onPreview={setPreview}
       loadPreview={rowLoadPreview}
       onDetails={setDetails}
+      onSelectMode={lifted ? startSelectingWith : undefined}
     />
   ));
 
   // The count leads the band in the archive's own voice; the picker and
   // the manager sit with it.
-  const countBand = (
+  const countBand = lifted ? (
+    dbControls ? (
+      <>
+        <span className="flex-1" />
+        {dbControls}
+      </>
+    ) : undefined
+  ) : (
     <>
       <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
         {count}
@@ -1610,6 +1640,7 @@ export function DatabaseGames({
 
   return (
     <>
+    {lifted && <InGamesHeader slot="subtitle">{count}</InGamesHeader>}
     <GameListShell
       shape={shape}
       toolbar={

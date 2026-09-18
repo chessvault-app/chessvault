@@ -1,4 +1,4 @@
-import { ExternalLink, Globe, Info, Play, Plus } from 'lucide-react';
+import { ExternalLink, Globe, Info, ListChecks, Play, Plus } from 'lucide-react';
 import {
   memo,
   useEffect,
@@ -46,6 +46,7 @@ import {
   type TableNav,
 } from './GameTable';
 import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
+import { InGamesHeader, useGamesHeader } from './header-slots';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { loadGamePgn } from './CollectionList';
 import { TitleTip } from '@/components/title-tip';
@@ -177,11 +178,16 @@ const ArchiveRow = memo(function ArchiveRow({
   onToggle,
   onCollect,
   onDetails,
+  onSelectMode,
   selectedRow = false,
   tabStop,
   onSelectRow,
 }: {
   game: GameSummary;
+  /** Given where Select… has no button of its own (a phone's page, see
+      ./header-slots): the card menu's entry starts a selection with this
+      game in it. */
+  onSelectMode?: (game: GameSummary) => void;
   /** False while a details panel stands beside the table, so the
       Notation column is not drawn — see GameTable. */
   withNotation?: boolean;
@@ -262,6 +268,11 @@ const ArchiveRow = memo(function ArchiveRow({
                 onSelect: () => window.open(link, '_blank', 'noreferrer'),
               },
             ]
+          : []),
+        // A game already collected cannot be picked (the selection is for
+        // adding), so its entry stands disabled, as Add does above.
+        ...(onSelectMode
+          ? [{ label: 'Select…', icon: ListChecks, disabled: inCollection, onSelect: () => onSelectMode(game) }]
           : []),
       ]}
       // Folded into the ⋯, the way the collection's rows carry it. As a
@@ -621,6 +632,10 @@ export function ArchiveBrowser({
   // Selection is a MODE, not a permanent column: a checkbox on every row
   // is clutter for the common case, which is picking out one game.
   const [selecting, setSelecting] = useState(false);
+  // A phone's page lends its title row (./header-slots): the count is the
+  // page's subtitle, there is no count band at rest, and Select… is an
+  // entry in each card's menu.
+  const lifted = useGamesHeader() !== null && shape === 'page';
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [addProgress, setAddProgress] = useState<{ done: number; total: number } | null>(null);
@@ -1074,6 +1089,26 @@ export function ArchiveBrowser({
   // instead (see the toolbar below), so the band only exists while
   // SELECTING: the mode's controls earn a row of their own for exactly
   // as long as the mode is on.
+  const tallyText =
+    month === ALL_MONTHS
+      ? cursor >= months.length
+        ? t('{n} games · all {total} months', {
+            n: visibleMonthGames.length,
+            total: months.length,
+          })
+        : t('{n} games · {at} of {total} months', {
+            n: visibleMonthGames.length,
+            at: cursor,
+            total: months.length,
+          })
+      : t('{n} games', { n: visibleMonthGames.length });
+  // The card menu's way into a selection, where the button is not drawn.
+  // A plain function: the React Compiler memoises it, and refuses the
+  // component outright if a useCallback here names fewer deps than it infers.
+  const startSelectingWith = (game: GameSummary): void => {
+    setPicked(new Set([gameKey(game)]));
+    setSelecting(true);
+  };
   const countGroup =
     month && visibleMonthGames.length > 0 && !selecting ? (
       <>
@@ -1087,18 +1122,7 @@ export function ArchiveBrowser({
             !merged && 'flex-1',
           )}
         >
-          {month === ALL_MONTHS
-            ? cursor >= months.length
-              ? t('{n} games · all {total} months', {
-                  n: visibleMonthGames.length,
-                  total: months.length,
-                })
-              : t('{n} games · {at} of {total} months', {
-                  n: visibleMonthGames.length,
-                  at: cursor,
-                  total: months.length,
-                })
-            : t('{n} games', { n: visibleMonthGames.length })}
+          {tallyText}
         </span>
         <SelectButton disabled={pickable.length === 0} onClick={() => setSelecting(true)} />
       </>
@@ -1124,7 +1148,7 @@ export function ArchiveBrowser({
   // took it away again, which is the same jump upside down.
   const countBand =
     listLoading ? (
-      merged ? undefined : (
+      merged || lifted ? undefined : (
         <>
           {/* The tally's own box, so the button lands where it will land. */}
           <span className="min-w-0 flex-1">
@@ -1140,7 +1164,7 @@ export function ArchiveBrowser({
       )
     ) : month && visibleMonthGames.length > 0 ? (
       !selecting ? (
-            merged ? undefined : countGroup
+            merged || lifted ? undefined : countGroup
           ) : (
             /* The shared bar (./selection). "New" can be nobody: a
                master checkbox that ticks nothing reads as broken unless
@@ -1269,6 +1293,7 @@ export function ArchiveBrowser({
           onToggle={rowToggle}
           onCollect={rowCollect}
           onDetails={setDetails}
+          onSelectMode={lifted ? startSelectingWith : undefined}
           selectedRow={selectedKey === gameKey(game)}
           tabStop={tabStopKey === gameKey(game)}
           onSelectRow={rowSelect}
@@ -1334,6 +1359,15 @@ export function ArchiveBrowser({
         selection={{ key: gameKey(details), summary: details, loadPgn: loadGamePgn(details) }}
         onClose={() => setDetails(null)}
       />
+    )}
+    {lifted && (
+      <InGamesHeader slot="subtitle">
+        {listLoading ? (
+          <Skeleton className="inline-block h-2.5 w-24 align-middle" />
+        ) : month && visibleMonthGames.length > 0 ? (
+          tallyText
+        ) : null}
+      </InGamesHeader>
     )}
     <GameListShell
       shape={shape}

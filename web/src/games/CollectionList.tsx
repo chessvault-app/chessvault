@@ -3,13 +3,14 @@ import {
   ExternalLink,
   Folder,
   Info,
+  ListChecks,
   Pencil,
   Plus,
   SearchX,
   Trash2,
   X,
 } from 'lucide-react';
-import { memo, useDeferredValue, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, useTransition, type ReactNode } from 'react';
+import { memo, useCallback, useDeferredValue, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, useTransition, type ReactNode } from 'react';
 
 import { sanitizeSegment } from '@shared/vaultNames';
 import {
@@ -23,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { dialogOpen } from '@/hooks/dialog-focus';
 import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
+import { InGamesHeader } from './header-slots';
 import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/ui/field';
 import { Skeleton } from '@/components/skeletons';
@@ -118,12 +120,16 @@ const CollectionRow = memo(function CollectionRow({
   onRename,
   onStartRename,
   onDetails,
+  onSelectMode,
   standing,
 }: {
   game: GameSummary;
   bookmarked: boolean;
   customName: string | null;
   renaming: boolean;
+  /** Given where Select… has no button of its own (see `lifted`): the
+      menu's entry starts a selection with this game in it. */
+  onSelectMode?: (game: GameSummary) => void;
   /** Selection mode's checkbox, in the row's leading slot. */
   standing?: ReactNode;
   onOpen: (game: GameSummary) => void;
@@ -197,6 +203,7 @@ const CollectionRow = memo(function CollectionRow({
               },
             ]
           : []),
+        ...(onSelectMode ? [{ label: 'Select…', icon: ListChecks, onSelect: () => onSelectMode(game) }] : []),
         { label: 'Remove', icon: Trash2, danger: true, onSelect: () => onDrop(game) },
       ]}
       showLink={false}
@@ -317,6 +324,7 @@ export function CollectionList({
   search,
   searchIssues,
   merged = false,
+  lifted = false,
   besideDetails = false,
   shape,
   onSelect,
@@ -325,6 +333,13 @@ export function CollectionList({
 }: {
   /** Where the list stands — see GameListShell. */
   shape: GameListShape;
+  /**
+   * A phone's page, where the title row is lent to the list
+   * (./header-slots): the count is drawn as the page's subtitle, the
+   * filters button stands in the title row, there is no count band at
+   * rest, and Select… is an entry in each card's menu.
+   */
+  lifted?: boolean;
   /** Dense table rows instead of cards — the wide pane's presentation.
       Explicit, never inferred: the same list renders as cards below lg
       whatever the pane says. */
@@ -729,6 +744,13 @@ export function CollectionList({
   const selectEntry = loaded && visible.length > 0 && !selecting ? (
     <SelectButton onClick={() => setSelecting(true)} />
   ) : null;
+  // The card menu's way in, where the button above is not drawn: the
+  // game whose menu it was is the first one picked, which is what a
+  // long press on a row does in Mail and in Files.
+  const startSelectingWith = useCallback((game: GameSummary): void => {
+    setPicked(new Set([gameKey(game)]));
+    setSelecting(true);
+  }, []);
   // The one verb: delete, through one undo for the lot. "All" is what the
   // filters show. A batch bookmark was here for a day and went: it is
   // not a thing anyone reaches for, and the row's own star is one press.
@@ -759,6 +781,12 @@ export function CollectionList({
 
   return (
     <>
+    {lifted && (
+      <>
+        <InGamesHeader slot="subtitle">{tally}</InGamesHeader>
+        <InGamesHeader slot="filters">{filterControls}</InGamesHeader>
+      </>
+    )}
     <GameListShell
       shape={shape}
       // At table density this one WRAPPING row is the whole resting
@@ -770,10 +798,13 @@ export function CollectionList({
       // mode rebuilds the stacked layout these pieces used to arrive
       // pre-assembled in.
       toolbar={
+        // Lifted, the row exists only while the search field does; the
+        // filters button has gone up to the title row (below).
+        lifted && !search && !searchIssues ? undefined : (
         <div className="flex w-full flex-col gap-2">
           <div className={cn('flex w-full items-center gap-1.5', searchRowClass, merged && 'flex-wrap')}>
             {search}
-            {filtersInRow && filterControls}
+            {filtersInRow && !lifted && filterControls}
             {merged && (
               <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
                 <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">
@@ -785,14 +816,15 @@ export function CollectionList({
           </div>
           {searchIssues}
         </div>
+        )
       }
       // The panel shape has no framed title to carry the tally, so the
       // count band says it — in card mode; at table the count rides the
-      // toolbar row above.
+      // toolbar row above, and lifted it is the page's subtitle.
       countBand={
         selecting ? (
           selectionBar
-        ) : merged ? undefined : (
+        ) : merged || lifted ? undefined : (
           <>
             <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
               {tally}
@@ -855,6 +887,7 @@ export function CollectionList({
                   onRename={onRename}
                   onStartRename={onStartRename}
                   onDetails={setDetails}
+                  onSelectMode={lifted ? startSelectingWith : undefined}
                 />
               ),
             )

@@ -1,4 +1,4 @@
-import { Bookmark, Plus } from 'lucide-react';
+import { Bookmark, Plus, Search } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { SearchInput, searchRowClass } from '@/components/text-fields';
@@ -114,17 +114,38 @@ function CollectionOutline() {
       // themselves so the page never does.
       width="xwide"
       scroll={false}
-      className="h-full overflow-hidden pb-3 sm:pb-4 md:pb-6"
+      className="h-full overflow-hidden pb-0 sm:pb-4 md:pb-6"
     >
       <Inert>
         <PageHeader
           title={t('Games')}
+          // A phone's page lends its title row to the list (games/
+          // header-slots): the count is the subtitle, and the search,
+          // bookmark and filters switches stand beside Import. The same
+          // real controls, held still, in the same order.
+          subtitle={folded ? <Tally /> : undefined}
           actions={
-            <Button variant="default" size="sm">
-              <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
-              <span className="md:hidden">{t('Import')}</span>
-              <span className="max-md:hidden">{t('Import a game')}</span>
-            </Button>
+            <>
+              {folded && (
+                <>
+                  <Button variant="secondary" size="icon-sm" className="shrink-0">
+                    <Search className="glyph" />
+                  </Button>
+                  <Button variant="secondary" size="icon-sm" className="shrink-0">
+                    <Bookmark className="glyph" />
+                  </Button>
+                  {showFilters && <MoreFiltersButton on={false} onClick={NOOP} />}
+                </>
+              )}
+              <Button variant="default" size="sm">
+                <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
+                {/* Read out but not drawn under 360px: beside the three lent
+                  switches the word pushed the row onto a second line at
+                  320px (photographed), and the plus says it. */}
+              <span className="md:hidden max-[22.4rem]:sr-only">{t('Import')}</span>
+                <span className="max-md:hidden">{t('Import a game')}</span>
+              </Button>
+            </>
           }
         />
         <div
@@ -154,6 +175,8 @@ function CollectionOutline() {
               }
               listVars={table ? tableVars : undefined}
               toolbar={
+                // No standing search row on a phone: the magnifier opens it.
+                folded ? undefined : (
                 <div className="flex w-full flex-col gap-2">
                   <div className={cn('flex w-full items-center gap-1.5', searchRowClass, merged && 'flex-wrap')}>
                     <SearchInput
@@ -195,9 +218,10 @@ function CollectionOutline() {
                     )}
                   </div>
                 </div>
+                )
               }
               countBand={
-                merged ? undefined : (
+                merged || folded ? undefined : (
                   <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
                     <Tally />
                   </span>

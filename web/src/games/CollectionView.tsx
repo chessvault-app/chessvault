@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import { useMediaQuery } from '@/lib/media';
 import { t } from '@/lib/i18n';
@@ -10,6 +10,8 @@ import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 
 import { GameDetailsPanel, type DetailsSelection } from './GameDetails';
+import { useFiltersFolded } from './GameFilters';
+import { GamesHeaderSlotsProvider } from './header-slots';
 import { GamesBrowser } from './GamesBrowser';
 import {
   DETAILS_PIN_KEY,
@@ -74,8 +76,21 @@ export function CollectionView() {
   const clearSelection = useRef<(() => void) | null>(null);
   // The browser owns the import sheet; the title line only rings it.
   const openImport = useRef<(() => void) | null>(null);
+  // On a phone the title row is lent to the list under it: the count is
+  // the subtitle and the find, bookmark and filter switches stand beside
+  // Import (./header-slots). State, not refs: the lists draw into these
+  // through portals, and a portal needs a render once its target exists.
+  const lend = useFiltersFolded();
+  const [subtitleEl, setSubtitleEl] = useState<HTMLElement | null>(null);
+  const [findersEl, setFindersEl] = useState<HTMLElement | null>(null);
+  const [filtersEl, setFiltersEl] = useState<HTMLElement | null>(null);
+  const slots = useMemo(
+    () => (lend ? { subtitle: subtitleEl, finders: findersEl, filters: filtersEl } : null),
+    [lend, subtitleEl, findersEl, filtersEl],
+  );
 
   return (
+    <GamesHeaderSlotsProvider value={slots}>
     <PageShell
       // xwide, not wide: at lg this page is a data table beside a
       // details column, and every extra pixel is another table column
@@ -107,12 +122,33 @@ export function CollectionView() {
           thumb, so nothing here was a hit area. */}
       <PageHeader
         title={t('Games')}
+        // `contents` on all three: the lent places add no box of their
+        // own, so what is drawn into them sits in the header's own flex
+        // row and the subtitle's own line.
+        // The zero-width space keeps the subtitle's line standing while a
+        // tab has no count to say (a handle not looked up yet), so the
+        // chips under it do not jump 20px between tabs.
+        subtitle={
+          lend ? (
+            <>
+              <span ref={setSubtitleEl} className="contents" />
+              {'​'}
+            </>
+          ) : undefined
+        }
         actions={
-          <Button variant="default" size="sm" onClick={() => openImport.current?.()}>
-            <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
-            <span className="md:hidden">{t('Import')}</span>
-            <span className="max-md:hidden">{t('Import a game')}</span>
-          </Button>
+          <>
+            {lend && <span ref={setFindersEl} className="contents" />}
+            {lend && <span ref={setFiltersEl} className="contents" />}
+            <Button variant="default" size="sm" onClick={() => openImport.current?.()}>
+              <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
+              {/* Read out but not drawn under 360px: beside the three lent
+                  switches the word pushed the row onto a second line at
+                  320px (photographed), and the plus says it. */}
+              <span className="md:hidden max-[22.4rem]:sr-only">{t('Import')}</span>
+              <span className="max-md:hidden">{t('Import a game')}</span>
+            </Button>
+          </>
         }
       />
 
@@ -163,5 +199,6 @@ export function CollectionView() {
         )}
       </div>
     </PageShell>
+    </GamesHeaderSlotsProvider>
   );
 }

@@ -1,4 +1,4 @@
-import { Bookmark, Pencil, Play, Plus, Trash2 } from 'lucide-react';
+import { Bookmark, Pencil, Play, Plus, Search, Trash2 } from 'lucide-react';
 import {
   useCallback,
   useDeferredValue,
@@ -48,6 +48,7 @@ import {
   SearchQueryIssues,
   type ValueSuggestion,
 } from './GameFilters';
+import { InGamesHeader, useGamesHeader } from './header-slots';
 import { type DetailsSelection } from './GameDetails';
 import { ArchiveBrowser } from './ArchiveBrowser';
 import { DatabaseGames, positionHuntPending } from './DatabaseGames';
@@ -521,13 +522,42 @@ export function GamesBrowser({
   const collectionKeys = new Set(games.map((g) => collectionKey(g)));
 
   /**
+   * On a phone's page the title row is lent to the browser
+   * (./header-slots), and the collection's search row is not a standing
+   * row any more: a magnifier beside the bookmark switch opens it, and
+   * it stays for as long as it holds a query. The field is used far less
+   * often than the rows are read, and at rest it was 52px of every
+   * screenful. Pressing the magnifier again empties and closes it, the
+   * one press that takes the narrowing off.
+   */
+  const lifted = useGamesHeader() !== null && frame === 'page';
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchShown = searchOpen || query.trim() !== '';
+
+  /**
    * Search, then the bookmark switch — the pair that narrows the
    * collection, living in the Collection tab's toolbar at every width.
    */
-  const finders = (fieldClass: string): ReactNode => (
-    <>
-      {/* The same query language the databases box speaks — one
-          parser in shared/, one chip box teaching it. */}
+  /* Icon only, like the shelves': the word Bookmarked beside it was
+     the only label in any of them, and a pressed state says the same
+     thing without asking for the width. */
+  const bookmarkSwitch = (
+    <Button
+      variant="secondary"
+      size="icon-sm"
+      active={markedOnly}
+      aria-pressed={markedOnly}
+      title={markedOnly ? t('Show all games') : t('Show bookmarked games only')}
+      className="shrink-0"
+      onClick={() => setMarkedOnly((v) => !v)}
+    >
+      <Bookmark className={cn('glyph', markedOnly && 'fill-current text-primary')} />
+    </Button>
+  );
+  const finders = (fieldClass: string): ReactNode => {
+    // The same query language the databases box speaks — one parser in
+    // shared/, one chip box teaching it.
+    const box = (
       <QueryBox
         query={query}
         onQuery={setQuery}
@@ -536,22 +566,17 @@ export function GamesBrowser({
         onOpenChange={setSearchHintsOpen}
         className={fieldClass}
       />
-      {/* Icon only, like the shelves': the word Bookmarked beside it was
-          the only label in any of them, and a pressed state says the same
-          thing without asking for the width. */}
-      <Button
-        variant="secondary"
-        size="icon-sm"
-        active={markedOnly}
-        aria-pressed={markedOnly}
-        title={markedOnly ? t('Show all games') : t('Show bookmarked games only')}
-        className="shrink-0"
-        onClick={() => setMarkedOnly((v) => !v)}
-      >
-        <Bookmark className={cn('glyph', markedOnly && 'fill-current text-primary')} />
-      </Button>
-    </>
-  );
+    );
+    // Lifted (a phone's page, ./header-slots): the bookmark switch is in
+    // the title row, and the field is a row only while it is in use.
+    if (lifted) return searchShown ? box : null;
+    return (
+      <>
+        {box}
+        {bookmarkSwitch}
+      </>
+    );
+  };
 
   // The collection's selection, re-resolved against the live array on
   // every render: load() replaces the objects after a rename or remove,
@@ -647,6 +672,29 @@ export function GamesBrowser({
         />
       )}
 
+      {/* The collection's two switches, in the page's title row on a
+          phone (./header-slots). The other tabs lend the row nothing
+          here: their field is how a list comes to exist at all (a
+          handle, a database), so it stays where it is. */}
+      {lifted && tab === 'collection' && (
+        <InGamesHeader slot="finders">
+          <Button
+            variant="secondary"
+            size="icon-sm"
+            active={searchShown}
+            aria-pressed={searchShown}
+            title={t('Search collection…')}
+            className="shrink-0"
+            onClick={() => {
+              if (searchShown) setQuery('');
+              setSearchOpen(!searchShown);
+            }}
+          >
+            <Search className="glyph" />
+          </Button>
+          {bookmarkSwitch}
+        </InGamesHeader>
+      )}
       <Box frame={frame} className={className}>
         {/* The pane's TITLE is the switch — the same line-Tabs strip
             the old source column used, for the same reason: naming
@@ -701,6 +749,7 @@ export function GamesBrowser({
           />
         ) : (
           <CollectionList
+            lifted={lifted}
             shape={shape}
             table={table}
             merged={merged}
