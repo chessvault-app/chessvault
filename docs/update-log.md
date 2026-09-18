@@ -14,10 +14,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 - **The phone's Games page stands two rows of chrome, not four.** The
   count is the line under the title, as the shelves put theirs. Search,
   the bookmark switch and the filters are icons in the title row beside
-  Import, and the search field is a row only while it is open or holds
-  a query. The Databases tab keeps its switches in the same places:
-  search, the position search, the filters. The four sources are chips
-  rather than an underlined strip.
+  Import, and pressing the magnifier turns the title row itself into
+  the search field, with an X to give it back: no tab gains a row for
+  searching. The Databases tab keeps its switches in the same places
+  (search, the position search, the filters), its database picker has
+  moved into its filter sheet, and the line under the title names the
+  database where there is more than one. On the Chess.com and Lichess
+  tabs the username field opens the same way, and the line under the
+  title says whose games are showing. The four sources are chips rather
+  than an underlined strip.
   Select… has moved into each game's ⋯ menu, and starts the selection
   with that game in it. The first game starts about 60 pixels higher.
   On the Databases tab the search by position, material or motif opens
