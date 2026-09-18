@@ -27,7 +27,8 @@ import { isCoarsePointer, useTabbedPanes } from '@/lib/media';
 import { navigate, navigateNow, useRouteSettled } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
 import { useSlowLoad } from '@/components/skeletons';
-import StudyOutline, { playersKey } from '@/studies/StudyView.skeleton';
+import StudyOutline from '@/studies/StudyView.skeleton';
+import { reservePlayers } from '@/studies/reservedPlayers';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { useEngine } from '@/store/engine';
 import { useExplorer } from '@/store/explorer';
@@ -135,7 +136,7 @@ export function StudyView({
   const hasPlayers = useAnalysis((s) => s.gameHeaders !== null);
   useEffect(() => {
     if (openId !== id) return;
-    localStorage.setItem(playersKey(kind, id), hasPlayers ? '1' : '0');
+    reservePlayers(kind, id, hasPlayers);
   }, [openId, id, kind, hasPlayers]);
 
   useEffect(() => {

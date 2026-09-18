@@ -52,7 +52,31 @@ const MAX_PGN_BYTES = 20 * 1024 * 1024;
  * first few names ship: they are a card's caption, not a table of
  * contents.
  */
-function chapterInfo(pgn: string): { count: number; names: string[] } {
+function chapterInfo(pgn: string): ChapterInfo {
+  return { ...chapterNames(pgn), players: firstChapterHasPlayers(pgn) };
+}
+
+interface ChapterInfo {
+  count: number;
+  names: string[];
+  /** Whether the chapter a document opens on names a player. */
+  players: boolean;
+}
+
+/**
+ * Whether the first chapter carries a White or a Black worth printing,
+ * by the rule the page itself opens it with (store/study,
+ * loadIntoAnalysis): a tag that is there and is not PGN's "?". The page
+ * draws player bars for exactly that, and its outline has to know before
+ * the document is fetched, so the listing says.
+ */
+function firstChapterHasPlayers(pgn: string): boolean {
+  const next = pgn.indexOf('[Event ', pgn.indexOf('[Event ') + 1);
+  const first = next === -1 ? pgn : pgn.slice(0, next);
+  return [...first.matchAll(/^\[(?:White|Black)\s+"([^"]*)"\]/gm)].some((m) => m[1] !== '?');
+}
+
+function chapterNames(pgn: string): { count: number; names: string[] } {
   const events = [...pgn.matchAll(/^\[Event\s+"([^"]*)"\]/gm)].map((m) => m[1]!.trim());
   const count = events.length || (pgn.trim() ? 1 : 0);
   const stated = [...pgn.matchAll(/^\[ChapterName\s+"([^"]*)"\]/gm)].map((m) => m[1]!.trim());
@@ -310,9 +334,9 @@ export function studiesApi(
   // Chapter counts and names parsed per file and cached by mtime, the same
   // pattern as the games list cache — a listing must not re-read every
   // study body.
-  const chapterCache = new Map<string, { mtimeMs: number; info: { count: number; names: string[] } }>();
+  const chapterCache = new Map<string, { mtimeMs: number; info: ChapterInfo }>();
 
-  const chapterInfoCached = (path: string, mtimeMs: number): { count: number; names: string[] } => {
+  const chapterInfoCached = (path: string, mtimeMs: number): ChapterInfo => {
     const hit = chapterCache.get(path);
     if (hit && hit.mtimeMs === mtimeMs) return hit.info;
     const info = chapterInfo(readFileSync(path, 'utf-8'));
@@ -450,6 +474,7 @@ export function studiesApi(
           id: file.slice(0, -ext.length).split(sep).join('/'),
           chapters: info ? info.count : 1,
           ...(info && info.names.length > 0 ? { chapterNames: info.names } : {}),
+          ...(info?.players ? { players: true } : {}),
           bytes: size,
           updatedAt: mtime.toISOString(),
           ...preview,

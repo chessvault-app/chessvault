@@ -6,6 +6,7 @@ import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { useAnalysis } from './analysis';
 import { usePrefs } from './prefs';
 import { forgetCollection } from '@/games/collection';
+import { reservePlayers } from '@/studies/reservedPlayers';
 // Type-only, so nothing of the component reaches this module at runtime —
 // the union simply lives beside the badge that renders it.
 import type { SaveState } from '@/components/save-control';
@@ -19,6 +20,8 @@ export interface StudyMeta {
   fen?: string | null;
   /** The first few chapters' names — the card's caption. */
   chapterNames?: string[];
+  /** Whether the chapter it opens on names a player (the page's bars). */
+  players?: boolean;
 }
 
 
@@ -282,6 +285,10 @@ export const useStudy = create<StudyState>()((set, get) => {
       try {
         const body = await api<{ studies: StudyMeta[]; folders?: string[] }>('/api/studies');
         set({ studies: body.studies, folders: body.folders ?? [], listLoaded: true, error: null });
+        // What each study's outline reserves for its player bars, from
+        // the listing: without it a study never opened on this device is
+        // a guess (studies/reservedPlayers).
+        for (const s of body.studies) reservePlayers('study', s.id, s.players === true);
       } catch {
         set({ listLoaded: true, error: 'Vault server unreachable' });
       }

@@ -104,6 +104,31 @@ describe('studies api', () => {
     expect(studies[0]).toMatchObject({ id: 'Ruy Lopez', chapters: 1 });
   });
 
+  it('says in the listing whether the first chapter names a player', async () => {
+    const put = (name: string, pgn: string) =>
+      app.request(`/api/studies/${encodeURIComponent(name)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ pgn }),
+        headers: { 'content-type': 'application/json' },
+      });
+    for (const name of ['Named', 'Unknown', 'Later']) {
+      await app.request('/api/studies', {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+        headers: { 'content-type': 'application/json' },
+      });
+    }
+    await put('Named', '[Event "a"]\n[White "Tal"]\n[Black "?"]\n\n1. e4 *\n');
+    await put('Unknown', '[Event "a"]\n[White "?"]\n[Black "?"]\n\n1. e4 *\n');
+    // Only the chapter a document opens on counts.
+    await put('Later', '[Event "a"]\n\n1. e4 *\n\n[Event "b"]\n[White "Tal"]\n\n1. d4 *\n');
+    const { studies } = (await (await app.request('/api/studies')).json()) as {
+      studies: { id: string; players?: boolean }[];
+    };
+    const players = Object.fromEntries(studies.map((s) => [s.id, s.players === true]));
+    expect(players).toMatchObject({ Named: true, Unknown: false, Later: false });
+  });
+
   it('404s on missing studies and rejects traversal ids', async () => {
     expect((await app.request('/api/studies/nope')).status).toBe(404);
     expect((await app.request('/api/studies/..%2Fetc')).status).toBe(400);
