@@ -97,7 +97,9 @@ export function Inert({ children, className }: { children: React.ReactNode; clas
  */
 export function InertEditButton() {
   return (
-    <Button variant="secondary" size="sm" className="shrink-0" {...INERT}>
+    // data-chrome-circle, as the real one: on iOS it is a glass circle in
+    // a chrome row (shell.css).
+    <Button data-chrome-circle="" variant="secondary" size="sm" className="shrink-0" {...INERT}>
       <Pencil className="glyph md:mr-1" />
       <span className="max-md:hidden">{t('Edit')}</span>
     </Button>

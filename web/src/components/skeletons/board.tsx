@@ -229,9 +229,15 @@ export function SkeletonBoard({
           // BookTrainer, the repertoire drill); a document's grows to
           // the 36px icon rung under a thumb, because its row holds
           // buttons.
-          name ? 'h-8' : 'wide:h-9 pointer-coarse:h-9',
+          // iOS: a document's buttons are 40px glass circles and its row
+          // grows to them; a trainer's stays h-8 around them, as the
+          // pages' own do.
+          name ? 'h-8' : 'wide:h-9 pointer-coarse:h-9 max-md:ios:h-10',
         )}
         data-ground=""
+        // Page chrome, as the pages' own rows: glass circles on iOS
+        // (shell.css).
+        data-chrome=""
       >
         {titleRow}
       </div>
@@ -283,6 +289,7 @@ export function SkeletonBoard({
             name && 'pr-[13px]',
           )}
           data-ground=""
+          data-chrome=""
         >
           {titleRow}
         </div>

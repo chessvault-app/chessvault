@@ -259,7 +259,7 @@ export function SettingsPlaceholder() {
           bar (PageHeader's min-h-11) with the back chevron before the
           name. The title is known without the answer, so it is the real
           words, and the chevron is the real button held inert. */}
-      <div className="flex h-7 items-center gap-x-3 max-md:h-11">
+      <div className="flex h-7 items-center gap-x-3 max-md:h-11" data-ground="" data-chrome="">
         <Button variant="ghost" size="icon-sm" className="md:hidden" disabled tabIndex={-1} aria-hidden>
           <ChevronLeft className="glyph" />
         </Button>

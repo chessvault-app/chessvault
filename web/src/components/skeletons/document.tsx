@@ -68,7 +68,13 @@ export function SkeletonDocument({ className }: { className?: string }) {
             header): the back chevron, DocumentTools' buttons and Edit are
             the same on every note, so their boxes are not a guess. Only
             the name and the save state wait. */}
-        <div className="flex h-7 shrink-0 items-center gap-2 pointer-coarse:h-9" data-ground="">
+        {/* data-chrome, as NoteView's header: on iOS these buttons are
+            glass circles (shell.css), 40px, and the row grows to them. */}
+        <div
+          className="flex h-7 shrink-0 items-center gap-2 pointer-coarse:h-9 max-md:ios:h-10"
+          data-ground=""
+          data-chrome=""
+        >
           <Button variant="ghost" size="icon-sm" {...INERT}>
             <ChevronLeft className="glyph" />
           </Button>
