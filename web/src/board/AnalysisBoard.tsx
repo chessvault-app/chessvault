@@ -811,7 +811,9 @@ export function BoardControls({
       >
         <ChevronLast className={NAV_ICON} />
       </Button>
-      <div className="bg-border mx-1 h-5 w-px pointer-coarse:h-[1.375rem]" />
+      {/* No divider inside the iOS capsule: its controls are spread like
+          the tab bar's tabs, and a rule between them is not a tab. */}
+      <div className="bg-border mx-1 h-5 w-px pointer-coarse:h-[1.375rem] ios:hidden" />
       <Button variant="ghost" size="icon" onClick={flip} title={t('Flip board (f)')}>
         <FlipHorizontal2 className={NAV_ICON} />
       </Button>

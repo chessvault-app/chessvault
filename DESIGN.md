@@ -884,11 +884,11 @@ hit areas, `title` as a tooltip. Composites live in
   pads by the bar's measured height (`--bottom-bar-h`, so a page ends
   where the bar begins), `bg-card` on the toned page (its fill is its
   edge). On iOS the same box is the platform's capsule: 24px in from
-  the sides and 4px of padding inside its ends, lifted by the home indicator's inset less 8px (20px
+  the sides and 6px of padding inside its ends, lifted by the home indicator's inset less 8px (20px
   where there is none), a true pill with the panel shadow, a 28px glyph
-  box in a 44px track a fifth of the capsule wide, and the current tab's
-  pill, 44px tall and that track plus 8px so it meets the capsule's end
-  on an end tab, a 12% wash of
+  box in a 52px track a fifth of the capsule wide, and the current tab's
+  pill, that track, 4px off the capsule's top and bottom and 6px off its
+  ends, a 12% wash of
   the ink over the glass (Instagram's glyph and track, measured off
   lanph3re's screenshots at 3x), and the page scrolls under it, its
   foot clearing `--page-b`. Icons only,
