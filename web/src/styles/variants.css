@@ -3,6 +3,17 @@
    <html> by startKeyboardTracking, which is also what sets --kb. */
 @custom-variant keyboard (:where(.kb-open) &);
 
+/* `ios:` / `android:` — the platform the phone shell is drawing for.
+   `data-platform` is put on <html> once, before the first render, by
+   lib/platform.ts; "Platform-specific design" in docs/design-principles.md
+   says which platform owns which idiom. A desktop has no variant: it is
+   the look every class describes without one. Where a platform variant
+   and `stacked:` or `keyboard:` both apply, declaration order decides,
+   and these are declared before `wide`/`stacked` on purpose so a layout
+   variant still wins over a platform one. */
+@custom-variant ios (:where([data-platform='ios']) &);
+@custom-variant android (:where([data-platform='android']) &);
+
 /* Layout direction is orientation-aware, not width-only: a Nest Hub or a
    phone held sideways is short and wide, and the panels belong BESIDE the
    board there — while portrait ALWAYS stacks, tablets included (lanph3re's call:

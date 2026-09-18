@@ -7,6 +7,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toast';
 import { startKeyboardTracking } from './lib/keyboardInset';
 import { startInstallTracking } from './lib/install';
+import { startPlatform } from './lib/platform';
 import { startPixelGridTracking } from './board/pixelGrid';
 import { initLang } from './lib/i18n';
 import { sweepStorage } from './lib/storageSweep';
@@ -28,6 +29,10 @@ sweepStorage();
 initTheme();
 watchSystemTheme();
 initPrefs();
+// The root's data-platform, which the ios:/android: variants read. Before
+// the first render for the same reason as the theme: the phone chrome is
+// decided by it, and a paint without it would be the desktop's.
+startPlatform();
 // NOT awaited, unlike the three above. Those decide the first paint, so
 // the frame waits for them; the difficulty word does not — the echo in
 // localStorage already draws it, and this only replaces that with the
@@ -51,8 +56,10 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 // The viewport is whatever index.html says and nothing rewrites it, and
 // the scale cap there is only half of the lock: a Safari tab ignores it,
 // and body's touch-action (index.css) is what holds the page still there.
-// No user agent sniffing either, so there is nothing to keep correct as
-// devices change. iOS auto-zoom is declined where it is caused —
+// No user agent sniffing either, outside lib/platform.ts (which reads it
+// once, to pick the phone chrome, and says what that costs), so there is
+// nothing else to keep correct as devices change. iOS auto-zoom is
+// declined where it is caused —
 // components/ui/input gives its fields a 16px font on a coarse pointer —
 // rather than leaned on the cap.
 

@@ -187,6 +187,17 @@ app's colour grammar beside them (`good`/`warn`/`info`, the board and
 eval colours). Old names (`text-fg`, `text-subtle`, `bg-surface-3`,
 `bg-surface`, `border-line`, `text-bad`) are gone and must not return.
 
+**The phone chrome may be platform-specific since 2026-09-18.** One
+attribute on the root, `data-platform` from `web/src/lib/platform.ts`,
+and two variants, `ios:` and `android:`, stacked on the registry's files
+like `md:`; no second component tree, and nothing inside a card differs
+by platform. Which platform owns which idiom, what a glass surface is,
+and what a platform variant has to prove (a diff confined to the grid's
+`phone-ios` pictures, and for glass the phone's frame time and a
+sampled contrast) are in "Platform-specific design" in
+`docs/design-principles.md`. The pane strip's exception above holds on
+every platform.
+
 ## Before cutting a release
 
 All three of these, every time, before the version is bumped:

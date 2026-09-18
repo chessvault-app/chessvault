@@ -18,11 +18,14 @@
  *
  * WHAT IT WALKS. Every route `check:contrast` walks plus the pages the
  * phone reaches through More and two leaf pages that claim the bottom
- * bar. Desktop and phone widths, light and dark, and three phone-only
- * states: 320px (where six tab labels used to overprint), scrolled 240px
- * inside the page's scroller (the header's compact state), and with the
- * keyboard flag set on the root (the bar must be gone). Reduced motion is
- * emulated so nothing is caught mid-transition.
+ * bar. Desktop and phone widths, light and dark, and four phone-only
+ * states: the phone as iOS (`chess-vault:platform` overriding the guess
+ * lib/platform.ts makes, so the `ios:` variants apply in Chromium; a
+ * change meant for iOS shows here and nowhere else), 320px (where six
+ * tab labels used to overprint), scrolled 240px inside the page's
+ * scroller (the header's compact state), and with the keyboard flag set
+ * on the root (the bar must be gone). Reduced motion is emulated so
+ * nothing is caught mid-transition.
  *
  * WHAT IS NOISE. The board's engine output and the puzzle dashboard's
  * pick settle rather than render, so those shots differ between two runs
@@ -94,9 +97,12 @@ const STATES: {
   height: number;
   routes?: string[];
   prepare?: string;
+  /** Written to `chess-vault:platform` before load; the guess otherwise. */
+  platform?: 'ios' | 'android';
 }[] = [
   { name: 'desktop', width: 1280, height: 900 },
   { name: 'phone', width: 375, height: 812 },
+  { name: 'phone-ios', width: 375, height: 812, platform: 'ios' },
   { name: 'phone-320', width: 320, height: 568, routes: ['#/games', '#/studies', '#/more'] },
   {
     name: 'phone-scrolled',
@@ -236,9 +242,13 @@ try {
         hasTouch: state.width < 768,
         isMobile: state.width < 768,
       });
-      await context.addInitScript((prefs) => {
-        localStorage.setItem('chess-vault:theme', JSON.stringify({ state: prefs, version: 0 }));
-      }, theme.prefs);
+      await context.addInitScript(
+        ({ prefs, platform }) => {
+          localStorage.setItem('chess-vault:theme', JSON.stringify({ state: prefs, version: 0 }));
+          if (platform) localStorage.setItem('chess-vault:platform', platform);
+        },
+        { prefs: theme.prefs, platform: state.platform },
+      );
       const page = await context.newPage();
       for (const route of state.routes ?? ROUTES) {
         if (ONLY && !ONLY.includes(route)) continue;
