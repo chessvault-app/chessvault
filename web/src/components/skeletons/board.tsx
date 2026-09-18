@@ -37,6 +37,7 @@ export function SkeletonBoard({
   players = false,
   chapters = false,
   explorer = false,
+  explorerKey,
   name,
   panes,
   openPane = 0,
@@ -66,8 +67,16 @@ export function SkeletonBoard({
   players?: boolean | 'wide';
   /** A study's chapter list, which a game and a trainer do not have. */
   chapters?: boolean;
-  /** The explorer, docked at the foot of the column on a wide screen. */
-  explorer?: boolean;
+  /**
+   * The explorer, docked at the foot of the column on a wide screen.
+   * Folded to its header, which is how a board page opens it, or
+   * `'open'` for the one route that arrives with it switched on
+   * (Tools > Explorer): the panel's own box, at the height this device
+   * dragged it to or its 300px default (ExplorerPane, components/panel).
+   */
+  explorer?: boolean | 'open';
+  /** That open panel's resize key, whose stored height it reserves. */
+  explorerKey?: string;
   /**
    * A TRAINER's title row instead of a document's.
    *
@@ -177,6 +186,8 @@ export function SkeletonBoard({
   // read per render like everything else here; the wait it stands
   // through cannot change it.
   const chapterH = chapters ? panelStoredHeight('study-chapters') : null;
+  const explorerH =
+    explorer === 'open' ? ((explorerKey ? panelStoredHeight(explorerKey) : null) ?? 300) : null;
   /**
    * The board square, the title row and the player bars are drawn on the
    * PAGE rather than in a card, and were the first placeholders found
@@ -422,6 +433,10 @@ export function SkeletonBoard({
           className={cn(
             'bg-card flex flex-col overflow-hidden rounded-xl ring-1 ring-card-ring [--card-spacing:var(--card-pad)]',
             panel?.body ? 'shrink-0' : 'min-h-0 flex-1',
+            // The floor the Board gives its moves panel against an open
+            // explorer (AnalysisView, engine off), or the explorer's
+            // 300px takes the column on a short window.
+            explorer === 'open' && 'lg:min-h-[min(22rem,45%)]',
           )}
         >
           {/* The panel opens on its header, as the chapters panel above
@@ -473,9 +488,32 @@ export function SkeletonBoard({
         {/* Folded to its header, which is where a board page opens it:
             `enabled` is session state and starts off (store/explorer), so a
             load never finds the 300px open panel. Same min-h-11 header. */}
-        {explorer && (
+        {explorer === true && (
           <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring max-lg:hidden [--card-spacing:var(--card-pad)]">
             <PanelHeader title={t('Explorer')} />
+          </div>
+        )}
+        {/* Open: Panel's own inline rule for a resizable panel (height and
+            a ceiling that both yield, `0 1 auto`) over ExplorerPane's
+            floor, so a short column squeezes the two alike. The rows are
+            the move table's: a move, a count, the result bar. */}
+        {explorerH !== null && (
+          <div
+            className="bg-card flex flex-col overflow-hidden rounded-xl ring-1 ring-card-ring max-lg:hidden lg:min-h-[min(12rem,20%)] [--card-spacing:var(--card-pad)]"
+            style={{ height: explorerH, maxHeight: explorerH, flex: '0 1 auto' }}
+          >
+            <PanelHeader
+              title={t('Explorer')}
+              actions={<span aria-hidden className="bg-muted h-5 w-9 shrink-0 rounded-full" />}
+            />
+            <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden px-3 pb-3">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex shrink-0 items-center gap-3">
+                  <Skeleton className="h-3 w-8 shrink-0" />
+                  <Skeleton className="h-3 min-w-0 flex-1" />
+                </div>
+              ))}
+            </div>
           </div>
         )}
         {foot}

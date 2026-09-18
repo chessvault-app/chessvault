@@ -18,6 +18,7 @@ import {
   updateNode,
 } from '@shared/tree';
 import { pgnToChapters, treeToPgn } from '@shared/pgn';
+import { namedPlayer, publishHandedNames } from '@/board/handedNames';
 import type { CommentShape, Headers, MoveTree, NodeEval, NodeId } from '@shared/types';
 
 /** A move awaiting the user's choice of promotion piece. */
@@ -359,3 +360,13 @@ export function holdsWork(board: BoardSnapshot): boolean {
   return root.children.length > 0 || board.gameHeaders !== null || root.fen !== INITIAL_FEN;
 }
 
+
+// What the Board's outline draws before this module is on the page: a
+// handed-over game with names wears its player bars on a phone, and a
+// fresh board does not (board/handedNames). Only a handoff counts. A
+// board left behind has names too, and entering without one resets it.
+useAnalysis.subscribe((s) => {
+  publishHandedNames(
+    s.handoff && (namedPlayer(s.gameHeaders?.White) || namedPlayer(s.gameHeaders?.Black)),
+  );
+});

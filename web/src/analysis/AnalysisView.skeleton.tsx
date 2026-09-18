@@ -1,4 +1,5 @@
 import { SkeletonBoard } from '@/components/skeletons';
+import { handedNames } from '@/board/handedNames';
 import { t } from '@/lib/i18n';
 
 /**
@@ -20,9 +21,11 @@ import { t } from '@/lib/i18n';
  * Three more things the page draws and this did not, all of them fixed:
  * the two player bars around the board (the Board is editablePlayers, so
  * both stand), the Engine block docked over the moves panel from lg, and
- * the Explorer folded at the column's foot, which is there on BOTH
- * routes — the explorer segment decides whether it opens, not whether it
- * exists. Without the bars the board sat 34px high of where it lands.
+ * the Explorer at the column's foot, which is there on BOTH routes: the
+ * explorer segment decides whether it opens, not whether it exists, so
+ * that route draws it open and the Board draws it folded. At `wide`,
+ * without the bars, the board sat 34px high of where it lands; stacked,
+ * a board with no names has no bars to wait for.
  *
  * The moves panel's title is the LINE's name rather than the word Moves,
  * and before a move is played the page prints the starting position's,
@@ -36,11 +39,14 @@ export default function BoardOutline({ params = [] }: { params?: string[] }) {
       // Tools > Explorer opens a phone on the explorer's tab, the third,
       // and the one pane on screen is then the explorer's.
       openPane={explorer ? 2 : 0}
-      // The bars are empty on a cold load (no names typed yet), and empty
-      // bars stand only at `wide`: stacked, the page draws neither.
-      players="wide"
+      // Empty bars stand only at `wide`: stacked, the page draws neither.
+      // A game handed over with names wears both everywhere, and the
+      // store says so without being imported here (board/handedNames).
+      players={handedNames() ? true : 'wide'}
       engine
-      explorer
+      // Folded on the Board; Tools > Explorer arrives with it switched on.
+      explorer={explorer ? 'open' : true}
+      explorerKey="analysis-explorer"
       panel={{
         title: explorer ? (
           <>

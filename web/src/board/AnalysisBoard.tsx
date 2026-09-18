@@ -13,6 +13,7 @@ import { getNode, legalDests, moveSquares, pathTo, positionAt } from '@shared/tr
 import { BOARD_LANE_ALLOWANCE, BOARD_MAX_W } from '@/board/boardSize';
 import { BOARD_WIDE_COLUMN } from '@/components/layout';
 import { publishBoardHeight } from './boardBlock.ts';
+import { namedPlayer } from './handedNames.ts';
 import { playSound, soundForSan } from '@/board/sound';
 import { SquareBadge } from '@/board/square-overlay';
 import { cn } from '@/lib/utils';
@@ -129,8 +130,7 @@ export function AnalysisBoard({
   // two rows of placeholder either side of the board, and the panels
   // below have better uses for them — so stacked shows the bars only for
   // real names, while wide keeps its fixed strip and the editable fields.
-  const named = (v: string | undefined): boolean => !!v && v !== '?';
-  const hasNames = named(headers?.White) || named(headers?.Black);
+  const hasNames = namedPlayer(headers?.White) || namedPlayer(headers?.Black);
 
   // Board props are memoized on their VALUES: this component re-renders on
   // every engine info line, and a fresh array/Map each time made chessground
