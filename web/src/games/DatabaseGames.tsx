@@ -101,7 +101,7 @@ import {
   type TableNav,
 } from './GameTable';
 import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
-import { InGamesHeader, useGamesHeader } from './header-slots';
+import { InGamesHeader, openTitleSearch, useGamesHeader } from './header-slots';
 import { scrollParent } from '@/lib/scroll';
 import { dialogOpen } from '@/hooks/dialog-focus';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
@@ -441,8 +441,11 @@ export function DatabaseGames({
   // only for the database picker and its manager. Up here with the state,
   // above the early returns. The key is refGameKey's, written out: that
   // helper is declared below them.
-  const lifted = useGamesHeader() !== null && shape === 'page';
-  const [searchOpen, setSearchOpen] = useState(false);
+  const header = useGamesHeader();
+  const lifted = header !== null && shape === 'page';
+  // The field takes the page's title row over while it is open
+  // (./header-slots, `search`): never a row of its own on a phone.
+  const titleSearch = lifted && header.searching;
   // A handle on the page's scroller, for the press that opens the field
   // from the compact bar and has to go up to meet it.
   const topRef = useRef<HTMLSpanElement>(null);
@@ -1257,6 +1260,12 @@ export function DatabaseGames({
           initial={structured}
           draftResult={quickDraft.result}
           extraFields={
+            <>
+            {lifted && dbControls && (
+              <Field label="Reference database">
+                <div className="flex items-center gap-2">{dbControls}</div>
+              </Field>
+            )}
             <Field label="Result and strength">
               <div className="flex gap-2">
                 <ResultSelect
@@ -1269,6 +1278,7 @@ export function DatabaseGames({
                 />
               </div>
             </Field>
+            </>
           }
           onClear={() => setQuickDraft({ result: 'any', minElo: 0 })}
           onApply={(next) => {
@@ -1373,14 +1383,13 @@ export function DatabaseGames({
 
   // The count leads the band in the archive's own voice; the picker and
   // the manager sit with it.
-  const countBand = lifted ? (
-    dbControls ? (
-      <>
-        <span className="flex-1" />
-        {dbControls}
-      </>
-    ) : undefined
-  ) : (
+  // Lifted there is no band at rest at all: the count is the subtitle,
+  // Select… is in each card's menu, and the database picker and its
+  // manager, which were the last things keeping a row here, are the first
+  // field of the filter sheet (lanph3re, 2026-09-19). Which database is
+  // open is a thing chosen once, not a control to keep on screen; the
+  // subtitle names it where there is more than one.
+  const countBand = lifted ? undefined : (
     <>
       <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
         {count}
@@ -1672,49 +1681,94 @@ export function DatabaseGames({
       <ScanSearch className="glyph" />
     </Button>
   );
-  // The magnifier that opens the text search on a phone's page, where the
-  // field is a row only while it is open or holds a query: the same shape,
-  // in the same place, as the collection's (GamesBrowser).
-  const searchShown = searchOpen || query.trim() !== '';
+  // The magnifier that turns the page's title row into the text search on
+  // a phone: the same shape, in the same place, as the collection's
+  // (GamesBrowser). The X beside the field empties it and gives the row
+  // back.
   const searchSwitch = (
     <Button
       variant="secondary"
       size="icon-sm"
-      active={searchShown}
-      aria-pressed={searchShown}
       title={t('Search database…')}
       className="shrink-0"
       onClick={() => {
-        if (searchShown) onQuery('');
-        setSearchOpen(!searchShown);
-        if (!searchShown && topRef.current) scrollParent(topRef.current)?.scrollTo({ top: 0 });
+        if (header) openTitleSearch(header);
+        if (topRef.current) scrollParent(topRef.current)?.scrollTo({ top: 0 });
       }}
     >
       <Search className="glyph" />
     </Button>
   );
+  const queryIssues = (
+    <SearchQueryIssues
+      query={query}
+      pending={hintsOpen}
+      filters={{
+        result: resultFilter !== 'any' ? resultFilter : undefined,
+        minElo: minElo > 0 ? minElo : undefined,
+        player: structured.player || undefined,
+        side: structured.side,
+        outcome: structured.outcome,
+        player2: structured.player2 || undefined,
+        from: structured.from || undefined,
+        to: structured.to || undefined,
+      }}
+    />
+  );
+  const queryBox = (className?: string): ReactNode => (
+    <QueryBox
+      query={query}
+      onQuery={onQuery}
+      suggest={suggestValues}
+      placeholder={t('Search database…')}
+      onOpenChange={setHintsOpen}
+      className={className}
+    />
+  );
   return (
     <>
     {lifted && (
       <>
-        <InGamesHeader slot="subtitle">{count}</InGamesHeader>
+        <InGamesHeader slot="subtitle">
+          {count}
+          {dbs && dbs.length > 1 && curDb ? ` · ${curDb}` : null}
+        </InGamesHeader>
         <InGamesHeader slot="finders">
           {searchSwitch}
           {huntSwitch}
         </InGamesHeader>
         <InGamesHeader slot="filters">{filters}</InGamesHeader>
+        {titleSearch && (
+          <InGamesHeader slot="search">
+            {queryBox('min-w-0 flex-1')}
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('Close')}
+              className="shrink-0"
+              onClick={() => {
+                onQuery('');
+                header.setSearching(false);
+              }}
+            >
+              <X className="glyph" />
+            </Button>
+          </InGamesHeader>
+        )}
       </>
     )}
     <span ref={topRef} hidden />
     <GameListShell
       shape={shape}
       toolbar={
-        // On a phone's page the switches are in the title row and the
-        // field is a row only while it is in use, the collection's shape
-        // exactly (lanph3re: the two tabs kept their buttons in different
-        // places). An empty query has no issues to say, so with the field
-        // shut there is no row at all.
-        lifted && !searchShown ? undefined : (
+        // On a phone's page the switches and the field are in the title
+        // row, the collection's shape exactly (lanph3re: the two tabs kept
+        // their buttons in different places, and then a field that opened
+        // as a row was still a row). What is left here is the query's
+        // issues, and the shell hides a toolbar that draws nothing.
+        lifted ? (
+          queryIssues
+        ) : (
         <div className="flex w-full flex-col gap-2">
           {/* At table density this one WRAPPING row is the whole chrome:
               search, the filters and the count band folded together.
@@ -1726,14 +1780,7 @@ export function DatabaseGames({
               mode keeps the stacked bands: a phone's rows are cards, and
               its chrome was never the problem. */}
           <div className={cn('flex w-full items-center gap-1.5', searchRowClass, merged && 'flex-wrap')}>
-            <QueryBox
-              query={query}
-              onQuery={onQuery}
-              suggest={suggestValues}
-              placeholder={t('Search database…')}
-              onOpenChange={setHintsOpen}
-              className={merged ? 'basis-72' : undefined}
-            />
+            {queryBox(merged ? 'basis-72' : undefined)}
             {/* secondary, not ghost: the row's rule (lanph3re asked for
                 one) is that stateful toggles wear the box of the fields
                 they stand among — this one opens the hunt surface and
@@ -1757,20 +1804,7 @@ export function DatabaseGames({
               </span>
             )}
           </div>
-          <SearchQueryIssues
-            query={query}
-            pending={hintsOpen}
-            filters={{
-              result: resultFilter !== 'any' ? resultFilter : undefined,
-              minElo: minElo > 0 ? minElo : undefined,
-              player: structured.player || undefined,
-              side: structured.side,
-              outcome: structured.outcome,
-              player2: structured.player2 || undefined,
-              from: structured.from || undefined,
-              to: structured.to || undefined,
-            }}
-          />
+          {queryIssues}
           {/* A row of its own everywhere but a phone's page, where it was
               the fifth row of chrome over the first game (lanph3re,
               2026-09-18): there the same controls open as a sheet. */}

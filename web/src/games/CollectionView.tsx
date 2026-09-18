@@ -89,6 +89,10 @@ export function CollectionView() {
   const [barFindersEl, setBarFindersEl] = useState<HTMLElement | null>(null);
   const [barFiltersEl, setBarFiltersEl] = useState<HTMLElement | null>(null);
   const [barChipsEl, setBarChipsEl] = useState<HTMLElement | null>(null);
+  // While a list is being searched the title row IS the field
+  // (./header-slots, `search`): no row is added anywhere.
+  const [searchEl, setSearchEl] = useState<HTMLElement | null>(null);
+  const [searching, setSearching] = useState(false);
   const slots = useMemo(
     () =>
       lend
@@ -99,9 +103,12 @@ export function CollectionView() {
             barFinders: barFindersEl,
             barFilters: barFiltersEl,
             barChips: barChipsEl,
+            search: searchEl,
+            searching,
+            setSearching,
           }
         : null,
-    [lend, subtitleEl, findersEl, filtersEl, barFindersEl, barFiltersEl, barChipsEl],
+    [lend, subtitleEl, findersEl, filtersEl, barFindersEl, barFiltersEl, barChipsEl, searchEl, searching],
   );
   const importButton = (
     <Button variant="default" size="sm" onClick={() => openImport.current?.()}>
@@ -178,6 +185,11 @@ export function CollectionView() {
         // (their own portal targets, since a target cannot be drawn
         // twice) and the source chips under them, so a source can be
         // changed from anywhere in a long list.
+        titleRow={
+          lend && searching ? (
+            <div ref={setSearchEl} data-games-search="" className="flex min-w-0 flex-1 items-center gap-2" />
+          ) : undefined
+        }
         pinned={lend}
         pinnedActions={
           <>

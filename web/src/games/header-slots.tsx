@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from 'react';
-import { createPortal } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 
 /**
  * The Games page's title row, lent to the lists under it.
@@ -39,15 +39,44 @@ export interface GamesHeaderSlots {
   barFinders: HTMLElement | null;
   barFilters: HTMLElement | null;
   barChips: HTMLElement | null;
+  /**
+   * The title row itself, while a list is being searched. A field that
+   * opened as a row of its own under the chips was a row all the same
+   * (lanph3re, 2026-09-19), so the field takes the title's row over
+   * instead, the way a phone's own apps turn their bar into the field:
+   * the name and the switches step out, the field and a way back step in,
+   * and the page is exactly as tall as it was. Null while nobody is
+   * searching. `searching` is the page's, because the page is what swaps
+   * the row; a list turns it on from its magnifier and off from its X.
+   */
+  search: HTMLElement | null;
+  searching: boolean;
+  setSearching: (on: boolean) => void;
 }
 
 /** The slots a caller draws into; each title-row slot brings its bar twin. */
-type Slot = 'subtitle' | 'finders' | 'filters' | 'barChips';
-const TWIN: Partial<Record<Slot, keyof GamesHeaderSlots>> = { finders: 'barFinders', filters: 'barFilters' };
+type Slot = 'subtitle' | 'finders' | 'filters' | 'barChips' | 'search';
+const TWIN: Partial<Record<Slot, 'barFinders' | 'barFilters'>> = { finders: 'barFinders', filters: 'barFilters' };
 
 const Slots = createContext<GamesHeaderSlots | null>(null);
 
 export const GamesHeaderSlotsProvider = Slots.Provider;
+
+/**
+ * Open the title-row search and put the caret in it, inside the press.
+ *
+ * Inside, because iOS raises the keyboard only for a focus made during
+ * the gesture that asked for it: a focus from an effect or a frame later
+ * lands the caret and leaves the keyboard down, and a search field with
+ * no keyboard is a second tap. So the row swap is committed
+ * synchronously (the page's row mounts, its ref hands the portal its
+ * target, the list's field mounts into it, all within the flush) and the
+ * field that now exists is focused before the handler returns.
+ */
+export function openTitleSearch(header: GamesHeaderSlots): void {
+  flushSync(() => header.setSearching(true));
+  document.querySelector<HTMLInputElement>('[data-games-search] input')?.focus();
+}
 
 /** The lent header, or null where the chrome stays in the list. */
 export function useGamesHeader(): GamesHeaderSlots | null {

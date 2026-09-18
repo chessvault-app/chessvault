@@ -1,4 +1,4 @@
-import { Bookmark, Pencil, Play, Plus, Search, Trash2 } from 'lucide-react';
+import { Bookmark, Pencil, Play, Plus, Search, Trash2, X } from 'lucide-react';
 import {
   useCallback,
   useDeferredValue,
@@ -48,7 +48,7 @@ import {
   SearchQueryIssues,
   type ValueSuggestion,
 } from './GameFilters';
-import { InGamesHeader, useGamesHeader } from './header-slots';
+import { InGamesHeader, openTitleSearch, useGamesHeader } from './header-slots';
 import { scrollParent } from '@/lib/scroll';
 import { type DetailsSelection } from './GameDetails';
 import { ArchiveBrowser } from './ArchiveBrowser';
@@ -361,10 +361,15 @@ export function GamesBrowser({
   useLayoutEffect(() => {
     if (clearRef) clearRef.current = clearSelection;
   });
+  // The page's lent title row, where there is one (./header-slots).
+  const header = useGamesHeader();
   const setTab = (next: MainTab): void => {
     heldTab = next;
     setTabState(next);
     clearSelection();
+    // A field open in the title row is the tab's own; the next tab's row
+    // starts as its title.
+    header?.setSearching(false);
   };
 
   // A write invalidates, so `load` always goes to the server; the cached
@@ -524,16 +529,15 @@ export function GamesBrowser({
 
   /**
    * On a phone's page the title row is lent to the browser
-   * (./header-slots), and the collection's search row is not a standing
-   * row any more: a magnifier beside the bookmark switch opens it, and
-   * it stays for as long as it holds a query. The field is used far less
-   * often than the rows are read, and at rest it was 52px of every
-   * screenful. Pressing the magnifier again empties and closes it, the
-   * one press that takes the narrowing off.
+   * (./header-slots), and the collection's search is not a row at all: a
+   * magnifier beside the bookmark switch turns the TITLE ROW into the
+   * field, and the X beside the field empties it and gives the row back.
+   * The field is used far less often than the rows are read; as a
+   * standing row it was 52px of every screenful, and as a row that opened
+   * on demand it was still a row (lanph3re, 2026-09-19).
    */
-  const lifted = useGamesHeader() !== null && frame === 'page';
-  const [searchOpen, setSearchOpen] = useState(false);
-  const searchShown = searchOpen || query.trim() !== '';
+  const lifted = header !== null && frame === 'page';
+  const searching = lifted && header.searching;
   // A handle on the page's scroller, for the one press that scrolls it.
   const topRef = useRef<HTMLSpanElement>(null);
 
@@ -557,22 +561,23 @@ export function GamesBrowser({
       <Bookmark className={cn('glyph', markedOnly && 'fill-current text-primary')} />
     </Button>
   );
+  // The same query language the databases box speaks — one parser in
+  // shared/, one chip box teaching it.
+  const finderBox = (fieldClass: string): ReactNode => (
+    <QueryBox
+      query={query}
+      onQuery={setQuery}
+      suggest={suggestCollection}
+      placeholder={t('Search collection…')}
+      onOpenChange={setSearchHintsOpen}
+      className={fieldClass}
+    />
+  );
   const finders = (fieldClass: string): ReactNode => {
-    // The same query language the databases box speaks — one parser in
-    // shared/, one chip box teaching it.
-    const box = (
-      <QueryBox
-        query={query}
-        onQuery={setQuery}
-        suggest={suggestCollection}
-        placeholder={t('Search collection…')}
-        onOpenChange={setSearchHintsOpen}
-        className={fieldClass}
-      />
-    );
+    const box = finderBox(fieldClass);
     // Lifted (a phone's page, ./header-slots): the bookmark switch is in
-    // the title row, and the field is a row only while it is in use.
-    if (lifted) return searchShown ? box : null;
+    // the title row, and so is the field while it is open (below).
+    if (lifted) return null;
     return (
       <>
         {box}
@@ -684,16 +689,13 @@ export function GamesBrowser({
           <Button
             variant="secondary"
             size="icon-sm"
-            active={searchShown}
-            aria-pressed={searchShown}
             title={t('Search collection…')}
             className="shrink-0"
             onClick={() => {
-              if (searchShown) setQuery('');
-              setSearchOpen(!searchShown);
+              openTitleSearch(header);
               // Pressed from the compact bar the field opens at the top
               // of a page that is scrolled away from it: go and meet it.
-              if (!searchShown && topRef.current) scrollParent(topRef.current)?.scrollTo({ top: 0 });
+              if (topRef.current) scrollParent(topRef.current)?.scrollTo({ top: 0 });
             }}
           >
             <Search className="glyph" />
@@ -701,11 +703,28 @@ export function GamesBrowser({
           {bookmarkSwitch}
         </InGamesHeader>
       )}
+      {searching && tab === 'collection' && (
+        <InGamesHeader slot="search">
+          {finderBox('min-w-0 flex-1')}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            title={t('Close')}
+            className="shrink-0"
+            onClick={() => {
+              setQuery('');
+              header.setSearching(false);
+            }}
+          >
+            <X className="glyph" />
+          </Button>
+        </InGamesHeader>
+      )}
       {/* The source chips again, in the bar a scroll up reveals, so a
           source can be changed from the middle of a long list. */}
       {lifted && (
         <InGamesHeader slot="barChips">
-          <GamesTabStrip value={tab} onValueChange={setTab} frame="page" />
+          <GamesTabStrip value={tab} onValueChange={setTab} frame="page" flush />
         </InGamesHeader>
       )}
       <span ref={topRef} hidden />
@@ -798,7 +817,7 @@ export function GamesBrowser({
               // lifted field shut (an empty query) there are none, and an
               // element here, even one that draws nothing, made the list
               // stand an empty 20px toolbar band the databases tab did not.
-              lifted && !searchShown ? undefined : (
+              lifted && !searching ? undefined : (
                 <SearchQueryIssues
                   query={query}
                   pending={searchHintsOpen}

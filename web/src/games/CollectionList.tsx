@@ -798,9 +798,12 @@ export function CollectionList({
       // mode rebuilds the stacked layout these pieces used to arrive
       // pre-assembled in.
       toolbar={
-        // Lifted, the row exists only while the search field does; the
-        // filters button has gone up to the title row (below).
-        lifted && !search && !searchIssues ? undefined : (
+        // Lifted, there is no row: the field is in the page's title row
+        // and the filters button beside it. What is left is the query's
+        // issues, which stand here only while there are any.
+        lifted ? (
+          searchIssues
+        ) : (
         <div className="flex w-full flex-col gap-2">
           <div className={cn('flex w-full items-center gap-1.5', searchRowClass, merged && 'flex-wrap')}>
             {search}

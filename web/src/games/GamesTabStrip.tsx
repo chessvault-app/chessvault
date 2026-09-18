@@ -31,12 +31,16 @@ export function GamesTabStrip({
   onValueChange,
   frame,
   stripRef,
+  flush = false,
 }: {
   value: MainTab;
   onValueChange: (tab: MainTab) => void;
   frame: 'panel' | 'page';
   /** The browser measures this to decide whether its toolbar folds. */
   stripRef?: Ref<HTMLDivElement>;
+  /** No air under the chips: the copy inside the page's compact bar,
+      whose own padding ends it. */
+  flush?: boolean;
 }) {
   return (
     <Tabs value={value} onValueChange={(v) => onValueChange(v as MainTab)} className="contents">
@@ -70,6 +74,11 @@ export function GamesTabStrip({
         className={cn(
           'border-border scrollbar-hidden box-content flex h-10 shrink-0 items-center overflow-x-auto overflow-y-hidden border-b',
           frame === 'page' && 'max-md:h-9 max-md:border-b-0',
+          // 12px between the chips and the first row's hairline. With no
+          // toolbar between them any more the rule sat 1px under the
+          // chips' own edge and the two read as one broken shape
+          // (lanph3re, 2026-09-19).
+          frame === 'page' && !flush && 'max-md:mb-3',
         )}
       >
         <TabsList

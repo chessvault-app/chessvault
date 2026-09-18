@@ -1,4 +1,4 @@
-import { ExternalLink, Globe, Info, ListChecks, Play, Plus } from 'lucide-react';
+import { ExternalLink, Globe, Info, ListChecks, Play, Plus, Search, X } from 'lucide-react';
 import {
   memo,
   useEffect,
@@ -46,7 +46,7 @@ import {
   type TableNav,
 } from './GameTable';
 import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
-import { InGamesHeader, useGamesHeader } from './header-slots';
+import { InGamesHeader, openTitleSearch, useGamesHeader } from './header-slots';
 import { GameDetailsSheet, type DetailsSelection } from './GameDetails';
 import { loadGamePgn } from './CollectionList';
 import { TitleTip } from '@/components/title-tip';
@@ -635,7 +635,11 @@ export function ArchiveBrowser({
   // A phone's page lends its title row (./header-slots): the count is the
   // page's subtitle, there is no count band at rest, and Select… is an
   // entry in each card's menu.
-  const lifted = useGamesHeader() !== null && shape === 'page';
+  const header = useGamesHeader();
+  const lifted = header !== null && shape === 'page';
+  // The handle's field takes the page's title row over while it is open
+  // (./header-slots, `search`), never a row of its own on a phone.
+  const titleSearch = lifted && header.searching;
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [addProgress, setAddProgress] = useState<{ done: number; total: number } | null>(null);
@@ -1214,35 +1218,42 @@ export function ArchiveBrowser({
   /** Whether the filter controls ride the search row rather than a row of their own. */
   const folded = useFiltersFolded();
   const filtersInRow = merged || folded;
+  // The handle and its Browse button, a value because on a phone's page
+  // they stand in the title row instead of a row of their own.
+  const handleField = (
+    <>
+    <SearchInput
+      value={username}
+      onChange={(e) => setUsername(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && username.trim()) void loadMonths();
+      }}
+      placeholder={provider === 'chesscom' ? t('Chess.com username') : t('Lichess username')}
+      aria-label={provider === 'chesscom' ? t('Chess.com username') : t('Lichess username')}
+      className={cn('min-w-0 flex-1', merged && 'basis-72')}
+      inputSize="sm"
+    />
+    <Button
+      variant="secondary"
+      size="icon-sm"
+      title={t("Browse this player's online archive")}
+      disabled={loading !== null || !username.trim()}
+      onClick={() => void loadMonths()}
+    >
+      {loading === 'months' ? (
+        <Spinner className="glyph" />
+      ) : (
+        <Globe className="glyph" />
+      )}
+    </Button>
+    </>
+  );
   const toolbar = (
     <>
         <div className={cn('flex items-center gap-1.5', searchRowClass, merged && 'w-full flex-wrap')}>
           {/* SearchInput, not a bare Input: a mistyped handle needed
               selecting and retyping — the X empties it in one press. */}
-          <SearchInput
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && username.trim()) void loadMonths();
-            }}
-            placeholder={provider === 'chesscom' ? t('Chess.com username') : t('Lichess username')}
-            aria-label={provider === 'chesscom' ? t('Chess.com username') : t('Lichess username')}
-            className={cn('min-w-0 flex-1', merged && 'basis-72')}
-            inputSize="sm"
-          />
-          <Button
-            variant="secondary"
-            size="icon-sm"
-            title={t("Browse this player's online archive")}
-            disabled={loading !== null || !username.trim()}
-            onClick={() => void loadMonths()}
-          >
-            {loading === 'months' ? (
-              <Spinner className="glyph" />
-            ) : (
-              <Globe className="glyph" />
-            )}
-          </Button>
+          {handleField}
           {/* Below sm the month select steps out (see its class) and the
               row is the handle field, the globe and the filters button,
               the filters button ending the row the way the collection's
@@ -1349,6 +1360,14 @@ export function ArchiveBrowser({
               { site: provider === 'chesscom' ? 'Chess.com' : 'Lichess' },
             )}
           </p>
+          {/* Where the field is behind the magnifier, the empty tab offers
+              it outright: this is the press the tab exists for. */}
+          {lifted && !titleSearch && (
+            <Button variant="default" size="sm" onClick={() => openTitleSearch(header)}>
+              <Search className="glyph" data-icon="inline-start" />
+              {provider === 'chesscom' ? t('Chess.com username') : t('Lichess username')}
+            </Button>
+          )}
         </div>
       )}
     </>
@@ -1362,19 +1381,51 @@ export function ArchiveBrowser({
         onClose={() => setDetails(null)}
       />
     )}
+    {lifted && (
+      <InGamesHeader slot="finders">
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          title={provider === 'chesscom' ? t('Chess.com username') : t('Lichess username')}
+          className="shrink-0"
+          onClick={() => openTitleSearch(header)}
+        >
+          <Search className="glyph" />
+        </Button>
+      </InGamesHeader>
+    )}
+    {titleSearch && (
+      <InGamesHeader slot="search">
+        {handleField}
+        {/* Closing keeps the handle: it is what the list is OF, not a
+            narrowing to take off, and the subtitle goes on naming it. */}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          title={t('Close')}
+          className="shrink-0"
+          onClick={() => header.setSearching(false)}
+        >
+          <X className="glyph" />
+        </Button>
+      </InGamesHeader>
+    )}
     {lifted && <InGamesHeader slot="filters">{waitingFilters}</InGamesHeader>}
     {lifted && (
       <InGamesHeader slot="subtitle">
         {listLoading ? (
           <Skeleton className="inline-block h-2.5 w-24 align-middle" />
         ) : month && visibleMonthGames.length > 0 ? (
-          tallyText
+          // Whose games these are: the handle is not on screen while the
+          // title row is the title.
+          `${username.trim()} · ${tallyText}`
         ) : null}
       </InGamesHeader>
     )}
     <GameListShell
       shape={shape}
-      toolbar={toolbar}
+      // Lifted, the toolbar's one row (the handle) is in the title row.
+      toolbar={lifted ? undefined : toolbar}
       // No reserved filter row at table density, where the filters live
       // in the toolbar row and no filter band will come.
       // No `filtersLoading`: the stand-in IS the filter row, so the band

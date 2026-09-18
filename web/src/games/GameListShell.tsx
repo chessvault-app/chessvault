@@ -316,7 +316,11 @@ export function GameListShell({
       {toolbar != null && (
         <div
           className={cn(
-            'flex flex-col gap-2',
+            // empty:hidden, for a toolbar that is an element drawing
+            // nothing (a phone's lifted lists pass only their query
+            // issues, which are usually none): the padding below would
+            // otherwise stand an empty band over the rows.
+            'flex flex-col gap-2 empty:hidden',
             // A sheet's card already pads by 3 on every side; the framed
             // card pads nothing; the panel adds a step of top clearance
             // under the tab bar's lit rule — less of one at table

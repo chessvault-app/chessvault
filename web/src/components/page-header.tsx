@@ -76,6 +76,7 @@ export function PageHeader({
   pinned = false,
   pinnedActions,
   pinnedBelow,
+  titleRow,
   className,
 }: {
   title: string;
@@ -116,6 +117,13 @@ export function PageHeader({
   /** A second line inside the bar, under the title row (the Games
       page's source chips). */
   pinnedBelow?: ReactNode;
+  /**
+   * What the title row holds INSTEAD of the name and its actions, while
+   * given: a search field that takes the row over rather than adding one
+   * under it (the Games page on a phone). The row keeps its height and
+   * its place, so nothing below it moves.
+   */
+  titleRow?: ReactNode;
   className?: string;
 }) {
   const pinRef = useRef<HTMLDivElement>(null);
@@ -193,28 +201,38 @@ export function PageHeader({
           className,
         )}
       >
-        {back && (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className={backVisible === 'phone' ? 'md:hidden' : undefined}
-            title={t('Back')}
-            onClick={back}
-          >
-            <ChevronLeft className="glyph" />
-          </Button>
-        )}
-        <h1
-          className={cn(
-            pageTitleClass,
-            truncate && 'min-w-0 flex-1 truncate',
-          )}
-        >
-          {title}
-        </h1>
-        {meta}
-        {actions && (
-          <div className="ml-auto flex min-w-0 items-center justify-end gap-2">{actions}</div>
+        {titleRow ? (
+          <>
+            {/* The page keeps its heading while the row is a field. */}
+            <h1 className="sr-only">{title}</h1>
+            {titleRow}
+          </>
+        ) : (
+          <>
+            {back && (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className={backVisible === 'phone' ? 'md:hidden' : undefined}
+                title={t('Back')}
+                onClick={back}
+              >
+                <ChevronLeft className="glyph" />
+              </Button>
+            )}
+            <h1
+              className={cn(
+                pageTitleClass,
+                truncate && 'min-w-0 flex-1 truncate',
+              )}
+            >
+              {title}
+            </h1>
+            {meta}
+            {actions && (
+              <div className="ml-auto flex min-w-0 items-center justify-end gap-2">{actions}</div>
+            )}
+          </>
         )}
       </header>
       {/* Tight under the title: the column's gap less 12px is 4px. */}
