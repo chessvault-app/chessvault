@@ -85,7 +85,12 @@ export function CollectionView() {
       // Pinned at every width: the browser's lists scroll themselves,
       // so the page never scrolls — the tab strip and the toolbar stay
       // put while the rows move, on a phone exactly as on the desktop.
-      className="h-full overflow-hidden pb-3 sm:pb-4 md:pb-6"
+      // No bottom padding on a phone: the rows scroll inside their own
+      // box, so the padding was a 12px strip of page ground between the
+      // last row and the bottom bar, which on a dark theme read as a
+      // black band under the list (lanph3re, 2026-09-18). The rows now
+      // run to the bar, as a native list does.
+      className="h-full overflow-hidden pb-0 sm:pb-4 md:pb-6"
     >
       {/* Import on the title line, where Studies, Notes and Books put
           theirs: the page is a shelf of the reader's own games, and it
