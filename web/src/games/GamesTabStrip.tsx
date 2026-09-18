@@ -52,15 +52,32 @@ export function GamesTabStrip({
           wrapper's CONTENT box matches the triggers exactly, so
           nothing is clipped and the underline ends flush on the
           border. */}
+      {/* On a phone's page the four sources are chips, not an underlined
+          strip over a rule (lanph3re, 2026-09-19). The page had four rows
+          of chrome standing before the first game, and the strip was the
+          heaviest of them: a full-width rule with a thick underline is a
+          second header under the header. Chips are the same four presses
+          at the weight of a filter, which is what choosing a source is,
+          and they are the control the puzzle themes already use. Still
+          tabs to a screen reader and the keyboard: only the paint
+          changes, under `max-md`, and only on the page frame (the panel
+          frame is the workspace's, which a phone never draws). The `!`
+          on the selected fill is for the line variant's own
+          `aria-selected:bg-transparent`, which is written through a group
+          selector and outranks a plain utility. */}
       <div
         ref={stripRef}
-        className="border-border scrollbar-hidden box-content flex h-10 shrink-0 items-center overflow-x-auto overflow-y-hidden border-b"
+        className={cn(
+          'border-border scrollbar-hidden box-content flex h-10 shrink-0 items-center overflow-x-auto overflow-y-hidden border-b',
+          frame === 'page' && 'max-md:h-9 max-md:border-b-0',
+        )}
       >
         <TabsList
           variant="line"
           aria-label={t('What the pane is showing')}
           className={cn(
             'flex w-max min-w-full items-center justify-start gap-1 rounded-none border-0 bg-transparent p-0',
+            frame === 'page' && 'max-md:gap-1.5',
             // In a card the first label steps in from the card's
             // edge; on a page the first trigger's underline starts
             // where the title and the search field do.
@@ -76,7 +93,11 @@ export function GamesTabStrip({
               // underline cannot overlap the border without
               // being clipped, so it sits ON the rule instead
               // of thickening it — the same 2px to the eye.
-              className="h-10 min-w-0 flex-none rounded-none px-1.5 font-semibold group-data-horizontal/tabs:after:bottom-0"
+              className={cn(
+                'h-10 min-w-0 flex-none rounded-none px-1.5 font-semibold group-data-horizontal/tabs:after:bottom-0',
+                frame === 'page' &&
+                  'max-md:border-input max-md:text-muted-foreground max-md:aria-selected:text-foreground max-md:aria-selected:bg-accent! max-md:h-9 max-md:rounded-full max-md:border max-md:px-3 max-md:font-medium max-md:after:hidden',
+              )}
             >
               <span className="truncate">{t(label)}</span>
             </TabsTrigger>
