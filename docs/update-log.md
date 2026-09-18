@@ -10,10 +10,16 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 - **On a phone the shelves search from the title row.** Studies, Notes,
   Books, puzzle books and puzzle themes no longer stand a search row
   under their title. A magnifier in the title row turns that row into the
-  field, with the keyboard up at once; Cancel, the X beside a query that
-  is standing, or tapping away from an empty field gives the title back.
-  The magnifier is in the bar a scroll up reveals, too. The puzzle books
-  header is one line now: its New book button is a plus under 640 pixels.
+  field, with the keyboard up at once; its Cancel, which stays beside the
+  field for as long as the search is open, or tapping away from an empty
+  field, gives the title back. The magnifier is in the bar a scroll up
+  reveals, too. On iOS that Cancel is a glass capsule like the buttons
+  beside it.
+- **On a phone the add button is a plus.** Create on the shelves, New
+  book, and the Games page's Import draw as the plus alone under the
+  tablet width, a filled circle on iOS, with the word still read out. The
+  word was what wrapped a phone's title row, and the puzzle books header
+  is one line again. A desktop keeps the words.
 - **The open pane on a phone's board page is a filled tab.** The strip
   over the pane marked its open tab with a thin line under a small icon.
   The icons are larger now and the open one sits on a filled segment,
@@ -22,8 +28,8 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   count is the line under the title, as the shelves put theirs. Search,
   the bookmark switch and the filters are icons in the title row beside
   Import, and pressing the magnifier turns the title row itself into
-  the search field, with an X to give it back: no tab gains a row for
-  searching. The Databases tab keeps its switches in the same places
+  the search field, with Cancel beside it to give it back: no tab gains
+  a row for searching. The Databases tab keeps its switches in the same places
   (search, the position search, the filters), and where there is more
   than one database its picker is the database's name in the line under
   the title: tap the name to change it. On the Chess.com and Lichess
