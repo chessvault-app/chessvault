@@ -1102,8 +1102,14 @@ export function HomePage() {
           action Home has, the quick switcher (components/quick-switcher),
           which a keyboard reaches with Ctrl/⌘ K and a thumb reaches here.
           `md:contents` dissolves the row on a desktop, where the h1 is
-          the sidebar's and the button has a key. */}
-      <div className="flex w-full items-center justify-self-start max-md:mb-4 md:contents">
+          the sidebar's and the button has a key.
+
+          data-chrome: this is the page's title row, so on iOS its
+          magnifier is the glass circle every other page's is
+          (styles/shell.css, under md). It was the one bare ghost icon in
+          that corner, and going from a shelf to Home and back the same
+          control changed material (lanph3re, 2026-09-19). */}
+      <div data-chrome="" className="flex w-full items-center justify-self-start max-md:mb-4 md:contents">
         <h1 className="flex min-h-11 items-center gap-2.5 md:sr-only">
           {/* The mark bare, not on the sidebar's primary tile (lanph3re):
               a page header is type, and a filled tile beside it read as a
