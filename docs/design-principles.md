@@ -1166,9 +1166,10 @@ drawn, and what one has to prove.
   Settings debug card, not for users, and nothing else reads it.
 - **iOS owns its chrome; the content is the same everywhere.** On iOS
   the chrome may follow iOS 26: the tab bar as a floating capsule inset
-  from the edges over scrolling content, and folding to its icons on a
-  scroll down (Apple's closes to the current tab alone, which read as
-  an empty control on the phone; lanph3re's call, 2026-09-18); the compact page header, the contextual action
+  from the edges over scrolling content, icons only, and getting
+  smaller on a scroll down and whole again on a scroll up (Instagram's
+  shape; Apple's own closes to the current tab alone, which read as an
+  empty control on the phone; lanph3re's call, 2026-09-18); the compact page header, the contextual action
   bar, the toast and the menus as glass over what is under them (the
   sheet stays opaque until it is measured: a swipe drags a near
   full-screen layer, which a blur re-samples every frame, and its
@@ -1196,7 +1197,9 @@ drawn, and what one has to prove.
   and only on a phone; under any of the three it falls back to the
   opaque card. The alpha and the blur radius are the two
   numbers a glass surface has, and both are set by measurement (below),
-  not by eye.
+  not by eye: 70% where the surface carries text (4.5:1) and 55% on the
+  capsule, which carries icons (3:1). Apple publishes no ratio; Liquid
+  Glass is a dynamic material, and these are this app's numbers.
 - **What a platform variant has to prove.** The screenshot grid
   (`npm run shots:grid`) walks a `phone-ios` state beside `phone`,
   with the override set, so a change that means to be iOS-only shows a

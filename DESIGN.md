@@ -886,14 +886,17 @@ hit areas, `title` as a tooltip. Composites live in
   edge). On iOS the same box is the platform's capsule: 20px in from
   the sides, lifted by the home indicator's inset (20px where there is
   none), a true pill with the window ring and the panel shadow, and
-  the page scrolls under it, its foot clearing `--page-b`; on a scroll
-  down its labels fold away and it drops to a 44px row of icons, whole
-  again on a scroll up, at the top, or on a tap (Apple's closes to the
-  current tab alone; lanph3re's call for the icons, 2026-09-18). The
-  page pads for the open capsule throughout. The capsule is
-  glass (`utilities.css`, `glass`: the card's fill at 70% over a 12px
-  blur, a line of light on its top edge, the tabs in foreground ink so
-  they clear 4.5:1 over whatever passes under), falling back to the
+  the page scrolls under it, its foot clearing `--page-b`. Icons only,
+  a 48px row, the labels for the screen reader; on a scroll down it
+  scales to 85% from its bottom edge and a scroll up, the top, or a tap
+  brings it back, while the pinned header returns on the same scroll up
+  (Instagram's shape on iOS; lanph3re's call, 2026-09-18, after Apple's
+  own close-to-one-tab read as an empty control). A transform, so the
+  page's padding never moves. The capsule is
+  glass (`utilities.css`, `glass`: the card's fill over a 12px blur, a
+  line of light on its top edge; 70% for a surface carrying text and
+  55% on the capsule, whose icons are held to 3:1 and drawn in
+  foreground ink), falling back to the
   card's fill where the browser cannot blur, where the reader asked for
   reduced transparency, or where the debug card switched it off; the
   compact page header, the menus and the toast take the same glass on

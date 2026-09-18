@@ -26,13 +26,12 @@ import { useRef } from 'react';
  * two report in cannot matter. A callback ref, since the tab bar mounts
  * and unmounts as pages claim the edge.
  *
- * `hold` keeps the last measurement while true: the iOS capsule drops
- * 12px while it is closed on a scroll down (shell/mobile-nav), and a
- * footprint that followed it would reflow the page under the finger on
- * every scroll. The page pads for the open capsule throughout.
+ * The iOS capsule gets smaller on a scroll down by a transform
+ * (shell/mobile-nav), which a border box does not see, so the footprint
+ * holds still while it does; a footprint that followed a shrinking box
+ * would reflow the page under the finger on every scroll.
  */
 const heights = new Map<Element, number>();
-const holds = new Map<Element, boolean>();
 let observer: ResizeObserver | null = null;
 
 function publish(): void {
@@ -42,30 +41,29 @@ function publish(): void {
 }
 
 function measure(el: Element): void {
-  if (holds.get(el) && heights.has(el)) return;
-  const rect = el.getBoundingClientRect();
-  const row = el.parentElement?.getBoundingClientRect();
-  // A hidden bar measures a zero box at the origin, and the row's bottom
-  // minus that would be the whole screen.
-  heights.set(el, rect.height === 0 || !row ? 0 : row.bottom - rect.top);
+  // Offset geometry, not the client rect: the iOS capsule is scaled
+  // while the page is read, and the client rect would follow the scale.
+  // The bar is positioned on the row, so its offsets are the row's.
+  const box = el as HTMLElement;
+  const row = box.offsetParent as HTMLElement | null;
+  // A hidden bar has no offset parent and no height.
+  if (!row || box.offsetHeight === 0) {
+    heights.set(el, 0);
+    return;
+  }
+  heights.set(el, row.clientHeight - box.offsetTop);
 }
 
-export function useBottomBarMeasure(hold = false): (el: HTMLElement | null) => void {
+export function useBottomBarMeasure(): (el: HTMLElement | null) => void {
   const held = useRef<HTMLElement | null>(null);
-  // The hold rides the callback: a new closure each render, which React
-  // re-runs on commit (null, then the element), so the hold the element
-  // carries is the one from the latest render, ahead of the observer's
-  // next report.
   return (el: HTMLElement | null) => {
     const prev = held.current;
     if (prev) {
       observer?.unobserve(prev);
       heights.delete(prev);
-      holds.delete(prev);
     }
     held.current = el;
     if (el) {
-      holds.set(el, hold);
       // Not `??=`: the React Compiler refuses that operator (check:compiler).
       if (!observer) {
         observer = new ResizeObserver((entries) => {

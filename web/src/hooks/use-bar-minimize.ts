@@ -7,7 +7,7 @@ const TOP = 16;
 const SLACK = 4;
 
 /**
- * Whether the iOS capsule should be closed: down to its icons.
+ * Whether the iOS capsule should be small: the page is being read.
  *
  * iOS 26 minimises the tab bar on a scroll down and brings it back on
  * the first scroll up, so the content being read gets more of the

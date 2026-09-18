@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { Ellipsis, House } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { atRoute, navigate, sectionHref, type Section } from '@/lib/router';
@@ -50,8 +51,18 @@ import { MORE_SECTIONS, NAV, openSection } from '@/shell/shared';
     where the gates pass and the card's fill stays where they do not. */
 const OVERLAY = cn(
   'absolute inset-x-0 bottom-0 z-20',
-  'ios:inset-x-5 ios:bottom-[max(1.25rem,var(--safe-b))] ios:rounded-full ios:border-0 ios:pb-0',
+  // The lift: Instagram's bar sits a little into the indicator's inset
+  // (measured off lanph3re's screenshots, 2026-09-18: its foot about
+  // 20pt off the screen's edge against a 34pt inset), so the capsule
+  // stands 8px lower than the inset, and 20px where there is none.
+  'ios:inset-x-5 ios:bottom-[max(1.25rem,calc(var(--safe-b)-0.5rem))] ios:rounded-full ios:border-0 ios:pb-0',
   'ios:ring-1 ios:ring-window-ring ios:shadow-md ios:glass',
+  // Clearer than the text surfaces' 70% (tokens.css, --glass-fill): the
+  // capsule carries icons only on iOS, and an icon is held to 3:1 where
+  // a label is held to 4.5:1. 55% is where the icons' ink still clears
+  // 3:1 over black in light and over white in dark (measured, the
+  // commit has the numbers). lanph3re asked for clearer (2026-09-18).
+  'ios:[--glass-fill:55%]',
 );
 
 export function MobileBottom({ active }: { active: Section }) {
@@ -101,17 +112,19 @@ export function MobileBottom({ active }: { active: Section }) {
  * bottom padding where they were.
  */
 function MobileNav({ active }: { active: Section }) {
-  // iOS: down to its icons while the page is read, whole again on a
-  // scroll up (hooks/use-bar-minimize). The labels fold away and the
-  // capsule drops from 56px to the 44px hit floor; every tab stays, so
-  // a tap still goes where it says. It shipped first as Apple's own
-  // shape, the capsule closing to the current tab alone, and lanph3re
-  // asked for the icons instead on the phone (2026-09-18): one tab in a
-  // pill at the corner read as an empty control. The footprint main
-  // pads by is held at the open height while the capsule is closed, or
-  // the page would reflow under the finger on every scroll down.
+  // iOS: icons only, a 48px row, and it gets smaller while the page is
+  // read: on a scroll down the capsule scales to 85% from its bottom
+  // edge, and a scroll up, the top of the page or a tap brings it back
+  // (hooks/use-bar-minimize); the pinned page header comes back on the
+  // same scroll up (hooks/use-scroll-reveal). Instagram's shape on iOS,
+  // at lanph3re's call (2026-09-18), after two others: Apple's own,
+  // the capsule closing to the current tab alone, read as an empty
+  // control on the phone, and a fold from labels to icons made the
+  // labels the exception rather than the rule. A scale, not a height,
+  // so the footprint main pads by never moves and nothing reflows under
+  // the finger.
   const { minimized, expand } = useBarMinimized(active);
-  const measure = useBottomBarMeasure(minimized);
+  const measure = useBottomBarMeasure();
   const inMore = active === 'more' || MORE_SECTIONS.some((m) => m.section === active);
   // Desktop reaches home through the sidebar's logo; the bottom bar needs
   // its own entry or a phone can never get back to the landing page.
@@ -185,6 +198,8 @@ function MobileNav({ active }: { active: Section }) {
       className={cn(
         // min-h-11: the bar's own coarse-pointer floor (DESIGN.md, Buttons).
         'flex min-h-11 flex-1 flex-col items-center justify-center gap-1 py-1 text-xs font-medium',
+        // iOS: the icon row's height, with no label under the icon.
+        'ios:min-h-12',
         'transition-colors duration-150',
         isActive ? 'text-primary font-semibold' : 'text-muted-foreground',
         // On the glass capsule the inactive tabs draw foreground ink, not
@@ -203,17 +218,9 @@ function MobileNav({ active }: { active: Section }) {
       {/* Six labels overprinted under 320px (a 390 phone zoomed to 200%)
           and went screen-reader-only there; five fit at 320 with 20px to
           spare on the widest, so the name stays on screen at every width.
-          On iOS the label folds away while the capsule is closed: its
-          line collapses and it fades, on the pane-turn clock, and the
-          gap above it goes with it so the icon row is what is left. */}
-      <span
-        className={cn(
-          'ios:overflow-hidden ios:transition-[max-height,opacity,margin] ios:duration-(--pane-turn) ios:ease-(--pane-turn-ease)',
-          minimized ? 'ios:max-h-0 ios:opacity-0 ios:-mt-1' : 'ios:max-h-4',
-        )}
-      >
-        {t(label)}
-      </span>
+          On iOS the capsule is icons only and the label is for the
+          screen reader, which is what Instagram's bar does there. */}
+      <span className="ios:sr-only">{t(label)}</span>
     </button>
   );
 
@@ -247,8 +254,14 @@ function MobileNav({ active }: { active: Section }) {
         // Nothing here scrolls or zooms, so this costs the bar nothing and
         // saves the scrub from arguing with the page under it.
         'touch-none',
+        // iOS: the shrink, a transform from the bottom edge on the
+        // pane-turn clock, so no layout moves with it.
+        'ios:origin-bottom ios:scale-(--bar-scale) ios:transition-transform ios:duration-(--pane-turn) ios:ease-(--pane-turn-ease)',
+        'motion-reduce:transition-none',
       )}
       data-minimized={minimized ? '' : undefined}
+      // iOS: smaller while the page is read (see MobileNav's top).
+      style={{ '--bar-scale': minimized ? '0.85' : '1' } as CSSProperties}
       {...scrub.bar}
     >
       {/* The one pill, behind whichever tab is current, sliding between
