@@ -667,6 +667,9 @@ export function DatabaseGames({
     if (huntKind === 'material' && !material) return;
     const mine = ++huntSeq.current;
     setHunting(true);
+    // On a phone the hunt's controls are a sheet (see `lifted`), and a
+    // sheet left standing would cover the rows it has just asked for.
+    if (lifted) setHuntOpen(false);
     onSelectRef.current?.(null);
     setHuntRows([]);
     setHuntProgress(null);
@@ -781,6 +784,7 @@ export function DatabaseGames({
     motifEntry,
     motifSide,
     motifHeld,
+    lifted,
   ]);
 
   // Meta can fail like any other request — a raw fetch here used to leave
@@ -1673,11 +1677,15 @@ export function DatabaseGames({
             <Button
               variant="secondary"
               size="icon-sm"
-              active={huntOpen}
+              active={huntOpen || (lifted && inHunt)}
               title={t('Search by position, material or motif')}
               className="shrink-0"
               onClick={() => {
-                if (huntOpen) {
+                // A sheet is opened, never toggled: it closes itself, and
+                // its own Clear is what drops a hunt (below).
+                if (lifted) {
+                  setHuntOpen(true);
+                } else if (huntOpen) {
                   setHuntOpen(false);
                   if (huntRows !== null) clearHunt();
                 } else {
@@ -1716,7 +1724,10 @@ export function DatabaseGames({
               to: structured.to || undefined,
             }}
           />
-          {huntControls}
+          {/* A row of its own everywhere but a phone's page, where it was
+              the fifth row of chrome over the first game (lanph3re,
+              2026-09-18): there the same controls open as a sheet. */}
+          {!lifted && huntControls}
         </div>
       }
       filters={filtersInRow ? undefined : filters}
@@ -1793,6 +1804,34 @@ export function DatabaseGames({
         ) : undefined
       }
     />
+    {lifted && huntOpen && (
+      <Dialog
+        open
+        onOpenChange={(open) => {
+          if (!open) setHuntOpen(false);
+        }}
+      >
+        <DialogContent title="Search by position, material or motif" icon={ScanSearch}>
+          {huntControls}
+          {/* What the toggle's second press does on a desktop: drop the
+              hunt and go back to the text search's rows. */}
+          {inHunt && (
+            <div className="flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  clearHunt();
+                  setHuntOpen(false);
+                }}
+              >
+                {t('Clear')}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    )}
     {settingUp && (
       <Dialog
         open
