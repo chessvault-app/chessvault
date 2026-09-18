@@ -145,7 +145,9 @@ export const BOARD_WIDE_SIDE =
  * for a scrollbar that cannot appear.
  */
 export const BOARD_SCROLL_SHELL =
-  'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto stacked:pointer-fine:pr-4 stacked:pointer-fine:[scrollbar-gutter:stable_both-edges] ' +
+  // pt adds --page-t, the phone's status-bar inset, which the shell no
+  // longer pays under md (styles/shell.css); it is 0px from md.
+  'flex h-full min-h-0 flex-col gap-3 p-3 pt-[calc(0.75rem+var(--page-t))] stacked:gap-2 stacked:overflow-y-auto stacked:pointer-fine:pr-4 stacked:pointer-fine:[scrollbar-gutter:stable_both-edges] ' +
   BOARD_WIDE_SHELL;
 
 /**
@@ -178,7 +180,8 @@ export const BOARD_SCROLL_SHELL =
  * made it a fourth copy, so it is a constant like its sibling.
  */
 export const BOARD_HELD_SHELL =
-  'flex h-full min-h-0 flex-col gap-3 p-3 stacked:gap-2 stacked:overflow-y-auto ' + BOARD_WIDE_SHELL;
+  'flex h-full min-h-0 flex-col gap-3 p-3 pt-[calc(0.75rem+var(--page-t))] stacked:gap-2 stacked:overflow-y-auto ' +
+  BOARD_WIDE_SHELL;
 
 /**
  * The workspace-family shell: a column of regions that fits the viewport,

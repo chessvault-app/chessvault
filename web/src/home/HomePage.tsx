@@ -1073,7 +1073,7 @@ export function HomePage() {
     // (lanph3re, comparing on the phone). From md the 24px stays — the
     // desktop has no header row to line up and the dashboard breathes
     // better for it.
-    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto overflow-x-hidden p-6 max-md:grid-rows-[auto_1fr] max-md:p-4">
+    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)] place-items-center overflow-y-auto overflow-x-hidden p-6 max-md:grid-rows-[auto_1fr] max-md:p-4 max-md:pt-[calc(1rem+var(--page-t))]">
       {/* The page's heading — VISIBLE on a phone, a landmark everywhere.
 
           Its history matters, because it has now moved in both directions.

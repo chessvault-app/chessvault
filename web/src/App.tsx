@@ -203,7 +203,7 @@ function Shell() {
         // left a band under the bottom bar on lanph3re's phone, and a
         // shell that is wrong while nobody is typing is worse than a
         // keyboard that misbehaves while somebody is.
-        'bg-background text-foreground vv-band flex h-[var(--app-h,100svh)] flex-col overflow-hidden',
+        'bg-background text-foreground vv-band app-shell flex h-[var(--app-h,100svh)] flex-col overflow-hidden',
         // The containing block for everything absolutely positioned under
         // it. Without this an `sr-only` span (position: absolute) placed
         // past the shell's bottom edge, which the puzzle dashboard's log
@@ -217,7 +217,10 @@ function Shell() {
         // Standalone PWAs draw edge-to-edge: keep content clear of the
         // dynamic island / notch (top) and the rounded corners (sides).
         // The bottom inset lives on MobileNav, which sits on that edge.
-        'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-(--safe-t)',
+        // The top one is the shell's only from md: under it the page pads
+        // for the notch itself, so its content can scroll through the
+        // inset (styles/shell.css, --shell-t and --page-t).
+        'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pt-(--shell-t)',
       )}
     >
       {/* The first thing Tab reaches: a jump past the section list into

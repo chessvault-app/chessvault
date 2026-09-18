@@ -739,7 +739,7 @@ function ReaderHeader({
     );
   }
   return (
-    <div className="flex shrink-0 items-center px-4 pt-4 md:px-6 md:pt-6">
+    <div className="flex shrink-0 items-center px-4 pt-[calc(1rem+var(--page-t))] md:px-6 md:pt-6">
       <PageHeader
         className="min-w-0 flex-1"
         title={title}

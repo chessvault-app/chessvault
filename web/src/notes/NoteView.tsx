@@ -433,7 +433,11 @@ function NoteEditor({
     // No padding on the TOP of the scroll container: `sticky top-0` pins to
     // the scrollport, which is the padding box, so a pt- here leaves a band
     // above the pinned header for content to scroll through in plain view.
-    // The header wrapper carries that padding instead. The bottom keeps the
+    // The header wrapper carries that padding instead, the phone's
+    // status-bar inset included (--page-t, styles/shell.css): the header
+    // reaches the top of the screen and its fill runs up behind the
+    // status bar, one surface from the screen's edge to the rule, and the
+    // note scrolls under all of it. The bottom keeps the
     // home-indicator inset, since an edited note claims the phone's bar and
     // its text would otherwise run under it — and --safe-b is zero while
     // the keyboard is up, when the indicator is behind the keys.
@@ -452,7 +456,7 @@ function NoteEditor({
       <div
         ref={setHeader}
         className={cn(
-          'sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pt-4 md:-mx-6 md:px-6 md:pt-6',
+          'sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pt-[calc(1rem+var(--page-t))] md:-mx-6 md:px-6 md:pt-6',
           // The page header's grammar: the page's own tone at rest, and the
           // bars' fill with the card's edge once the note has scrolled
           // under it, so the line returns under High contrast. A standing

@@ -38,8 +38,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   bar now fades in over the slide.
 - **The installed app keeps clear of iOS 27's top band.** iOS 27 dims a
   strip below the status bar of a home screen app, and it lay over the
-  top of every page's header. The app now starts 16 pixels lower there.
-  The strip is the system's and stays; nothing sits under it any more.
+  top of every page's header. A page's header now starts 16 pixels
+  lower there. The strip is the system's and stays; only what scrolls
+  passes under it.
+- **A phone's pages scroll under the status bar.** The installed app
+  held a solid block above every page for the notch, and a scrolled note
+  stopped dead at its lower edge. Each page now carries that room itself,
+  so its content passes under the status bar as it scrolls, and a pinned
+  header, the note's, runs up behind the status bar as one surface.
 
 ## 0.11.3
 

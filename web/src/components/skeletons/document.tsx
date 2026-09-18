@@ -59,7 +59,7 @@ export function SkeletonDocument({ className }: { className?: string }) {
           classes rather than read through matchMedia: this is a
           placeholder, and a media query it has to subscribe to is a
           render it has to do twice. */}
-      <div className="-mx-4 flex shrink-0 flex-col gap-3 border-b border-transparent px-4 pb-3 pt-4 md:-mx-6 md:px-6 md:pt-6 md:pointer-fine:pb-1.5">
+      <div className="-mx-4 flex shrink-0 flex-col gap-3 border-b border-transparent px-4 pb-3 pt-[calc(1rem+var(--page-t))] md:-mx-6 md:px-6 md:pt-6 md:pointer-fine:pb-1.5">
         {/* pointer-coarse:h-9, like every control the row holds: the back
             chevron and the edit button are icon-sm and sm, which grow to
             36px under a thumb. Pinned at h-7 the row was a button short on

@@ -58,6 +58,35 @@
   --ios-band: 16px;
 }
 
+/* Who pays the top clearance: the shell, or the page.
+
+   The shell used to pad by --safe-t at every width, which made the top
+   inset a solid block above every page: a scrolled note stopped dead at
+   its lower edge, where an iOS app's content passes under the status bar
+   (a scroll view's content inset, not a frame). So under md, where the
+   page fills the width and the phone is the platform, the shell pads
+   nothing and every page family adds --page-t to its own top padding:
+   PageShell's column, the note's pinned header, the board shells, the
+   canvas header, the reader and workbench headers. Content then scrolls
+   through the inset, and a pinned header extends up behind the status
+   bar as one fill, instead of the page's ground showing between the
+   system's band and the header (lanph3re, 2026-09-18).
+
+   From md the shell keeps the whole inset: a sidebar and a title row sit
+   at the top there and gain nothing from running under a status bar. The
+   two variables always sum to --safe-t, so the sheet band and the skip
+   link above keep reading --safe-t. */
+:root {
+  --shell-t: var(--safe-t);
+  --page-t: 0px;
+}
+@media (max-width: 47.9375rem) {
+  :root {
+    --shell-t: 0px;
+    --page-t: var(--safe-t);
+  }
+}
+
 /* How tall a bottom sheet may grow, as a share of the layer it floats
    in — named here because the answer changes when the keyboard is up.
    The percentage resolves where it is USED, against the sheet's own
@@ -95,6 +124,12 @@
      padding; the floating layers never needed it, because at rest they
      are bottom-anchored and stop well short of the top. */
   padding-top: var(--safe-t);
+}
+/* The shell alone pays only its share (--shell-t above): under md the
+   page carries the inset in its own top padding, and a second one here
+   would push the pinned band down by the notch while the keyboard is up. */
+.kb-open .app-shell {
+  padding-top: var(--shell-t);
 }
 
 /* Below the band, the screen is not empty. iOS keeps painting the layout

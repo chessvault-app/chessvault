@@ -223,7 +223,7 @@ export function PuzzleEntry({
           the compact leaf row on a phone. Image import lives in the
           editor's own Position panel, not up here. */}
       {wide ? (
-        <div className="flex shrink-0 items-center px-4 pt-4 md:px-6 md:pt-6">
+        <div className="flex shrink-0 items-center px-4 pt-[calc(1rem+var(--page-t))] md:px-6 md:pt-6">
           <PageHeader
             className="min-w-0 flex-1"
             title={`${t(replace ? 'Fix' : 'Add')} #${number}`}
@@ -233,7 +233,7 @@ export function PuzzleEntry({
           />
         </div>
       ) : (
-        <div className="flex shrink-0 items-center gap-2 px-3 pt-3">
+        <div className="flex shrink-0 items-center gap-2 px-3 pt-[calc(0.75rem+var(--page-t))]">
           <Button variant="ghost" size="icon-sm" title={t('Back to the book')} onClick={onCancel}>
             <ChevronLeft className="glyph" />
           </Button>

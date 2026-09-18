@@ -91,7 +91,10 @@ export function PageShell({
     >
       <div
         className={cn(
-          'mx-auto flex w-full flex-col gap-4 px-4 pt-4 pb-[calc(2rem+var(--safe-b))] md:px-6 md:pt-6',
+          // The top adds --page-t, the phone's status-bar inset (styles/
+          // shell.css): the column starts under it, and what scrolls
+          // passes through it, as the bottom does the home indicator.
+          'mx-auto flex w-full flex-col gap-4 px-4 pt-[calc(1rem+var(--page-t))] pb-[calc(2rem+var(--safe-b))] md:px-6 md:pt-6',
           WIDTHS[width],
           className,
         )}
