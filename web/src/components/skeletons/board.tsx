@@ -39,6 +39,7 @@ export function SkeletonBoard({
   explorer = false,
   name,
   panes,
+  openPane = 0,
   foot,
   stackedPanel,
   panel,
@@ -57,8 +58,12 @@ export function SkeletonBoard({
    * PlayerBar draws nothing until the headers are loaded, so a game's board
    * used to sit where a study's does and then take on 24px above it, 24
    * below and the gaps between. A study has no players and passes nothing.
+   *
+   * `'wide'` is the Board's own empty bars (editablePlayers with no names
+   * typed): they stand at `wide` and are folded away stacked, where a
+   * nameless board draws neither (AnalysisBoard, `hasNames`).
    */
-  players?: boolean;
+  players?: boolean | 'wide';
   /** A study's chapter list, which a game and a trainer do not have. */
   chapters?: boolean;
   /** The explorer, docked at the foot of the column on a wide screen. */
@@ -86,6 +91,11 @@ export function SkeletonBoard({
    * not running while the page is still arriving.
    */
   panes?: LucideIcon[];
+  /**
+   * Which tab of that switcher is the open one, where it is not the
+   * first: the Board reached as Tools > Explorer opens on its third.
+   */
+  openPane?: number;
   /** A panel at the foot of the side column, drawn by whoever knows what
       it holds. The explorer's own fold is `explorer` above. */
   foot?: React.ReactNode;
@@ -251,7 +261,7 @@ export function SkeletonBoard({
           <div
             className={cn(
               'w-full items-end wide:flex wide:h-10',
-              players || strip ? 'flex' : 'hidden wide:flex',
+              (players === true) || strip ? 'flex' : 'hidden wide:flex',
             )}
           >
             {strip ?? (players && playerBar)}
@@ -259,7 +269,9 @@ export function SkeletonBoard({
           <BoardLane>
             <Skeleton className="board-box aspect-square rounded-xl" />
           </BoardLane>
-          {below ?? (players && playerBar)}
+          {below ??
+            (players &&
+              (players === 'wide' ? <div className="stacked:hidden">{playerBar}</div> : playerBar))}
         </div>
       </div>
 
@@ -331,7 +343,7 @@ export function SkeletonBoard({
               key={i}
               className={cn(
                 'flex flex-1 items-center justify-center',
-                i === 0 ? 'text-foreground' : 'text-muted-foreground',
+                i === openPane ? 'text-foreground' : 'text-muted-foreground',
               )}
             >
               <Icon className="glyph" />
@@ -342,7 +354,10 @@ export function SkeletonBoard({
           <span
             aria-hidden
             className="bg-foreground absolute bottom-0 left-0 h-0.5 rounded-full"
-            style={{ width: `${100 / (panes?.length ?? (chapters ? 4 : 3))}%` }}
+            style={{
+              width: `${100 / (panes?.length ?? (chapters ? 4 : 3))}%`,
+              translate: `${openPane * 100}%`,
+            }}
           />
         </div>
         {/* The panels below are the wide layout's: a phone shows one pane

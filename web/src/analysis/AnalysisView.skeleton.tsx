@@ -29,13 +29,28 @@ import { t } from '@/lib/i18n';
  * which is what a cold load always opens on.
  */
 export default function BoardOutline({ params = [] }: { params?: string[] }) {
+  const explorer = params[0] === 'explorer';
   return (
     <SkeletonBoard
-      name={params[0] === 'explorer' ? t('Explorer') : t('Board')}
-      players
+      name={explorer ? t('Explorer') : t('Board')}
+      // Tools > Explorer opens a phone on the explorer's tab, the third,
+      // and the one pane on screen is then the explorer's.
+      openPane={explorer ? 2 : 0}
+      // The bars are empty on a cold load (no names typed yet), and empty
+      // bars stand only at `wide`: stacked, the page draws neither.
+      players="wide"
       engine
       explorer
-      panel={{ title: t('Starting position') }}
+      panel={{
+        title: explorer ? (
+          <>
+            <span className="max-lg:hidden">{t('Starting position')}</span>
+            <span className="lg:hidden">{t('Explorer')}</span>
+          </>
+        ) : (
+          t('Starting position')
+        ),
+      }}
     />
   );
 }
