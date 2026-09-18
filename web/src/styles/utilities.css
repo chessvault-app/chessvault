@@ -135,21 +135,35 @@
    panel shadow below. The one recipe for every translucent surface the
    platform chrome draws ("Platform-specific design" in
    docs/design-principles.md); nothing composes its own. Drawn only where
-   the browser can blur, only when the reader has not asked for reduced
+   the browser can blur, not when the reader has asked for reduced
    transparency, and only while the root does not carry data-glass="off",
    which the Settings debug card sets for the A/B on the phone
    (lib/platform.ts reads it back at launch). Under any of the three the
    element keeps whatever opaque fill it declared, so the capsule falls
    back to the card. -webkit-backdrop-filter beside the unprefixed one:
-   iOS 26 takes either, older Safari only the prefixed. */
+   iOS 26 takes either, older Safari only the prefixed.
+
+   The reduced-transparency gate is written as an override that takes
+   the glass AWAY under `reduce`, not as a condition that grants it under
+   `no-preference`: a browser that does not know the feature (Safari, on
+   lanph3re's phone, 2026-09-18) evaluates an unknown media feature as
+   false, and the first form left the capsule opaque there with the Glass
+   switch on. An unknown feature in the override is simply ignored, and
+   the glass stays. */
 @utility glass {
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    @media (prefers-reduced-transparency: no-preference) {
+    :root:not([data-glass='off']) & {
+      background-color: color-mix(in oklch, var(--card) var(--glass-fill), transparent);
+      -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+      backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+      box-shadow: inset 0 1px 0 0 var(--glass-highlight), var(--shadow-panel);
+    }
+    @media (prefers-reduced-transparency: reduce) {
       :root:not([data-glass='off']) & {
-        background-color: color-mix(in oklch, var(--card) var(--glass-fill), transparent);
-        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
-        backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
-        box-shadow: inset 0 1px 0 0 var(--glass-highlight), var(--shadow-panel);
+        background-color: var(--card);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+        box-shadow: var(--shadow-panel);
       }
     }
   }

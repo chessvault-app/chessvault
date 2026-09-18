@@ -7,12 +7,13 @@ const TOP = 16;
 const SLACK = 4;
 
 /**
- * Whether the iOS capsule should be down to its current tab.
+ * Whether the iOS capsule should be closed: down to its icons.
  *
  * iOS 26 minimises the tab bar on a scroll down and brings it back on
- * the first scroll up, so the content being read gets the width of the
+ * the first scroll up, so the content being read gets more of the
  * screen and the tabs are one flick away; at the top of a page the bar
- * is always whole. The same shape the pinned headers take
+ * is always whole. What "closed" draws is the bar's business
+ * (shell/mobile-nav); this decides when. The same shape the pinned headers take
  * (hooks/use-scroll-reveal), read the same way: direction with a few
  * pixels of slack, and a position past either end (a rubber-band
  * bounce) read as no move.

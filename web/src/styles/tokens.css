@@ -174,12 +174,18 @@
      fill it keeps, how far it blurs what is under it, and the light
      along its top edge. The fill and the blur are the two numbers a
      glass surface has, and both are placed by measurement ("Platform-
-     specific design", docs/design-principles.md): 85% is where the
-     inactive tab label still clears 4.5:1 over black content under
-     it, and 12px is a quarter of the 24px blur that cost the docked bar
-     its frames in 2026-09. The highlight is white at both ends of the
-     theme, since it stands for light on the edge, not for ink. */
-  --glass-fill: 85%;
+     specific design", docs/design-principles.md). It was 85%, the fill
+     at which a MUTED tab label still cleared 4.5:1 over black content,
+     and at 85% a white capsule over a white shelf was opaque to the eye
+     (lanph3re, on the phone, 2026-09-18). So the ink moved instead of
+     the fill staying: on iOS the tabs draw foreground ink, the active
+     one told by its pill and weight as Apple's are, and 70% is where
+     THAT ink clears 4.5:1 over black in light and over white in dark
+     (shell/mobile-nav has the numbers). 12px is half the 24px blur that
+     cost the docked bar its frames in 2026-09. The highlight is white at
+     both ends of the theme, since it stands for light on the edge, not
+     for ink. */
+  --glass-fill: 70%;
   --glass-blur: 12px;
   --glass-highlight: oklch(100% 0 0 / 0.6);
   --background-accent: oklch(calc(97% + (95% - 97%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));

@@ -10,8 +10,8 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 - **On an iPhone, the bottom bar floats.** The tab bar, and a page's
   own controls when they take its place, sit in a rounded capsule lifted
   off the bottom edge, and the page scrolls under it, which is the shape
-  iOS 26 gives its own apps. Scrolling down closes the tab bar to the
-  tab you are on; scrolling up, or tapping it, opens it again. The
+  iOS 26 gives its own apps. Scrolling down folds the tab bar to its
+  icons; scrolling up, or tapping it, opens it again. The
   capsule is translucent, the page showing through it softened, unless
   the phone asks for reduced transparency; the compact page header,
   menus and toasts take the same material. Android and the desktop keep
