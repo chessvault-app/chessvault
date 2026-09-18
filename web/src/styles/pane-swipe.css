@@ -131,10 +131,10 @@
   }
 }
 
-/* The header's line moves with the finger (translate, from --pane-dx) and
+/* The header's fill moves with the finger (translate, from --pane-dx) and
    walks to its tab on the pane's clock: a tap moves `left`, a settling
    swipe moves the transform, and both take the turn's own duration and
-   curve so the line and the pane land together. Mid-drag it is pinned to
+   curve so the fill and the pane land together. Mid-drag it is pinned to
    the finger, so no transition. Reduced motion flattens it to the swap. */
 [data-pane-indicator] {
   transition:
