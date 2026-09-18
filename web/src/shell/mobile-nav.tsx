@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { Ellipsis, House } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { atRoute, navigate, sectionHref, type Section } from '@/lib/router';
@@ -5,6 +6,7 @@ import { scrollPageToTop } from '@/lib/scroll';
 import { useTabScrub } from '@/hooks/use-tab-scrub';
 import { MOBILE_BAR_SLOT_ID, useMobileBarClaimed } from '@/components/mobile-action-bar';
 import { useBottomBarMeasure } from '@/hooks/use-bottom-bar';
+import { useBarMinimized } from '@/hooks/use-bar-minimize';
 import { t } from '@/lib/i18n';
 import { MORE_SECTIONS, NAV, openSection } from '@/shell/shared';
 
@@ -89,6 +91,13 @@ export function MobileBottom({ active }: { active: Section }) {
  */
 function MobileNav({ active }: { active: Section }) {
   const measure = useBottomBarMeasure();
+  // iOS: down to the current tab while the page is read, whole again on
+  // a scroll up (hooks/use-bar-minimize). The capsule is a grid of five
+  // tracks of one tab's width, and minimising sets the other four to
+  // zero: grid tracks interpolate, so the capsule, whose width is its
+  // tracks, closes on the tab over the pane-turn clock, which is the one
+  // morph WebKit can draw here (a width to fit-content cannot animate).
+  const { minimized, expand } = useBarMinimized(active);
   const inMore = active === 'more' || MORE_SECTIONS.some((m) => m.section === active);
   // Desktop reaches home through the sidebar's logo; the bottom bar needs
   // its own entry or a phone can never get back to the landing page.
@@ -164,6 +173,10 @@ function MobileNav({ active }: { active: Section }) {
         'flex min-h-11 flex-1 flex-col items-center justify-center gap-1 py-1 text-xs font-medium',
         'transition-colors duration-150',
         isActive ? 'text-primary font-semibold' : 'text-muted-foreground',
+        // A grid item in a track closing to zero must be allowed to, and
+        // what is in it fades rather than being cropped mid-glyph.
+        'ios:min-w-0 ios:overflow-hidden ios:transition-[color,opacity] ios:duration-(--pane-turn)',
+        minimized && !isCurrent && 'ios:opacity-0',
       )}
     >
       {/* The pill's footprint; the pill itself is the sliding element
@@ -208,8 +221,24 @@ function MobileNav({ active }: { active: Section }) {
         // Nothing here scrolls or zooms, so this costs the bar nothing and
         // saves the scrub from arguing with the page under it.
         'touch-none',
+        // iOS: the capsule is its five tracks (--cols below), fit to them
+        // and anchored at the left inset, so it closes from the right
+        // when it minimises, the way Apple's does with the search circle
+        // on its trailing side. The tracks are the morph.
+        'ios:grid ios:grid-cols-(--cols) ios:w-fit ios:right-auto ios:overflow-hidden',
+        'ios:transition-[grid-template-columns] ios:duration-(--pane-turn) ios:ease-(--pane-turn-ease)',
+        'motion-reduce:transition-none',
       )}
-      {...scrub.bar}
+      data-minimized={minimized ? '' : undefined}
+      style={{
+        // One tab's width: a fifth of the row less the capsule's insets.
+        // The viewport rather than a percentage, since a percentage track
+        // in a fit-content grid has nothing to resolve against.
+        '--tab-w': 'calc((100vw - 2.5rem) / 5)',
+        '--cols': slots.map((_, i) => (minimized && i !== activeIndex ? '0px' : 'var(--tab-w)')).join(' '),
+      } as CSSProperties}
+      // No scrub on a one-tab capsule: a drag along it has nowhere to go.
+      {...(minimized ? {} : scrub.bar)}
     >
       {/* The one pill, behind whichever tab is current, sliding between
           them over the pane-turn duration. Each tab used to draw its own
@@ -227,11 +256,21 @@ function MobileNav({ active }: { active: Section }) {
         // property rather than this style prop, so a render that lands
         // mid-gesture cannot fight the finger for it.
         style={{
-          left: `var(--nav-pill-left, calc(${(activeIndex + 0.5) * (100 / slots.length)}% - 1.75rem))`,
+          // Minimised, the capsule is the one tab, and the pill sits in
+          // its middle.
+          left: minimized
+            ? 'calc(50% - 1.75rem)'
+            : `var(--nav-pill-left, calc(${(activeIndex + 0.5) * (100 / slots.length)}% - 1.75rem))`,
         }}
       />
       {slots.map(({ key, label, icon, on, go }, i) =>
         tab(key, label, icon, i === lit, on, () => {
+          // A tap on the minimised capsule opens it and does nothing
+          // else, which is what a tap on Apple's does.
+          if (minimized) {
+            expand();
+            return;
+          }
           // The click behind a scrub would run the slot the finger STARTED
           // on; the scrub has already run the one it ended on.
           if (scrub.scrubbed()) return;

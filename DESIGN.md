@@ -886,7 +886,9 @@ hit areas, `title` as a tooltip. Composites live in
   edge). On iOS the same box is the platform's capsule: 20px in from
   the sides, lifted by the home indicator's inset (20px where there is
   none), a true pill with the window ring and the panel shadow, and
-  the page scrolls under it, its foot clearing `--page-b`. Both faces
+  the page scrolls under it, its foot clearing `--page-b`; on a scroll
+  down it closes to the current tab and opens again on a scroll up or
+  at the top, and a tap on the closed capsule opens it. Both faces
   are `bg-card` (its fill is its
   edge; `border-card-ring` draws the line only under High contrast) and
   the home-indicator inset, gone while the keyboard is up. Each tab is a

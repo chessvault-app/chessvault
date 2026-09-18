@@ -103,6 +103,19 @@ const STATES: {
   { name: 'desktop', width: 1280, height: 900 },
   { name: 'phone', width: 375, height: 812 },
   { name: 'phone-ios', width: 375, height: 812, platform: 'ios' },
+  {
+    // The same scroll as phone-scrolled below, as iOS: the capsule down
+    // to its current tab (hooks/use-bar-minimize).
+    name: 'phone-ios-scrolled',
+    width: 375,
+    height: 812,
+    platform: 'ios',
+    routes: ['#/studies', '#/notes', '#/settings', '#/more'],
+    prepare: `(() => {
+      const el = [...document.querySelectorAll('[data-page-scroll]')].find((n) => n.checkVisibility());
+      if (el) el.scrollTop = 240;
+    })()`,
+  },
   { name: 'phone-320', width: 320, height: 568, routes: ['#/games', '#/studies', '#/more'] },
   {
     name: 'phone-scrolled',
