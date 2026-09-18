@@ -300,6 +300,7 @@ export function ThemesPage() {
               </span>
             )
           }
+          searchCollapse={{ label: t('Find a theme'), active: query !== '', onClear: () => setQuery('') }}
           search={
             <SearchInput
               inputSize="sm"

@@ -37,12 +37,31 @@ export interface FabAction {
  * scrolling back to the header. The row's own verbs, which are the ones
  * reached from the middle of a list, are unchanged.
  */
-export function CreateControl({ actions, label = 'Create' }: { actions: FabAction[]; label?: string }) {
+export function CreateControl({
+  actions,
+  label = 'Create',
+  compact = false,
+}: {
+  actions: FabAction[];
+  label?: string;
+  /**
+   * Read the label out but do not draw it under sm: for a header that
+   * also holds a back chevron, a long title and two switches, where the
+   * word put the actions on a second line at 390px (the puzzle books
+   * shelf, photographed) and the title row then changed height whenever
+   * its search opened. The plus says it.
+   */
+  compact?: boolean;
+}) {
   const single = actions.length === 1 ? actions[0] : null;
+  const words = single ? t(single.label) : t(label);
   const button = (
     <Button variant="default" size="sm" onClick={single ? single.onSelect : undefined}>
       <Plus className="glyph" data-icon="inline-start" />
-      {single ? t(single.label) : t(label)}
+      {/* Under 360px every shelf's word goes too: beside the title row's
+          magnifier and bookmark switch it wrapped the row at 320px
+          (photographed), as Import did on the Games page. */}
+      <span className={compact ? 'max-sm:sr-only' : 'max-[22.4rem]:sr-only'}>{words}</span>
       {!single && <ChevronDown className="ml-1 glyph-sm" />}
     </Button>
   );

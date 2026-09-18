@@ -1,8 +1,11 @@
-import { ChevronLeft } from 'lucide-react';
-import { useRef, type ReactNode } from 'react';
+import { ChevronLeft, Search, X } from 'lucide-react';
+import { useRef, useState, type ReactNode } from 'react';
+import { flushSync } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { searchRowClass } from '@/components/text-fields';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
+import { useMediaQuery } from '@/lib/media';
+import { scrollParent } from '@/lib/scroll';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
@@ -77,6 +80,7 @@ export function PageHeader({
   pinnedActions,
   pinnedBelow,
   titleRow,
+  searchCollapse,
   className,
 }: {
   title: string;
@@ -124,9 +128,81 @@ export function PageHeader({
    * its place, so nothing below it moves.
    */
   titleRow?: ReactNode;
+  /**
+   * On a phone, fold the `search` row into the title row: at rest a
+   * magnifier stands first among the actions and there is no search row;
+   * pressed, the title row IS the field, with an X that empties it and
+   * gives the name back. The shape the Games page settled on a phone
+   * (games/header-slots says why a field that opens as a row is still a
+   * row), here for every page that hands this header a `search`
+   * (lanph3re, 2026-09-19). From md the row stands where it always did.
+   *
+   * The page still owns the query, so it says three things: what the
+   * magnifier is called (the field's own placeholder), whether a query is
+   * standing (the field then stays open, so a narrowed list is never
+   * narrowed invisibly, as when a kept page comes back), and how to
+   * empty it.
+   */
+  searchCollapse?: { label: string; active: boolean; onClear: () => void };
   className?: string;
 }) {
   const pinRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
+  const phone = useMediaQuery('(max-width: 47.9375rem)');
+  const folds = Boolean(search && searchCollapse && phone);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const fieldShown = folds && (searchOpen || searchCollapse!.active);
+  // Focused inside the press: iOS raises the keyboard only for a focus made
+  // during the gesture, so the row swap is committed under flushSync and
+  // the field that now exists is focused before the handler returns. From
+  // the compact bar the page goes up to meet it first.
+  const openSearch = (): void => {
+    if (pinRef.current) scrollParent(pinRef.current)?.scrollTo({ top: 0 });
+    flushSync(() => setSearchOpen(true));
+    headerRef.current?.querySelector('input')?.focus();
+  };
+  const magnifier = folds ? (
+    <Button variant="secondary" size="icon-sm" title={searchCollapse!.label} className="shrink-0" onClick={openSearch}>
+      <Search className="glyph" />
+    </Button>
+  ) : null;
+  const ownTitleRow = fieldShown ? (
+    <div
+      className="group/title-search flex min-w-0 flex-1 items-center gap-2"
+      // Left empty, the row gives the title back. That is what the app's
+      // search field's own Cancel does to it (empties it and blurs,
+      // components/text-fields), and what tapping away from a field
+      // nothing was typed into means. Read off the DOM a task later: at
+      // the blur itself the page's query has not caught up with Cancel.
+      onBlur={(e) => {
+        const box = e.currentTarget;
+        setTimeout(() => {
+          if (!box.isConnected || box.contains(document.activeElement)) return;
+          if ((box.querySelector('input')?.value ?? '') === '') setSearchOpen(false);
+        }, 0);
+      }}
+    >
+      {/* The field fills the row whatever width its page gave it. */}
+      <div className="min-w-0 flex-1 [&>*]:w-full">{search}</div>
+      {/* The way out while the field is NOT focused (a query standing,
+          the keyboard put away). Focused, the field shows its own Cancel
+          in this very spot, and two ways out side by side was one too
+          many (photographed). */}
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        title={t('Close')}
+        className="shrink-0 group-has-[input:focus]/title-search:hidden"
+        onClick={() => {
+          searchCollapse!.onClear();
+          setSearchOpen(false);
+        }}
+      >
+        <X className="glyph" />
+      </Button>
+    </div>
+  ) : undefined;
+  const row = titleRow ?? ownTitleRow;
   const { scrolled, hidden } = useScrollReveal(pinRef, pinned);
   const barShown = pinned && scrolled && !hidden;
   return (
@@ -177,8 +253,11 @@ export function PageHeader({
                 </Button>
               )}
               <span className="min-w-0 flex-1 truncate text-base font-semibold">{title}</span>
-              {(pinnedActions ?? actions) && (
-                <div className="ml-auto flex min-w-0 items-center justify-end gap-2">{pinnedActions ?? actions}</div>
+              {(magnifier || (pinnedActions ?? actions)) && (
+                <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
+                  {magnifier}
+                  {pinnedActions ?? actions}
+                </div>
               )}
             </div>
             {pinnedBelow}
@@ -186,6 +265,7 @@ export function PageHeader({
         </div>
       )}
       <header
+        ref={headerRef}
         // data-ground: a page's chrome stands on the page, not in a card
         // (docs/design-principles.md), and the muted and secondary fills
         // step a rung up under it (index.css, `[data-ground]`). The search
@@ -201,11 +281,11 @@ export function PageHeader({
           className,
         )}
       >
-        {titleRow ? (
+        {row ? (
           <>
             {/* The page keeps its heading while the row is a field. */}
             <h1 className="sr-only">{title}</h1>
-            {titleRow}
+            {row}
           </>
         ) : (
           <>
@@ -229,8 +309,11 @@ export function PageHeader({
               {title}
             </h1>
             {meta}
-            {actions && (
-              <div className="ml-auto flex min-w-0 items-center justify-end gap-2">{actions}</div>
+            {(magnifier || actions) && (
+              <div className="ml-auto flex min-w-0 items-center justify-end gap-2">
+                {magnifier}
+                {actions}
+              </div>
             )}
           </>
         )}
@@ -241,7 +324,7 @@ export function PageHeader({
       {description && (
         <p className="text-muted-foreground -mt-2 text-sm leading-relaxed">{description}</p>
       )}
-      {search && (
+      {search && !folds && (
         <div data-ground="" className={cn('flex items-center gap-2 md:[&>:first-child]:max-w-sm', searchRowClass)}>
           {search}
         </div>

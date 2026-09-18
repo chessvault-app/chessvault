@@ -265,6 +265,9 @@ export function ShelfToolbar<S extends string = ShelfSort>({
       // bar on a scroll up (see PageHeader).
       pinned
       subtitle={subtitle}
+      // On a phone the field is a magnifier in the title row until it is
+      // wanted (see PageHeader, `searchCollapse`).
+      searchCollapse={{ label: placeholder, active: query !== '', onClear: () => onQuery('') }}
       search={
         <SearchInput
           type="text"

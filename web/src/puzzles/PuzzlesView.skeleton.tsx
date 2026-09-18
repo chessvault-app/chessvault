@@ -176,6 +176,9 @@ function ThemesOutline() {
           title={t('Puzzle themes')}
           back={() => navigate('puzzles', 'hub')}
           subtitle={<SkeletonSubtitle />}
+          // The page folds its field into the title row on a phone; the
+          // outline says the same three things so it draws the same row.
+          searchCollapse={{ label: t('Find a theme'), active: false, onClear: NOOP }}
           search={
             <SearchInput
               inputSize="sm"
@@ -363,7 +366,7 @@ function PuzzleShelfOutline() {
         sort={view.sort}
         dir={view.dir}
         // One action, so the button says it rather than opening a menu.
-        create={<OutlineCreate label="New book" actions={1} />}
+        create={<OutlineCreate label="New book" actions={1} compact />}
       />
       {cards > 0 && <SkeletonBookCards cards={cards} />}
     </PageShell>

@@ -114,10 +114,20 @@ export function ShelfHeader<S extends string>({
  * menu's: numbered placeholders drew the puzzle shelf a button that
  * read "+ 0".
  */
-export function OutlineCreate({ label = 'Create', actions }: { label?: string; actions: number }) {
+export function OutlineCreate({
+  label = 'Create',
+  actions,
+  compact,
+}: {
+  label?: string;
+  actions: number;
+  /** As the shelf's own CreateControl. */
+  compact?: boolean;
+}) {
   return (
     <CreateControl
       label={label}
+      compact={compact}
       actions={Array.from({ length: actions }, () => ({
         label,
         icon: Plus,
