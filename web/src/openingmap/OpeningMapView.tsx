@@ -1475,8 +1475,6 @@ function NodePanel({
         className={cn(
           'border-border bg-card sticky z-10 mt-auto flex items-stretch gap-1 border-t',
           '-mx-3 px-3 pt-2',
-          // iOS: glass, as the sheet it is the foot of (components/ui/dialog).
-          'max-md:ios:glass max-md:ios:rounded-none',
           // Gone while the keyboard is up, the same as the phone's own
           // bottom bar. Pinned to the foot of a sheet that has just given
           // way to the keyboard, this row rides up and sits over the
