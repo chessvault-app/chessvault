@@ -25,15 +25,18 @@ export interface PaneTab<T extends string> {
  * the top of a column that has no card for it to belong to. `header` is
  * what the board pages use: the strip becomes the top of the pane card
  * under it, drawn in the card's own surface and ring, with the open tab
- * marked by a line on the card's edge. A pill over a card read as two
+ * marked by a muted fill behind its icon. The fill replaced a 2px line on
+ * the card's edge under 14px icons (lanph3re, 2026-09-18): at the same
+ * 32px the strip read as thin and its icons as small, so the icons are
+ * 18px and the marker is as tall as the strip allows. A pill over a card read as two
  * unrelated floating things stacked; the header is one object. The pane
  * cards below square their top corners to meet it (index.css, "pane
  * header"), and the column's gap between the two is swallowed here, so
  * the header costs the pane less height than the pill and its gap did.
  *
- * The line under the open tab is also how a swipe shows itself: the hook
+ * The fill behind the open tab is also how a swipe shows itself: the hook
  * (hooks/use-pane-swipe) leaves `--pane-dx` on the column while a finger
- * holds the panes, and the line follows it, a tab's width per pane, so the
+ * holds the panes, and the fill follows it, a tab's width per pane, so the
  * marker travels with the thumb and lands where the panes do. The pill
  * face has nothing to move and just fills on the pane's clock.
  */
@@ -102,6 +105,22 @@ export function PaneTabs<T extends string>({
           className,
         )}
       >
+        {/* Ahead of the tabs in the DOM, so the icons paint over it. */}
+        {header && (
+          <span
+            aria-hidden
+            data-pane-indicator
+            className="bg-muted absolute inset-y-[3px] rounded-lg"
+            style={{
+              width: `calc(${100 / tabs.length}% - 6px)`,
+              left: `calc(${(at * 100) / tabs.length}% + 3px)`,
+              // Dragging left pulls the next pane in, so the fill goes
+              // right: a pane's travel is a tab's width here. --pane-dx is
+              // the column's, inherited; at rest it is unset and this is 0.
+              transform: `translateX(calc(var(--pane-dx, 0px) / -${tabs.length}))`,
+            }}
+          />
+        )}
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
@@ -129,29 +148,14 @@ export function PaneTabs<T extends string>({
               className={cn(
                 'duration-(--pane-turn) ease-(--pane-turn-ease) pointer-coarse:h-[calc(100%-1px)]',
                 Icon && 'py-1',
-                // The header draws its own line (below), one that moves.
+                // The header draws its own fill (above), one that moves.
                 header && 'rounded-none after:hidden',
               )}
             >
-              {Icon ? <Icon className="size-3.5" /> : t(tab.label)}
+              {Icon ? <Icon className={header ? 'size-[1.125rem]' : 'size-3.5'} /> : t(tab.label)}
             </TabsTrigger>
           );
         })}
-        {header && (
-          <span
-            aria-hidden
-            data-pane-indicator
-            className="bg-foreground absolute bottom-0 h-0.5 rounded-full"
-            style={{
-              width: `${100 / tabs.length}%`,
-              left: `${(at * 100) / tabs.length}%`,
-              // Dragging left pulls the next pane in, so the line goes
-              // right: a pane's travel is a tab's width here. --pane-dx is
-              // the column's, inherited; at rest it is unset and this is 0.
-              transform: `translateX(calc(var(--pane-dx, 0px) / -${tabs.length}))`,
-            }}
-          />
-        )}
       </TabsList>
     </Tabs>
   );

@@ -7,6 +7,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **The open pane on a phone's board page is a filled tab.** The strip
+  over the pane marked its open tab with a thin line under a small icon.
+  The icons are larger now and the open one sits on a filled segment,
+  which follows a swipe as the line did. The strip is no taller.
 - **The phone's Games page stands two rows of chrome, not four.** The
   count is the line under the title, as the shelves put theirs. Search,
   the bookmark switch and the filters are icons in the title row beside
