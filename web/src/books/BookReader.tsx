@@ -680,7 +680,7 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
           board's navigation on the Board tab. */}
       <MobileActionBar>
         {tab === 'board' ? (
-          <BoardControls className="py-1.5" />
+          <BoardControls className="py-1.5 ios:py-0" />
         ) : (
           // The editor carries its own toolbar under its board, so the bar
           // holds nothing on that tab — claimed and empty (as a note being

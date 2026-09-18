@@ -1187,7 +1187,8 @@ drawn, and what one has to prove.
   rules that already govern them.
 - **Glass is one surface, gated three ways.** A translucent surface is
   a card fill at high alpha over a small backdrop blur with a saturate,
-  the window ring, and a one-pixel inset highlight from the foreground,
+  a one-pixel rim of light inside and a hairline of ink outside (one
+  shows on dark content, the other on light, so the edge never goes),
   all from existing tokens, defined once as a utility and never as a
   per-component recipe. It is drawn only under `@supports
   (backdrop-filter)`, taken away under `prefers-reduced-transparency:

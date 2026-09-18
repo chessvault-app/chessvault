@@ -156,14 +156,25 @@
       background-color: color-mix(in oklch, var(--card) var(--glass-fill), transparent);
       -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
       backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
-      box-shadow: inset 0 1px 0 0 var(--glass-highlight), var(--shadow-panel);
+      /* The edge, all the way round: a rim of light inside and a hairline
+         of ink outside, then the panel shadow. It was a line of light on
+         the top edge alone, and over content of the capsule's own colour
+         the bottom of the capsule had no edge at all (lanph3re, on the
+         phone, 2026-09-18). The two rims cover each other's blind side:
+         the light one is what shows on dark content, the ink one on
+         light. This box-shadow replaces the ring utilities on the same
+         element, which is why the rim is drawn here and not with them. */
+      box-shadow:
+        inset 0 0 0 1px var(--glass-highlight),
+        0 0 0 1px var(--glass-edge),
+        var(--shadow-panel);
     }
     @media (prefers-reduced-transparency: reduce) {
       :root:not([data-glass='off']) & {
         background-color: var(--card);
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
-        box-shadow: var(--shadow-panel);
+        box-shadow: 0 0 0 1px var(--glass-edge), var(--shadow-panel);
       }
     }
   }

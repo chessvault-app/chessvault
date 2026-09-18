@@ -301,7 +301,7 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
       {/* Phones: move navigation lives in the bottom bar, replacing the
           global tabs while the board is open. */}
       <MobileActionBar>
-        <BoardControls className="py-1.5" />
+        <BoardControls className="py-1.5 ios:py-0" />
       </MobileActionBar>
     </div>
   );

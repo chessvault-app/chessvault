@@ -884,9 +884,12 @@ hit areas, `title` as a tooltip. Composites live in
   pads by the bar's measured height (`--bottom-bar-h`, so a page ends
   where the bar begins), `bg-card` on the toned page (its fill is its
   edge). On iOS the same box is the platform's capsule: 20px in from
-  the sides, lifted by the home indicator's inset (20px where there is
-  none), a true pill with the window ring and the panel shadow, and
-  the page scrolls under it, its foot clearing `--page-b`. Icons only,
+  the sides, lifted by the home indicator's inset less 8px (20px where
+  there is none), a true pill with the panel shadow, a 24px glyph in a
+  40 by 64px track and the current tab's pill a 12% wash of the ink
+  over the glass (Instagram's glyph and track, off lanph3re's
+  screenshots), and the page scrolls under it, its foot clearing
+  `--page-b`. Icons only,
   a 48px row, the labels for the screen reader; on a scroll down it
   scales to 85% from its bottom edge and a scroll up, the top, or a tap
   brings it back, while the pinned header returns on the same scroll up
@@ -894,7 +897,8 @@ hit areas, `title` as a tooltip. Composites live in
   own close-to-one-tab read as an empty control). A transform, so the
   page's padding never moves. The capsule is
   glass (`utilities.css`, `glass`: the card's fill over a 12px blur, a
-  line of light on its top edge; 70% for a surface carrying text and
+  rim of light inside and a hairline of ink outside, so it keeps an
+  edge over content of its own colour; 70% for a surface carrying text and
   55% on the capsule, whose icons are held to 3:1 and drawn in
   foreground ink), falling back to the
   card's fill where the browser cannot blur, where the reader asked for

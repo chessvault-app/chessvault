@@ -622,7 +622,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           {/* The app's gutter, not a smaller one of its own: every other
               claimant of this row is a centred button strip, so this is
               the first whose text has a left edge to line up with. */}
-          <div className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-6 pr-4">
+          <div className="flex min-w-0 flex-1 items-center gap-3 py-2 pl-6 pr-4 ios:py-0">
             <button
               type="button"
               className="min-w-0 flex-1 text-left"

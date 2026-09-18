@@ -186,8 +186,18 @@
      both ends of the theme, since it stands for light on the edge, not
      for ink. */
   --glass-fill: 70%;
+  /* The capsule's fill (shell/mobile-nav): icons only, held to 3:1. In
+     light 55% is where the active icon on its 12% wash of ink still
+     clears 3:1 over black content; dark needs 65% for the same icon
+     over WHITE content, where the wash of white ink lightens its own
+     ground (measured 2.60:1 at 55% and 2.97:1 at 60%; tokens-dark.css). */
+  --glass-fill-capsule: 55%;
   --glass-blur: 12px;
   --glass-highlight: oklch(100% 0 0 / 0.6);
+  /* The hairline of ink outside a glass surface (utilities.css), the
+     edge that shows where the rim of light does not: a light capsule
+     over light content. */
+  --glass-edge: color-mix(in oklch, var(--foreground) 10%, transparent);
   --background-accent: oklch(calc(97% + (95% - 97%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));
   /* Already pure white; the contrast knob has nothing to add here. */
   --surface: oklch(100% 0 0);

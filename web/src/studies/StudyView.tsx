@@ -267,7 +267,7 @@ export function StudyView({
             bar is the right size and nothing in it can be pressed. */}
         {pending && (
           <MobileActionBar>
-            <BoardControls className="py-1.5 invisible" aria-hidden />
+            <BoardControls className="py-1.5 ios:py-0 invisible" aria-hidden />
           </MobileActionBar>
         )}
       </div>
@@ -498,7 +498,7 @@ export function StudyView({
 
       {/* Phones: move navigation in the bottom bar (see AnalysisView). */}
       <MobileActionBar>
-        <BoardControls className="py-1.5" />
+        <BoardControls className="py-1.5 ios:py-0" />
       </MobileActionBar>
     </div>
   );

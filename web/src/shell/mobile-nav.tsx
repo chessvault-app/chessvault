@@ -59,10 +59,12 @@ const OVERLAY = cn(
   'ios:ring-1 ios:ring-window-ring ios:shadow-md ios:glass',
   // Clearer than the text surfaces' 70% (tokens.css, --glass-fill): the
   // capsule carries icons only on iOS, and an icon is held to 3:1 where
-  // a label is held to 4.5:1. 55% is where the icons' ink still clears
-  // 3:1 over black in light and over white in dark (measured, the
-  // commit has the numbers). lanph3re asked for clearer (2026-09-18).
-  'ios:[--glass-fill:55%]',
+  // a label is held to 4.5:1. The capsule's own fill is a token, one
+  // number per theme (tokens.css, --glass-fill-capsule: 55% in light,
+  // 65% in dark), placed where the active icon on its pill still clears
+  // 3:1 over white content, the worst ground for a dark capsule.
+  // lanph3re asked for clearer (2026-09-18).
+  'ios:[--glass-fill:var(--glass-fill-capsule)]',
 );
 
 export function MobileBottom({ active }: { active: Section }) {
@@ -82,6 +84,11 @@ export function MobileBottom({ active }: { active: Section }) {
           // terms); this fill is what it falls back to.
           'bg-card border-border flex items-stretch border-t md:hidden',
           'pb-[env(safe-area-inset-bottom)] keyboard:hidden',
+          // iOS: the same row as the tab bar's, whatever a page puts in
+          // it: 48px tall, its controls centred, and every glyph in it at
+          // the tab bar's 24px (the board controls draw 22px on a coarse
+          // pointer, and read small beside the tabs; lanph3re, 2026-09-18).
+          'ios:min-h-12 ios:items-center ios:[&_svg]:size-6',
           // With the tab bar below: what is IN the bar arrives on the
           // slide's clock during a page change (motion.css, `bar-in`).
           'bottom-bar',
@@ -212,8 +219,12 @@ function MobileNav({ active }: { active: Section }) {
     >
       {/* The pill's footprint; the pill itself is the sliding element
           above, drawn once for the bar. */}
-      <span className="relative grid h-7 w-14 place-items-center rounded-full">
-        <Icon className="size-[1.15rem]" strokeWidth={isActive ? 2.4 : 2} />
+      {/* iOS: Instagram's glyphs and track, measured off lanph3re's
+          screenshots (2026-09-18): a 24px glyph in a 40px-tall, 64px-wide
+          track that nearly fills the 48px row. The docked bar keeps its
+          18px glyph under a label. */}
+      <span className="relative grid h-7 w-14 place-items-center rounded-full ios:h-10 ios:w-16">
+        <Icon className="size-[1.15rem] ios:size-6" strokeWidth={isActive ? 2.4 : 2} />
       </span>
       {/* Six labels overprinted under 320px (a 390 phone zoomed to 200%)
           and went screen-reader-only there; five fit at 320 with 20px to
@@ -273,14 +284,22 @@ function MobileNav({ active }: { active: Section }) {
       <span
         aria-hidden
         data-nav-pill
-        className="bg-nav-pill pointer-events-none absolute top-1 h-7 w-14 rounded-full transition-[left] duration-(--pane-turn) ease-(--pane-turn-ease)"
+        className={cn(
+          'bg-nav-pill pointer-events-none absolute top-1 h-7 w-14 rounded-full transition-[left] duration-(--pane-turn) ease-(--pane-turn-ease)',
+          // iOS: the track's size (above), and a wash of the ink rather
+          // than the docked bar's opaque tint, so the glass shows through
+          // the pill as it does through the rest of the capsule; an opaque
+          // pill on a translucent capsule read as a block stuck to it
+          // (lanph3re, 2026-09-18). --pill-half is the left calc's term.
+          'ios:h-10 ios:w-16 ios:bg-foreground/12 ios:[--pill-half:2rem]',
+        )}
         // Its resting place is the current tab's slot; while a finger is
         // scrubbing the bar (hooks/use-tab-scrub) the bar carries the
         // override and the pill is wherever the finger is. A custom
         // property rather than this style prop, so a render that lands
         // mid-gesture cannot fight the finger for it.
         style={{
-          left: `var(--nav-pill-left, calc(${(activeIndex + 0.5) * (100 / slots.length)}% - 1.75rem))`,
+          left: `var(--nav-pill-left, calc(${(activeIndex + 0.5) * (100 / slots.length)}% - var(--pill-half, 1.75rem)))`,
         }}
       />
       {slots.map(({ key, label, icon, on, go }, i) =>
