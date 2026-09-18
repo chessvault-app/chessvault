@@ -17,7 +17,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   On the Databases tab the search by position, material or motif opens
   as a sheet instead of a fifth row: running it closes the sheet, the
   line under the title says what was found, and the sheet's Clear drops
-  the search. A desktop is unchanged.
+  the search. And the page scrolls as one column, the way the shelves
+  do: the title, the chips and the games scroll away together, and a
+  scroll up brings back a compact bar holding the same switches and the
+  source chips, so a source can be changed from the middle of a long
+  list. A desktop is unchanged.
 - **On an iPhone, the bottom bar floats.** The tab bar, and a page's
   own controls when they take its place, sit in a rounded capsule lifted
   off the bottom edge, and the page scrolls under it, which is the shape
