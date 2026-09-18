@@ -1399,7 +1399,10 @@ export function ArchiveBrowser({
       // panel's height on a phone like every other tab's.
       // On iOS the rows scroll under the floating bar and the last one
       // clears its footprint (styles/shell.css, --page-b).
-      listClassName="flex-1 overflow-y-auto ios:pb-(--page-b)"
+      // Lifted (a phone's page), the PAGE scrolls and these rows are part
+      // of its column: no box of their own to scroll in, and the page's
+      // own padding clears the floating bar.
+      listClassName={lifted ? 'flex-1' : 'flex-1 overflow-y-auto ios:pb-(--page-b)'}
       // The end of the list asks for the next months. Older play is
       // reached by scrolling towards it, which is the same gesture that
       // used to be a minute of waiting before anything showed.

@@ -74,6 +74,8 @@ export function PageHeader({
   actions,
   search,
   pinned = false,
+  pinnedActions,
+  pinnedBelow,
   className,
 }: {
   title: string;
@@ -104,6 +106,16 @@ export function PageHeader({
   search?: ReactNode;
   /** A compact copy of the title row, pinned and shown on a scroll up. */
   pinned?: boolean;
+  /**
+   * What the bar draws in place of `actions`, for a page whose actions
+   * cannot be drawn twice: the Games page's are portal targets
+   * (games/header-slots), and a second copy would take the first one's
+   * ref. `actions` when omitted.
+   */
+  pinnedActions?: ReactNode;
+  /** A second line inside the bar, under the title row (the Games
+      page's source chips). */
+  pinnedBelow?: ReactNode;
   className?: string;
 }) {
   const pinRef = useRef<HTMLDivElement>(null);
@@ -126,7 +138,7 @@ export function PageHeader({
           <div
             data-chrome=""
             className={cn(
-              'bg-card border-card-ring flex items-center gap-2 border-b px-4 pb-2 md:px-6',
+              'bg-card border-card-ring flex flex-col gap-2 border-b px-4 pb-2 md:px-6',
               // iOS: glass over the list scrolling under it (utilities.css,
               // `glass`, on the capsule's terms: bg-card is what it falls
               // back to). The title is foreground ink, which clears the
@@ -144,19 +156,24 @@ export function PageHeader({
               barShown ? 'translate-y-0' : 'invisible -translate-y-full',
             )}
           >
-            {back && (
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                className={backVisible === 'phone' ? 'md:hidden' : undefined}
-                title={t('Back')}
-                onClick={back}
-              >
-                <ChevronLeft className="glyph" />
-              </Button>
-            )}
-            <span className="min-w-0 flex-1 truncate text-base font-semibold">{title}</span>
-            {actions && <div className="ml-auto flex min-w-0 items-center justify-end gap-2">{actions}</div>}
+            <div className="flex items-center gap-2">
+              {back && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className={backVisible === 'phone' ? 'md:hidden' : undefined}
+                  title={t('Back')}
+                  onClick={back}
+                >
+                  <ChevronLeft className="glyph" />
+                </Button>
+              )}
+              <span className="min-w-0 flex-1 truncate text-base font-semibold">{title}</span>
+              {(pinnedActions ?? actions) && (
+                <div className="ml-auto flex min-w-0 items-center justify-end gap-2">{pinnedActions ?? actions}</div>
+              )}
+            </div>
+            {pinnedBelow}
           </div>
         </div>
       )}

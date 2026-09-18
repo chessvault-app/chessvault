@@ -84,9 +84,34 @@ export function CollectionView() {
   const [subtitleEl, setSubtitleEl] = useState<HTMLElement | null>(null);
   const [findersEl, setFindersEl] = useState<HTMLElement | null>(null);
   const [filtersEl, setFiltersEl] = useState<HTMLElement | null>(null);
+  // And the same again inside the compact bar a scroll up reveals, with
+  // the source chips under them (PageHeader, `pinned`).
+  const [barFindersEl, setBarFindersEl] = useState<HTMLElement | null>(null);
+  const [barFiltersEl, setBarFiltersEl] = useState<HTMLElement | null>(null);
+  const [barChipsEl, setBarChipsEl] = useState<HTMLElement | null>(null);
   const slots = useMemo(
-    () => (lend ? { subtitle: subtitleEl, finders: findersEl, filters: filtersEl } : null),
-    [lend, subtitleEl, findersEl, filtersEl],
+    () =>
+      lend
+        ? {
+            subtitle: subtitleEl,
+            finders: findersEl,
+            filters: filtersEl,
+            barFinders: barFindersEl,
+            barFilters: barFiltersEl,
+            barChips: barChipsEl,
+          }
+        : null,
+    [lend, subtitleEl, findersEl, filtersEl, barFindersEl, barFiltersEl, barChipsEl],
+  );
+  const importButton = (
+    <Button variant="default" size="sm" onClick={() => openImport.current?.()}>
+      <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
+      {/* Read out but not drawn under 360px: beside the three lent
+          switches the word pushed the row onto a second line at
+          320px (photographed), and the plus says it. */}
+      <span className="md:hidden max-[22.4rem]:sr-only">{t('Import')}</span>
+      <span className="max-md:hidden">{t('Import a game')}</span>
+    </Button>
   );
 
   return (
@@ -96,16 +121,22 @@ export function CollectionView() {
       // details column, and every extra pixel is another table column
       // shown instead of shed. Below lg no viewport reaches either cap.
       width="xwide"
-      scroll={false}
-      // Pinned at every width: the browser's lists scroll themselves,
-      // so the page never scrolls — the tab strip and the toolbar stay
-      // put while the rows move, on a phone exactly as on the desktop.
-      // No bottom padding on a phone: the rows scroll inside their own
-      // box, so the padding was a 12px strip of page ground between the
-      // last row and the bottom bar, which on a dark theme read as a
-      // black band under the list (lanph3re, 2026-09-18). The rows now
-      // run to the bar, as a native list does.
-      className="h-full overflow-hidden pb-0 sm:pb-4 md:pb-6 ios:h-[calc(100%+var(--bottom-bar-h))]"
+      // From md the browser's lists scroll themselves and the page never
+      // does: the tab strip and the toolbar stay put while the rows move,
+      // which a table beside a details column wants. On a phone the page
+      // is one scrolling column like every shelf (lanph3re, 2026-09-18):
+      // the title, the chips and the rows scroll away together, and a
+      // scroll up reveals the compact bar. The pinned rows were the one
+      // page on a phone that did not move like the others.
+      scroll={lend}
+      // Scrolling (a phone), the column is PageShell's own, floor and
+      // all, and only needs to fill the screen when the list is short, so
+      // an empty tab's message still centres in what is left.
+      className={
+        lend
+          ? 'min-h-full'
+          : 'h-full overflow-hidden pb-6 ios:h-[calc(100%+var(--bottom-bar-h))]'
+      }
     >
       {/* Import on the title line, where Studies, Notes and Books put
           theirs: the page is a shelf of the reader's own games, and it
@@ -140,16 +171,22 @@ export function CollectionView() {
           <>
             {lend && <span ref={setFindersEl} className="contents" />}
             {lend && <span ref={setFiltersEl} className="contents" />}
-            <Button variant="default" size="sm" onClick={() => openImport.current?.()}>
-              <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
-              {/* Read out but not drawn under 360px: beside the three lent
-                  switches the word pushed the row onto a second line at
-                  320px (photographed), and the plus says it. */}
-              <span className="md:hidden max-[22.4rem]:sr-only">{t('Import')}</span>
-              <span className="max-md:hidden">{t('Import a game')}</span>
-            </Button>
+            {importButton}
           </>
         }
+        // The bar a scroll up reveals, on a phone: the same switches
+        // (their own portal targets, since a target cannot be drawn
+        // twice) and the source chips under them, so a source can be
+        // changed from anywhere in a long list.
+        pinned={lend}
+        pinnedActions={
+          <>
+            <span ref={setBarFindersEl} className="contents" />
+            <span ref={setBarFiltersEl} className="contents" />
+            {importButton}
+          </>
+        }
+        pinnedBelow={<div ref={setBarChipsEl} className="min-w-0" />}
       />
 
       {/* minmax(0,1fr), not a bare fr: an fr track is min-content wide

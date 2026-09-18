@@ -113,8 +113,11 @@ function CollectionOutline() {
       // data table beside a details column, and its lists scroll
       // themselves so the page never does.
       width="xwide"
-      scroll={false}
-      className="h-full overflow-hidden pb-0 sm:pb-4 md:pb-6"
+      // A phone's page scrolls as one column (CollectionView); from md
+      // the lists scroll themselves. The same two shapes, so the rows
+      // land where the outline drew them.
+      scroll={folded}
+      className={folded ? 'min-h-full' : 'h-full overflow-hidden pb-6'}
     >
       <Inert>
         <PageHeader

@@ -30,7 +30,20 @@ export interface GamesHeaderSlots {
   finders: HTMLElement | null;
   /** Second group: the list's own filters button. */
   filters: HTMLElement | null;
+  /**
+   * The same two groups again, and the source chips, in the compact bar
+   * a scroll up reveals (PageHeader, `pinned`). A portal has one target,
+   * so what is drawn into a title-row slot is drawn into its bar twin
+   * too: one element, rendered twice, by the one component that owns it.
+   */
+  barFinders: HTMLElement | null;
+  barFilters: HTMLElement | null;
+  barChips: HTMLElement | null;
 }
+
+/** The slots a caller draws into; each title-row slot brings its bar twin. */
+type Slot = 'subtitle' | 'finders' | 'filters' | 'barChips';
+const TWIN: Partial<Record<Slot, keyof GamesHeaderSlots>> = { finders: 'barFinders', filters: 'barFilters' };
 
 const Slots = createContext<GamesHeaderSlots | null>(null);
 
@@ -42,7 +55,15 @@ export function useGamesHeader(): GamesHeaderSlots | null {
 }
 
 /** Draw `children` into one of the lent places; nothing until it exists. */
-export function InGamesHeader({ slot, children }: { slot: keyof GamesHeaderSlots; children: ReactNode }) {
-  const target = useContext(Slots)?.[slot];
-  return target ? createPortal(children, target) : null;
+export function InGamesHeader({ slot, children }: { slot: Slot; children: ReactNode }) {
+  const slots = useContext(Slots);
+  const target = slots?.[slot];
+  const twinKey = TWIN[slot];
+  const twin = twinKey ? slots?.[twinKey] : null;
+  return (
+    <>
+      {target ? createPortal(children, target) : null}
+      {twin ? createPortal(children, twin) : null}
+    </>
+  );
 }

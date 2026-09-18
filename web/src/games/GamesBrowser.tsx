@@ -49,6 +49,7 @@ import {
   type ValueSuggestion,
 } from './GameFilters';
 import { InGamesHeader, useGamesHeader } from './header-slots';
+import { scrollParent } from '@/lib/scroll';
 import { type DetailsSelection } from './GameDetails';
 import { ArchiveBrowser } from './ArchiveBrowser';
 import { DatabaseGames, positionHuntPending } from './DatabaseGames';
@@ -533,6 +534,8 @@ export function GamesBrowser({
   const lifted = useGamesHeader() !== null && frame === 'page';
   const [searchOpen, setSearchOpen] = useState(false);
   const searchShown = searchOpen || query.trim() !== '';
+  // A handle on the page's scroller, for the one press that scrolls it.
+  const topRef = useRef<HTMLSpanElement>(null);
 
   /**
    * Search, then the bookmark switch — the pair that narrows the
@@ -688,6 +691,9 @@ export function GamesBrowser({
             onClick={() => {
               if (searchShown) setQuery('');
               setSearchOpen(!searchShown);
+              // Pressed from the compact bar the field opens at the top
+              // of a page that is scrolled away from it: go and meet it.
+              if (!searchShown && topRef.current) scrollParent(topRef.current)?.scrollTo({ top: 0 });
             }}
           >
             <Search className="glyph" />
@@ -695,6 +701,14 @@ export function GamesBrowser({
           {bookmarkSwitch}
         </InGamesHeader>
       )}
+      {/* The source chips again, in the bar a scroll up reveals, so a
+          source can be changed from the middle of a long list. */}
+      {lifted && (
+        <InGamesHeader slot="barChips">
+          <GamesTabStrip value={tab} onValueChange={setTab} frame="page" />
+        </InGamesHeader>
+      )}
+      <span ref={topRef} hidden />
       <Box frame={frame} className={className}>
         {/* The pane's TITLE is the switch — the same line-Tabs strip
             the old source column used, for the same reason: naming
