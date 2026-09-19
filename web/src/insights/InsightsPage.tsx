@@ -268,6 +268,8 @@ export function InsightsPage() {
       // invisible is the length it will really be (./shape).
       games: report.games,
       accGames: report.analysis.games,
+      depth: report.analysis.depth ?? PASS_DEPTH,
+      acpl: Math.round(meanOf(report.analysis.acpl) ?? 0),
       openings: Math.min(OPENING_FOLD, openings.length),
       book: earliestExits(openings).length,
       summary: exitSplit(report.cells).exits > 0,

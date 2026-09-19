@@ -74,6 +74,14 @@ export interface Shape {
    */
   games: number;
   accGames: number;
+  /** The same sentence's other two figures, its depth and its centipawn
+      mean, so the stand-in is the sentence itself and not one like it.
+      With `00` for both, the link after the sentence sat 1px out on
+      Windows and 3px out on a Linux runner (check:skeletons' first CI
+      run); why two tabular digits differ at all was not run down. Zero
+      means not seen yet, and `00` still stands in. */
+  depth: number;
+  acpl: number;
 }
 
 export const DEFAULT_SHAPE: Shape = {
@@ -90,6 +98,8 @@ export const DEFAULT_SHAPE: Shape = {
   analysed: false,
   games: 0,
   accGames: 0,
+  depth: 0,
+  acpl: 0,
 };
 
 /** The fold the openings table takes, which also caps what is stored. */
@@ -116,6 +126,8 @@ export function readShape(): Shape {
       analysed: p.analysed === true,
       games: Math.max(0, Number(p.games) || 0),
       accGames: Math.max(0, Number(p.accGames) || 0),
+      depth: Math.max(0, Number(p.depth) || 0),
+      acpl: Math.max(0, Number(p.acpl) || 0),
     };
   } catch {
     return DEFAULT_SHAPE;

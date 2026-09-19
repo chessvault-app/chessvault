@@ -4,7 +4,7 @@ import { TitleTip } from '@/components/title-tip';
 import { Button } from '@/components/ui/button';
 import { PageShell } from '@/components/page-shell';
 import { Arrival, SkeletonLicenceRows, useSlowLoad } from '@/components/skeletons';
-import { GROUPS_KEY, LicencesHead, groupsOf, readGroups } from '@/settings/LicensesPage.skeleton';
+import { GROUPS_KEY, HOLDER_KEY, LicencesHead, groupsOf, readGroups } from '@/settings/LicensesPage.skeleton';
 import { routePlaceholderShown } from '@/lib/lazyRoute';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -106,10 +106,11 @@ export function LicensesPage() {
     if (groups.length === 0) return;
     try {
       localStorage.setItem(GROUPS_KEY, String(groups.length));
+      if (inventory) localStorage.setItem(HOLDER_KEY, `${inventory.year} ${inventory.holder}`);
     } catch {
       // Nothing to reserve next time; the web build's two serve.
     }
-  }, [groups]);
+  }, [groups, inventory]);
 
   const shown = useMemo(() => {
     const term = query.trim().toLowerCase();

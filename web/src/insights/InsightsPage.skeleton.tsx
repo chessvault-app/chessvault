@@ -389,9 +389,9 @@ export function InsightsSkeleton({ shape }: { shape: Shape }) {
                     // it settled at.
                     n: figureDigits(shape.accGames),
                     total: figureDigits(shape.games),
-                    d: '00',
+                    d: shape.depth || '00',
                   })}
-                  {`, ${t('{n} centipawns lost per move', { n: '00' })}`}.{' '}
+                  {`, ${t('{n} centipawns lost per move', { n: shape.acpl || '00' })}`}.{' '}
                   <Button
                     variant="link"
                     size="sm"

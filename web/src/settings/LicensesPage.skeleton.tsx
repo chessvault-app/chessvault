@@ -49,6 +49,24 @@ export const readGroups = (): number => {
 };
 
 /**
+ * The copyright line's year and holder as this build last printed them,
+ * on the same bargain. They sit mid-sentence with a link after them, so
+ * two bars of a measured width put that link wherever one platform's
+ * text metrics happened to: right on Windows, and 50px out on Linux at
+ * 390, where the real words broke the line somewhere else (the first CI
+ * run of check:skeletons). The words themselves, drawn invisible under
+ * the bar, wrap the way they will wrap.
+ */
+export const HOLDER_KEY = 'vault:licences-holder';
+const readHolder = (): string => {
+  try {
+    return localStorage.getItem(HOLDER_KEY) ?? '';
+  } catch {
+    return '';
+  }
+};
+
+/**
  * The whole page while its chunk is on the wire.
  *
  * Not a reduced version of the page: the page's OWN head, drawn with no
@@ -115,6 +133,7 @@ export function LicencesHead({
 }) {
   const total = inventory?.entries.length ?? 0;
   const groups = groupsOf(inventory);
+  const [reservedHolder] = useState(readHolder);
   return (
     <>
   <PageHeader
@@ -129,6 +148,13 @@ export function LicencesHead({
             Chess Vault ©{' '}
             {inventory ? (
               `${inventory.year} ${inventory.holder}`
+            ) : reservedHolder ? (
+              // The words this build printed last time, held invisible so
+              // the sentence breaks where it will, under one bar.
+              <span className="relative">
+                <span className="invisible">{reservedHolder}</span>
+                <Skeleton className="absolute inset-x-0 top-1/2 h-2.5 -translate-y-1/2" />
+              </span>
             ) : (
               // A year and a holder's name, as words in the sentence.
               <>
