@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { isDemo } from '@/lib/demo';
 import { t } from '@/lib/i18n';
+import { INSIGHTS_COPY } from './copy';
 import { navigateNow } from '@/lib/router';
 import { confirmLeave } from '@/lib/leaveGuard';
 import { useAnalysis } from '@/store/analysis';
@@ -177,11 +178,9 @@ function CompareBody({ databases }: { databases: FieldDatabase[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('Compare with a database')}</CardTitle>
+        <CardTitle>{INSIGHTS_COPY.compare.title()}</CardTitle>
         <CardDescription className="max-w-prose">
-          {color === 'white'
-            ? t('Your recent games as White, checked against this database’s players. Positions where your move is one they rarely choose, strongest habit first.')
-            : t('Your recent games as Black, checked against this database’s players. Positions where your move is one they rarely choose, strongest habit first.')}
+          {INSIGHTS_COPY.compare.desc(color)}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">

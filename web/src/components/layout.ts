@@ -229,3 +229,27 @@ export const WORKSPACE_SHELL =
  */
 export const EDITOR_WINDOW_SIZE =
   'sm:h-[min(46rem,94dvh)] sm:w-[min(30rem,94vw)] sm:max-w-none sm:[--editor-board-budget:calc(min(46rem,94dvh)_-_21rem)]';
+
+/**
+ * A shelf's cards: three columns where the page is wide enough (studies,
+ * notes), two on the books shelf, whose card is wider, or the list. The
+ * shelves and the placeholder that reserves their rows
+ * (components/skeletons/cards) read the same three strings, so a column
+ * count changed on a shelf is changed in its outline by the same edit.
+ * It was one string written five times.
+ */
+export const SHELF_GRID_3 = 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3';
+export const SHELF_GRID_2 = 'grid grid-cols-1 gap-3 sm:grid-cols-2';
+export const SHELF_LIST = 'flex flex-col gap-1.5';
+
+/**
+ * A shelf card's box, by layout, and the two numbers inside it that a
+ * placeholder has to agree with: the text column's floor on a grid card
+ * and the preview line's height. components/shelf-card draws them and
+ * components/skeletons/cards reserves them. Here and not in shelf-card,
+ * which brings the mini board and the swipe row with it, and an outline
+ * has to land before the page's chunk does.
+ */
+export const SHELF_CARD_RING = 'overflow-hidden rounded-xl ring-1 ring-card-ring';
+export const SHELF_CARD_PAD = { grid: 'px-4 py-3', list: 'px-3 py-2' } as const;
+export const SHELF_CARD_TEXT_FLOOR = 'flex flex-col justify-center sm:min-h-[4.125rem]';

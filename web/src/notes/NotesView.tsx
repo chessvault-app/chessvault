@@ -1,3 +1,4 @@
+import { SHELF_GRID_3, SHELF_LIST } from '@/components/layout';
 import {
   Bookmark,
   SearchX,
@@ -544,7 +545,7 @@ function GroupedNotes({
           {groups.get(folder)!.length === 0 ? (
             <p className="text-muted-foreground px-1 text-sm">{t('Empty folder.')}</p>
           ) : (
-            <ul className={layout === 'grid' ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3' : 'flex flex-col gap-1.5'}>
+            <ul className={layout === 'grid' ? SHELF_GRID_3 : SHELF_LIST}>
               {groups.get(folder)!.map((note) => (
                 <NoteCard
                   links={linkCounts[note.id] ?? 0}

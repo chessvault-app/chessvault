@@ -1,3 +1,4 @@
+import { SHELF_GRID_2 } from '@/components/layout';
 import { BookMarked, ScanSearch, BookOpen, BookText, Bookmark, FileUp, Folder as FolderIcon, FolderInput, Pencil, SearchX, Trash2, Upload, X } from 'lucide-react';
 import { useCallback, useDeferredValue, useEffect, useState } from 'react';
 
@@ -353,7 +354,7 @@ export function BooksPage() {
               {groups.get(folder)!.length === 0 ? (
                 <p className="text-muted-foreground px-1 text-sm">{t('Empty folder.')}</p>
               ) : (
-                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">{cardsOf(groups.get(folder)!)}</ul>
+                <ul className={SHELF_GRID_2}>{cardsOf(groups.get(folder)!)}</ul>
               )}
             </section>
           ))}

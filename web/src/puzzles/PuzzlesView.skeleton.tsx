@@ -114,11 +114,19 @@ function HubOutline() {
  */
 export const HUB_CARD_FILL = 'min-h-24 max-h-[12.25rem] flex-1';
 export const HUB_BOARD_FILL = 'h-full max-h-48 w-auto';
+/**
+ * The two card boxes, which the page and this outline both draw: a puzzle
+ * card (and the empty slot, which is the same box), and a place row. The
+ * ring costs no layout, so slot and card are the same box; the page adds
+ * only its hover, its press and `text-left`.
+ */
+export const HUB_CARD_SHAPE = 'bg-card ring-card-ring flex w-full items-stretch gap-3 rounded-xl ring-1 px-2.5 py-1.5';
+export const HUB_PLACE_SHAPE = 'bg-card ring-card-ring flex w-full shrink-0 items-center gap-3 rounded-xl ring-1 px-3 py-2.5';
 
 /** One of the three PLACES to go, waiting: PlaceCard with its words out. */
 export function HubPlaceRow() {
   return (
-    <div className="bg-card ring-card-ring flex w-full shrink-0 items-center gap-3 rounded-xl ring-1 px-3 py-2.5">
+    <div className={HUB_PLACE_SHAPE}>
       <Skeleton className="size-10 shrink-0 rounded-md" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         {/* The title's text-base line box (24px) and the detail's text-sm
@@ -138,14 +146,7 @@ export function HubPlaceRow() {
 /** One of the three PUZZLES to solve, waiting: PuzzleCard's own box. */
 export function HubPuzzleRow() {
   return (
-    <div
-      className={cn(
-        // PuzzleCard's own geometry, ring and all: a ring costs no
-        // layout, so slot and card are the same box.
-        'bg-card ring-card-ring flex w-full items-stretch gap-3 rounded-xl ring-1 px-2.5 py-1.5',
-        HUB_CARD_FILL,
-      )}
-    >
+    <div className={cn(HUB_CARD_SHAPE, HUB_CARD_FILL)}>
       <Skeleton className={cn('aspect-square shrink-0 rounded-md', HUB_BOARD_FILL)} />
       <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
         <Skeleton className="h-3 w-1/3" />

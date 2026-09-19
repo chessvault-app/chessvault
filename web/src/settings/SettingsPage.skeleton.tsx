@@ -288,8 +288,21 @@ export function SettingsPlaceholder() {
   );
 }
 
-/** The Appearance card's seven Selects, in the card's order (AppearanceCard). */
-const APPEARANCE_FIELDS = ['App language', 'App theme', 'Density', 'Colours', 'Board', 'Pieces', 'Castling'];
+/**
+ * The Appearance card's seven Selects, in the card's order. The card
+ * (settings/cards/appearance-card) labels its fields out of this, so a
+ * renamed field is renamed in the placeholder by the same edit.
+ */
+export const APPEARANCE_LABELS = {
+  language: 'App language',
+  theme: 'App theme',
+  density: 'Density',
+  colours: 'Colours',
+  board: 'Board',
+  pieces: 'Pieces',
+  castling: 'Castling',
+} as const;
+const APPEARANCE_FIELDS = Object.values(APPEARANCE_LABELS);
 
 /**
  * A labelled control, held inert: the real Field with its real label

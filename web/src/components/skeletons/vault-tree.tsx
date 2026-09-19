@@ -1,6 +1,5 @@
-import { FileJson, Folder as FolderIcon, FolderGit2, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { VAULT_ROWS, VaultNote, VaultPath, type VaultKind } from '@/components/vault-tree';
+import { VAULT_ICONS, VAULT_ROWS, VaultNote, VaultPath, type VaultKind } from '@/components/vault-tree';
 import { t } from '@/lib/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loading } from './primitives';
@@ -118,14 +117,7 @@ export function SkeletonVaultTree({
   );
 }
 
-/**
- * The glyph VaultTree draws for each kind of row, at its size. The map
- * is VaultTree's own (`ICONS`, components/vault-tree), restated here
- * because that file does not export it; the two are three entries and
- * the kinds are a closed type, so a new kind fails to compile here.
- */
-const VAULT_ICONS: Record<VaultKind, LucideIcon> = { folder: FolderIcon, git: FolderGit2, json: FileJson };
-
+/** The glyph VaultTree draws for each kind of row, out of its own map, at its size. */
 function VaultRowIcon({ kind }: { kind: VaultKind }) {
   const Icon = VAULT_ICONS[kind];
   return <Icon className="size-4" aria-hidden="true" />;

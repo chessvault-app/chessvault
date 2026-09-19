@@ -12,6 +12,7 @@ import { FilterRow, SideSelect, type SideFilter } from '@/games/GameFilters';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
+import { INSIGHTS_COPY } from './copy';
 const exact = new Intl.NumberFormat('en');
 import { DATE_RANGES, DATE_RANGE_LABEL, type DateRange } from '@/insights/dateRange';
 import type { MyGamesFilters } from '@/store/explorer';
@@ -362,8 +363,8 @@ export function InsightsSkeleton({ shape }: { shape: Shape }) {
     <div className="flex flex-col gap-4" role="status" aria-label={t('Loading')} aria-live="polite">
       {card(
         'results',
-        t('Results'),
-        t('Score is wins plus half the draws, out of the games played.'),
+        INSIGHTS_COPY.results.title(),
+        INSIGHTS_COPY.results.desc(),
         <>
           {/* Overall, by colour, by time control. */}
           {[1, 2, shape.speeds].map((rows, i) => table(rows, `results-${i}`))}
@@ -411,10 +412,8 @@ export function InsightsSkeleton({ shape }: { shape: Shape }) {
       {shape.quality &&
         card(
           'quality',
-          t('Move quality'),
-          t(
-            "Every move you played in the analysed games, by the engine's verdict, and how accurate they were by phase and by move number.",
-          ),
+          INSIGHTS_COPY.quality.title(),
+          INSIGHTS_COPY.quality.desc(),
           <>
             {/* The stacked verdict bar: 16px, on the chip corner. */}
             <Skeleton className="h-4 w-full rounded-[4px]" />
@@ -427,19 +426,15 @@ export function InsightsSkeleton({ shape }: { shape: Shape }) {
         )}
       {card(
         'openings',
-        t('Openings'),
-        t(
-          'One row per opening family, named from the deepest catalogued position each game reached. Most played first.',
-        ),
+        INSIGHTS_COPY.openings.title(),
+        INSIGHTS_COPY.openings.desc(),
         table(shape.openings, 'openings'),
         'flex flex-col gap-2',
       )}
       {card(
         'book',
-        t('Leaving book'),
-        t(
-          'The first move after which the position is in no catalogued line, and whose move it was. The openings where your own move leaves earliest come first.',
-        ),
+        INSIGHTS_COPY.book.title(),
+        INSIGHTS_COPY.book.desc(),
         <>
           {/* The "Your move left book first in n of N games, on average at
               move m" line. It is one line on a desk and two on a phone, so
@@ -479,8 +474,8 @@ export function InsightsSkeleton({ shape }: { shape: Shape }) {
       {shape.compare &&
         card(
           'compare',
-          t('Compare with a database'),
-          t('Your recent games as White, checked against this database’s players. Positions where your move is one they rarely choose, strongest habit first.'),
+          INSIGHTS_COPY.compare.title(),
+          INSIGHTS_COPY.compare.desc('white'),
           <>
             {/* The side toggle and, where there is more than one
                 database, the picker beside it. Held inert, as every
@@ -527,8 +522,8 @@ export function InsightsSkeleton({ shape }: { shape: Shape }) {
         )}
       {card(
         'activity',
-        t('Activity'),
-        t('Games per month, won over drew over lost, and the week.'),
+        INSIGHTS_COPY.activity.title(),
+        INSIGHTS_COPY.activity.desc(),
         <>
           <div className="min-w-0">
             {/* The figure's four lines around its chart, each on
@@ -568,10 +563,8 @@ export function InsightsSkeleton({ shape }: { shape: Shape }) {
       )}
       {card(
         'endings',
-        t('How games ended'),
-        t(
-          "Read from the move text and the file's own termination line. A decisive game that names neither is counted as a resignation.",
-        ),
+        INSIGHTS_COPY.endings.title(),
+        INSIGHTS_COPY.endings.desc(),
         <>
           {['won', 'drew', 'lost'].map((key) => (
             <div key={key} className="flex min-w-0 flex-col gap-3">
@@ -594,8 +587,8 @@ export function InsightsSkeleton({ shape }: { shape: Shape }) {
       {shape.lengths > 0 &&
         card(
           'length',
-          t('Game length'),
-          t('Results by how many moves the game ran.'),
+          INSIGHTS_COPY.length.title(),
+          INSIGHTS_COPY.length.desc(),
           table(shape.lengths, 'length'),
           '',
         )}

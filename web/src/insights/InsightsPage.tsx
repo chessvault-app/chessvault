@@ -9,6 +9,7 @@ import type { Ending } from '@shared/gameIndex';
 import { api } from '@/lib/api';
 import { routePlaceholderShown } from '@/lib/lazyRoute';
 import { t, useLang } from '@/lib/i18n';
+import { INSIGHTS_COPY } from './copy';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/empty-state';
@@ -424,8 +425,8 @@ function Tables({ report }: { report: Report }) {
     <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
-          <CardTitle>{t('Results')}</CardTitle>
-          <CardDescription className="max-w-prose">{t('Score is wins plus half the draws, out of the games played.')}</CardDescription>
+          <CardTitle>{INSIGHTS_COPY.results.title()}</CardTitle>
+          <CardDescription className="max-w-prose">{INSIGHTS_COPY.results.desc()}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {/* The whole corpus is the first row of the same table shape the
@@ -466,10 +467,10 @@ function Tables({ report }: { report: Report }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('Openings')}</CardTitle>
+          <CardTitle>{INSIGHTS_COPY.openings.title()}</CardTitle>
           <CardDescription className="max-w-prose">
             {report.named
-              ? t('One row per opening family, named from the deepest catalogued position each game reached. Most played first.')
+              ? INSIGHTS_COPY.openings.desc()
               : t('The opening catalogue is missing from this install, so games are grouped by their ECO header.')}
           </CardDescription>
         </CardHeader>
@@ -528,11 +529,9 @@ function Tables({ report }: { report: Report }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('Leaving book')}</CardTitle>
+          <CardTitle>{INSIGHTS_COPY.book.title()}</CardTitle>
           <CardDescription className="max-w-prose">
-            {t(
-              'The first move after which the position is in no catalogued line, and whose move it was. The openings where your own move leaves earliest come first.',
-            )}
+            {INSIGHTS_COPY.book.desc()}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
@@ -644,8 +643,8 @@ function ActivityCard({ report }: { report: Report }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('Activity')}</CardTitle>
-        <CardDescription className="max-w-prose">{t('Games per month, won over drew over lost, and the week.')}</CardDescription>
+        <CardTitle>{INSIGHTS_COPY.activity.title()}</CardTitle>
+        <CardDescription className="max-w-prose">{INSIGHTS_COPY.activity.desc()}</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6 md:grid-cols-[1fr_18rem]">
         {series.length > 0 && (
@@ -770,9 +769,9 @@ function EndingsCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('How games ended')}</CardTitle>
+        <CardTitle>{INSIGHTS_COPY.endings.title()}</CardTitle>
         <CardDescription className="max-w-prose">
-          {t('Read from the move text and the file\'s own termination line. A decisive game that names neither is counted as a resignation.')}
+          {INSIGHTS_COPY.endings.desc()}
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6 sm:grid-cols-3">
@@ -900,8 +899,8 @@ function LengthCard({ lengths }: { lengths: Report['lengths'] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('Game length')}</CardTitle>
-        <CardDescription className="max-w-prose">{t('Results by how many moves the game ran.')}</CardDescription>
+        <CardTitle>{INSIGHTS_COPY.length.title()}</CardTitle>
+        <CardDescription className="max-w-prose">{INSIGHTS_COPY.length.desc()}</CardDescription>
       </CardHeader>
       <CardContent>
         <TallyTable
@@ -1148,9 +1147,9 @@ function MoveQualityCard({ analysis }: { analysis: Report['analysis'] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{t('Move quality')}</CardTitle>
+        <CardTitle>{INSIGHTS_COPY.quality.title()}</CardTitle>
         <CardDescription className="max-w-prose">
-          {t('Every move you played in the analysed games, by the engine\'s verdict, and how accurate they were by phase and by move number.')}
+          {INSIGHTS_COPY.quality.desc()}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

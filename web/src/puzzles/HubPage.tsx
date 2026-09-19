@@ -14,6 +14,8 @@ import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import {
   HUB_BOARD_FILL,
   HUB_CARD_FILL,
+  HUB_CARD_SHAPE,
+  HUB_PLACE_SHAPE,
   HubPlaceRow,
   HubPuzzleRow,
 } from './PuzzlesView.skeleton';
@@ -151,11 +153,7 @@ function PuzzleCard({
       // sets this row's height on its own, so vertical padding here is
       // slack around a shape that already has its own margins, while the
       // horizontal padding is still holding the text off the edge.
-      className={cn(
-        'bg-card ring-card-ring hover:bg-accent flex w-full items-stretch gap-3',
-        'rounded-xl ring-1 px-2.5 py-1.5 text-left transition-colors duration-100',
-        CARD_FILL,
-      )}
+      className={cn(HUB_CARD_SHAPE, 'hover:bg-accent text-left transition-colors duration-100', CARD_FILL)}
     >
       <Board
         fen={fen}
@@ -216,11 +214,7 @@ function EmptySlot({ title, detail, go }: { title: string; detail?: string; go?:
     </>
   );
   // PuzzleCard's geometry exactly; only the hover and the press differ.
-  const shape = cn(
-    'bg-card ring-card-ring flex w-full items-stretch gap-3',
-    'rounded-xl ring-1 px-2.5 py-1.5 text-left',
-    CARD_FILL,
-  );
+  const shape = cn(HUB_CARD_SHAPE, 'text-left', CARD_FILL);
   return go ? (
     <button type="button" onClick={go} className={cn(shape, 'hover:bg-accent transition-colors duration-100')}>
       {body}
@@ -259,10 +253,7 @@ function PlaceCard({
     <button
       type="button"
       onClick={go}
-      className={cn(
-        'bg-card ring-card-ring hover:bg-accent flex w-full shrink-0 items-center gap-3',
-        'rounded-xl ring-1 px-3 py-2.5 text-left transition-colors duration-100',
-      )}
+      className={cn(HUB_PLACE_SHAPE, 'hover:bg-accent text-left transition-colors duration-100')}
     >
       {/* The 40px block the shelf row's cover used, so the three line up
           on one left edge with the covers they replaced. */}
