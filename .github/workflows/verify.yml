@@ -88,6 +88,12 @@ jobs:
       # it twice without any other check noticing).
       - run: npm run check:page-turn
 
+      # And a third: does every route's placeholder still stand where its
+      # page lands? A placeholder is a second drawing of its page, edited
+      # by different commits, and the audit that compared them was run by
+      # hand, weeks late each time (scripts/check-skeletons.ts).
+      - run: npm run check:skeletons
+
   native:
     runs-on: ubuntu-latest
     steps:

@@ -53,6 +53,7 @@
     "fuzz:parity": "tsx scripts/fuzz-parity.ts",
     "check:contrast": "tsx scripts/check-contrast.ts",
     "check:page-turn": "tsx scripts/check-page-turn.ts",
+    "check:skeletons": "tsx scripts/check-skeletons.ts",
     "shots:grid": "tsx scripts/shot-grid.ts",
     "shots:placeholders": "tsx scripts/shot-placeholders.ts"
   },

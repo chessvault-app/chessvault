@@ -187,6 +187,25 @@ app's colour grammar beside them (`good`/`warn`/`info`, the board and
 eval colours). Old names (`text-fg`, `text-subtle`, `bg-surface-3`,
 `bg-surface`, `border-line`, `text-bad`) are gone and must not return.
 
+**A placeholder is a second drawing of its page, and it is kept from
+drifting two ways.** By construction first: an outline
+(`<Page>.skeleton.tsx`, drawn while the page's chunk is on the wire and
+again by the page for its own wait) is composed from what the page
+itself draws, never from a copy of it. A frame, a class string, a list
+of labels or a sentence that both need is stated once, in the outline's
+module or a light one beside it (`components/layout.ts`,
+`insights/copy.ts`, `workspace/board-budget.ts`), and the page imports
+it back; the outline cannot import the page, whose chunk is what it is
+waiting for. A number copied into a placeholder is a measurement of one
+moment and says so. Then by measurement: `npm run check:skeletons` holds
+every route's outline, wait and loaded page to each other on the demo
+and fails when anything drawn in two of them has moved. Its first run
+found six routes adrift that six hand audits had not, because the
+harness they used had never once held a data wait. A drift that is
+found and not fixed goes in that script's `KNOWN` list as OWED, with the
+reason; a new route goes in `scripts/lib/placeholders.ts`, which the
+check insists on.
+
 **The phone chrome may be platform-specific since 2026-09-18.** One
 attribute on the root, `data-platform` from `web/src/lib/platform.ts`,
 and two variants, `ios:` and `android:`, stacked on the registry's files
@@ -205,8 +224,8 @@ All three of these, every time, before the version is bumped:
 **Audit the repo against this file.** `npm run verify` now does the
 mechanical parts on every push and pull request (`check:compiler` among
 them: every component must compile under the React Compiler, since a
-refusal is silent), and `check:contrast` and `check:page-turn` run beside
-it as their own CI job — not in `verify` because they are the checks that
+refusal is silent), and `check:contrast`, `check:page-turn` and
+`check:skeletons` run beside it as their own CI job — not in `verify` because they are the checks that
 need a browser and a built demo, and the first was a script nobody ran
 until that job existed. `check:repo` documents
 its own list at the top of `scripts/check-repo.ts` — currently absolute
