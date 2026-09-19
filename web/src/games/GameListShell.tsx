@@ -221,7 +221,10 @@ export function GameListShell({
               className={cn(
                 // Named container: GameRow's narrow-row rules answer to the
                 // list's own width, not the window's.
-                '@container/arc divide-border border-border min-h-0 divide-y border-t',
+                '@container/arc divide-border border-border min-h-0 divide-y',
+                // Under a column header the top rule is the header's own
+                // (see the sticky wrapper below), so it stays when rows scroll.
+                listHeader == null && 'border-t',
                 // Stale rows under a fresh search: half-dimmed, on a short
                 // fade so a fast answer (under useSlowLoad's hold) never
                 // shows it at all.
@@ -315,7 +318,16 @@ export function GameListShell({
               {/* Sticky, opaque, and as wide as the rows: the header
                   scrolls sideways WITH the table and stays put over a
                   vertical scroll. */}
-              <div ref={pinHeader} className="bg-card sticky top-0 z-10 min-w-[var(--gt-min)] shrink-0">
+              {/* The rule under the header is the HEADER's, not the list's:
+                  as the ul's border-t it scrolled away with the first row
+                  (measured: 200px of scroll took it 200px up) and left rows
+                  sliding under an edge nothing drew, header and rows
+                  sharing one fill. The shadow joins it once rows are
+                  beneath (scrolled-shadow, styles/utilities.css). */}
+              <div
+                ref={pinHeader}
+                className="bg-card border-border scrolled-shadow sticky top-0 z-10 min-w-[var(--gt-min)] shrink-0 border-b"
+              >
                 {listHeader}
               </div>
               {rows}

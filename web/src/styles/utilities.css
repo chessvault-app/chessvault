@@ -247,3 +247,43 @@
 }
 
 
+
+/* A pinned band's shadow, cast only once its scroller has moved: the
+   games table's column header, whose rows share its fill and slid under
+   an edge nothing drew. The rule under the band is the band's own and is
+   always there; this is the part that says rows are beneath it. Driven
+   by the nearest scroller's own timeline, so there is no listener and
+   nothing to keep in step; an engine without scroll timelines draws the
+   rule alone. Cast in --shadow-color like every other lift. It is faint
+   in dark, where a shadow on near-black has little to darken (chosen
+   from mockups with that on show, lanph3re 2026-09-19).
+
+   On ::after, never on the band: an animated box-shadow on the band
+   itself gave it a compositor layer of its own, and the pixel grid
+   showed every column heading redrawn without subpixel antialiasing, at
+   rest, before anything had scrolled. The band must be positioned
+   (sticky is) for the pseudo-element to hang under it. */
+@utility scrolled-shadow {
+  &::after {
+    content: '';
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    height: 0.5rem;
+    pointer-events: none;
+    opacity: 0;
+    background: linear-gradient(hsl(var(--shadow-color) / 28%), hsl(var(--shadow-color) / 0%));
+  }
+  @supports (animation-timeline: scroll()) {
+    &::after {
+      animation: scrolled-shadow linear both;
+      animation-timeline: scroll(nearest block);
+      animation-range: 0 1.5rem;
+    }
+  }
+}
+@keyframes scrolled-shadow {
+  to {
+    opacity: 1;
+  }
+}
