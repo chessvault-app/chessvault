@@ -1,5 +1,5 @@
 ﻿import { CornerDownLeft, Database, Grid3x3, Info, ListChecks, ListPlus, Play, Plus, ScanSearch, Search, SearchX, SlidersHorizontal, X } from 'lucide-react';
-import { Suspense, lazy, memo, useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { Suspense, lazy, memo, useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
 import { getNode, mainlineFrom } from '@shared/tree';
@@ -1451,20 +1451,51 @@ export function DatabaseGames({
 
     </>
   );
+  // The sheet's verb: labelled and as wide as the fields above it. The
+  // icon-only button is the inline row's economy, which a sheet has no
+  // need of. Disabled on runButton's own terms.
+  const sheetRunButton = (
+    <Button
+      variant="default"
+      disabled={
+        hunting ||
+        (huntKind === 'position' && huntFen.trim() === '') ||
+        (huntKind === 'material' && presetId === 'custom' && customSpec === null)
+      }
+      onClick={() => void runHunt()}
+    >
+      <ScanSearch data-icon="inline-start" />
+      {t('Search')}
+    </Button>
+  );
+
   // The last select and the run button travel as one: each was its own
   // flex item, so a narrow pane broke the row wherever the width ran
   // out and the verb landed alone on a line (lanph3re's screenshot).
   // Grouped, a phone shows the kind and the field on one line and the
   // match rung with the button on the next, the verb still ending the
   // row and never by itself. Both modes end this way.
-  const tail = 'flex shrink-0 items-center gap-1.5';
+  //
+  // On a phone's sheet (`lifted`) none of that applies: the sheet has the
+  // screen's height to spend, and one wrapped line of unnamed selects was
+  // a form squeezed into a toolbar's shape (lanph3re, 2026-09-19). There
+  // each control is a Field on its own line under its name, and the verb
+  // is a labelled button ending the column. The taller sheet is also what
+  // a select's own list needs: it opens over this one and is capped at
+  // its height (ui/dialog, --sheet-cap), and over the one-line sheet the
+  // three kinds did not fit.
+  const tail = lifted ? 'flex flex-col gap-4' : 'flex shrink-0 items-center gap-1.5';
+  const knob = lifted ? 'md' : 'sm';
+  const named = (label: string, control: ReactElement): ReactElement =>
+    lifted ? <Field label={label}>{control}</Field> : control;
   const huntControls = huntOpen && (
-    <div className="flex w-full flex-wrap items-center gap-1.5">
-      <Select
+    <div className={lifted ? 'flex w-full flex-col gap-4' : 'flex w-full flex-wrap items-center gap-1.5'}>
+      {named('Search by', <Select
         value={huntKind}
         onValueChange={(v) => setHuntKind(v as 'position' | 'material' | 'motif')}
         ariaLabel={t('Search by')}
-        size="sm"
+        size={knob}
+        className={lifted ? 'w-full' : undefined}
         groups={[
           {
             options: [
@@ -1474,10 +1505,10 @@ export function DatabaseGames({
             ],
           },
         ]}
-      />
+      />)}
       {huntKind === 'position' ? (
         <>
-          <ClearableInput
+          {named('Paste a FEN', <ClearableInput
             inputSize="sm"
             value={huntFen}
             onChange={(e) => setHuntFen(e.target.value)}
@@ -1495,7 +1526,7 @@ export function DatabaseGames({
             // FEN field is a paste target, not a reading field — it can
             // START at 6rem and grow into whatever the row has spare,
             // which at any ordinary pane is most of it.
-            className="min-w-0 flex-1 basis-24"
+            className={lifted ? 'w-full' : 'min-w-0 flex-1 basis-24'}
             // Inside the field, not beside it: a lone unlabelled icon
             // between the field and the match select read as belonging to
             // neither. Leading the field, it is the other way to fill it.
@@ -1515,21 +1546,22 @@ export function DatabaseGames({
                 <Grid3x3 className="glyph" />
               </InputGroupButton>
             }
-          />
+          />)}
           <span className={tail}>
-            <Select
+            {named('How closely to match', <Select
               value={rung}
               onValueChange={(v) => setRung(v as MatchMode)}
               ariaLabel={t('How closely to match')}
-              size="sm"
+              size={knob}
+              className={lifted ? 'w-full' : undefined}
               groups={[{ options: RUNGS.map((r) => ({ value: r.id, label: t(r.label) })) }]}
-            />
-            {runButton}
+            />)}
+            {lifted ? sheetRunButton : runButton}
           </span>
         </>
       ) : huntKind === 'motif' ? (
         <>
-          <Select
+          {named('Motif', <Select
             value={motifId}
             onValueChange={(v) => {
               setMotifId(v);
@@ -1537,10 +1569,10 @@ export function DatabaseGames({
               if (picked) setMotifHeld(picked.stable);
             }}
             ariaLabel={t('Motif')}
-            size="sm"
+            size={knob}
             // The same basis as the material preset, for the same
             // reason: a phone puts the knobs on the next line.
-            className="min-w-0 flex-1 basis-40"
+            className={lifted ? 'w-full' : 'min-w-0 flex-1 basis-40'}
             groups={[
               {
                 label: 'Patterns',
@@ -1551,36 +1583,38 @@ export function DatabaseGames({
                 options: STRUCTURES.map((s) => ({ value: s.id, label: t(s.label) })),
               },
             ]}
-          />
+          />)}
           {motifEntry?.side && (
-            <Select
+            named('Which side has it', <Select
               value={motifSide}
               onValueChange={(v) => setMotifSide(v as MotifSide)}
               ariaLabel={t('Which side has it')}
-              size="sm"
+              size={knob}
+              className={lifted ? 'w-full' : undefined}
               groups={[
                 { options: MOTIF_SIDES.map((s) => ({ value: s.id, label: t(s.label) })) },
               ]}
-            />
+            />)
           )}
           <span className={tail}>
             {motifEntry?.held && (
-              <Select
+              named('How long it must hold', <Select
                 value={String(motifHeld)}
                 onValueChange={(v) => setMotifHeld(Number(v))}
                 ariaLabel={t('How long it must hold')}
-                size="sm"
+                size={knob}
+                className={lifted ? 'w-full' : undefined}
                 groups={[
                   { options: HELD.map((h) => ({ value: String(h.plies), label: t(h.label) })) },
                 ]}
-              />
+              />)
             )}
-            {runButton}
+            {lifted ? sheetRunButton : runButton}
           </span>
         </>
       ) : (
         <>
-          <Select
+          {named('Material', <Select
             value={presetId}
             onValueChange={(v) => {
               // Picking Custom… opens the editor; the pick only lands
@@ -1589,13 +1623,13 @@ export function DatabaseGames({
               else setPresetId(v);
             }}
             ariaLabel={t('Material')}
-            size="sm"
+            size={knob}
             // basis-40, not the zero a bare flex-1 gives: with no basis
             // the select never asked for room, so a phone kept the whole
             // mode on one line and this read "Pa…". Asking for 160px
             // sends the held-for pair to the next line instead, and the
             // preset takes the rest of the first beside the kind.
-            className="min-w-0 flex-1 basis-40"
+            className={lifted ? 'w-full' : 'min-w-0 flex-1 basis-40'}
             groups={[
               {
                 options: [
@@ -1604,7 +1638,7 @@ export function DatabaseGames({
                 ],
               },
             ]}
-          />
+          />)}
           {presetId === 'custom' && (
             <Button
               variant="ghost"
@@ -1617,11 +1651,12 @@ export function DatabaseGames({
           )}
           {presetId !== 'custom' &&
             !isSymmetricMaterial((ENDGAMES.find((p) => p.id === presetId) ?? ENDGAMES[0]!).spec) && (
-              <Select
+              named('Which side has it', <Select
                 value={materialSide}
                 onValueChange={(v) => setMaterialSide(v as 'white' | 'black')}
                 ariaLabel={t('Which side has it')}
-                size="sm"
+                size={knob}
+                className={lifted ? 'w-full' : undefined}
                 groups={[
                   {
                     options: [
@@ -1630,19 +1665,20 @@ export function DatabaseGames({
                     ],
                   },
                 ]}
-              />
+              />)
             )}
           <span className={tail}>
-            <Select
+            {named('How long it must hold', <Select
               value={String(heldPlies)}
               onValueChange={(v) => setHeldPlies(Number(v))}
               ariaLabel={t('How long it must hold')}
-              size="sm"
+              size={knob}
+              className={lifted ? 'w-full' : undefined}
               groups={[
                 { options: HELD.map((h) => ({ value: String(h.plies), label: t(h.label) })) },
               ]}
-            />
-            {runButton}
+            />)}
+            {lifted ? sheetRunButton : runButton}
           </span>
         </>
       )}
