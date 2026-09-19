@@ -33,6 +33,20 @@ import { INERT, InertDocumentTools, InertEditButton, InertSaveState, Loading } f
  * `stacked:overflow-y-auto`, so a window short enough to make the page
  * scroll clipped the placeholder instead.
  */
+/**
+ * A player's bar over or under a board: the colour dot and the name, on
+ * the 24px line the real one takes (PlayerSlot). Exported for the one
+ * board that is not on this shell, the workspace's.
+ */
+export function SkeletonPlayerBar({ className }: { className?: string }) {
+  return (
+    <div className={cn('flex h-6 items-center gap-2', className)}>
+      <Skeleton className="size-2 shrink-0 rounded-full" />
+      <Skeleton className="h-3 w-32" />
+    </div>
+  );
+}
+
 export function SkeletonBoard({
   players = false,
   chapters = false,
@@ -231,10 +245,7 @@ export function SkeletonBoard({
     // that ignores it moves the whole stack sideways when the real view
     // arrives.
     <BoardLane>
-      <div className="board-box flex h-6 items-center gap-2">
-        <Skeleton className="size-2 shrink-0 rounded-full" />
-        <Skeleton className="h-3 w-32" />
-      </div>
+      <SkeletonPlayerBar className="board-box" />
     </BoardLane>
   );
   return (

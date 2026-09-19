@@ -24,6 +24,6 @@ export { SkeletonCards, SkeletonBookCards } from './skeletons/cards';
 export { SkeletonTiles } from './skeletons/tiles';
 export { SkeletonThemeCard, SkeletonThemeGroups } from './skeletons/themes';
 export { SkeletonDocument } from './skeletons/document';
-export { SkeletonBoard } from './skeletons/board';
+export { SkeletonBoard, SkeletonPlayerBar } from './skeletons/board';
 export { SkeletonFilterRow, SkeletonGameRows } from './skeletons/games';
 export { SkeletonVaultTree } from './skeletons/vault-tree';

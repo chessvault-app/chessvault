@@ -34,9 +34,9 @@ import { Button } from '@/components/ui/button';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Switch } from '@/components/ui/switch';
 import { WORKSPACE_SHELL } from '@/components/layout';
-import { useElementHeight } from '@/hooks/use-element-height';
 import { useUndoable } from '@/hooks/use-undoable';
-import { useElementWidth } from '@/hooks/use-element-width';
+import { useWorkspaceBudget } from './board-budget';
+import { AnalysisHint } from './WorkspaceView.skeleton';
 
 /**
  * The workspace: every analysis surface at once — board, moves + engine,
@@ -92,53 +92,6 @@ function WorkspaceGate() {
 
 /** Where the Analysis panel's fold is remembered across sessions. */
 const ANALYSIS_FOLD = 'vault:workspace-analysis';
-
-/**
- * What the board wrapper stacks around the board at `wide`, in px: a
- * player bar (~h-9) + gap-2 on each side of the board — the top strip
- * sits at natural height here (alignPlayersTo="panels"), not the board
- * pages' h-10 reserve. Part of the --board-budget arithmetic — the
- * workspace's stand-in for the 10rem the full-viewport pages reserve.
- */
-const BOARD_STRIPS_PX = 88;
-
-/** The shell's own chrome around the top row, in px: p-4 above and below
-    (32) plus the gap-3 between the row and the games band (12). */
-const SHELL_CHROME_PX = 44;
-
-/**
- * The games band's floor, in px (matches its min-h-72 class). The band is
- * flex-1 — everything the board cannot spend is its to show rows in — and
- * this floor is what the board's budget is computed AROUND, so the board
- * only ever grows into height the band keeps anyway. 18rem, down from
- * 20: with the band's chrome folded to one row the floor still holds
- * ~5 table rows, and the two reclaimed rems are the board's
- * (lanph3re asked for a bit more board).
- */
-const BAND_MIN_PX = 288;
-
-/** The board column's width bounds: the 18rem usability floor every board
-    page keeps, and the 64rem ceiling lg imposes so panes keep room. */
-const clampBoardWidth = (px: number): number => Math.min(Math.max(px, 288), 1024);
-
-/** The moves and explorer columns' caps, in px — the max-w-[30rem] and
-    max-w-[32rem] on their classes below, written down once more so the
-    page's own width cap (board + both columns + gaps) can be computed:
-    past ~30rem a move list or an explorer table is blank space between a
-    name and its number. */
-const MOVES_MAX_PX = 480;
-const EXPLORER_MAX_PX = 512;
-
-/** And their floors (the min-w classes below), which the BOARD answers
-    to: the board column takes its height budget as an explicit width,
-    and on a tall window that budget plus these floors outgrew the row —
-    the explorer stood flush against the viewport's edge with the
-    shell's padding overflowed past it (lanph3re's report). The board
-    yields first: its width is capped at what the row holds after the
-    floors, measured on the width-cap wrapper. */
-const MOVES_MIN_PX = 272;
-const EXPLORER_MIN_PX = 304;
-const REGION_GAPS_PX = 24;
 
 function Workspace() {
   // The explorer is a dedicated column here, so it opens open: a page
@@ -197,8 +150,6 @@ function Workspace() {
   // as air. The column is measured, not computed: its height is the end
   // of the min/max chain in boardSize.ts, the same reason
   // publishBoardHeight measures on the board pages.
-  const [shellRef, shellH] = useElementHeight();
-  const budget = Math.max(0, shellH - SHELL_CHROME_PX - BAND_MIN_PX - BOARD_STRIPS_PX);
 
   // The eval bar's lane, ADDED to the board's column rather than taken out
   // of the board — the only board host that can do it, because this one
@@ -224,6 +175,8 @@ function Workspace() {
   // paragraph always said it was.
   const engineOn = useEngine((s) => s.enabled);
   const laneW = engineOn ? EVAL_LANE_PX : 0;
+  // The arithmetic is workspace/board-budget's, which the outline runs too.
+  const { shellRef, shellH, capRef, budget, boardColW, capMaxWidth } = useWorkspaceBudget(laneW);
 
   // The board column's height, measured two ways on one element: a
   // ResizeObserver for content-driven changes, and a layout effect keyed
@@ -272,17 +225,6 @@ function Workspace() {
   // eating into a board that is already at its floor. The row cap is the
   // one bound that still applies to the pair, since past it the explorer
   // runs off the page.
-  const [capRef, capW] = useElementWidth();
-  const boardColW =
-    capW > 0
-      ? Math.max(
-          288 + laneW,
-          Math.min(
-            clampBoardWidth(budget) + laneW,
-            capW - MOVES_MIN_PX - EXPLORER_MIN_PX - REGION_GAPS_PX,
-          ),
-        )
-      : clampBoardWidth(budget) + laneW;
 
   // --- the games band -------------------------------------------------
   // The band is the GamesBrowser — the Games page's own tabbed pane,
@@ -381,8 +323,7 @@ function Workspace() {
                 // for out of the two columns beside it (see laneW), and a
                 // cap that allowed for the bar as well moved the page
                 // instead of the columns.
-                maxWidth:
-                  boardColW - laneW + MOVES_MAX_PX + EXPLORER_MAX_PX + REGION_GAPS_PX,
+                maxWidth: capMaxWidth,
               }
             : undefined
         }
@@ -494,9 +435,7 @@ function Workspace() {
               <>
                 <ReviewStrip panel className="-mb-[var(--card-floor,var(--card-spacing))]" />
                 {reviewIdle && !(hasGame && hasMoves) && (
-                  <p className="text-muted-foreground border-border -mb-[var(--card-floor,var(--card-spacing))] border-t px-3 py-2 text-sm">
-                    {t('Play moves or load a game, then run an engine review.')}
-                  </p>
+                  <AnalysisHint />
                 )}
               </>
             )}
