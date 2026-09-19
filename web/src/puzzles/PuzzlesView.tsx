@@ -1,16 +1,12 @@
 import {
-  BarChart3,
   ChevronLeft,
   ChevronRight,
   Cpu,
-  Eye,
   LayoutGrid,
-  Lightbulb,
   ExternalLink,
   RotateCcw,
   RotateCw,
   Settings2,
-  X,
 } from 'lucide-react';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 import type { Color } from 'chessops/types';
@@ -58,6 +54,15 @@ import {
   type DifficultyId,
 } from './bands';
 import { consumePendingPuzzle } from './handoff';
+import {
+  DashboardButton,
+  DifficultyChip,
+  PUZZLE_BODY,
+  PUZZLE_FOOT,
+  PuzzleActions,
+  PuzzleWait,
+  puzzleNote,
+} from './PuzzlesView.skeleton';
 import { fetchSolvedToday } from './today';
 import { t } from '@/lib/i18n';
 import {
@@ -83,23 +88,6 @@ interface Meta {
   user: UserState;
 }
 
-
-/**
- * What is actually being withheld while you solve.
- *
- * The panel used to say the difficulty and themes both stay hidden until
- * the end, which is true only when the trainer chose them. You can pick
- * either yourself — and being told that the thing you just selected is a
- * secret reads as the app having lost track of what you asked for. So
- * the sentence names only what you do not already know, and says nothing
- * at all when you know both.
- */
-function hiddenNote(pickedDifficulty: boolean, pickedTheme: boolean): string {
-  if (pickedDifficulty && pickedTheme) return 'Find the best move.';
-  if (pickedDifficulty) return 'Find the best move. The themes stay hidden until you finish.';
-  if (pickedTheme) return 'Find the best move. The difficulty stays hidden until you finish.';
-  return 'Find the best move. The difficulty and themes stay hidden until you finish.';
-}
 
 /** What the solver is doing right now. */
 type Phase =
@@ -723,19 +711,7 @@ function Trainer({
    * or a replay it is the more useful of the two — a hidden difficulty is
    * a detail, being told the attempt is not counted is not.
    */
-  const modeNote =
-    mode === 'failed'
-      ? t('Reviewing, not counted. Each clean solve spaces the puzzle further out, and enough in a row retire it.')
-      : mode === 'single'
-        ? t('Replaying puzzle #{id}, not counted. A clean solve still retires it from the review list.', {
-            id: puzzleId ?? '',
-          })
-        : null;
-
-  /** The line the panel settles on, named here because the wait has to
-      reserve its height before it can be shown. */
-  const settledNote =
-    modeNote ?? t(hiddenNote(difficulty !== 'any' && difficulty !== 'adaptive', Boolean(theme)));
+  const settledNote = puzzleNote(mode, puzzleId, difficulty, theme);
   const puzzlePanel = (
   // No `grow`, on either layout: the panel is the height of what it says.
   // A phone had it stretched to the bottom bar (f1e1757) so the column
@@ -774,14 +750,7 @@ function Trainer({
               <Cpu className="glyph" />
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            title={t('Dashboard')}
-            onClick={() => navigate('puzzles', 'dashboard')}
-          >
-            <BarChart3 className="glyph" />
-          </Button>
+          <DashboardButton />
         </>
       }
     />
@@ -831,7 +800,7 @@ function Trainer({
         whatever hung off the end. `min-h-0` because a flex item will not
         shrink below its content without it, which is exactly the overflow
         being fixed. */}
-    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)">
+    <div className={PUZZLE_BODY}>
       {phase === 'done' && puzzle ? (
         <>
           <p
@@ -871,30 +840,9 @@ function Trainer({
             <p className="text-foreground text-2xl font-semibold tracking-tight">
               {solverSide === 'white' ? t('White to move') : t('Black to move')}
             </p>
-          ) : phase === 'loading' ? (
-            // The side-to-play line's own box (text-2xl is a 32px line)
-            // while the puzzle is found, so the prose under it and the
-            // actions below do not step down when the heading lands.
-            <div className="flex h-8 items-center">
-              <Skeleton className="h-4 w-28" />
-            </div>
           ) : null}
           {phase === 'loading' ? (
-            // The sentence that is about to land, laid out invisible, with
-            // "Finding a puzzle…" over it. That one is a single line and the
-            // answer wraps to two on a phone, so with nothing holding the
-            // second the difficulty row and every action under it stepped
-            // down the moment the puzzle arrived: 23px at 390, and on a
-            // desktop the panel rose 22px instead, its column handing the
-            // room back. The Cycles panel reserves its prose the same way.
-            <div className="relative">
-              <p aria-hidden className="invisible text-sm leading-relaxed">
-                {settledNote}
-              </p>
-              <p className="text-muted-foreground absolute inset-0 text-sm leading-relaxed">
-                {t('Finding a puzzle…')}
-              </p>
-            </div>
+            <PuzzleWait note={settledNote} />
           ) : (
             <p
               className={cn(
@@ -958,7 +906,7 @@ function Trainer({
           the phase made it read as two different rows swapping places on
           the panel's floor. Hint, Solution and Skip end on Skip, which is
           the one that leaves this puzzle. */}
-      <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">
+      <CardFooter className={PUZZLE_FOOT}>
         {phase === 'done' ? (
           <>
             {/* An anchor, not a button that navigates: it goes out of the
@@ -1019,45 +967,15 @@ function Trainer({
                 meant one mis-tap could not be told from the other. `me-auto`
                 is all the separation this needs; a confirm on either would
                 be a question asked hundreds of times to catch a slip. */}
-            {mode !== 'single' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                // The icon rung on a thumb: these three end a puzzle, and
-                // Solution and Skip are adjacent, irreversible and one tap
-                // each, so they get 44px rather than the 36px floor.
-                className="me-auto pointer-coarse:h-11"
-                onClick={() => void loadNext(theme, difficulty, puzzle?.id)}
-              >
-                <X className="glyph" data-icon="inline-start" />
-                {t('Skip')}
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="pointer-coarse:h-11"
-              disabled={phase !== 'solving'}
-              onClick={() => {
+            <PuzzleActions
+              onSkip={mode !== 'single' ? () => void loadNext(theme, difficulty, puzzle?.id) : undefined}
+              solving={phase === 'solving'}
+              onHint={() => {
                 setHint((h) => Math.min(h + 1, 2));
                 if (hint >= 1) setHelped(true);
               }}
-              title={t('First press marks the piece, second the move (not counted as a fail)')}
-            >
-              <Lightbulb className="glyph" data-icon="inline-start" />
-              {t('Hint')}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="pointer-coarse:h-11"
-              disabled={phase !== 'solving'}
-              onClick={viewSolution}
-              title={t('Counts as a failed attempt')}
-            >
-              <Eye className="glyph" data-icon="inline-start" />
-              {t('Solution')}
-            </Button>
+              onSolution={viewSolution}
+            />
           </>
         )}
       </CardFooter>
@@ -1250,44 +1168,6 @@ function DifficultyRow({
         </Button>
       ))}
     </div>
-  );
-}
-
-/**
- * The active difficulty (and theme), visible while solving.
- *
- * It only existed inside the gear window before — nothing on the solving
- * screen said what was being trained. The chip states it and opens the
- * window that changes it.
- */
-function DifficultyChip({
-  difficulty,
-  theme,
-  onOpen,
-}: {
-  difficulty: DifficultyId;
-  theme: string;
-  onOpen: () => void;
-}) {
-  const label = DIFFICULTIES.find((d) => d.id === difficulty)?.label ?? 'Any';
-  return (
-    <Button
-      variant="secondary"
-      size="sm"
-      // A settings row, not a chip: it owns the panel's width, states the
-      // current pick on the left and carries the "opens something" mark
-      // on the right, like the theme row inside the window it opens.
-      className="w-full min-w-0 justify-start"
-      title={t('Puzzle settings')}
-      onClick={onOpen}
-    >
-      <Settings2 className="glyph shrink-0" />
-      <span className="truncate">
-        {difficulty === 'any' ? t('Any difficulty') : t(label)}
-        {theme && ` · ${themeLabel(theme)}`}
-      </span>
-      <ChevronRight className="text-muted-foreground ml-auto glyph shrink-0" />
-    </Button>
   );
 }
 

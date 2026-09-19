@@ -1,10 +1,13 @@
-import { ChevronRight, Info, ListOrdered, Puzzle } from 'lucide-react';
+import { BarChart3, ChevronRight, Eye, Info, Lightbulb, ListOrdered, Puzzle, Settings2, X } from 'lucide-react';
 import { PageHeader } from '@/components/page-header';
 import { SearchInput } from '@/components/text-fields';
 import { PageShell } from '@/components/page-shell';
 import { ChipRow } from '@/components/chip-row';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Button } from '@/components/ui/button';
+import { CardFooter } from '@/components/ui/card';
+import { DIFFICULTIES, storedDifficulty, type DifficultyId } from './bands';
+import { themeLabel } from './theme-labels';
 import { OutlineCreate, ShelfHeader } from '@/components/shelf-outline';
 import { readShelfOrder } from '@/components/shelf-toolbar';
 import {
@@ -448,8 +451,8 @@ export function cyclesProse(nudge: boolean): string {
  *
  * Two panes while an exercise is running, opening on the trainer's own
  * (hooks/use-analyse-in-place): the engine appears only once the answer
- * is in. The Puzzle panel at the column's foot holds its header, which
- * is what the real one opens with.
+ * is in. The Puzzle panel at the column's foot is the page's own, as it
+ * stands while a puzzle is found (PuzzlePanelOutline).
  */
 function TrainerOutline({ params }: { params: string[] }) {
   return (
@@ -458,11 +461,274 @@ function TrainerOutline({ params }: { params: string[] }) {
       panes={[Info, ListOrdered]}
       stackedPanel={t('Puzzle')}
       foot={
-        <div className="bg-card shrink-0 overflow-hidden rounded-xl ring-1 ring-card-ring max-lg:hidden [--card-spacing:var(--card-pad)]">
-          <PanelHeader title={t('Puzzle')} />
+        <div className="contents max-lg:hidden">
+          <PuzzlePanelOutline params={params} />
         </div>
       }
     />
+  );
+}
+
+/* ------------------------------------------------ the Puzzle panel */
+
+/*
+ * The trainer's Puzzle panel, in the pieces its wait is made of. The page
+ * (PuzzlesView) draws them and the outline below draws them, which is
+ * the only way the two can be one box: the outline folded this panel to
+ * its 44px header, the page waits with all of it, and the header stood
+ * 184px higher the moment the chunk landed (check:skeletons, 1280x800).
+ */
+
+/** The panel's scrolling body, and the footer band at its end. */
+export const PUZZLE_BODY = 'flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)';
+export const PUZZLE_FOOT = '-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2';
+
+/**
+
+ * What is actually being withheld while you solve.
+
+ *
+
+ * The panel used to say the difficulty and themes both stay hidden until
+
+ * the end, which is true only when the trainer chose them. You can pick
+
+ * either yourself — and being told that the thing you just selected is a
+
+ * secret reads as the app having lost track of what you asked for. So
+
+ * the sentence names only what you do not already know, and says nothing
+
+ * at all when you know both.
+
+ */
+
+function hiddenNote(pickedDifficulty: boolean, pickedTheme: boolean): string {
+
+  if (pickedDifficulty && pickedTheme) return 'Find the best move.';
+
+  if (pickedDifficulty) return 'Find the best move. The themes stay hidden until you finish.';
+
+  if (pickedTheme) return 'Find the best move. The difficulty stays hidden until you finish.';
+
+  return 'Find the best move. The difficulty and themes stay hidden until you finish.';
+
+}
+
+/** The line the panel settles on, which the wait reserves the height of. */
+export function puzzleNote(
+  mode: 'fresh' | 'failed' | 'single',
+  puzzleId: string | undefined,
+  difficulty: DifficultyId,
+  theme: string,
+): string {
+  if (mode === 'failed')
+    return t('Reviewing, not counted. Each clean solve spaces the puzzle further out, and enough in a row retire it.');
+  if (mode === 'single')
+    return t('Replaying puzzle #{id}, not counted. A clean solve still retires it from the review list.', {
+      id: puzzleId ?? '',
+    });
+  return t(hiddenNote(difficulty !== 'any' && difficulty !== 'adaptive', Boolean(theme)));
+}
+
+/**
+ * The panel's two lines while a puzzle is found: the side-to-play line's
+ * own box (text-2xl is a 32px line), so the prose under it and the
+ * actions below do not step down when the heading lands, and then the
+ * sentence that is about to land, laid out invisible, with "Finding a
+ * puzzle…" over it. That one is a single line and the answer wraps to two
+ * on a phone, so with nothing holding the second the difficulty row and
+ * every action under it stepped down the moment the puzzle arrived: 23px
+ * at 390, and on a desktop the panel rose 22px instead, its column
+ * handing the room back. The Cycles panel reserves its prose the same way.
+ */
+export function PuzzleWait({ note }: { note: string }) {
+  return (
+    <>
+      <div className="flex h-8 items-center">
+        <Skeleton className="h-4 w-28" />
+      </div>
+      <div className="relative">
+        <p aria-hidden className="invisible text-sm leading-relaxed">
+          {note}
+        </p>
+        <p className="text-muted-foreground absolute inset-0 text-sm leading-relaxed">{t('Finding a puzzle…')}</p>
+      </div>
+    </>
+  );
+}
+
+/**
+
+ * The active difficulty (and theme), visible while solving.
+
+ *
+
+ * It only existed inside the gear window before — nothing on the solving
+
+ * screen said what was being trained. The chip states it and opens the
+
+ * window that changes it.
+
+ */
+
+export function DifficultyChip({
+
+  difficulty,
+
+  theme,
+
+  onOpen,
+
+}: {
+
+  difficulty: DifficultyId;
+
+  theme: string;
+
+  onOpen: () => void;
+
+}) {
+
+  const label = DIFFICULTIES.find((d) => d.id === difficulty)?.label ?? 'Any';
+
+  return (
+
+    <Button
+
+      variant="secondary"
+
+      size="sm"
+
+      // A settings row, not a chip: it owns the panel's width, states the
+
+      // current pick on the left and carries the "opens something" mark
+
+      // on the right, like the theme row inside the window it opens.
+
+      className="w-full min-w-0 justify-start"
+
+      title={t('Puzzle settings')}
+
+      onClick={onOpen}
+
+    >
+
+      <Settings2 className="glyph shrink-0" />
+
+      <span className="truncate">
+
+        {difficulty === 'any' ? t('Any difficulty') : t(label)}
+
+        {theme && ` · ${themeLabel(theme)}`}
+
+      </span>
+
+      <ChevronRight className="text-muted-foreground ml-auto glyph shrink-0" />
+
+    </Button>
+
+  );
+
+}
+
+/** The header's way to the dashboard. */
+export function DashboardButton() {
+  return (
+    <Button variant="ghost" size="icon-sm" title={t('Dashboard')} onClick={() => navigate('puzzles', 'dashboard')}>
+      <BarChart3 className="glyph" />
+    </Button>
+  );
+}
+
+/**
+ * Skip, Hint and Solution: the footer's row while a puzzle is unsolved.
+ *
+ * Skip sits at the far end, away from Solution, and is first in the DOM
+ * so the reading order is the order on screen. The three used to be one
+ * right-aligned run: Hint, then Solution, then Skip, touching, with the
+ * two that END the puzzle side by side under the thumb, and neither asks
+ * first, because neither should have to. Solution is the consequential
+ * one (it records a failed attempt), Skip costs nothing but the puzzle,
+ * and having them adjacent meant one mis-tap could not be told from the
+ * other. `me-auto` is all the separation this needs; a confirm on either
+ * would be a question asked hundreds of times to catch a slip.
+ *
+ * The icon rung on a thumb: these three end a puzzle, and Solution and
+ * Skip are adjacent, irreversible and one tap each, so they get 44px
+ * rather than the 36px floor.
+ */
+export function PuzzleActions({
+  onSkip,
+  solving,
+  onHint,
+  onSolution,
+}: {
+  /** Absent on a replay, which has no next puzzle to skip to. */
+  onSkip?: () => void;
+  solving: boolean;
+  onHint?: () => void;
+  onSolution?: () => void;
+}) {
+  return (
+    <>
+      {onSkip && (
+        <Button variant="ghost" size="sm" className="me-auto pointer-coarse:h-11" onClick={onSkip}>
+          <X className="glyph" data-icon="inline-start" />
+          {t('Skip')}
+        </Button>
+      )}
+      <Button
+        variant="ghost"
+        size="sm"
+        className="pointer-coarse:h-11"
+        disabled={!solving}
+        onClick={onHint}
+        title={t('First press marks the piece, second the move (not counted as a fail)')}
+      >
+        <Lightbulb className="glyph" data-icon="inline-start" />
+        {t('Hint')}
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="pointer-coarse:h-11"
+        disabled={!solving}
+        onClick={onSolution}
+        title={t('Counts as a failed attempt')}
+      >
+        <Eye className="glyph" data-icon="inline-start" />
+        {t('Solution')}
+      </Button>
+    </>
+  );
+}
+
+/**
+ * The whole panel as the page stands it while a puzzle is found, for the
+ * outline: the same header, body and footer, held inert. What is being
+ * trained is this device's stored pick and the address, which is all the
+ * page has at that moment too.
+ */
+function PuzzlePanelOutline({ params }: { params: string[] }) {
+  const mode = params[0] === 'failed' ? 'failed' : params[0] === 'id' && params[1] ? 'single' : 'fresh';
+  const theme = mode === 'fresh' && params[0] === 'theme' ? (params[1] ?? '') : '';
+  const difficulty = storedDifficulty();
+  return (
+    <Inert>
+      <Panel>
+        <PanelHeader title={t('Puzzle')} actions={<DashboardButton />} />
+        <div className={PUZZLE_BODY}>
+          <div className="flex flex-col gap-0.5">
+            <PuzzleWait note={puzzleNote(mode, params[1], difficulty, theme)} />
+          </div>
+          {mode === 'fresh' && <DifficultyChip difficulty={difficulty} theme={theme} onOpen={NOOP} />}
+          <CardFooter className={PUZZLE_FOOT}>
+            <PuzzleActions onSkip={mode !== 'single' ? NOOP : undefined} solving={false} />
+          </CardFooter>
+        </div>
+      </Panel>
+    </Inert>
   );
 }
 
