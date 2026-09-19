@@ -7,6 +7,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A sidebar row opens its section's first page.** Clicking Studies
+  with a study left open in it went back to that study, which a tab bar
+  does and a sidebar does not. The row now opens the list. The phone's
+  tab bar still returns to the page its section was on, and the study is
+  in the quick switcher's recent list.
 - **On iOS the opening map's menu is in the title row.** The compass is
   a glass circle beside the back chevron and opens the same menu as a
   sheet; the floating disc in the corner stays on Android. On every phone

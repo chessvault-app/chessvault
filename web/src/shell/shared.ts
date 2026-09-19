@@ -90,7 +90,9 @@ export const inTools = (s: Section): boolean =>
 export const UNKEPT = new Set<Section>(['board', 'workspace', 'editor']);
 
 /**
- * Open a section from a tab or a sidebar row.
+ * Open a section from the phone's tab bar. A sidebar row is a destination
+ * and opens the section's root with a plain `navigate` (a sidebar has no
+ * second-tap-to-root, so returning to a leaf there read as a wrong page).
  *
  * Where it was last, since the page under it is still there (KeepAlive):
  * a tab bar's tab returns to the stack it left, and a shelf that is kept

@@ -20,7 +20,7 @@ import { useMediaQuery, useWorkspaceViewport } from '@/lib/media';
 import { hasTitleBar } from '@/components/title-bar';
 import { foldedFrom, useSidebar } from '@/store/sidebar';
 import { warmSection } from '@/shell/routes';
-import { NAV, TOOLS_SUBNAV, inTools, openSection } from '@/shell/shared';
+import { NAV, TOOLS_SUBNAV, inTools } from '@/shell/shared';
 import { ConnectionLabel, VaultLabel } from '@/shell/vault-label';
 
 /** Sub-entries under Puzzles. Failed-review deliberately has no entry —
@@ -262,7 +262,7 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
             <TitleTip title={folded ? t(label) : undefined} side={tipSide}>
             <NavLink
               href={sectionHref(section)}
-              onActivate={() => openSection(section, active)}
+              onActivate={() => navigate(section)}
               // Hover is intent (TanStack Router's default): the chunk
               // starts on the way before the click, where the idle sweep
               // has not reached it yet. A no-op once it is in hand.
@@ -365,7 +365,7 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
         <TitleTip title={folded ? t('Databases') : undefined} side={tipSide}>
         <NavLink
           href={sectionHref('databases')}
-          onActivate={() => openSection('databases', active)}
+          onActivate={() => navigate('databases')}
           aria-label={t('Databases')}
           aria-current={active === 'databases' ? 'page' : undefined}
           className={cn(
@@ -401,7 +401,7 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
           <TitleTip title={t('Settings')} side={folded ? tipSide : undefined}>
             <NavLink
               href={sectionHref('settings')}
-              onActivate={() => openSection('settings', active)}
+              onActivate={() => navigate('settings')}
               aria-label={t('Settings')}
               aria-current={active === 'settings' ? 'page' : undefined}
               className={cn(
