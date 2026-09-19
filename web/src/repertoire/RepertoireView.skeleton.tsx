@@ -30,7 +30,6 @@ import { t } from '@/lib/i18n';
 export default function RepertoireOutline() {
   return (
     <SkeletonBoard
-      shell="scroll"
       name={t('Repertoire')}
       pageHeader
       // The drill plays a game, so both players' bars stand, as they do

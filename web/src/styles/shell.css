@@ -132,6 +132,14 @@
      beside glass circles (lanph3re, 2026-09-19). Only while it is shown:
      put away it is collapsed to no width, and this rule's padding would
      stand an empty capsule in its place. */
+  /* And everywhere else a search field stands (a search row under a
+     header, a panel, a sheet) the same material at the field's own height:
+     the capsule in the title row beside a grey pill one row down read as
+     two search bars (lanph3re, 2026-09-19). The chrome rule below is the
+     more specific and adds the row's 40px. */
+  :root[data-platform='ios'] button[data-search-cancel]:not([aria-hidden='true']) {
+    @apply glass text-foreground rounded-full shadow-md ring-1 ring-window-ring active:opacity-70;
+  }
   :root[data-platform='ios'] [data-chrome] button[data-search-cancel]:not([aria-hidden='true']) {
     @apply glass text-foreground h-10 rounded-full px-4 shadow-md ring-1 ring-window-ring active:opacity-70;
   }

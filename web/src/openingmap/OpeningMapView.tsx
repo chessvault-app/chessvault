@@ -29,6 +29,7 @@ import { ClearableInput, SearchInput } from '@/components/text-fields';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { MiniBoard } from '@/components/mini-board';
+import { ActionMenu } from '@/components/action-menu';
 import { Fab, type FabAction } from '@/components/fab';
 import { LichessTokenNotice, useLichessToken } from '@/components/lichess-token-notice';
 import { ResultBadge } from '@/components/result-badge';
@@ -506,6 +507,28 @@ export function OpeningMapView({ params }: { params: string[] }) {
           />
         ) : null
       }
+      searchCollapse={
+        loaded && map
+          ? { label: t('Search the map'), active: query !== '', onClear: () => setQuery('') }
+          : undefined
+      }
+      headerActions={
+        loaded && map ? (
+          // iOS has no floating action button: the map's menu is a glass
+          // circle on the title row there, beside the magnifier, and the
+          // Fab below is every other phone's (lanph3re, 2026-09-19).
+          <ActionMenu title="Map menu" actions={mapActions}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              title={t('Map menu')}
+              className="hidden max-md:ios:inline-flex"
+            >
+              <Compass className="glyph" />
+            </Button>
+          </ActionMenu>
+        ) : null
+      }
       actions={
         loaded && map
           ? // The same actions the Fab carries, drawn straight onto the
@@ -697,7 +720,7 @@ export function OpeningMapView({ params }: { params: string[] }) {
           this page it is also one more thing on the canvas that swallows
           a touch meant for the map. */}
       {loaded && map && (
-        <Fab label={t('Map menu')} icon={Compass} className="md:hidden" actions={mapActions} />
+        <Fab label={t('Map menu')} icon={Compass} className="ios:hidden md:hidden" actions={mapActions} />
       )}
 
       {optionsOpen && (

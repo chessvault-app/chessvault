@@ -142,7 +142,9 @@ export function CanvasShell({
   back,
   meta,
   actions,
+  headerActions,
   search,
+  searchCollapse,
   panel,
   children,
 }: {
@@ -158,6 +160,10 @@ export function CanvasShell({
    * toolbar parked over it.
    */
   actions?: ReactNode;
+  /** Controls on the title's own row, as any page's (PageHeader, `actions`). */
+  headerActions?: ReactNode;
+  /** Folds the search into the title row on a phone (PageHeader, `searchCollapse`). */
+  searchCollapse?: { label: string; active: boolean; onClear: () => void };
   /**
    * A filter or search for the surface, on a row of its own under the
    * title. It shared the title's row while there were two of them; a
@@ -242,7 +248,7 @@ export function CanvasShell({
         {/* The search row is PageHeader's: the field is what follows this
             page's title, one shell gap down (the column's gap-4, as in
             PageShell), where every other page's first row sits. */}
-        <PageHeader title={title} back={back} meta={meta} search={search} />
+        <PageHeader title={title} back={back} meta={meta} actions={headerActions} search={search} searchCollapse={searchCollapse} />
       </div>
 
       {/* The surface, and everything that belongs ON it. Positioned, so

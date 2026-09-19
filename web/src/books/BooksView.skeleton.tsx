@@ -100,7 +100,7 @@ function ReaderOutline({ id }: { id: string }) {
           height: the chevron sets it, 36px under a thumb. This said h-8,
           and the pane strip under it stood 4px high of where it landed
           (check:skeletons). */}
-      <div className={cn(READER_FLUSH_ROW, 'md:hidden')}>
+      <div className={cn(READER_FLUSH_ROW, 'md:hidden')} data-chrome="">
         <Button variant="ghost" size="icon-sm">
           <ChevronLeft className="glyph" />
         </Button>

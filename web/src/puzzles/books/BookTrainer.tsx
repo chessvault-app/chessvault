@@ -446,7 +446,8 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   };
 
   const header = (
-    <div className="flex shrink-0 items-center gap-2">
+    // Page chrome: on iOS its icon buttons are glass circles (shell.css).
+    <div className="flex shrink-0 items-center gap-2" data-chrome="">
       <Button
         variant="ghost"
         size="icon-sm"

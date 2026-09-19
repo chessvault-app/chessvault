@@ -723,7 +723,7 @@ function ReaderHeader({
 }) {
   if (flush) {
     return (
-      <div className={READER_FLUSH_ROW}>
+      <div className={READER_FLUSH_ROW} data-chrome="">
         <Button variant="ghost" size="icon-sm" title={t('Back to Books')} onClick={onBack}>
           <ChevronLeft className="glyph" />
         </Button>

@@ -994,7 +994,7 @@ function Trainer({
     <div className={BOARD_HELD_SHELL}>
       {/* Stacked layouts lead with the header, convention-style; on wide
           the band lives in the side column so it aligns with the board. */}
-      <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">
+      <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden" data-chrome="">
         <Button
           variant="ghost"
           size="icon-sm"
