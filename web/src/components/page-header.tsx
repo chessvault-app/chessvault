@@ -54,7 +54,8 @@ export const pageTitleClass = 'text-2xl font-semibold tracking-tight md:text-xl'
  *
  * `pinned` adds the bar the large title turns into once it has scrolled
  * away: a compact row (chevron, the name at text-base, the same actions)
- * in the card's fill over a rule, pinned to the top of the scroller and
+ * in the card's fill over a rule (the page's tone from md), pinned to
+ * the top of the scroller and
  * shown ONLY on a scroll up (hooks/use-scroll-reveal). The list keeps the
  * whole screen while it is read down, and the controls are one flick
  * back, which is the platform's own shape for a long list and what the
@@ -216,8 +217,17 @@ export function PageHeader({
         >
           <div
             data-chrome=""
+            // On the page tone the bar's secondary fills step up a rung,
+            // as the header's own do (index.css, `[data-ground]`).
+            data-ground={phone ? undefined : ''}
             className={cn(
               'bg-card border-card-ring flex flex-col gap-2 border-b px-4 pb-2 md:px-6',
+              // From md the page's column is narrower than its pane, and the
+              // card's fill stopped at the column's edges: a slab floating
+              // in the pane. There the bar keeps the page tone and the list
+              // just stops under it, as the note's header does (NoteView;
+              // lanph3re, 2026-09-19). A phone's bar is the screen's width.
+              'md:bg-background',
               // iOS: glass over the list scrolling under it (utilities.css,
               // `glass`, on the capsule's terms: bg-card is what it falls
               // back to). The title is foreground ink, which clears the
