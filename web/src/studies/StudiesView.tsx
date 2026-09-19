@@ -1,3 +1,4 @@
+import { SHELF_GRID_3, SHELF_LIST } from '@/components/layout';
 import { Bookmark, CloudDownload, SearchX, FileText, FileUp, Folder as FolderIcon, FolderInput, Library, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -854,7 +855,7 @@ function GroupedStudies({
             // so more columns cost nothing and cut the scrolling; every
             // column is 1fr, so the row stretches with the container
             // rather than leaving a gutter down the right.
-            <ul className={layout === 'grid' ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3' : 'flex flex-col gap-1.5'}>
+            <ul className={layout === 'grid' ? SHELF_GRID_3 : SHELF_LIST}>
               {groups.get(folder)!.map((study) => (
                 <StudyCard
                   key={study.id}

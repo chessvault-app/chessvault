@@ -482,16 +482,40 @@ function PlaceholderChecklist() {
  * and measures 56px against the others' 37, so a book panel reserved with
  * ordinary rows would be 19px short per book.
  */
+/**
+ * A dashboard panel's head, for the card and for the placeholder that
+ * waits for it. Bare, it is the heading with the band's padding on it;
+ * given something to end on (Recent games' count) it is a row, and the
+ * padding moves to the row. The placeholder drew the bare one for both,
+ * so that heading stood 12px left of where it landed (check:skeletons).
+ */
+function PanelHead({ title, children }: { title: string; children?: React.ReactNode }) {
+  if (!children)
+    return (
+      <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 type-row font-medium">{title}</h2>
+    );
+  return (
+    <div className="border-border flex items-baseline border-b px-3 pb-1.5 pt-2">
+      <h2 className="text-muted-foreground flex-1 type-row font-medium">{title}</h2>
+      {children}
+    </div>
+  );
+}
+
 function PlaceholderPanel({
   title,
   rows,
   books = false,
   trailing = true,
   icon = true,
+  tally = false,
 }: {
   title: string;
   rows: number;
   books?: boolean;
+  /** The count the Recent games head ends on, which makes that head a
+      row of two and not a bare heading (PanelHead). */
+  tally?: boolean;
   /** The date, tally or count column the dashboard's rows end with. The
       checklist's rows have none — only a tick and a chevron. */
   trailing?: boolean;
@@ -500,9 +524,7 @@ function PlaceholderPanel({
 }) {
   return (
     <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
-      <h2 className="text-muted-foreground border-border border-b px-3 pb-1.5 pt-2 type-row font-medium">
-        {title}
-      </h2>
+      <PanelHead title={title}>{tally && <Skeleton className="h-2.5 w-14 self-center" />}</PanelHead>
       {Array.from({ length: rows }, (_, i) =>
         books ? (
           <div
@@ -553,15 +575,14 @@ function RecentGamesCard({
 }) {
   return (
     <div className={cn('bg-card overflow-hidden rounded-xl ring-1 ring-card-ring', className)}>
-      <div className="border-border flex items-baseline border-b px-3 pb-1.5 pt-2">
-        <h2 className="text-muted-foreground flex-1 type-row font-medium">{t('Recent games')}</h2>
+      <PanelHead title={t('Recent games')}>
         {/* The collection's size, where a tile used to carry it, with
             its noun: a bare "30" beside a list of three read as a badge
             count. */}
         <span className="text-muted-foreground type-row-sub">
           <Figures text={t('{n} games', { n: compact.format(total) })} />
         </span>
-      </div>
+      </PanelHead>
       {games.map((g) => (
         <ListRow
           key={`${g.file}#${g.index}`}
@@ -1376,6 +1397,7 @@ export function HomePage() {
               title={t('Recent games')}
               rows={Math.min(reservedDash.games, PHONE_GAMES)}
               icon={false}
+              tally
             />
           </div>
         )}
@@ -1626,7 +1648,7 @@ export function HomePage() {
               <PlaceholderPanel title={t('Training')} rows={reservedDash.training} trailing={false} />
             )}
             {show('games') && reservedDash.games > 0 && (
-              <PlaceholderPanel title={t('Recent games')} rows={reservedDash.games} icon={false} />
+              <PlaceholderPanel title={t('Recent games')} rows={reservedDash.games} icon={false} tally />
             )}
             {show('books') && reservedDash.books > 0 && (
               <PlaceholderPanel title={t('Puzzle books')} rows={reservedDash.books} books />

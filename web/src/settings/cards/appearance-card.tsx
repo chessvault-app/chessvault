@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from 'react';
 import { Palette } from 'lucide-react';
 import { Field } from '@/components/ui/field';
-import { SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
+import { APPEARANCE_LABELS, SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
 import { Select } from '@/components/ui/select';
 import { Disclosure } from '@/components/disclosure';
 import { SettingRow } from '@/components/setting-row';
@@ -61,7 +61,7 @@ export function AppearanceCard() {
     <Card icon={Palette} title={t('Appearance')}>
       {/* Language leads: it changes every other label on this page, so
           reading it first is what makes the rest of the card make sense. */}
-      <Field label="App language">
+      <Field label={APPEARANCE_LABELS.language}>
         <Select
           value={getLang()}
           onValueChange={(v) => setLang(v as Lang)}
@@ -70,7 +70,7 @@ export function AppearanceCard() {
         />
       </Field>
 
-      <Field label="App theme">
+      <Field label={APPEARANCE_LABELS.theme}>
         <Select
           value={theme}
           onValueChange={(v) => setTheme(v as ThemePreference)}
@@ -89,7 +89,7 @@ export function AppearanceCard() {
           scroll, which is a working setting and not a decorative one.
           Per-device, so the same vault is compact on a monitor and
           comfortable under a thumb. */}
-      <Field label="Density">
+      <Field label={APPEARANCE_LABELS.density}>
         <Select
           value={density}
           onValueChange={(v) => setDensity(v as Density)}
@@ -103,7 +103,7 @@ export function AppearanceCard() {
           neighbours. The list's headings stand in for the swatches' hint:
           shadcn's own five greys, the app's coloured ones, and the
           contrast one, each under its own label. */}
-      <Field label="Colours">
+      <Field label={APPEARANCE_LABELS.colours}>
         <Select
           value={schemeId}
           onValueChange={setSchemeId}
@@ -135,7 +135,7 @@ export function AppearanceCard() {
           swatch moved onto the rows, one per preset, and the trigger wears
           the same one — the separate preview would now be the selected
           row's swatch drawn twice. */}
-      <Field label="Board">
+      <Field label={APPEARANCE_LABELS.board}>
         <Select
           value={boardTheme}
           onValueChange={(v) => setBoardTheme(v as BoardTheme)}
@@ -153,7 +153,7 @@ export function AppearanceCard() {
         />
       </Field>
 
-      <Field label="Pieces">
+      <Field label={APPEARANCE_LABELS.pieces}>
         <Select
           value={pieces}
           onValueChange={(v) => setPieces(v as PieceSet)}
@@ -171,7 +171,7 @@ export function AppearanceCard() {
         />
       </Field>
 
-      <Field label="Castling">
+      <Field label={APPEARANCE_LABELS.castling}>
         <Select
           value={castleStyle}
           onValueChange={(v) => setCastleStyle(v as CastleStyle)}

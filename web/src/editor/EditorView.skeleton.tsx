@@ -71,7 +71,17 @@ export default function EditorOutline() {
       // under the board there and an outline of one would be a picture
       // of a panel that is not coming.
       sideColumn={false}
-      panel={{ title: t('Position'), body: <PositionForm /> }}
+      panel={{
+        title: t('Position'),
+        body: (
+          <>
+            <div className={POSITION_BODY}>
+              <PositionForm />
+            </div>
+            <FenRow />
+          </>
+        ),
+      }}
     />
   );
 }
@@ -178,6 +188,18 @@ export function ToolStrip({
 
 
 /** The Position card's fields, in the page's own order and words. */
+/** The Position panel's body, as the page frames its fields and this outline frames the same ones. */
+export const POSITION_BODY = 'grid gap-3 px-(--card-spacing) pb-(--card-spacing)';
+/** The two clocks, side by side. */
+export const CLOCK_GRID = 'grid grid-cols-2 gap-2';
+/**
+ * The FEN row under the fields. -mb: the row is the card's floor, so it
+ * claims the card's own bottom padding; py-1.5 is symmetric, so the line
+ * centres itself.
+ */
+export const FEN_ROW =
+  'border-border -mb-[var(--card-floor,var(--card-spacing))] flex shrink-0 items-center gap-1.5 border-t py-1.5 pl-3 pr-2';
+
 function PositionForm() {
   return (
     <Inert>
@@ -213,7 +235,7 @@ function PositionForm() {
       <Field label="En passant target">
         <Select value="" onValueChange={NOOP} ariaLabel={t('En passant target')} groups={[{ options: [] }]} />
       </Field>
-      <div className="grid grid-cols-2 gap-3">
+      <div className={CLOCK_GRID}>
         <Field label="Halfmove clock">
           <Input value="" readOnly aria-label={t('Halfmove clock')} />
         </Field>
@@ -221,11 +243,21 @@ function PositionForm() {
           <Input value="" readOnly aria-label={t('Move number')} />
         </Field>
       </div>
-      {/* The FEN row, which is the card's floor: the tick, the string and
-          Copy. Without it the card ended 49px above where it settles
-          (measured on the demo at 1280). The string is the one thing here
-          that is data, so it is a bar; everything else is the real row. */}
-      <div className="border-border -mx-3 -mb-3 flex shrink-0 items-center gap-1.5 border-t py-1.5 pl-3 pr-2">
+    </Inert>
+  );
+}
+
+/**
+ * The FEN row, which is the card's floor: the tick, the string and Copy.
+ * Without it the card ended 49px above where it settles (measured on the
+ * demo at 1280). The string is the one thing here that is data, so it is
+ * a bar; everything else is the real row, in the page's own frame and,
+ * as on the page, a sibling of the fields' body and not the last of them.
+ */
+function FenRow() {
+  return (
+    <Inert>
+      <div className={FEN_ROW}>
         <CheckCircle2 className="text-good glyph shrink-0" aria-hidden />
         <span className="flex min-w-0 flex-1 items-center font-mono text-xs">
           <Skeleton className="h-2.5 w-full" />

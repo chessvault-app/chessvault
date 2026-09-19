@@ -1,3 +1,4 @@
+import { SHELF_CARD_PAD, SHELF_CARD_RING, SHELF_CARD_TEXT_FLOOR } from '@/components/layout';
 import { Bookmark, MoreHorizontal, type LucideIcon } from 'lucide-react';
 import { useState, type ReactNode, useRef } from 'react';
 import { cn } from '@/lib/utils';
@@ -108,7 +109,7 @@ export function ShelfCard({
         {...swipe.handlers}
         className={cn(
           'bg-card group relative flex h-full cursor-pointer gap-3 touch-pan-y',
-          'overflow-hidden rounded-xl ring-1 ring-card-ring',
+          SHELF_CARD_RING,
           // The tint every other row and card in the app answers a
           // pointer with (the games row, the book shelves). This one
           // lifted a pixel and grew a shadow instead, on the theory that
@@ -118,7 +119,7 @@ export function ShelfCard({
           // moves the text being read.
           'transition-colors duration-100 hover:bg-accent',
           'pointer-coarse:active:bg-accent',
-          layout === 'grid' ? 'px-4 py-3' : 'items-center px-3 py-2',
+          layout === 'grid' ? SHELF_CARD_PAD.grid : cn('items-center', SHELF_CARD_PAD.list),
           // A bookmarked card says so before it is read: an edge down the
           // left in the accent, plus the small glyph on the meta line
           // below. The edge alone was the whole indicator for a while,
@@ -184,7 +185,7 @@ export function ShelfCard({
               // were 65.6 and 21.6, which put the board 12.8px into a
               // card 89.59px tall. See mini-board for what a board at a
               // fractional device pixel costs on a phone's route change.
-              layout === 'grid' && 'flex flex-col justify-center sm:min-h-[4.125rem]',
+              layout === 'grid' && SHELF_CARD_TEXT_FLOOR,
             )}
           >
             {/* Only the TITLE keeps clear of the ⋯, which is pinned to the

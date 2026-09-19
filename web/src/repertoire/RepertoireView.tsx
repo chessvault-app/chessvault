@@ -39,6 +39,7 @@ import { bookLabel } from '@/store/explorer';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { CardFooter } from '@/components/ui/card';
+import { GAME_BODY, GAME_FOOT } from './RepertoireView.skeleton';
 import { rememberDrill, rememberedDrill } from '@/lib/training';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { ConfirmDialog } from '@/components/confirm-dialog';
@@ -1659,7 +1660,7 @@ export function RepertoireView() {
         the top and bottom, its gap between this body and the floor below
         — and it drops that bottom py by itself when a footer is present,
         which is what the hand-rolled `pb-0` here used to stand in for. */}
-    <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)">
+    <div className={cn(GAME_BODY, 'min-h-0 grow overflow-y-auto')}>
       {/* Idle, the panel is what the page opens on: what the next game
           would be, and the button that begins it. Playing, it is the
           status line the trainers all carry. */}
@@ -1764,7 +1765,7 @@ export function RepertoireView() {
         shadcn's CardFooter: the slot a card keeps for its actions, a
         muted band under a rule, the same one the two trainers' rows
         stand on. */}
-    <CardFooter className="flex-col items-stretch gap-3">
+    <CardFooter className={GAME_FOOT}>
       {phase === 'idle' && startBlock}
       {phase === 'idle' && setupRow}
       {phase !== 'idle' && phase !== 'ended' && (
@@ -1911,14 +1912,14 @@ export function RepertoireView() {
           wide ? (
             <Panel fit className="shrink-0">
               <PanelHeader title={t('New game')} />
-              <div className="flex flex-col gap-3 px-(--card-spacing)">
+              <div className={GAME_BODY}>
                 {setupFields}
                 {startNotes}
               </div>
               {/* The same floor the Game panel keeps: the thing to press
                   stands on CardFooter's band, under the fields it starts,
                   instead of trailing them as one more row of form. */}
-              <CardFooter className="flex-col items-stretch gap-3">{startBlock}</CardFooter>
+              <CardFooter className={GAME_FOOT}>{startBlock}</CardFooter>
             </Panel>
           ) : (
             gamePanel

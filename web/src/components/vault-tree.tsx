@@ -36,7 +36,8 @@ import { t } from '@/lib/i18n';
  */
 export type VaultKind = 'folder' | 'git' | 'json';
 
-const ICONS: Record<VaultKind, LucideIcon> = { folder: Folder, git: FolderGit2, json: FileJson };
+/** The glyph each kind of row draws. The placeholder draws the same one (skeletons/vault-tree). */
+export const VAULT_ICONS: Record<VaultKind, LucideIcon> = { folder: Folder, git: FolderGit2, json: FileJson };
 
 export interface VaultRow {
   /** The name as the folder shows it, bare: `games`, `config.json`. */
@@ -92,7 +93,7 @@ export function VaultTree({
       </div>
       <ul>
         {rows.map((r) => {
-          const Icon = ICONS[r.kind];
+          const Icon = VAULT_ICONS[r.kind];
           return (
             <li key={r.path}>
               <span className="icon text-muted-foreground">

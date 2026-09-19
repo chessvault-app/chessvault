@@ -1,5 +1,6 @@
 import { ChevronRight, Play, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CardFooter } from '@/components/ui/card';
 import { Field } from '@/components/ui/field';
 import { Segmented } from '@/components/segmented';
 import { Select } from '@/components/ui/select';
@@ -31,6 +32,7 @@ export default function RepertoireOutline() {
     <SkeletonBoard
       shell="scroll"
       name={t('Repertoire')}
+      pageHeader
       // The drill plays a game, so both players' bars stand, as they do
       // on a collected game (PlayerSlot, above and below the board).
       players
@@ -48,14 +50,33 @@ export default function RepertoireOutline() {
             <span className="wide:hidden">{t('Game')}</span>
           </>
         ),
+        fit: true,
+        // The page's own two bands: the body, padded across and spaced by
+        // its own gap, and the CardFooter the thing to press stands on.
+        // Each fold's content sits directly in the band (`contents`), or
+        // the band's gap has one child to space and spaces nothing: the
+        // fields stood stacked with no air between them.
         body: (
           <>
-            <div className="stacked:hidden">
-              <NewGameForm />
+            <div className={GAME_BODY}>
+              <div className="contents stacked:hidden">
+                <NewGameForm />
+              </div>
+              <div className="contents wide:hidden">
+                <PhoneGameLines />
+              </div>
             </div>
-            <div className="wide:hidden">
-              <PhoneGameCard />
-            </div>
+            <CardFooter className={GAME_FOOT}>
+              <Inert>
+                <Button variant="default" size="default" className="w-full">
+                  <Play className="glyph" data-icon="inline-start" />
+                  {t('Start')}
+                </Button>
+                <div className="contents wide:hidden">
+                  <PhoneSetupRow />
+                </div>
+              </Inert>
+            </CardFooter>
           </>
         ),
       }}
@@ -69,23 +90,32 @@ export default function RepertoireOutline() {
  * begins, and the row that opens the settings sheet. The form itself is
  * behind that row, which is why the phone's panel is shorter.
  */
-function PhoneGameCard() {
+function PhoneGameLines() {
   return (
     <Inert>
       <p className="text-foreground text-base font-medium">{t('Starting position')}</p>
       <p className="text-muted-foreground text-sm">{t('Practise an opening against real games')}</p>
-      <Button variant="default" size="default" className="w-full">
-        <Play className="glyph" data-icon="inline-start" />
-        {t('Start')}
-      </Button>
-      <div className="bg-card ring-card-ring flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 ring-1">
-        <SlidersHorizontal className="text-muted-foreground glyph shrink-0" />
-        <Skeleton className="h-2.5 min-w-0 flex-1" />
-        <ChevronRight className="text-muted-foreground glyph shrink-0" />
-      </div>
     </Inert>
   );
 }
+
+/** The row under Start that says what Start would play and opens the settings sheet. */
+function PhoneSetupRow() {
+  return (
+    <div className="bg-card ring-card-ring flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 ring-1">
+      <SlidersHorizontal className="text-muted-foreground glyph shrink-0" />
+      <Skeleton className="h-2.5 min-w-0 flex-1" />
+      <ChevronRight className="text-muted-foreground glyph shrink-0" />
+    </div>
+  );
+}
+
+/**
+ * The Game and New game panels' two bands, which the page draws and this
+ * outline draws: the body's frame, and the footer's.
+ */
+export const GAME_BODY = 'flex flex-col gap-3 px-(--card-spacing)';
+export const GAME_FOOT = 'flex-col items-stretch gap-3';
 
 /**
  * The form's own fields, in the page's own order and words, held inert.
@@ -136,12 +166,6 @@ function NewGameForm() {
       <Field label="Opening">
         <ClearableInput value="" readOnly aria-label={t('Opening')} placeholder={t('Starting position')} />
       </Field>
-      <div className="flex flex-col gap-2">
-        <Button variant="default" size="default" className="w-full">
-          <Play className="glyph" data-icon="inline-start" />
-          {t('Start')}
-        </Button>
-      </div>
     </Inert>
   );
 }

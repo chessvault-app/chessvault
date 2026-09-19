@@ -27,9 +27,9 @@ import { SelectButton, SelectRowCheckbox, SelectionBar } from './selection';
 import { InGamesHeader } from './header-slots';
 import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/ui/field';
-import { Skeleton } from '@/components/skeletons';
 import { searchRowClass } from '@/components/text-fields';
-import { collectionLastCount, collectionWasNonEmpty } from './collection';
+import { collectionWasNonEmpty } from './collection';
+import { MergedTally, SelectReserve, Tally } from './GamesView.skeleton';
 
 import { t } from '@/lib/i18n';
 import {
@@ -714,17 +714,9 @@ export function CollectionList({
    * it would be a hole in a loading state its neighbours are already
    * drawing — one skeleton arriving late reads worse than one brief.
    */
-  const lastCount = collectionLastCount();
-  const tally = loaded ? (
-    t('{n} games', { n: visible.length.toLocaleString() })
-  ) : lastCount !== null ? (
-    <span className="relative inline-block">
-      <span className="invisible">{t('{n} games', { n: lastCount.toLocaleString() })}</span>
-      <Skeleton className="absolute inset-x-0 top-1/2 h-2.5 -translate-y-1/2" />
-    </span>
-  ) : (
-    <Skeleton className="h-2.5 w-16" />
-  );
+  // The wait's bar is the outline's own (GamesView.skeleton, Tally), so
+  // the two waits draw one reservation.
+  const tally = loaded ? t('{n} games', { n: visible.length.toLocaleString() }) : <Tally />;
 
   const rowCheckbox = (game: GameSummary): ReactNode => (
     <SelectRowCheckbox
@@ -741,7 +733,9 @@ export function CollectionList({
   );
   // Beside the count, as the archive puts it; nothing to select is
   // nothing to enter for.
-  const selectEntry = loaded && visible.length > 0 && !selecting ? (
+  const selectEntry = !loaded ? (
+    <SelectReserve />
+  ) : visible.length > 0 && !selecting ? (
     <SelectButton onClick={() => setSelecting(true)} />
   ) : null;
   // The card menu's way in, where the button above is not drawn: the
@@ -808,14 +802,7 @@ export function CollectionList({
           <div className={cn('flex w-full items-center gap-1.5', searchRowClass, merged && 'flex-wrap')}>
             {search}
             {filtersInRow && !lifted && filterControls}
-            {merged && (
-              <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
-                <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">
-                  {tally}
-                </span>
-                {selectEntry}
-              </span>
-            )}
+            {merged && <MergedTally tally={tally} select={selectEntry} />}
           </div>
           {searchIssues}
         </div>

@@ -15,6 +15,7 @@ import {
   useSlowLoad,
 } from '@/components/skeletons';
 import { t } from '@/lib/i18n';
+import { englishLabel, themeLabel } from './theme-labels';
 import { THEMES_SHAPE_KEY, readThemesShape } from './reservation';
 import { ThemeCard } from './PuzzlesView.skeleton';
 
@@ -94,37 +95,10 @@ const GROUPS: { title: string; themes: string[] }[] = [
   { title: 'Source', themes: ['master', 'masterVsMaster', 'superGM'] },
 ];
 
-const LABELS: Record<string, string> = {
-  attackingF2F7: 'Attacking f2/f7',
-  xRayAttack: 'X-ray attack',
-  enPassant: 'En passant',
-  masterVsMaster: 'Master vs master',
-  superGM: 'Super-GM games',
-  master: 'Master games',
-  oneMove: 'One move',
-  killBoxMate: 'Kill box mate',
-  // The possessives, which the id spells without their apostrophe and the
-  // derivation below printed that way: "Morphys mate" on a card.
-  morphysMate: "Morphy's mate",
-  pillsburysMate: "Pillsbury's mate",
-  swallowstailMate: "Swallow's tail mate",
-};
-
-/** The label in the app's own English, before translation. */
-function englishLabel(theme: string): string {
-  if (LABELS[theme]) return LABELS[theme];
-  const spaced = theme
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/(\d+)/g, ' $1')
-    .toLowerCase()
-    .trim();
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
-}
-
-/** camelCase theme id → human label ("hangingPiece" → "Hanging piece"). */
-export function themeLabel(theme: string): string {
-  return t(englishLabel(theme));
-}
+// The labels live in ./theme-labels, a module light enough for the
+// trainer's outline to read; re-exported because this page is where
+// callers have always found them.
+export { themeLabel };
 
 /**
  * What a query is matched against, folded: case, spaces, hyphens and

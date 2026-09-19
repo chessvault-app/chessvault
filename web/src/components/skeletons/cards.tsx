@@ -1,3 +1,4 @@
+import { SHELF_CARD_PAD, SHELF_CARD_RING, SHELF_CARD_TEXT_FLOOR, SHELF_GRID_2, SHELF_GRID_3, SHELF_LIST } from '@/components/layout';
 import { Folder as FolderIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -7,7 +8,7 @@ import { Loading, NAME_WIDTHS } from './primitives';
  * A shelf's grouped frame, which the studies, notes and library shelves
  * share (gap-4 of gap-2 sections): the root's cards headerless the way
  * the root draws them, then each collection under ShelfFolderHeader's
- * fixed 24px row, or, at zero, its one-line "Empty collection." note.
+ * fixed 24px row, or, at zero, its one-line "Empty folder." note.
  * The caller supplies the cards; `stack(n, offset)` draws `n` of them
  * starting at card `offset` of the whole shelf.
  */
@@ -58,7 +59,7 @@ function SkeletonShelfGroups({
 export function SkeletonCards({
   cards = 5,
   layout = 'list',
-  gridClassName = 'grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3',
+  gridClassName = SHELF_GRID_3,
   groups,
   cover = true,
   className,
@@ -68,7 +69,7 @@ export function SkeletonCards({
    * The shelf's grouped shape, where the caller stored one last visit
    * (components/shelf-reservation): root cards with nothing above them,
    * then one section per collection — its 24px header, and its cards or
-   * the one-line "Empty collection." note. Without it the flat `cards`
+   * the one-line "Empty folder." note. Without it the flat `cards`
    * stack is drawn, which is right only for a shelf nothing is known
    * about.
    */
@@ -109,8 +110,9 @@ export function SkeletonCards({
         // glyph 24.8px above the note card's: a hop on every thumbnail the
         // moment the list landed, 2 to 3 device pixels at 3x. Measured
         // on the demo at 390px with the list request held.
-        'bg-card flex items-center gap-3 overflow-hidden rounded-xl ring-1 ring-card-ring',
-        grid ? 'px-4 py-3' : 'px-3 py-2',
+        'bg-card flex items-center gap-3',
+        SHELF_CARD_RING,
+        grid ? SHELF_CARD_PAD.grid : SHELF_CARD_PAD.list,
       )}
       // The card's settled height where the shelf measured it last visit
       // (shelf-reservation says why a measurement and not a line count).
@@ -133,7 +135,7 @@ export function SkeletonCards({
           // the card would centre one. From sm up only, as on the card:
           // the one-column phone shelf reserves nothing, and its card is
           // the height of these lines.
-          grid && 'flex flex-col justify-center sm:min-h-[4.125rem]',
+          grid && SHELF_CARD_TEXT_FLOOR,
         )}
       >
         {/* The title is `text-base` at every width (shelf-card: a card
@@ -160,7 +162,7 @@ export function SkeletonCards({
     </div>
   );
   const stack = (n: number, offset = 0) => (
-    <div className={grid ? gridClassName : 'flex flex-col gap-1.5'}>
+    <div className={grid ? gridClassName : SHELF_LIST}>
       {Array.from({ length: n }, (_, i) => card(i + offset))}
     </div>
   );
@@ -234,7 +236,7 @@ export function SkeletonBookCards({
     </div>
   );
   const stack = (n: number, offset = 0) => (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+    <div className={SHELF_GRID_2}>
       {Array.from({ length: n }, (_, i) => card(i + offset))}
     </div>
   );

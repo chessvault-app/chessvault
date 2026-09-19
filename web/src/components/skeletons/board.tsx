@@ -10,7 +10,7 @@ import {
   BOARD_WIDE_COLUMN,
   BOARD_WIDE_SIDE,
 } from '@/components/layout';
-import { PanelHeader, panelStoredHeight } from '@/components/panel';
+import { Panel, PanelHeader, panelStoredHeight } from '@/components/panel';
 import { t } from '@/lib/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
 import { INERT, InertDocumentTools, InertEditButton, InertSaveState, Loading } from './primitives';
@@ -33,8 +33,23 @@ import { INERT, InertDocumentTools, InertEditButton, InertSaveState, Loading } f
  * `stacked:overflow-y-auto`, so a window short enough to make the page
  * scroll clipped the placeholder instead.
  */
+/**
+ * A player's bar over or under a board: the colour dot and the name, on
+ * the 24px line the real one takes (PlayerSlot). Exported for the one
+ * board that is not on this shell, the workspace's.
+ */
+export function SkeletonPlayerBar({ className }: { className?: string }) {
+  return (
+    <div className={cn('flex h-6 items-center gap-2', className)}>
+      <Skeleton className="size-2 shrink-0 rounded-full" />
+      <Skeleton className="h-3 w-32" />
+    </div>
+  );
+}
+
 export function SkeletonBoard({
   players = false,
+  pageHeader = false,
   chapters = false,
   explorer = false,
   explorerKey,
@@ -65,6 +80,13 @@ export function SkeletonBoard({
    * nameless board draws neither (AnalysisBoard, `hasNames`).
    */
   players?: boolean | 'wide';
+  /**
+   * The page draws this row with PageHeader (the repertoire trainer),
+   * whose chevron and title stand 12px apart, and not with the trainers'
+   * own row, where they stand 8px apart. The title was 4px left of where
+   * it landed on a phone (check:skeletons).
+   */
+  pageHeader?: boolean;
   /** A study's chapter list, which a game and a trainer do not have. */
   chapters?: boolean;
   /**
@@ -136,6 +158,9 @@ export function SkeletonBoard({
         line's name there, which before a move is the starting
         position). With a body the panel takes that body's height. */
     body?: React.ReactNode;
+    /** `fit`, where the page's own Panel is: a short form that must not
+        be cut off under a tall board (RepertoireView). */
+    fit?: boolean;
   };
   /**
    * The Engine block docked on top of that panel, which is what every
@@ -228,10 +253,7 @@ export function SkeletonBoard({
     // that ignores it moves the whole stack sideways when the real view
     // arrives.
     <BoardLane>
-      <div className="board-box flex h-6 items-center gap-2">
-        <Skeleton className="size-2 shrink-0 rounded-full" />
-        <Skeleton className="h-3 w-32" />
-      </div>
+      <SkeletonPlayerBar className="board-box" />
     </BoardLane>
   );
   return (
@@ -254,6 +276,8 @@ export function SkeletonBoard({
           // grows to them; a trainer's stays h-8 around them, as the
           // pages' own do.
           name ? 'h-8' : 'wide:h-9 pointer-coarse:h-9 max-md:ios:h-10',
+          // PageHeader's own gap, where that is what the page draws.
+          pageHeader && 'gap-x-3',
         )}
         data-ground=""
         // Page chrome, as the pages' own rows: glass circles on iOS
@@ -429,62 +453,74 @@ export function SkeletonBoard({
             instead: the editor's Position card and the repertoire
             trainer's New game card are forms, and a form stretched to the
             column's foot is not what either page draws. */}
-        <div
-          className={cn(
-            'bg-card flex flex-col overflow-hidden rounded-xl ring-1 ring-card-ring [--card-spacing:var(--card-pad)]',
-            panel?.body ? 'shrink-0' : 'min-h-0 flex-1',
-            // The floor the Board gives its moves panel against an open
-            // explorer (AnalysisView, engine off), or the explorer's
-            // 300px takes the column on a short window.
-            explorer === 'open' && 'lg:min-h-[min(22rem,45%)]',
-          )}
-        >
-          {/* The panel opens on its header, as the chapters panel above
-              does: the moves title and the row of controls beside it. The
-              bars used to start 12px down a panel whose first 44px is that
-              band, so every move line sat a header too high. The title is
-              the real PanelHeader's; a study's says its chapter's name
-              instead, which is data, so the panel's own word stands. The
-              controls stay as boxes: which ones the row holds depends on
-              the document. */}
-          {/* The engine, docked: its own header with the switch that
-              turns it on, and nothing under it, which is what a board
-              page opens with (the block is off until asked). */}
-          {engine && (
-            <div className="max-lg:hidden">
-              <PanelHeader
-                title={t('Engine')}
-                actions={<span aria-hidden className="bg-muted h-5 w-9 shrink-0 rounded-full" />}
-              />
-            </div>
-          )}
-          <PanelHeader
-            title={
-              panel ? (
-                panel.title
-              ) : stackedPanel === undefined ? (
-                t('Moves')
-              ) : (
-                <>
-                  <span className="max-lg:hidden">{t('Moves')}</span>
-                  <span className="lg:hidden">{stackedPanel}</span>
-                </>
-              )
-            }
-            actions={
-              panel ? undefined : [0, 1, 2].map((i) => <span key={i} className="size-7" />)
-            }
-          />
-          {panel?.body ? (
-            <div className="flex flex-col gap-3 px-3 pb-3">{panel.body}</div>
-          ) : (
+        {panel?.body ? (
+          /* A named panel with a body of its own is the page's form (the
+             editor's Position card, the repertoire trainer's New game
+             card), and it is drawn in the REAL Panel, `fit` as both pages
+             stand it. It was a div restating the card: px-3 where the
+             card pads by --card-spacing, no floor for a footer to stand
+             on, and one gap for whatever the outline handed it, so the
+             editor's fields stood 4px left of where they landed and the
+             trainer's Start button 65px above (check:skeletons, the first
+             run). The body brings its own frame, which is the page's. */
+          <Panel fit={panel.fit} className={panel.fit ? 'shrink-0' : undefined}>
+            <PanelHeader title={panel.title} />
+            {panel.body}
+          </Panel>
+        ) : (
+          <div
+            className={cn(
+              'bg-card flex flex-col overflow-hidden rounded-xl ring-1 ring-card-ring [--card-spacing:var(--card-pad)]',
+              'min-h-0 flex-1',
+              // The floor the Board gives its moves panel against an open
+              // explorer (AnalysisView, engine off), or the explorer's
+              // 300px takes the column on a short window.
+              explorer === 'open' && 'lg:min-h-[min(22rem,45%)]',
+            )}
+          >
+            {/* The panel opens on its header, as the chapters panel above
+                does: the moves title and the row of controls beside it. The
+                bars used to start 12px down a panel whose first 44px is that
+                band, so every move line sat a header too high. The title is
+                the real PanelHeader's; a study's says its chapter's name
+                instead, which is data, so the panel's own word stands. The
+                controls stay as boxes: which ones the row holds depends on
+                the document. */}
+            {/* The engine, docked: its own header with the switch that
+                turns it on, and nothing under it, which is what a board
+                page opens with (the block is off until asked). */}
+            {engine && (
+              <div className="max-lg:hidden">
+                <PanelHeader
+                  title={t('Engine')}
+                  actions={<span aria-hidden className="bg-muted h-5 w-9 shrink-0 rounded-full" />}
+                />
+              </div>
+            )}
+            <PanelHeader
+              title={
+                panel ? (
+                  panel.title
+                ) : stackedPanel === undefined ? (
+                  t('Moves')
+                ) : (
+                  <>
+                    <span className="max-lg:hidden">{t('Moves')}</span>
+                    <span className="lg:hidden">{stackedPanel}</span>
+                  </>
+                )
+              }
+              actions={
+                panel ? undefined : [0, 1, 2].map((i) => <span key={i} className="size-7" />)
+              }
+            />
             <div className="flex min-h-0 flex-1 flex-col gap-2 px-3 pb-3">
               {Array.from({ length: 8 }, (_, i) => (
                 <Skeleton key={i} className={cn('h-2.5 shrink-0', i % 2 ? 'w-3/5' : 'w-4/5')} />
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
         {/* Folded to its header, which is where a board page opens it:
             `enabled` is session state and starts off (store/explorer), so a
             load never finds the 300px open panel. Same min-h-11 header. */}
