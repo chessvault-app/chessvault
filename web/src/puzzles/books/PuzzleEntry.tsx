@@ -233,7 +233,7 @@ export function PuzzleEntry({
           />
         </div>
       ) : (
-        <div className="flex shrink-0 items-center gap-2 px-3 pt-[calc(0.75rem+var(--page-t))]">
+        <div className="flex shrink-0 items-center gap-2 px-3 pt-[calc(0.75rem+var(--page-t))]" data-chrome="">
           <Button variant="ghost" size="icon-sm" title={t('Back to the book')} onClick={onCancel}>
             <ChevronLeft className="glyph" />
           </Button>

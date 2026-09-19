@@ -363,7 +363,7 @@ export function BookPage({ slug }: { slug: string }) {
             source PDF, re-reading the drafts and resetting are in the
             menu, the reset last and red as ActionMenu places a danger. */}
         {renaming ? (
-          <div className="mb-4 flex items-center gap-2 max-md:min-h-11">
+          <div className="mb-4 flex items-center gap-2 max-md:min-h-11" data-chrome="">
             <Button
               variant="ghost"
               size="icon-sm"
