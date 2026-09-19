@@ -1,16 +1,12 @@
-import { Bookmark, LayoutDashboard } from 'lucide-react';
+import { LayoutDashboard } from 'lucide-react';
 import { PageGate } from '@/components/page-gate';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Button } from '@/components/ui/button';
-import { SearchInput, searchRowClass } from '@/components/text-fields';
 import { Inert, Skeleton } from '@/components/skeletons';
 import { WORKSPACE_SHELL } from '@/components/layout';
-import { GameListShell } from '@/games/GameListShell';
-import { GamesTabStrip } from '@/games/GamesTabStrip';
-import { GameTableHeader, gameTableColumns } from '@/games/GameTable';
+import { CollectionPaneOutline } from '@/games/GamesView.skeleton';
 import { useWorkspaceViewport } from '@/lib/media';
 import { navigate } from '@/lib/router';
-import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /**
@@ -109,41 +105,14 @@ export default function WorkspaceOutline() {
           </div>
         </div>
         {/* The games band: the Games page's own browser as a full-width
-            strip, in its panel frame. Drawn from the browser's own
-            pieces — its tab strip, and the shell that owns every band's
-            padding and rule — so this is the band's geometry and not an
-            impression of it. The band is `flex-1` under a row whose
+            strip, in its panel frame. It is the Games outline's own pane
+            (CollectionPaneOutline), in the other of its two boxes, so
+            this is the band's geometry and not an impression of it. The band is `flex-1` under a row whose
             height is the board's, so it takes whatever the row leaves;
             without its contents that was the page's largest empty
             rectangle, on its longest download. */}
         <Panel className="min-h-72 flex-1">
-          <GamesTabStrip value="collection" onValueChange={NOOP} frame="panel" />
-          <GameListShell
-            shape="panel"
-            dense
-            denseColumns={gameTableColumns(false, true)}
-            rowBookmark
-            rowLink
-            listLoading
-            filtersLoading
-            listHeader={<GameTableHeader />}
-            toolbar={
-              <div className={cn('flex w-full items-center gap-1.5', searchRowClass)}>
-                <SearchInput
-                  type="text"
-                  inputSize="sm"
-                  value=""
-                  readOnly
-                  placeholder={t('Search collection…')}
-                  aria-label={t('Search collection…')}
-                  className="min-w-0 flex-1"
-                />
-                <Button variant="secondary" size="icon-sm" className="shrink-0">
-                  <Bookmark className="glyph" />
-                </Button>
-              </div>
-            }
-          />
+          <CollectionPaneOutline frame="panel" />
         </Panel>
       </div>
       </Inert>
@@ -151,4 +120,3 @@ export default function WorkspaceOutline() {
   );
 }
 
-const NOOP = (): void => {};

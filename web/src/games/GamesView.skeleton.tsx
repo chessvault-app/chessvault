@@ -90,22 +90,11 @@ function CollectionOutline() {
   const pinned = readDetailsPin() ?? roomy;
   const besideDetails = wide && pinned;
   const detailsReservePx = wide && !pinned ? (roomier ? DETAILS_RESERVE_WIDE_PX : DETAILS_RESERVE_PX) : 0;
-  // The same measurement GamesBrowser makes, over the same element: the
-  // strip's own wrapper, which is the pane's full width.
-  const [paneRef, paneW] = useElementWidth();
-  const merged = wide && paneW > 0 && paneW - detailsReservePx >= MERGED_MIN_PX;
+  // The header's half of the fold: a phone's title row carries the
+  // list's switches, the filters one only where the pane would draw
+  // its filters (CollectionPaneOutline reads the same flag).
   const folded = useFiltersFolded();
-  const filtersInRow = merged || folded;
-  const table = wide;
-  // The column template the header and the placeholder rows both lay
-  // out on, from the widths this device dragged them to.
-  const tableVars = useGameTableVars(false, !besideDetails);
-  // Where the controls ride the search row, the page draws them before
-  // its games land — but only for a device that has seen this vault's
-  // collection hold something, which is the same flag CollectionList
-  // reads (`showFilters`). Without them the phone's search box stood
-  // 42px wide of where it settles.
-  const showFilters = filtersInRow && collectionWasNonEmpty();
+  const showFilters = folded && collectionWasNonEmpty();
 
   return (
     <PageShell
@@ -161,77 +150,122 @@ function CollectionOutline() {
               variable pinned to the ground, which is what Box draws for
               `frame="page"` (GamesBrowser). */}
           <div className="flex min-h-0 flex-col [--card:var(--background)]">
-            <GamesTabStrip value="collection" onValueChange={NOOP} frame="page" stripRef={paneRef} />
-            <GameListShell
-              shape="page"
-              dense={table}
-              denseColumns={gameTableColumns(false, !besideDetails)}
-              rowBookmark
-              rowLink
-              listLoading
-              filtersLoading={!filtersInRow}
-              listHeader={
-                table ? <GameTableHeader withNotation={!besideDetails} /> : undefined
-              }
-              listVars={table ? tableVars : undefined}
-              toolbar={
-                // No standing search row on a phone: the magnifier opens it.
-                folded ? undefined : (
-                <div className="flex w-full flex-col gap-2">
-                  <div className={cn('flex w-full items-center gap-1.5', searchRowClass, merged && 'flex-wrap')}>
-                    <SearchInput
-                      type="text"
-                      inputSize="sm"
-                      value=""
-                      readOnly
-                      placeholder={t('Search collection…')}
-                      aria-label={t('Search collection…')}
-                      className="min-w-0 flex-1"
-                    />
-                    <Button variant="secondary" size="icon-sm" className="shrink-0">
-                      <Bookmark className="glyph" />
-                    </Button>
-                    {showFilters && (
-                      <>
-                        <OwnershipSelect
-                          value="any"
-                          onChange={NOOP}
-                          className={cn(QUICK_SELECT, merged && 'flex-none')}
-                        />
-                        <ResultSelect
-                          value="any"
-                          onChange={NOOP}
-                          className={cn(QUICK_SELECT, merged && 'flex-none')}
-                        />
-                        <NotesSelect
-                          value="any"
-                          onChange={NOOP}
-                          className={cn(QUICK_SELECT, merged && 'flex-none')}
-                        />
-                        <MoreFiltersButton on={false} onClick={NOOP} />
-                      </>
-                    )}
-                    {merged && (
-                      <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
-                        <Tally />
-                      </span>
-                    )}
-                  </div>
-                </div>
-                )
-              }
-              countBand={
-                merged || folded ? undefined : (
-                  <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
-                    <Tally />
-                  </span>
-                )
-              }
-            />
+            <CollectionPaneOutline frame="page" besideDetails={besideDetails} detailsReservePx={detailsReservePx} />
           </div>
         </div>
       </Inert>
     </PageShell>
+  );
+}
+
+/**
+ * The collection pane itself: the tab strip over the list shell, with the
+ * toolbar, the header and the placeholder rows the browser draws while
+ * its games are out. One component for both hosts, the Games page
+ * (`frame="page"`) and the workspace's band (`frame="panel"`), because
+ * they are one browser (GamesBrowser) in two boxes. The workspace drew a
+ * looser copy of this, which never set the table's column template: its
+ * header stood as a stacked column and its filters on a row of their
+ * own, 88px of drift that check:skeletons found on its first run.
+ */
+export function CollectionPaneOutline({
+  frame,
+  besideDetails = false,
+  detailsReservePx = 0,
+}: {
+  frame: 'page' | 'panel';
+  /** A details column stands beside the table, which drops Notation. */
+  besideDetails?: boolean;
+  /** Room the pane keeps free for a details column that may open. */
+  detailsReservePx?: number;
+}) {
+  const wide = useMediaQuery(TABLE_MQ);
+  // The same measurement GamesBrowser makes, over the same element: the
+  // strip's own wrapper, which is the pane's full width.
+  const [paneRef, paneW] = useElementWidth();
+  const merged = wide && paneW > 0 && paneW - detailsReservePx >= MERGED_MIN_PX;
+  const folded = useFiltersFolded();
+  const filtersInRow = merged || folded;
+  const table = wide;
+  // The column template the header and the placeholder rows both lay
+  // out on, from the widths this device dragged them to.
+  const tableVars = useGameTableVars(false, !besideDetails);
+  // Where the controls ride the search row, the page draws them before
+  // its games land — but only for a device that has seen this vault's
+  // collection hold something, which is the same flag CollectionList
+  // reads (`showFilters`). Without them the phone's search box stood
+  // 42px wide of where it settles.
+  const showFilters = filtersInRow && collectionWasNonEmpty();
+  return (
+    <>
+    <GamesTabStrip value="collection" onValueChange={NOOP} frame={frame} stripRef={paneRef} />
+    <GameListShell
+      shape={frame}
+      dense={table}
+      denseColumns={gameTableColumns(false, !besideDetails)}
+      rowBookmark
+      rowLink
+      listLoading
+      filtersLoading={!filtersInRow}
+      listHeader={
+        table ? <GameTableHeader withNotation={!besideDetails} /> : undefined
+      }
+      listVars={table ? tableVars : undefined}
+      toolbar={
+        // No standing search row on a phone: the magnifier opens it.
+        folded ? undefined : (
+        <div className="flex w-full flex-col gap-2">
+          <div className={cn('flex w-full items-center gap-1.5', searchRowClass, merged && 'flex-wrap')}>
+            <SearchInput
+              type="text"
+              inputSize="sm"
+              value=""
+              readOnly
+              placeholder={t('Search collection…')}
+              aria-label={t('Search collection…')}
+              className="min-w-0 flex-1"
+            />
+            <Button variant="secondary" size="icon-sm" className="shrink-0">
+              <Bookmark className="glyph" />
+            </Button>
+            {showFilters && (
+              <>
+                <OwnershipSelect
+                  value="any"
+                  onChange={NOOP}
+                  className={cn(QUICK_SELECT, merged && 'flex-none')}
+                />
+                <ResultSelect
+                  value="any"
+                  onChange={NOOP}
+                  className={cn(QUICK_SELECT, merged && 'flex-none')}
+                />
+                <NotesSelect
+                  value="any"
+                  onChange={NOOP}
+                  className={cn(QUICK_SELECT, merged && 'flex-none')}
+                />
+                <MoreFiltersButton on={false} onClick={NOOP} />
+              </>
+            )}
+            {merged && (
+              <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
+                <Tally />
+              </span>
+            )}
+          </div>
+        </div>
+        )
+      }
+      countBand={
+        merged || folded ? undefined : (
+          <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
+            <Tally />
+          </span>
+        )
+      }
+    />
+    </>
   );
 }
 
