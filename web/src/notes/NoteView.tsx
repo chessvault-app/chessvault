@@ -439,17 +439,15 @@ function NoteEditor({
     // ends at the keyboard now (lib/keyboardInset, index.css), so this box
     // is already entirely above it and padding again pushed the last lines
     // of the note up out of a container that had nothing under it.
-    <div className="flex h-full flex-col gap-3 overflow-y-auto pb-[calc(1rem+var(--safe-b))] md:pb-6ios:h-[calc(100%+var(--bottom-bar-h))] ios:pb-[calc(1rem+var(--page-b))]">
+    <div className="mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto px-4 pb-[calc(1rem+var(--safe-b))] md:px-6 md:pb-6 ios:h-[calc(100%+var(--bottom-bar-h))] ios:pb-[calc(1rem+var(--page-b))]">
       {/* Header AND palette pin together. Pinning only the palette left the
-          title scrolling away above it. The scroller is the pane's full
-          width and the text column is capped inside it (`column`), so the
-          bar's fill and rule run edge to edge while its contents keep the
-          column: filled only as wide as the text, it read as a box
-          floating in the pane (lanph3re, 2026-09-19). */}
+          title scrolling away above it, and the negative margins let the
+          bar span the column's full width — inset by the page padding it
+          read as narrower than the text it formats. */}
       <div
         ref={setHeader}
         className={cn(
-          'sticky top-0 z-30 shrink-0 border-b pt-[calc(1rem+var(--page-t))] md:pt-6',
+          'sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pt-[calc(1rem+var(--page-t))] md:-mx-6 md:px-6 md:pt-6',
           // The page header's grammar: the page's own tone at rest, and the
           // bars' fill with the card's edge once the note has scrolled
           // under it, so the line returns under High contrast. A standing
@@ -471,7 +469,6 @@ function NoteEditor({
           editable ? 'pb-1.5' : 'pb-3',
         )}
       >
-      <div className={cn(column, 'flex flex-col gap-3')}>
       <header
         // On the page ground at rest; once scrolled the bar is a card and
         // the Edit button's secondary fill separates on its own
@@ -527,9 +524,8 @@ function NoteEditor({
       </header>
       <EditorPalette editor={editor} editable={editable} />
       </div>
-      </div>
 
-      <EditorContent editor={editor} className={cn(column, 'min-h-0 flex-1')} />
+      <EditorContent editor={editor} className="min-h-0 flex-1" />
       <WikiSuggest store={editor ? wikiSuggestStore(editor) : null} host={editor?.view.dom ?? null} />
 
       {recovery && editor && (
@@ -564,10 +560,6 @@ function NoteEditor({
     </div>
   );
 }
-
-/** The text column inside the full-width scroller: the header's contents
-    and the note share it, so they stay on one pair of edges. */
-const column = 'mx-auto w-full max-w-3xl px-4 md:px-6';
 
 function NoteTitle({ id }: { id: string }) {
   const [editing, setEditing] = useState(false);
