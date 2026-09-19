@@ -76,6 +76,7 @@ export function GameListShell({
   rowLink = false,
   denseColumns,
   more,
+  end,
   footnote,
   tail,
 }: {
@@ -141,6 +142,9 @@ export function GameListShell({
   denseColumns?: GameColumn[];
   /** The infinite-scroll sentinel row at the list's foot. */
   more?: { ref: Ref<HTMLLIElement>; label: string } | null;
+  /** What the list's foot says once every row is in: the tally. Opt-in,
+      for a list the PAGE scrolls; a boxed list ends at its box. */
+  end?: ReactNode;
   /** The one-line note under the list (the archive's row cap). */
   footnote?: ReactNode;
   /** Whole-pane states below everything: empty prompts, pre-list
@@ -285,6 +289,18 @@ export function GameListShell({
                 <li ref={more.ref} className="flex items-center justify-center gap-2 p-3">
                   <Spinner className="text-muted-foreground size-4" />
                   <span className="text-muted-foreground text-sm">{more.label}</span>
+                </li>
+              )}
+              {!listLoading && !more && list != null && end != null && (
+                // The list's floor once there is nothing left to load. A
+                // phone's page ran from its last row straight into bare
+                // ground, with no rule under the row and nothing saying the
+                // rows had ended rather than stopped arriving (lanph3re's
+                // report). An li, so divide-y closes the last row with the
+                // same hairline every other row has; never striped, since it
+                // is not a row.
+                <li className="text-muted-foreground bg-transparent! p-4 text-center text-xs tabular-nums">
+                  {end}
                 </li>
               )}
             </ul>

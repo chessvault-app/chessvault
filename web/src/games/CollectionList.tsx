@@ -889,6 +889,7 @@ export function CollectionList({
       // of its column: no box of their own to scroll in, and the page's
       // own padding clears the floating bar.
       listClassName={lifted ? 'flex-1' : 'flex-1 overflow-y-auto ios:pb-(--page-b)'}
+      end={lifted ? tally : undefined}
       tail={
         !loaded ? undefined : /* Nothing to show and nothing narrowing the list. Two ways to get
             here: the collection really is empty, or its last rows were just

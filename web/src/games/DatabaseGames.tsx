@@ -1886,6 +1886,7 @@ export function DatabaseGames({
         // streams everything it finds up to the server's cap.
         !inHunt && nextCursor !== null ? { ref: sentinel, label: t('Loading more games…') } : null
       }
+      end={lifted && !hunting ? count : undefined}
       tail={
         // A search that comes back empty says so, with the way out — an
         // empty bordered box under a count of 0 read as a broken pane.

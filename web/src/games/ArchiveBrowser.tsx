@@ -891,39 +891,39 @@ export function ArchiveBrowser({
      its own value, takes one line whatever the options are, and
      wraps onto a second when the column is narrow. */
   // The month select's options, once, for the row and for the window.
-  const monthGroups = [
-    {
-      options: [
-        {
-          value: ALL_MONTHS,
-          // The months below each state what they hold; this row
-          // states what the whole account holds — the provider's
-          // own lifetime figure, not just what is cached here.
-          // Offline (no stats to ask) it falls back to what is
-          // on disk, saying so.
-          label:
-            total !== null
-              ? `${t('Any date')} · ${t('{n} games', { n: total.toLocaleString() })}`
-              : cachedGames > 0
-                ? `${t('Any date')} · ${t('{n} games cached', { n: cachedGames })}`
-                : t('Any date'),
-          short: t('Any date'),
-        },
-        ...months.map((m) => ({
-          value: m.month,
-          label: `${m.month}${
-            m.cached
-              ? ` · ${t('{n} games', { n: m.games ?? 0 })}`
-              : offline
-                ? ` · ${t('needs internet')}`
-                : ''
-          }`,
-          // The month alone once it is chosen: how many games it
-          // holds is what you needed while picking one.
-          short: m.month,
-        })),
-      ],
-    },
+  const monthGroups = [
+    {
+      options: [
+        {
+          value: ALL_MONTHS,
+          // The months below each state what they hold; this row
+          // states what the whole account holds — the provider's
+          // own lifetime figure, not just what is cached here.
+          // Offline (no stats to ask) it falls back to what is
+          // on disk, saying so.
+          label:
+            total !== null
+              ? `${t('Any date')} · ${t('{n} games', { n: total.toLocaleString() })}`
+              : cachedGames > 0
+                ? `${t('Any date')} · ${t('{n} games cached', { n: cachedGames })}`
+                : t('Any date'),
+          short: t('Any date'),
+        },
+        ...months.map((m) => ({
+          value: m.month,
+          label: `${m.month}${
+            m.cached
+              ? ` · ${t('{n} games', { n: m.games ?? 0 })}`
+              : offline
+                ? ` · ${t('needs internet')}`
+                : ''
+          }`,
+          // The month alone once it is chosen: how many games it
+          // holds is what you needed while picking one.
+          short: m.month,
+        })),
+      ],
+    },
   ];
   const filters = months.length > 0 ? (
     <>
@@ -1459,6 +1459,7 @@ export function ArchiveBrowser({
           ? { ref: moreSentinel, label: t('Loading older games…') }
           : null
       }
+      end={lifted ? tallyText : undefined}
       footnote={footnote}
       tail={tail}
     />
