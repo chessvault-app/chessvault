@@ -50,7 +50,7 @@ import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/utils';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
-import { POSITION_BODY } from './EditorView.skeleton';
+import { CLOCK_GRID, FEN_ROW, POSITION_BODY } from './EditorView.skeleton';
 import { useMediaQuery } from '@/lib/media';
 import { useUndoable } from '@/hooks/use-undoable';
 import { announce } from '@/lib/announce';
@@ -613,7 +613,7 @@ export function EditorView({
         />
       </Field>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className={CLOCK_GRID}>
         <Field label="Halfmove clock">
           <NumberInput
             value={state.halfmoves}
@@ -683,7 +683,7 @@ export function EditorView({
               bottom padding — left in place, those 16px sat under the row
               and the FEN line read top-heavy in a band taller than it
               needed. py-1.5 is symmetric, so the line centres itself. */}
-          <div className="border-border -mb-[var(--card-floor,var(--card-spacing))] flex shrink-0 items-center gap-1.5 border-t py-1.5 pl-3 pr-2">
+          <div className={FEN_ROW}>
             {validity.legal && (
               <CheckCircle2 className="text-good glyph shrink-0" aria-label={t('Legal position')} />
             )}

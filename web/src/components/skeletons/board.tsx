@@ -49,6 +49,7 @@ export function SkeletonPlayerBar({ className }: { className?: string }) {
 
 export function SkeletonBoard({
   players = false,
+  pageHeader = false,
   chapters = false,
   explorer = false,
   explorerKey,
@@ -79,6 +80,13 @@ export function SkeletonBoard({
    * nameless board draws neither (AnalysisBoard, `hasNames`).
    */
   players?: boolean | 'wide';
+  /**
+   * The page draws this row with PageHeader (the repertoire trainer),
+   * whose chevron and title stand 12px apart, and not with the trainers'
+   * own row, where they stand 8px apart. The title was 4px left of where
+   * it landed on a phone (check:skeletons).
+   */
+  pageHeader?: boolean;
   /** A study's chapter list, which a game and a trainer do not have. */
   chapters?: boolean;
   /**
@@ -268,6 +276,8 @@ export function SkeletonBoard({
           // grows to them; a trainer's stays h-8 around them, as the
           // pages' own do.
           name ? 'h-8' : 'wide:h-9 pointer-coarse:h-9 max-md:ios:h-10',
+          // PageHeader's own gap, where that is what the page draws.
+          pageHeader && 'gap-x-3',
         )}
         data-ground=""
         // Page chrome, as the pages' own rows: glass circles on iOS

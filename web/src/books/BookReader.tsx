@@ -44,6 +44,7 @@ import { t } from '@/lib/i18n';
 import { useMediaQuery, useWideLayout } from '@/lib/media';
 import { navigate, up } from '@/lib/router';
 import { cn } from '@/lib/utils';
+import { READER_FLUSH_ROW } from './BooksView.skeleton';
 import { loadPlacements, type BookSummary } from '@/puzzles/books/data';
 import { useAnalysis } from '@/store/analysis';
 
@@ -722,7 +723,7 @@ function ReaderHeader({
 }) {
   if (flush) {
     return (
-      <div className="flex shrink-0 items-center gap-2">
+      <div className={READER_FLUSH_ROW}>
         <Button variant="ghost" size="icon-sm" title={t('Back to Books')} onClick={onBack}>
           <ChevronLeft className="glyph" />
         </Button>

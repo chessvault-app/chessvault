@@ -8,6 +8,7 @@ import { Inert, Skeleton } from '@/components/skeletons';
 import { PaneTabs } from '@/components/pane-tabs';
 import { readPageShape, readReaderBoardShown, readReaderPaneWidth } from '@/books/reservation';
 import { decodeSegment } from '@/lib/router';
+import { cn } from '@/lib/utils';
 import { useWideLayout } from '@/lib/media';
 import { OutlineCreate, ShelfHeader } from '@/components/shelf-outline';
 import { readShelfOrder, type ShelfDir, type ShelfSorts } from '@/components/shelf-toolbar';
@@ -95,8 +96,11 @@ function ReaderOutline({ id }: { id: string }) {
         />
       </div>
       {/* A phone's row is the reader's own compact one: a chevron, the
-          name, the verbs. */}
-      <div className="flex h-8 shrink-0 items-center gap-2 md:hidden">
+          name, the verbs. In the reader's own frame, which states no
+          height: the chevron sets it, 36px under a thumb. This said h-8,
+          and the pane strip under it stood 4px high of where it landed
+          (check:skeletons). */}
+      <div className={cn(READER_FLUSH_ROW, 'md:hidden')}>
         <Button variant="ghost" size="icon-sm">
           <ChevronLeft className="glyph" />
         </Button>
@@ -241,3 +245,6 @@ function LibraryOutline() {
 export function LibraryCards({ groups }: { groups: { root: number; folders: number[] } }) {
   return <SkeletonBookCards groups={groups} footer="line" />;
 }
+
+/** The reader's compact header row on a phone, which the reader and this outline both draw. */
+export const READER_FLUSH_ROW = 'flex shrink-0 items-center gap-2';

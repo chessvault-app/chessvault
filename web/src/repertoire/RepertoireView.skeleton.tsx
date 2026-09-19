@@ -32,6 +32,7 @@ export default function RepertoireOutline() {
     <SkeletonBoard
       shell="scroll"
       name={t('Repertoire')}
+      pageHeader
       // The drill plays a game, so both players' bars stand, as they do
       // on a collected game (PlayerSlot, above and below the board).
       players
