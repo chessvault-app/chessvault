@@ -22,6 +22,7 @@ import { wikiSuggestStore } from './wikiLink';
 import { readAliases, writeAliases } from '@shared/frontMatter';
 import { MobileActionBar } from '@/components/mobile-action-bar';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
+import { useMediaQuery } from '@/lib/media';
 import { usePinnedBand } from '@/hooks/use-pinned-band';
 import { t } from '@/lib/i18n';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -419,6 +420,7 @@ function NoteEditor({
   // the way while the note is read downwards and comes back on the first
   // move up (hooks/use-scroll-reveal).
   const { scrolled, hidden } = useScrollReveal(headerRef);
+  const phone = useMediaQuery('(max-width: 47.9375rem)');
 
   return (
     // No padding on the TOP of the scroll container: `sticky top-0` pins to
@@ -448,12 +450,17 @@ function NoteEditor({
         ref={setHeader}
         className={cn(
           'sticky top-0 z-30 -mx-4 flex shrink-0 flex-col gap-3 border-b px-4 pt-[calc(1rem+var(--page-t))] md:-mx-6 md:px-6 md:pt-6',
-          // The page header's grammar: the page's own tone at rest, and the
-          // bars' fill with the card's edge once the note has scrolled
-          // under it, so the line returns under High contrast. A standing
-          // rule on the page tone was the one sticky header that did not.
-          'transition-[transform,background-color,border-color] duration-(--pane-turn) ease-(--pane-turn-ease)',
-          scrolled ? 'bg-card border-card-ring' : 'bg-background border-transparent',
+          // The page's own tone at rest, and once the note has scrolled
+          // under it the card's edge as a rule, so the line returns under
+          // High contrast. The card's FILL comes with it only on a phone,
+          // where the column is the screen and the bar runs edge to edge.
+          // On a desktop the column is narrower than its pane, and a filled
+          // bar stopped at the text's edges: a slab floating in the pane,
+          // the lid of a box with no box under it. There it keeps the page
+          // tone, as the top strip of Notion or Obsidian does, and the note
+          // just stops under it (lanph3re, 2026-09-19).
+          'bg-background transition-[transform,background-color,border-color] duration-(--pane-turn) ease-(--pane-turn-ease)',
+          scrolled ? 'border-card-ring max-md:bg-card' : 'border-transparent',
           // Off the top of the scrollport while the note is read down;
           // the sticky box keeps its place, so nothing below moves.
           // Not while editing: pressing Edit focuses the editor, the browser
@@ -470,10 +477,10 @@ function NoteEditor({
         )}
       >
       <header
-        // On the page ground at rest; once scrolled the bar is a card and
-        // the Edit button's secondary fill separates on its own
+        // On the page ground, except a phone's scrolled bar, which is a
+        // card and the Edit button's secondary fill separates on its own
         // (index.css, `[data-ground]`).
-        data-ground={scrolled ? undefined : ''}
+        data-ground={scrolled && phone ? undefined : ''}
         // Page chrome: on iOS its icon buttons are glass circles (shell.css).
         data-chrome=""
         className="flex shrink-0 items-center gap-2"
