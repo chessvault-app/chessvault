@@ -7,6 +7,17 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **On iOS the opening map's menu is in the title row.** The compass is
+  a glass circle beside the back chevron and opens the same menu as a
+  sheet; the floating disc in the corner stays on Android. On every phone
+  the map's search folds into a magnifier on that row, as the shelves' do,
+  and the map takes the height the search row held.
+- **On iOS every back chevron and every search Cancel is glass.** The
+  endgame drill, the puzzle trainers, puzzle entry, a book being renamed
+  and the reader's phone row drew a bare chevron, and a search field
+  outside a title row drew a grey Cancel.
+- **The repertoire page no longer scrolls on a phone.** A long line grew
+  the page. Its panel scrolls inside itself now, as the other trainers' do.
 - **On a phone the shelves search from the title row.** Studies, Notes,
   Books, puzzle books and puzzle themes no longer stand a search row
   under their title. A magnifier in the title row turns that row into the
