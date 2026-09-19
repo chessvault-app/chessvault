@@ -50,6 +50,7 @@ import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/utils';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
+import { POSITION_BODY } from './EditorView.skeleton';
 import { useMediaQuery } from '@/lib/media';
 import { useUndoable } from '@/hooks/use-undoable';
 import { announce } from '@/lib/announce';
@@ -656,7 +657,7 @@ export function EditorView({
             title={t('Position')}
             actions={<LoadPositionButton loadText={loadText} applyImageFen={applyImageFen} />}
           />
-          <div className="grid gap-3 px-(--card-spacing) pb-(--card-spacing)">
+          <div className={POSITION_BODY}>
             {positionFields}
           </div>
 

@@ -71,7 +71,14 @@ export default function EditorOutline() {
       // under the board there and an outline of one would be a picture
       // of a panel that is not coming.
       sideColumn={false}
-      panel={{ title: t('Position'), body: <PositionForm /> }}
+      panel={{
+        title: t('Position'),
+        body: (
+          <div className={POSITION_BODY}>
+            <PositionForm />
+          </div>
+        ),
+      }}
     />
   );
 }
@@ -178,6 +185,9 @@ export function ToolStrip({
 
 
 /** The Position card's fields, in the page's own order and words. */
+/** The Position panel's body, as the page frames its fields and this outline frames the same ones. */
+export const POSITION_BODY = 'grid gap-3 px-(--card-spacing) pb-(--card-spacing)';
+
 function PositionForm() {
   return (
     <Inert>
