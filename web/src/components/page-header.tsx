@@ -242,6 +242,11 @@ export function PageHeader({
               // the slide out and flips at its end, so a bar that is off
               // is also not there for a hit test.
               'transition-[transform,visibility] duration-(--pane-turn) ease-(--pane-turn-ease)',
+              // At the top there is no slide: the header the bar copies is
+              // back in view under it, and for the length of a slide the
+              // page showed both (two rows of chips on the Games page). The
+              // bar is cut, and the header is what is left standing.
+              !scrolled && 'transition-none',
               barShown ? 'translate-y-0' : 'invisible -translate-y-full',
             )}
           >

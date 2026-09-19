@@ -28,7 +28,12 @@ const SLACK = 4;
  * direction has a few pixels of slack, or a finger resting on the glass
  * flickers the band; and a position past the scroller's end (a
  * rubber-band bounce) is read as no move, or every bounce at the foot of
- * a list flashed the band.
+ * a list flashed the band. A bounce past the TOP is the top, not a
+ * no-move: a flick home overshoots into it on iOS, and while it was
+ * skipped the band stood over the header it copies until the bounce
+ * settled, which on the Games page was two rows of source chips
+ * (lanph3re's screenshot, 2026-09-19). And a page leaving the top can
+ * only be going down, so the band starts hidden however slow the drag.
  */
 export function useScrollReveal(
   ref: RefObject<HTMLElement | null>,
@@ -49,10 +54,10 @@ export function useScrollReveal(
       const max = scroller.scrollHeight - scroller.clientHeight;
       const delta = top - last;
       last = top;
-      if (top < 0 || top > max) return;
+      if (top > max) return;
       setState((prev) => {
         if (top <= TOP) return prev.scrolled || prev.hidden ? { scrolled: false, hidden: false } : prev;
-        const hidden = delta > SLACK ? true : delta < -SLACK ? false : prev.hidden;
+        const hidden = !prev.scrolled || delta > SLACK ? true : delta < -SLACK ? false : prev.hidden;
         return prev.scrolled && prev.hidden === hidden ? prev : { scrolled: true, hidden };
       });
     };
