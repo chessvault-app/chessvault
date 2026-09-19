@@ -24,6 +24,7 @@ import { MobileActionBar } from '@/components/mobile-action-bar';
 import { useScrollReveal } from '@/hooks/use-scroll-reveal';
 import { useMediaQuery } from '@/lib/media';
 import { usePinnedBand } from '@/hooks/use-pinned-band';
+import { JumpColumn, useJumpTargets, type JumpTarget } from '@/components/jump-list';
 import { t } from '@/lib/i18n';
 import { api, apiErrorMessage } from '@/lib/api';
 
@@ -422,26 +423,89 @@ function NoteEditor({
   const { scrolled, hidden } = useScrollReveal(headerRef);
   const phone = useMediaQuery('(max-width: 47.9375rem)');
 
+  // The note's headings, each a jump to its heading: the column Settings
+  // stands in its margin (components/jump-list), here a table of contents.
+  // Read off the editor's own DOM, and again after every transaction that
+  // changed the document, so a heading typed or renamed is in the list on
+  // the same keystroke. Indented from the shallowest level the note uses,
+  // since a note that starts at h2 has no h1 to hang under.
+  const [headings, setHeadings] = useState<JumpTarget[]>([]);
+  useEffect(() => {
+    if (!editor) return;
+    const read = (): void => {
+      const found = [...editor.view.dom.querySelectorAll<HTMLElement>('h1, h2, h3')]
+        .map((el) => ({ el, title: el.textContent?.trim() ?? '', level: Number(el.tagName[1]) }))
+        .filter((h) => h.title);
+      const top = Math.min(...found.map((h) => h.level));
+      const next = found.map((h) => ({ el: h.el, title: h.title, depth: h.level - top }));
+      // Kept when nothing changed, or every keystroke would hand the
+      // scroll listener a new list to bind to.
+      setHeadings((prev) =>
+        prev.length === next.length && prev.every((h, i) => h.el === next[i]!.el && h.title === next[i]!.title && h.depth === next[i]!.depth)
+          ? prev
+          : next,
+      );
+    };
+    read();
+    editor.on('update', read);
+    return () => {
+      editor.off('update', read);
+    };
+  }, [editor]);
+  const { current, jump } = useJumpTargets(headings);
+  // Where the list starts: under the pinned header, level with the note's
+  // first line, as Settings' list is level with its first card. The
+  // header's height is not a constant (the palette joins it while
+  // editing), and the list stands outside the scroller the header
+  // publishes --pin-top to, so the frame is told separately.
+  const frameRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const head = headerRef.current;
+    const frame = frameRef.current;
+    if (!head || !frame) return;
+    const publish = (): void => frame.style.setProperty('--note-head', `${Math.round(head.getBoundingClientRect().height)}px`);
+    const ro = new ResizeObserver(publish);
+    ro.observe(head);
+    publish();
+    return () => ro.disconnect();
+  }, []);
+
   return (
-    // No padding on the TOP of the scroll container: `sticky top-0` pins to
-    // the scrollport, which is the padding box, so a pt- here leaves a band
-    // above the pinned header for content to scroll through in plain view.
-    // The header wrapper carries that padding instead, the phone's
-    // status-bar inset included (--page-t, styles/shell.css): the header
-    // reaches the top of the screen and its fill runs up behind the
-    // status bar, one surface from the screen's edge to the rule, and the
-    // note scrolls under all of it. The bottom keeps the
-    // home-indicator inset, since an edited note claims the phone's bar and
-    // its text would otherwise run under it — and --safe-b is zero while
-    // the keyboard is up, when the indicator is behind the keys.
-    //
-    // Nothing here pads for the KEYBOARD any more. It used to add exactly
-    // what the keyboard covered, from when the app shell stayed full
-    // height and the bottom of this box was underneath the keys. The shell
-    // ends at the keyboard now (lib/keyboardInset, index.css), so this box
-    // is already entirely above it and padding again pushed the last lines
-    // of the note up out of a container that had nothing under it.
-    <div className="mx-auto flex h-full max-w-3xl flex-col gap-3 overflow-y-auto px-4 pb-[calc(1rem+var(--safe-b))] md:px-6 md:pb-6 ios:h-[calc(100%+var(--bottom-bar-h))] ios:pb-[calc(1rem+var(--page-b))]">
+    // The column's box, apart from its scroller, so the heading list can
+    // stand in the margin beside it: inside the scroller it would be cut
+    // at the column's edge.
+    <div ref={frameRef} className="relative mx-auto h-full max-w-3xl">
+      {/* From the width where the pane has a margin to stand in (86rem, which is 84 measured plus a gutter off the sidebar:
+          the 48rem column, 11.5rem of list and gap either side of it to
+          stay centred, and the 13rem sidebar; later than Settings' xl
+          because the column is wider than its form).
+          Level with the note's opening heading (the column's 12px gap and
+          the heading's own 24px, measured), and scrolling on its own when a note
+          has more headings than the window has rows. */}
+      {headings.length >= 2 && (
+        <div className="pointer-events-none absolute top-[calc(var(--note-head)+2.25rem)] right-full bottom-6 mr-6 hidden w-40 overflow-y-auto min-[86rem]:block">
+          <JumpColumn label={t('Note headings')} targets={headings} current={current} onJump={jump} />
+        </div>
+      )}
+      {/* No padding on the TOP of the scroll container: `sticky top-0` pins to
+          the scrollport, which is the padding box, so a pt- here leaves a band
+          above the pinned header for content to scroll through in plain view.
+          The header wrapper carries that padding instead, the phone's
+          status-bar inset included (--page-t, styles/shell.css): the header
+          reaches the top of the screen and its fill runs up behind the
+          status bar, one surface from the screen's edge to the rule, and the
+          note scrolls under all of it. The bottom keeps the
+          home-indicator inset, since an edited note claims the phone's bar and
+          its text would otherwise run under it — and --safe-b is zero while
+          the keyboard is up, when the indicator is behind the keys.
+
+          Nothing here pads for the KEYBOARD any more. It used to add exactly
+          what the keyboard covered, from when the app shell stayed full
+          height and the bottom of this box was underneath the keys. The shell
+          ends at the keyboard now (lib/keyboardInset, index.css), so this box
+          is already entirely above it and padding again pushed the last lines
+          of the note up out of a container that had nothing under it. */}
+    <div className="flex h-full flex-col gap-3 overflow-y-auto px-4 pb-[calc(1rem+var(--safe-b))] md:px-6 md:pb-6 ios:h-[calc(100%+var(--bottom-bar-h))] ios:pb-[calc(1rem+var(--page-b))]">
       {/* Header AND palette pin together. Pinning only the palette left the
           title scrolling away above it, and the negative margins let the
           bar span the column's full width — inset by the page padding it
@@ -564,6 +628,7 @@ function NoteEditor({
           tabs are pushed above the keyboard by iOS and eat the room the
           note needs. Claiming the bar (with nothing in it) hides them. */}
       {editable && <MobileActionBar>{null}</MobileActionBar>}
+    </div>
     </div>
   );
 }

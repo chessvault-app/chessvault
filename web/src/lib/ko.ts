@@ -2268,6 +2268,7 @@ export const ko: Record<string, string> = {
   'One wrong try so far. Find the best move.': '지금까지 한 번 틀렸습니다. 최선의 수를 찾으세요.',
   'Vault folder: {path}': '보관함 폴더: {path}',
   'Settings sections': '설정 섹션',
+  'Note headings': '노트 목차',
   'Open the manual': '매뉴얼 열기',
   'More filters, {n} on': '필터 더 보기, {n}개 켜짐',
   'Demo vault. A reload puts it back.': '데모 보관함입니다. 새로 고치면 되돌아갑니다.',
