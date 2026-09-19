@@ -17,6 +17,7 @@ import {
   useFiltersFolded,
 } from '@/games/GameFilters';
 import { collectionLastCount, collectionWasNonEmpty } from '@/games/collection';
+import { SelectButton } from '@/games/selection';
 import {
   DETAILS_RESERVE_PX,
   DETAILS_RESERVE_WIDE_PX,
@@ -248,20 +249,19 @@ export function CollectionPaneOutline({
                 <MoreFiltersButton on={false} onClick={NOOP} />
               </>
             )}
-            {merged && (
-              <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
-                <Tally />
-              </span>
-            )}
+            {merged && <MergedTally tally={<Tally />} select={<SelectReserve />} />}
           </div>
         </div>
         )
       }
       countBand={
         merged || folded ? undefined : (
-          <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
-            <Tally />
-          </span>
+          <>
+            <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm font-medium tabular-nums">
+              <Tally />
+            </span>
+            <SelectReserve />
+          </>
         )
       }
     />
@@ -279,13 +279,48 @@ export function CollectionPaneOutline({
  * fallback, which is the same compromise that file settled on (no single
  * width suits one digit and four).
  */
-function Tally() {
+export function Tally() {
   const last = collectionLastCount();
   if (last === null) return <Skeleton className="h-2.5 w-16" />;
   return (
     <span className="relative inline-block">
       <span className="invisible">{t('{n} games', { n: last.toLocaleString() })}</span>
       <Skeleton className="absolute inset-x-0 top-1/2 h-2.5 -translate-y-1/2" />
+    </span>
+  );
+}
+
+/**
+ * The count and the way into selecting, where they ride the search row's
+ * end (the merged toolbar). The list and its outline both draw this, for
+ * the frame as much as the contents: the outline had the count's
+ * placeholder outside the text-sm font-medium span the count is set in,
+ * so the invisible words it is sized by were measured in another face
+ * and the filters before it stood 2px right (check:skeletons).
+ */
+export function MergedTally({ tally, select }: { tally: React.ReactNode; select?: React.ReactNode }) {
+  return (
+    <span className="ml-auto flex min-w-0 shrink-0 items-center gap-1.5">
+      <span className="text-muted-foreground min-w-0 truncate text-sm font-medium tabular-nums">{tally}</span>
+      {select}
+    </span>
+  );
+}
+
+/**
+ * Room for "Select…", which the list draws beside its count once it has
+ * games to select. On the merged row nothing held its place, and the
+ * filters stepped 75px left as it landed (check:skeletons, the workspace
+ * at 1280). Reserved only where the collection last held games, which is
+ * when the button comes; the real button, unseen and inert, because its
+ * width is the language's.
+ */
+export function SelectReserve() {
+  const last = collectionLastCount();
+  if (last === null || last === 0) return null;
+  return (
+    <span inert aria-hidden className="invisible">
+      <SelectButton onClick={NOOP} />
     </span>
   );
 }
