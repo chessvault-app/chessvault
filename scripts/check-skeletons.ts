@@ -86,49 +86,6 @@ const KNOWN: { shot: string; pair: 'O~D' | 'D~L'; key: string; why: string }[] =
     key: 'input|',
     why: 'the same toolbar: the page field itself, on a desktop.',
   },
-  // Owed: real drift this check found on its first run, not yet fixed.
-  {
-    shot: 'books-b5a3e1c07f2d49b8c--390',
-    pair: 'O~D',
-    key: '',
-    why: 'OWED. The phone reader draws its pane strip 4px lower than its outline does, and the opening spinner 3px.',
-  },
-  {
-    shot: 'puzzles--1280',
-    pair: 'O~D',
-    key: '',
-    why: 'OWED. The trainer outline folds the Puzzle panel to its 44px header at the column foot; the page waits with the whole panel (the side line, the note, the difficulty row, the footer), 228px, so the header stands 184px higher. The waiting panel has to become a component the outline can draw.',
-  },
-  {
-    shot: 'repertoire--390',
-    pair: 'O~D',
-    key: 'h1|',
-    why: 'OWED. The trainer draws PageHeader (gap-x-3) and SkeletonBoard draws its own title row (gap-2): 4px.',
-  },
-  {
-    shot: 'editor--1280',
-    pair: 'O~D',
-    key: '',
-    why: 'OWED. Two leftovers in the Position form: the Move number label 2px, the FEN row Copy button 4px.',
-  },
-  {
-    shot: 'workspace--1280',
-    pair: 'O~D',
-    key: 'button|combobox|select-trigger|Result',
-    why: 'OWED. Two of the band filters stand 2px right in the outline: this one,',
-  },
-  {
-    shot: 'workspace--1280',
-    pair: 'O~D',
-    key: 'button||button|More filters',
-    why: 'OWED. and this one.',
-  },
-  {
-    shot: 'workspace--1280',
-    pair: 'D~L',
-    key: 'button|',
-    why: 'OWED, and the page against itself: in the panel frame the collection tally is reserved at 4rem, the count that lands is wider, and the filters before it step 75px left.',
-  },
 ];
 
 const SRC = resolve(REPO_ROOT, 'web/src');
