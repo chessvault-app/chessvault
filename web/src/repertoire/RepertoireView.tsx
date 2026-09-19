@@ -53,7 +53,7 @@ import { Panel, PanelHeader } from '@/components/panel';
 import { PageHeader } from '@/components/page-header';
 import { AnalysisMovesPanel } from '@/analysis/AnalysisMovesPanel';
 import { useWideLayout } from '@/lib/media';
-import { BOARD_SCROLL_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
+import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { Select } from '@/components/ui/select';
 import { t } from '@/lib/i18n';
 
@@ -1627,7 +1627,7 @@ export function RepertoireView() {
   //
   // The body still scrolls (see below), so the panel is capped rather than
   // clipped wherever the column has a floor to cap it against.
-  <Panel className="shrink-0">
+  <Panel className="wide:shrink-0">
     <PanelHeader
       title={t('Game')}
       actions={
@@ -1824,8 +1824,10 @@ export function RepertoireView() {
   );
 
   return (
-    <div className={BOARD_SCROLL_SHELL}>
-      <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden">{header(true)}</div>
+    // BOARD_HELD_SHELL, as the other trainers: the side column below owns
+    // the scrolling, so the page fits the screen however long a line runs.
+    <div className={BOARD_HELD_SHELL}>
+      <div className="flex h-8 shrink-0 items-center gap-2 wide:hidden" data-chrome="">{header(true)}</div>
 
       {/* Once the line has ended the board becomes the analysis board, so
           the pieces move freely and the eval bar is the shared one — see
@@ -1867,28 +1869,13 @@ export function RepertoireView() {
         />
       </TrainerBoard>
 
-      {/* stacked:flex-none with min-h-max — the page column is what scrolls
-          on a phone, so this one takes the height its content needs and no
-          other. As flex-1 with min-h-0 it shrank under that content
-          instead, and the bottom of the New game panel was cut off; as
-          flex-1 against the max-content floor (aa41f4f) it grew the other
-          way, stretching a three-line status panel down to the bottom bar
-          to close a 104px band of page. The band is the better of the two:
-          it is page background where there is nothing to say, not an empty
-          panel pretending there is. */}
-      {/* Scrolls exactly when it is a side column — `wide`, which is what
-          makes it one. Keyed on `lg` before, it did not scroll on a phone
-          held sideways (wide starts at 44rem, lg at 64rem) and the New game
-          panel lost its bottom there.
-
-          And it must NOT scroll when stacked: the page column is what
-          scrolls on a phone, so a second scroll container inside it is at
-          best redundant. It is not harmless either — its height comes from
-          `min-height: max-content` over a form of Selects, and where a
-          browser computes that short, `overflow-y: auto` silently cuts the
-          panel off with a scrollbar a touch device never shows. That is the
-          Safari clipping. `overflow: visible` cannot clip, whatever the
-          height resolves to, so the bug has nowhere left to live. */}
+      {/* The endgame drill's column exactly: it fills what the board leaves
+          and scrolls inside itself. It took its content's height on a phone
+          while the New game form stood in it, a form of Selects that was
+          cut off when squeezed. That form is a sheet on a phone now, and
+          what is left is one pane at a time, so a long line grew the PAGE
+          and this was the one board page that scrolled (lanph3re,
+          2026-09-19). */}
       {/* No wide:pb-4 any more. It was breathing room for the scrolled-to-
           the-end idle form — but the column's bottom edge IS the board's
           (board-side-cap reads --board-col-h), so those same 16px held the
@@ -1897,7 +1884,7 @@ export function RepertoireView() {
           the end of a scroll is how every other board page's column ends,
           and the panels end in a footer band now, which is a finish. */}
       <div
-        className={`flex min-h-0 flex-1 flex-col gap-3 wide:overflow-y-auto wide:scrollbar-hidden stacked:min-h-max stacked:flex-none stacked:gap-2 ${BOARD_WIDE_SIDE}`}
+        className={`flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto scrollbar-hidden stacked:gap-2 ${BOARD_WIDE_SIDE}`}
         {...paneSwipe.column}
       >
         <div className="hidden h-9 shrink-0 items-center gap-2 wide:flex">{header()}</div>
