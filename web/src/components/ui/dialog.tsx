@@ -943,7 +943,24 @@ function DialogContent({
 
   const stack = (
     <DialogEnteredContext.Provider value={entered}>
-    <div className="grid min-w-0 grow">
+    <div
+      className={cn(
+        'grid min-w-0 grow',
+        // The content keeps its width while the sheet's edges stand in.
+        // `sheet-corners` insets a dropped sheet by a margin, a sixtieth
+        // of the drop, so every dragged frame made the box a fraction
+        // narrower and laid out everything in it again. Measured on the
+        // demo, the customise sheet dragged 180px down and back at CPU
+        // x4: a 33ms median frame and 419 to 681ms of long tasks; with
+        // the content handed the inset back, 16.7ms and about 55. The
+        // box's own px-4 is wider than the inset ever gets, so nothing
+        // leaves it; what changes is that a sheet resting low (the map's
+        // panel at its half rest, 7px) wears that much less padding
+        // instead of a narrower column. Zero where no sheet sets it, and
+        // a page inside a window sits in this grid and takes none again.
+        !page && 'mx-[calc(var(--sheet-inset,0px)*-1)]',
+      )}
+    >
       <div
         data-slot="dialog-under"
         // `inert`: the content under a page is neither read nor reached
