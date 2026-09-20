@@ -423,6 +423,34 @@ function useCloseWatcher(onClose: () => void, active: boolean): void {
 const NOT_A_DRAG = 'input, textarea, select, [contenteditable="true"], canvas';
 
 /**
+ * A touch on the sheet that is NOT on a field lets go of a field's
+ * selected text, so the sheet can be dragged.
+ *
+ * The Drawer ignores every swipe while the focused field inside it has
+ * text selected (shouldIgnoreSwipeForTextSelection: the selection's
+ * handles are dragged too, and it cannot tell which the finger is on).
+ * A prompt selects its whole value as it opens, so a rename could not
+ * be dragged away from ANYWHERE on the sheet until the selection was
+ * gone: measured on the demo at 375px, a 180px drag from the handle
+ * left the sheet's top at 612 with the field focused, and carried it to
+ * 760 without. A touch that starts off the field is not on a selection
+ * handle, which sits on the field, so the selection collapses to its
+ * end, as a tap elsewhere already does on the platform, and the caret
+ * and the keyboard stay.
+ */
+function releaseFieldSelection(sheet: HTMLElement): void {
+  const field = document.activeElement;
+  if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return;
+  if (!sheet.contains(field)) return;
+  try {
+    const end = field.selectionEnd;
+    if (end !== null && field.selectionStart !== end) field.setSelectionRange(end, end);
+  } catch {
+    // A number or a date field has no selection range to read.
+  }
+}
+
+/**
  * The two things a window may claim only while it is actually OPEN: the
  * count `dialogOpen()` answers from, and the CloseWatcher that makes
  * Android's Back close it.
@@ -995,6 +1023,7 @@ function DialogContent({
               onPointerDown={(e) => {
                 onPointerDown?.(e);
                 if ((e.target as Element | null)?.closest?.(NOT_A_DRAG)) e.stopPropagation();
+                else releaseFieldSelection(e.currentTarget);
               }}
               initialFocus={initialFocus}
               finalFocus={finalFocus}
