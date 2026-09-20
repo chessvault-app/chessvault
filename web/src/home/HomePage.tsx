@@ -14,14 +14,13 @@ import {
   X,
   Search,
 } from 'lucide-react';
-import { Suspense, lazy, useEffect, useEffectEvent, useState, useRef } from 'react';
+import { useEffect, useEffectEvent, useState, useRef } from 'react';
 import { BrandMark, Wordmark } from '@/components/brand-mark';
 import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { ApiError, api } from '@/lib/api';
 import { formatAgo, formatUntil } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
-import { WindowOpening } from '@/components/window-opening';
 import { Figures } from '@/components/figures';
 import { openQuickSwitcher } from '@/components/quick-switcher';
 import { nameSharedBoard } from '@/lib/shared-board';
@@ -35,7 +34,7 @@ import { Skeleton } from '@/components/skeletons';
 import { useDifficultyWord } from '@/puzzles/bands';
 import { fetchSolvedToday } from '@/puzzles/today';
 import { t } from '@/lib/i18n';
-import { CustomiseOpening } from './customise-parts';
+import { CustomiseDialog } from './CustomiseDialog';
 import { HOME_DESTINATIONS, type Destination, type HomeCount } from './destinations';
 import {
   cardOn,
@@ -56,13 +55,16 @@ import {
   type DashShape,
 } from './reservation';
 
-// Lazy, alone among this page's imports, and for the same reason the page
-// itself is eager: Sheet brings a portal, the drag, the cover measurement
-// and the focus trap, and most launches never open it. The landing chunk
-// pays for what every launch draws and nothing else.
-const CustomiseDialog = lazy(() =>
-  import('@/home/CustomiseDialog').then((m) => ({ default: m.CustomiseDialog })),
-);
+// Eager, like everything else this page draws. It was lazy, on the
+// grounds that Sheet brings a portal, the drag, the cover measurement and
+// the focus trap that most launches never open - but the stand-in drawn
+// while that chunk was on the wire imported Dialog and DialogContent
+// itself, so the landing chunk carried the whole of that machinery
+// anyway and the split deferred 1.8 kB of glue. What it cost was a
+// second mount: the stand-in drew the real CustomiseBody held inert, and
+// the chunk landing threw those ~40 rows away and built them again, 113ms
+// of blocked main thread (phone, 4x throttle) arriving mid-entrance.
+// Measured 2026-09-20; see the probe numbers in the commit.
 
 /**
  * The landing page — two pages sharing one file, split at md.
@@ -1852,20 +1854,12 @@ export function HomePage() {
             not on screen behind it at all. The card switches apply at
             whichever width draws the card. */}
         {editing && (
-          <Suspense
-            fallback={
-              <WindowOpening title={t('Customise home')} size="sm">
-                <CustomiseOpening layout={effective} />
-              </WindowOpening>
-            }
-          >
-            <CustomiseDialog
-              layout={effective}
-              onChange={save}
-              onReset={() => save(null)}
-              onClose={() => setEditing(false)}
-            />
-          </Suspense>
+          <CustomiseDialog
+            layout={effective}
+            onChange={save}
+            onReset={() => save(null)}
+            onClose={() => setEditing(false)}
+          />
         )}
       </div>
     </div>

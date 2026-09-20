@@ -7,10 +7,13 @@ import { t } from '@/lib/i18n';
 /**
  * A window whose contents are still on the wire.
  *
- * Four of this app's windows are lazy — the picture flow, the PDF
- * importer and the home page's arrangement sheet — because each drags in
- * machinery nothing else needs (the board recogniser, the page scanner).
- * All four hung their Suspense on `fallback={null}`, so pressing the
+ * Three of this app's windows are lazy — the picture flow and the PDF
+ * importer — because each drags in machinery nothing else needs (the
+ * board recogniser, the page scanner). The home page's arrangement sheet
+ * was a fourth until its chunk turned out to be 1.8 kB of glue over
+ * machinery the landing chunk already carried, and covering that wait
+ * cost a second mount of the whole body mid-entrance (2026-09-20).
+ * All of them hung their Suspense on `fallback={null}`, so pressing the
  * button that opens them did NOTHING until the chunk landed: on a slow
  * link, several seconds in which the only evidence of the press was that
  * the press had not worked.

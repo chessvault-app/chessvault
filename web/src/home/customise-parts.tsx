@@ -1,22 +1,23 @@
 import { ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingRow } from '@/components/setting-row';
-import { Inert } from '@/components/skeletons';
 import { Switch } from '@/components/ui/switch';
 import { t } from '@/lib/i18n';
 import { HOME_DESTINATIONS, type Destination } from './destinations';
 import { HOME_CARDS, cardOn, resolveHomeLayout, type HomeLayout } from './layout';
 
 /**
- * Everything the customise window draws under its title, outside the lazy
- * chunk that holds the window's behaviour.
+ * Everything the customise window draws under its title, leaving
+ * CustomiseDialog itself the sheet's wiring.
  *
- * It lives here so the window can be drawn before that chunk lands. The
- * fallback used to be six generic bars: measured on a 1280x900 desktop,
- * a 320px window in the middle of the screen, replaced by an 868px one
- * holding 1481px of rows. Nothing about this body waits on data. The
- * layout is already in the page's hands, so the placeholder is the body
- * itself, held inert, and it cannot disagree with what replaces it.
+ * This body used to be drawn twice. The window was lazy, and the
+ * stand-in shown while its chunk was on the wire rendered this same
+ * component held inert - the placeholder that cannot disagree with what
+ * replaces it, which was the right instinct aimed at a wait that was not
+ * worth covering. The chunk was 1.8 kB of glue over machinery the
+ * landing chunk already carried, and the swap rebuilt these ~40 rows
+ * from nothing in the middle of the sheet's entrance. The window is
+ * eager now and this mounts once (HomePage says what that measured).
  */
 export function CustomiseBody({
   layout,
@@ -144,33 +145,6 @@ export function CustomiseBody({
         </Button>
       </div>
     </>
-  );
-}
-
-const NOOP = (): void => {};
-
-/**
- * The body while the window's chunk is on the wire: the same rows in the
- * same states, and none of them answers. `WindowOpening` stacks its body
- * on gap-3 and the real window's card is gap-4, so the rhythm is restated
- * on a box of its own.
- */
-export function CustomiseOpening({ layout }: { layout: HomeLayout }) {
-  return (
-    <Inert>
-      <div className="flex flex-col gap-4">
-        <CustomiseBody
-          layout={layout}
-          onToggleCard={NOOP}
-          onPromote={NOOP}
-          onDemote={NOOP}
-          onHide={NOOP}
-          onUnhide={NOOP}
-          onMove={NOOP}
-          onReset={NOOP}
-        />
-      </div>
-    </Inert>
   );
 }
 
