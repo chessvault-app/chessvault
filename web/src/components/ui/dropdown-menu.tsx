@@ -14,8 +14,18 @@ function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
 }
 
+/**
+ * A trigger rendered as another element keeps that element's slot. The
+ * registry stamps its own over it, and a Button that stopped saying
+ * `data-slot="button"` fell out of every rule that finds a button that
+ * way: on iOS the page chrome's glass circles (styles/shell.css), which
+ * the grid showed bare the day a phone first drew this menu.
+ */
 function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
-  return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
+  // No key at all, not an undefined one: Base UI's merge lets an
+  // undefined here stand over the rendered element's own value.
+  const slot = props.render ? {} : { 'data-slot': 'dropdown-menu-trigger' };
+  return <MenuPrimitive.Trigger {...slot} {...props} />;
 }
 
 function DropdownMenuContent({
@@ -54,7 +64,21 @@ function DropdownMenuContent({
           className={cn(
             'bg-popover text-popover-foreground ring-window-ring z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg p-1 shadow-md ring-1 duration-100 outline-none',
             // iOS: glass (utilities.css). Popover and card are one token.
-            'ios:glass',
+            // On the phone it takes the glass rung of the radius ladder, 2xl
+            // (18px), and a row xl (14px): the corner less the 4px of p-1,
+            // so the lit row runs concentric with the menu's edge. At lg the
+            // menu read as squared beside the capsule and the glass circles
+            // (lanph3re, on the phone, 2026-09-20).
+            'ios:glass max-md:ios:rounded-2xl',
+            // On an iOS phone the menu grows out of its button and goes back
+            // into it, on the app's one spring: the entrance on
+            // --pane-turn, the exit on the same trace run backwards in
+            // 200ms, as a sheet and a page do ("Motion" in
+            // docs/design-principles.md). The registry's 100ms pop from 95%
+            // is a desktop's; from half size the origin Base UI sets, the
+            // button's corner, is where the eye sees it come from.
+            'max-md:ios:data-open:zoom-in-50 max-md:ios:data-open:duration-(--pane-turn) max-md:ios:data-open:ease-(--pane-turn-ease)',
+            'max-md:ios:data-closed:zoom-out-50 max-md:ios:data-closed:duration-200 max-md:ios:data-closed:ease-(--pane-turn-ease-out)',
             'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-closed:overflow-hidden data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
             className,
           )}
@@ -69,9 +93,15 @@ function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
   return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
 }
 
-/** The registry's row, shared with ContextMenu — the same menu opened two ways. */
+/**
+ * The registry's row, shared with ContextMenu — the same menu opened two ways.
+ *
+ * `pointer-coarse:py-2.5`, as SelectItem has: under a thumb the row
+ * measured 32px (py-1 round the phone's 24px row line), below the 36px
+ * floor every other control keeps, and is 44px with it.
+ */
 export const MENU_ITEM =
-  "group/menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm max-md:type-row outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive";
+  "group/menu-item relative flex cursor-default items-center gap-1.5 rounded-md max-md:ios:rounded-xl px-1.5 max-md:ios:px-2.5 py-1 text-sm max-md:type-row pointer-coarse:py-2.5 outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive";
 
 function DropdownMenuItem({
   className,
@@ -102,7 +132,7 @@ function DropdownMenuLabel({
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
       data-inset={inset}
-      className={cn('text-muted-foreground truncate px-1.5 py-1 text-xs max-md:type-row-sub font-medium data-inset:pl-7', className)}
+      className={cn('text-muted-foreground truncate px-1.5 max-md:ios:px-2.5 py-1 max-md:ios:pt-2 text-xs max-md:type-row-sub font-medium data-inset:pl-7', className)}
       {...props}
     />
   );

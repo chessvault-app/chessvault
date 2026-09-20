@@ -1,7 +1,7 @@
 import { useId, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { ClearableInput } from '@/components/text-fields';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, useDialogDepart } from '@/components/ui/dialog';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
 
@@ -51,15 +51,9 @@ export function PromptDialog({
   onSubmit: (value: string) => void;
   onClose: () => void;
 }) {
-  const [draft, setDraft] = useState(initial);
   // The title is the field's name: the window asks one question and the
   // title row already says which.
   const titleId = useId();
-  const submit = (): void => {
-    if (!draft.trim()) return;
-    if (closeOnSubmit) onClose();
-    onSubmit(draft.trim());
-  };
   return (
     <Dialog
       open
@@ -68,6 +62,63 @@ export function PromptDialog({
       }}
     >
       <DialogContent size="sm" title={label} titleId={titleId}>
+        <PromptBody
+          titleId={titleId}
+          initial={initial}
+          submitLabel={submitLabel}
+          inputMode={inputMode}
+          extra={extra}
+          error={error}
+          closeOnSubmit={closeOnSubmit}
+          onSubmit={onSubmit}
+          onClose={onClose}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * The prompt's contents, a component of their own so they sit INSIDE the
+ * Dialog and can ask it for a held exit (useDialogDepart): the sheet
+ * leaves, then the answer runs.
+ */
+function PromptBody({
+  titleId,
+  initial,
+  submitLabel,
+  inputMode,
+  extra,
+  error,
+  closeOnSubmit,
+  onSubmit,
+  onClose,
+}: {
+  titleId: string;
+  initial: string;
+  submitLabel: string;
+  inputMode?: 'numeric' | 'decimal';
+  extra?: ReactNode;
+  error?: string | null;
+  closeOnSubmit: boolean;
+  onSubmit: (value: string) => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState(initial);
+  const depart = useDialogDepart();
+  const submit = (): void => {
+    const value = draft.trim();
+    if (!value) return;
+    // A prompt that stays up to show an error answers at once; one that
+    // closes leaves first, since most callers unmount it as they answer.
+    if (!closeOnSubmit) return onSubmit(value);
+    depart(() => {
+      onClose();
+      onSubmit(value);
+    });
+  };
+  return (
+    <>
         {extra}
         <ClearableInput
           aria-labelledby={titleId}
@@ -102,7 +153,6 @@ export function PromptDialog({
             {t(submitLabel)}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+    </>
   );
 }

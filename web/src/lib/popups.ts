@@ -55,4 +55,29 @@ export function registerOpenPopup(close: () => void): () => void {
 /** Close every registered popup. */
 export function closePopups(): void {
   for (const close of [...closers]) close();
+  settleClosingPopups();
+}
+
+/**
+ * A popup that was ALREADY closing when the page turn began: end its
+ * exit now. It is not on the list above, since it stopped being open
+ * when its verb was pressed, but Base UI still reports the end of its
+ * exit with a flushSync, and an end that lands inside the pending turn
+ * makes React skip the turn. `[data-nav]` takes the animation away in
+ * the stylesheet, which the browser only acts on at its next style
+ * pass, inside the turn; finishing it here resolves it in a microtask,
+ * before React has rendered the transition at all.
+ *
+ * Found when an iPhone's menu took a 200ms exit: a book's Read verb
+ * navigates about 150ms after the press, and measured on the demo the
+ * turn played with a 100ms exit and was skipped with a 200ms one. It
+ * was a race at either length, won until then by the shorter exit.
+ */
+const CLOSING =
+  ':is([data-slot=popover-content], [data-slot=dropdown-menu-content], [data-slot=context-menu-content], [data-slot=select-content])[data-closed]';
+
+function settleClosingPopups(): void {
+  for (const popup of document.querySelectorAll(CLOSING)) {
+    for (const animation of popup.getAnimations()) animation.finish();
+  }
 }

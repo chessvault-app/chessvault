@@ -818,8 +818,9 @@ file that is absent and asks nothing, because a question in front of an
 action with nothing to lose is how questions stop being read where they
 matter.
 
-The row-actions sheet (`ActionMenu`'s phone half; on a desktop it is
-shadcn's DropdownMenu under the ⋯, and `ActionContextMenu` the same verbs
+The row-actions sheet (`ActionMenu`'s Android phone half; on a desktop
+and on an iPhone it is shadcn's DropdownMenu under the ⋯, see
+"Platform-specific design", and `ActionContextMenu` the same verbs
 at a right-click) is the exception, and it proves the rule: it is a list
 of verbs with no button row of its own, so there is nowhere for a Cancel
 to sit that is not itself another verb. It carries a grab handle and
@@ -911,17 +912,54 @@ closes with no exit and is deaf to hover while the turn plays; the
 Popover, DropdownMenu, ContextMenu and Select roots register their close
 while open, and `index.css` turns a popup's closing animation off while
 the root carries `data-nav`, so Base UI sees its end inside the router's
-own flush, before the transition exists to be skipped. On a phone every
-one of those is a bottom sheet, which the parent unmounts on choose, so
-the desktop roots are the belt to the tooltip's braces.
+own flush, before the transition exists to be skipped. A popup that was
+already closing when the turn began is not on that list, having stopped
+being open when its verb was pressed, and the stylesheet's `none` only
+lands at the browser's next style pass, inside the turn; so the router
+also finishes any exit still running on those four roots, which resolves
+it in a microtask before React renders the transition (`lib/popups`,
+2026-09-20). On an Android phone every one of those is a bottom sheet,
+which the parent unmounts on choose. On an iPhone a row's menu is the
+DropdownMenu, and this is the path it takes on every verb that
+navigates: a book's Read verb turns the page about 150ms after the
+press, and the turn played with a 100ms exit and was skipped with a
+200ms one until the router finished it.
+
+An iPhone's **menu** grows out of its button and goes back into it on
+the same spring: from half size at the corner Base UI anchors it to,
+over `--pane-turn` in and 200ms on the reversed trace out. Desktop keeps
+the registry's 100ms pop from 95%. Measured on the demo at four times
+CPU throttle, the frames during the open are the same as under the old
+animation (one long frame as the menu mounts, then 16.7ms); what a
+scaling glass surface costs the phone's compositor is owed from the
+device.
 
 A **sheet** slides from the bottom edge and does not fade; only the
-scrim fades. The one sheet that raises the keyboard as it opens does
-not slide, because its height changes under it while the keyboard rises
-and a slide measured from that height jumps: the keyboard's own motion
-is its entrance. Its exit still plays. See the note at the top of
-`components/ui/dialog.tsx` for how the wrapper makes the primitive see
-the close.
+scrim fades. The one sheet that raises the keyboard as it opens rises
+too, from a length the keyboard cannot change: its height changes under
+it while the keyboard comes up, and a slide measured from that height
+jumped, so for one release that sheet did not slide at all. It now
+starts a full viewport height down (`100dvh`), which is off screen
+whatever the sheet's box does. Recorded on the demo, it animates like
+any other sheet; against a real iOS keyboard it is still unchecked, and
+if it jumps there the cause is not the one this fixed.
+
+A sheet leaves the same way however it is closed. The wrapper holds the
+exit for a close that comes through it (the scrim, a drag, Back; the
+note at the top of `components/ui/dialog.tsx` says how it makes the
+primitive see the close), and a window's own answer asks for the same
+hold with `useDialogDepart`: a prompt's Done and a folder picked in Move
+to used to go straight to the caller, which unmounted the sheet in that
+commit, and the sheet that slid away when dismissed was cut when
+answered (2026-09-20). On a phone the answer runs once the sheet has
+left. A window that closes itself on a choice of its own should do the
+same.
+
+A prompt's sheet can be dragged while its text is selected. The Drawer
+ignores a swipe while the focused field has a selection, to leave the
+selection's handles alone, and a prompt selects its whole value as it
+opens; a touch that lands on the sheet and not on a field collapses the
+selection first (`releaseFieldSelection`).
 
 A **press** is colour, not scale: a touched button or row takes the
 tint it would have under a mouse, plus the registry's 1px nudge. A
@@ -1172,7 +1210,13 @@ drawn, and what one has to prove.
   empty control on the phone; lanph3re's call, 2026-09-18); the compact page header, the contextual action
   bar, the toast and the menus as glass over what is under them (the
   sheet stays opaque: built as glass and tried on the phone, it looked
-  worse than the opaque card, and it went back the same day, 2026-09-18); the back chevron and a header's icon actions in glass circles, and
+  worse than the opaque card, and it went back the same day, 2026-09-18); a row's ⋯ menu hung from the ⋯ as that glass menu and not
+  risen as a sheet, since iOS 26 anchors every list of actions, its
+  action sheet included, to the control that opened it (2026-09-20; one
+  hook in `components/action-menu.tsx` decides, and the long-press menu
+  keeps the sheet on every phone, having no control to hang from). Its
+  rows are 44px under a thumb on every platform
+  (`pointer-coarse:py-2.5`, as a Select's are; they measured 32px); the back chevron and a header's icon actions in glass circles, and
   its text buttons (a shelf's Create, Import) in pills of the same
   height, the primary one in its own fill, rather than bare on the page
   (one rule in `styles/shell.css` on the rows marked `data-chrome`,
@@ -1182,7 +1226,8 @@ drawn, and what one has to prove.
   a 51 by 31px track, green when on from a `--switch-on` token that is
   the platform's colour and not the app's `good`, a 27px white thumb). Android keeps what ships
   today: the docked opaque bar with the M3 pill, the flat full-bleed
-  rows, the registry switch. Desktop is untouched by any of this. What
+  rows, the registry switch, and the row-actions sheet, which Material
+  still offers beside its menu. Desktop is untouched by any of this. What
   is INSIDE a card follows the tonal rule on every platform: a card
   resting on the page is separated by its fill, so no material that
   samples the ground goes behind it, and a segmented control or a chip

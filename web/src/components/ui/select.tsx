@@ -196,6 +196,12 @@ function SelectContent({
             // iOS: glass (utilities.css). The scroll arrows below keep
             // the opaque fill: they cover the rows passing under them.
             'ios:glass',
+            // On an iOS phone: the glass rung of the radius ladder and the
+            // app's spring, as the row menu takes them (dropdown-menu.tsx
+            // says why, and with which numbers).
+            'max-md:ios:rounded-2xl',
+            'max-md:ios:data-open:zoom-in-50 max-md:ios:data-open:duration-(--pane-turn) max-md:ios:data-open:ease-(--pane-turn-ease)',
+            'max-md:ios:data-closed:zoom-out-50 max-md:ios:data-closed:duration-200 max-md:ios:data-closed:ease-(--pane-turn-ease-out)',
             'data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
             !alignItemWithTrigger &&
               'min-w-(--anchor-width) data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',

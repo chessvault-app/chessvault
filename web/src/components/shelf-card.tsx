@@ -118,7 +118,15 @@ export function ShelfCard({
           // (lanph3re's call), and a card that moves under the pointer
           // moves the text being read.
           'transition-colors duration-100 hover:bg-accent',
-          'pointer-coarse:active:bg-accent',
+          // Not while the press is on the corner controls: :active
+          // reaches every ancestor of the thing pressed, so a thumb on the
+          // ⋯ tinted the whole card. A sheet used to rise over that; the
+          // iPhone's menu hangs beside the card and leaves it in view
+          // (lanph3re, on the phone, 2026-09-20).
+          // Keyed on the strip that holds them and not on `button:active`,
+          // which was measured false during the press: the menu opens on
+          // the way down and the trigger is no longer the active element.
+          'pointer-coarse:[&:active:not(:has([data-card-controls]:active))]:bg-accent',
           layout === 'grid' ? SHELF_CARD_PAD.grid : cn('items-center', SHELF_CARD_PAD.list),
           // A bookmarked card says so before it is read: an edge down the
           // left in the accent, plus the small glyph on the meta line
@@ -265,6 +273,7 @@ export function ShelfCard({
         {/* Both corner controls in one strip, so they cannot overlap and
             the bookmark does not move when the ⋯ appears. */}
         <div
+          data-card-controls=""
           style={swipe.style}
           className={cn('absolute right-2 flex items-center gap-0.5', layout === 'grid' ? 'top-2' : 'top-1.5')}
         >

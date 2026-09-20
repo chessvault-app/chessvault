@@ -115,6 +115,24 @@ const DialogLeaveContext = React.createContext<{
   setPageMode: (page: boolean) => void;
 } | null>(null);
 
+/**
+ * Leave, then do it: for a window's own answer (a prompt's Done, a folder
+ * picked), called from inside the card.
+ *
+ * The Dialog holds its exit for every close request that comes through
+ * IT (the scrim, a drag, Back), but an answer went to the caller, whose
+ * state change unmounted the window in the same commit, so the sheet
+ * that slid away when dismissed was cut when it was answered: measured
+ * on the demo at 375px, gone 40 to 48ms after the press with no frame of
+ * travel, against 200ms and twelve positions for the scrim. On a desktop
+ * `depart` runs what it is given at once, as it always did; on a phone
+ * the answer runs once the sheet has left.
+ */
+export function useDialogDepart(): (then: () => void) => void {
+  const leave = React.use(DialogLeaveContext);
+  return leave ? leave.depart : (then) => then();
+}
+
 /** Whether the reader has asked for less motion, read when it matters. */
 const reducedMotion = (): boolean =>
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -403,6 +421,34 @@ function useCloseWatcher(onClose: () => void, active: boolean): void {
  * excuses only buttons and links.
  */
 const NOT_A_DRAG = 'input, textarea, select, [contenteditable="true"], canvas';
+
+/**
+ * A touch on the sheet that is NOT on a field lets go of a field's
+ * selected text, so the sheet can be dragged.
+ *
+ * The Drawer ignores every swipe while the focused field inside it has
+ * text selected (shouldIgnoreSwipeForTextSelection: the selection's
+ * handles are dragged too, and it cannot tell which the finger is on).
+ * A prompt selects its whole value as it opens, so a rename could not
+ * be dragged away from ANYWHERE on the sheet until the selection was
+ * gone: measured on the demo at 375px, a 180px drag from the handle
+ * left the sheet's top at 612 with the field focused, and carried it to
+ * 760 without. A touch that starts off the field is not on a selection
+ * handle, which sits on the field, so the selection collapses to its
+ * end, as a tap elsewhere already does on the platform, and the caret
+ * and the keyboard stay.
+ */
+function releaseFieldSelection(sheet: HTMLElement): void {
+  const field = document.activeElement;
+  if (!(field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement)) return;
+  if (!sheet.contains(field)) return;
+  try {
+    const end = field.selectionEnd;
+    if (end !== null && field.selectionStart !== end) field.setSelectionRange(end, end);
+  } catch {
+    // A number or a date field has no selection range to read.
+  }
+}
 
 /**
  * The two things a window may claim only while it is actually OPEN: the
@@ -977,6 +1023,7 @@ function DialogContent({
               onPointerDown={(e) => {
                 onPointerDown?.(e);
                 if ((e.target as Element | null)?.closest?.(NOT_A_DRAG)) e.stopPropagation();
+                else releaseFieldSelection(e.currentTarget);
               }}
               initialFocus={initialFocus}
               finalFocus={finalFocus}

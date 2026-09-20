@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { t } from '@/lib/i18n';
 import { isCoarsePointer, useMediaQuery } from '@/lib/media';
+import { currentPlatform } from '@/lib/platform';
 
 export interface MenuAction {
   label: string;
@@ -49,8 +50,34 @@ export interface MenuAction {
   onSelect: () => void;
 }
 
+/**
+ * As wide as its longest verb, from 14rem up to 24rem or the room the
+ * screen has, whichever is less; past that a verb wraps.
+ * It was a fixed w-56, which leaves a phone's row 174px for its text:
+ * measured at the phone's row type, 7 of the app's 74 menu labels need
+ * more (the widest 282px, and one in Korean), and they wrapped to a
+ * second line inside a menu of one-line rows (lanph3re, 2026-09-20).
+ */
+const MENU_WIDTH = 'w-auto min-w-56 max-w-[min(var(--available-width),24rem)]';
+
 /** Where a menu stops being a sheet and becomes a popover. */
 const WIDE = '(min-width: 40rem)';
+
+/**
+ * Which of the two a menu opens as. One answer for both menus, so the
+ * rule for what a phone gets is written once: `fine` adds the right-click
+ * menu's second question, whether there is a mouse to right-click with.
+ */
+function useMenuShape(fine = false): 'popover' | 'sheet' {
+  const wide = useMediaQuery(WIDE);
+  if (wide) return fine && isCoarsePointer() ? 'sheet' : 'popover';
+  // An iPhone's short list of verbs hangs from the control that opened
+  // it, as the system's own have since iOS 26 (the action sheet included,
+  // which lost its Cancel row the same day: a tap anywhere else cancels).
+  // Android keeps the sheet, which Material still offers for this. The
+  // long-press menu keeps it everywhere: there is no control to hang from.
+  return !fine && currentPlatform() === 'ios' ? 'popover' : 'sheet';
+}
 
 /**
  * The child rendered as itself with these props merged on — Base UI's
@@ -75,9 +102,13 @@ function RenderChild({ children, ...props }: { children: ReactElement } & Record
  * (Base UI: menu role, arrow keys and typeahead, first verb focused,
  * placed inside the window) — a bar sliding up from the bottom of a 1400px
  * window is a long way from a button in the middle of it, and a mouse
- * has no reach problem to solve. On a phone it is the app's bottom sheet
- * (components/ui/dialog, with the scrim, the drag and Back every other
- * phone window has), rising where the thumb already is.
+ * has no reach problem to solve. On an Android phone it is the app's
+ * bottom sheet (components/ui/dialog, with the scrim, the drag and Back
+ * every other phone window has), rising where the thumb already is. On an
+ * iPhone it is the desktop's menu again, as glass: measured on the demo
+ * at 375px it hangs 224px wide from the ⋯, turns upward from a trigger
+ * low on the page and ends above the tab capsule, and a flick that starts
+ * on the ⋯ still turns the pane (useMenuShape says why iOS).
  *
  * The child is the trigger and is rendered as itself (the `render` prop):
  * a Button, with its own title and size.
@@ -102,7 +133,7 @@ export function ActionMenu({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
-  const wide = useMediaQuery(WIDE);
+  const shape = useMenuShape();
   // Uncontrolled unless the caller holds the state (to light its trigger).
   const [own, setOwn] = useState(false);
   const isOpen = open ?? own;
@@ -111,11 +142,11 @@ export function ActionMenu({
     onOpenChange?.(next);
   };
 
-  if (wide) {
+  if (shape === 'popover') {
     return (
       <DropdownMenu open={isOpen} onOpenChange={setOpen}>
         <DropdownMenuTrigger render={children} />
-        <DropdownMenuContent align={align} className="w-56">
+        <DropdownMenuContent align={align} className={MENU_WIDTH}>
           {/* One group holding the label and its verbs: Base UI's
               GroupLabel only exists inside a Group (the registry's own
               composition rule too). */}
@@ -192,12 +223,12 @@ export function ActionContextMenu({
   // shape for a thumb, and Base UI's trigger brings touch handlers of its
   // own that swallowed the touchstart, which left the pane swipe dead on
   // the one pane that has this menu in it (hooks/use-pane-swipe).
-  const wide = useMediaQuery(WIDE) && !isCoarsePointer();
+  const shape = useMenuShape(true);
   const [open, setOpen] = useState(false);
 
   if (disabled) return children;
 
-  if (wide) {
+  if (shape === 'popover') {
     return (
       <ContextMenu>
         {/* The guard rides the trigger, not the child: Base UI runs a
@@ -210,7 +241,7 @@ export function ActionContextMenu({
             if (beforeOpen && !beforeOpen(event)) event.preventBaseUIHandler();
           }}
         />
-        <ContextMenuContent className="w-56">
+        <ContextMenuContent className={MENU_WIDTH}>
           <ContextMenuGroup>
             <ContextMenuLabel>{t(title)}</ContextMenuLabel>
             {actions.map((action) => (
