@@ -5,6 +5,7 @@ import { useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, 
 import { useSlowLoad } from '@/components/skeletons';
 
 import type { PinchLive, PinchPoint } from '@/hooks/use-pinch-zoom';
+import { afterRouteSettled, routeChanging, routeSettled } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { loadPdfjs } from '@/puzzles/ocr/pdfPage';
 
@@ -59,9 +60,19 @@ export function useBookPdf(
     }
     const key = pdfKey(id, bytes);
     const kept = takePdf(key);
+    // The document is handed to the page once the page has stopped
+    // sliding in (lib/router): it is what starts the first page's raster,
+    // on the main thread, and the reader is a leaf no route hold reaches.
+    // Measured before this (d970422b): about 90ms of it, 300 and 410ms
+    // into the slide. The open itself starts at once either way.
     if (kept) {
       owned = kept;
-      setDoc(kept);
+      if (routeChanging()) {
+        setDoc(null);
+        void routeSettled().then(() => {
+          if (live) setDoc(kept);
+        });
+      } else setDoc(kept);
     } else {
       setDoc(null);
       void (async () => {
@@ -73,7 +84,7 @@ export function useBookPdf(
             void task.destroy();
             return;
           }
-          const opened = await task.promise;
+          const opened = await afterRouteSettled(task.promise);
           if (!live) {
             // The reader left mid-open. Keeping it would hold a document
             // nothing asked for; the next visit opens it again.
