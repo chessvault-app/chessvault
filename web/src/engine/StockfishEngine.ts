@@ -271,10 +271,7 @@ export class StockfishEngine {
     if (!this.currentFen) return;
     if (!finished) {
       if (this.emitTimer !== null) return;
-      this.emitTimer = setTimeout(() => {
-        this.emitTimer = null;
-        this.flush(false);
-      }, 90);
+      this.armEmit(Math.max(90, this.quietUntil - performance.now()));
       return;
     }
     if (this.emitTimer !== null) {
@@ -282,6 +279,28 @@ export class StockfishEngine {
       this.emitTimer = null;
     }
     this.flush(true, bestMove);
+  }
+
+  /**
+   * When an intermediate update may not land, for the owner to say. Each
+   * one is a commit in every subscriber (the lines, the bar, the board's
+   * arrow) on the thread that is drawing whatever moves: the piece slide
+   * is chessground's own rAF loop, and a search restarts on the very move
+   * that starts one, so its first updates fell inside every slide.
+   * `quietMs` keeps them off the slide that follows analyse();
+   * `holdUpdates` is asked at each tick and, while it says yes, the tick
+   * is put back. Only intermediate frames wait. The final one never does.
+   */
+  quietMs = 0;
+  holdUpdates: (() => boolean) | null = null;
+  private quietUntil = 0;
+
+  private armEmit(ms: number): void {
+    this.emitTimer = setTimeout(() => {
+      this.emitTimer = null;
+      if (this.holdUpdates?.()) this.armEmit(90);
+      else this.flush(false);
+    }, ms);
   }
 
   private flush(finished: boolean, bestMove?: string): void {
@@ -348,6 +367,7 @@ export class StockfishEngine {
    * classic way to desynchronise a UCI engine, so it is avoided.
    */
   async analyse(fen: string, depth = 22, moveMs = 0): Promise<void> {
+    this.quietUntil = performance.now() + this.quietMs;
     if (!this.ready) await this.start();
     if (!this.worker || !this.ready) return;
 

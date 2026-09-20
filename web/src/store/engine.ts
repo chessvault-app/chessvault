@@ -9,6 +9,8 @@ import {
   type SearchUpdate,
 } from '@/engine/StockfishEngine';
 import type { PvLine } from '@/engine/uci';
+import { boardAnimMs } from '@/lib/motion';
+import { routeChanging } from '@/lib/router';
 
 /** Sensible default: leave a couple of cores for the UI. */
 const defaultThreads = (): number => {
@@ -159,6 +161,11 @@ export const useEngine = create<EngineState>()(
             onUpdate,
             onError,
           );
+          // The pane's engine shares a thread with what the pane shows
+          // moving: intermediate lines wait out the piece slide, a page
+          // turn and a pane flick (engine/StockfishEngine, holdUpdates).
+          engine.quietMs = boardAnimMs();
+          engine.holdUpdates = () => routeChanging() || document.querySelector('[data-pane-swipe]') !== null;
         }
         return engine;
       };
