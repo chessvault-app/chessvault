@@ -243,7 +243,14 @@ const evidenceCache = new Map<string, BookEvidence | undefined>();
 
 export function usePuzzleEvidence(slug: string, id: string | undefined): BookEvidence | undefined {
   const key = id ? `${slug}/${id}` : '';
-  const [, bump] = useState(0);
+  // The answer is STATE, not a counter beside a read of the cache: the
+  // React Compiler memoises `evidenceCache.get(key)` on `key` alone (a
+  // module Map is not a reactive input), so a bare re-render handed back
+  // the `undefined` of the first render and the eye only appeared on a
+  // remount, once the cache was already warm.
+  const [landed, setLanded] = useState<{ key: string; evidence: BookEvidence | undefined } | null>(
+    null,
+  );
   useEffect(() => {
     if (!id || evidenceCache.has(key)) return;
     let live = true;
@@ -267,13 +274,14 @@ export function usePuzzleEvidence(slug: string, id: string | undefined): BookEvi
         // network failure must not be — the next look simply asks again.
         evidenceCache.set(key, undefined);
       }
-      if (live) bump((n) => n + 1);
+      if (live) setLanded({ key, evidence: evidenceCache.get(key) });
     })();
     return () => {
       live = false;
     };
   }, [slug, id, key]);
-  return key ? evidenceCache.get(key) : undefined;
+  if (!key) return undefined;
+  return landed?.key === key ? landed.evidence : evidenceCache.get(key);
 }
 
 /** Positions and lines, fetched once per book when something solves. */
