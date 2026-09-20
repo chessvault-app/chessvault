@@ -64,7 +64,12 @@ function DropdownMenuContent({
           className={cn(
             'bg-popover text-popover-foreground ring-window-ring z-50 max-h-(--available-height) w-(--anchor-width) min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg p-1 shadow-md ring-1 duration-100 outline-none',
             // iOS: glass (utilities.css). Popover and card are one token.
-            'ios:glass',
+            // On the phone it takes the glass rung of the radius ladder, 2xl
+            // (18px), and a row xl (14px): the corner less the 4px of p-1,
+            // so the lit row runs concentric with the menu's edge. At lg the
+            // menu read as squared beside the capsule and the glass circles
+            // (lanph3re, on the phone, 2026-09-20).
+            'ios:glass max-md:ios:rounded-2xl',
             'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-closed:overflow-hidden data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
             className,
           )}
@@ -87,7 +92,7 @@ function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
  * floor every other control keeps, and is 44px with it.
  */
 export const MENU_ITEM =
-  "group/menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm max-md:type-row pointer-coarse:py-2.5 outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive";
+  "group/menu-item relative flex cursor-default items-center gap-1.5 rounded-md max-md:ios:rounded-xl px-1.5 max-md:ios:px-2.5 py-1 text-sm max-md:type-row pointer-coarse:py-2.5 outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive";
 
 function DropdownMenuItem({
   className,
@@ -118,7 +123,7 @@ function DropdownMenuLabel({
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
       data-inset={inset}
-      className={cn('text-muted-foreground truncate px-1.5 py-1 text-xs max-md:type-row-sub font-medium data-inset:pl-7', className)}
+      className={cn('text-muted-foreground truncate px-1.5 max-md:ios:px-2.5 py-1 max-md:ios:pt-2 text-xs max-md:type-row-sub font-medium data-inset:pl-7', className)}
       {...props}
     />
   );
