@@ -7,6 +7,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **On iOS a row's ⋯ menu opens from the ⋯.** Studies, notes, books,
+  folders, games, the reader's page menu and every other ⋯ rose as a
+  bottom sheet on every phone. On an iPhone the same verbs now hang from
+  the button as a glass menu, turning upward near the tab bar, and a tap
+  anywhere else closes it. Android keeps the sheet. A menu's rows are
+  44px tall under a thumb on every touch screen; they measured 32px.
 - **A sidebar row opens its section's first page.** Clicking Studies
   with a study left open in it went back to that study, which a tab bar
   does and a sidebar does not. The row now opens the list. The phone's

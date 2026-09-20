@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { t } from '@/lib/i18n';
 import { isCoarsePointer, useMediaQuery } from '@/lib/media';
+import { currentPlatform } from '@/lib/platform';
 
 export interface MenuAction {
   label: string;
@@ -59,7 +60,13 @@ const WIDE = '(min-width: 40rem)';
  */
 function useMenuShape(fine = false): 'popover' | 'sheet' {
   const wide = useMediaQuery(WIDE);
-  return wide && !(fine && isCoarsePointer()) ? 'popover' : 'sheet';
+  if (wide) return fine && isCoarsePointer() ? 'sheet' : 'popover';
+  // An iPhone's short list of verbs hangs from the control that opened
+  // it, as the system's own have since iOS 26 (the action sheet included,
+  // which lost its Cancel row the same day: a tap anywhere else cancels).
+  // Android keeps the sheet, which Material still offers for this. The
+  // long-press menu keeps it everywhere: there is no control to hang from.
+  return !fine && currentPlatform() === 'ios' ? 'popover' : 'sheet';
 }
 
 /**
@@ -85,9 +92,13 @@ function RenderChild({ children, ...props }: { children: ReactElement } & Record
  * (Base UI: menu role, arrow keys and typeahead, first verb focused,
  * placed inside the window) — a bar sliding up from the bottom of a 1400px
  * window is a long way from a button in the middle of it, and a mouse
- * has no reach problem to solve. On a phone it is the app's bottom sheet
- * (components/ui/dialog, with the scrim, the drag and Back every other
- * phone window has), rising where the thumb already is.
+ * has no reach problem to solve. On an Android phone it is the app's
+ * bottom sheet (components/ui/dialog, with the scrim, the drag and Back
+ * every other phone window has), rising where the thumb already is. On an
+ * iPhone it is the desktop's menu again, as glass: measured on the demo
+ * at 375px it hangs 224px wide from the ⋯, turns upward from a trigger
+ * low on the page and ends above the tab capsule, and a flick that starts
+ * on the ⋯ still turns the pane (useMenuShape says why iOS).
  *
  * The child is the trigger and is rendered as itself (the `render` prop):
  * a Button, with its own title and size.

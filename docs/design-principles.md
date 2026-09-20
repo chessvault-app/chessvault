@@ -818,8 +818,9 @@ file that is absent and asks nothing, because a question in front of an
 action with nothing to lose is how questions stop being read where they
 matter.
 
-The row-actions sheet (`ActionMenu`'s phone half; on a desktop it is
-shadcn's DropdownMenu under the ⋯, and `ActionContextMenu` the same verbs
+The row-actions sheet (`ActionMenu`'s Android phone half; on a desktop
+and on an iPhone it is shadcn's DropdownMenu under the ⋯, see
+"Platform-specific design", and `ActionContextMenu` the same verbs
 at a right-click) is the exception, and it proves the rule: it is a list
 of verbs with no button row of its own, so there is nowhere for a Cancel
 to sit that is not itself another verb. It carries a grab handle and
@@ -1172,7 +1173,13 @@ drawn, and what one has to prove.
   empty control on the phone; lanph3re's call, 2026-09-18); the compact page header, the contextual action
   bar, the toast and the menus as glass over what is under them (the
   sheet stays opaque: built as glass and tried on the phone, it looked
-  worse than the opaque card, and it went back the same day, 2026-09-18); the back chevron and a header's icon actions in glass circles, and
+  worse than the opaque card, and it went back the same day, 2026-09-18); a row's ⋯ menu hung from the ⋯ as that glass menu and not
+  risen as a sheet, since iOS 26 anchors every list of actions, its
+  action sheet included, to the control that opened it (2026-09-20; one
+  hook in `components/action-menu.tsx` decides, and the long-press menu
+  keeps the sheet on every phone, having no control to hang from). Its
+  rows are 44px under a thumb on every platform
+  (`pointer-coarse:py-2.5`, as a Select's are; they measured 32px); the back chevron and a header's icon actions in glass circles, and
   its text buttons (a shelf's Create, Import) in pills of the same
   height, the primary one in its own fill, rather than bare on the page
   (one rule in `styles/shell.css` on the rows marked `data-chrome`,
@@ -1182,7 +1189,8 @@ drawn, and what one has to prove.
   a 51 by 31px track, green when on from a `--switch-on` token that is
   the platform's colour and not the app's `good`, a 27px white thumb). Android keeps what ships
   today: the docked opaque bar with the M3 pill, the flat full-bleed
-  rows, the registry switch. Desktop is untouched by any of this. What
+  rows, the registry switch, and the row-actions sheet, which Material
+  still offers beside its menu. Desktop is untouched by any of this. What
   is INSIDE a card follows the tonal rule on every platform: a card
   resting on the page is separated by its fill, so no material that
   samples the ground goes behind it, and a segmented control or a chip
