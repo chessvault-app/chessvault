@@ -1,5 +1,5 @@
 import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipHorizontal2 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { cloneElement, isValidElement, type ReactElement, type ReactNode } from 'react';
 import { AnalysisBoard, BoardControls, ColumnControls } from '@/board/AnalysisBoard';
 import { publishBoardHeight } from '@/board/boardBlock';
 import { BOARD_MAX_W } from '@/board/boardSize';
@@ -64,6 +64,24 @@ export function TrainerBoard({
 }
 
 /**
+ * A pane that is closed stays mounted and takes `hidden`, as the study
+ * and analysis pages' panes do. Left out of the tree instead, the
+ * neighbour was MOUNTED by the flick that brought it in: the swipe hook
+ * commits it under flushSync from inside a touchmove (hooks/
+ * use-pane-swipe), so a whole move list or the engine block rendered for
+ * the first time in the middle of the gesture. The class goes on the
+ * pane's own root, not a wrapper, because the hook reads the column's
+ * direct children as the panes. Every pane passed here ends in Panel,
+ * whose `cn` lets `hidden` win over its `flex`.
+ */
+function shown(pane: ReactNode, on: boolean): ReactNode {
+  if (on) return pane;
+  if (!isValidElement(pane)) return null;
+  const el = pane as ReactElement<{ className?: string }>;
+  return cloneElement(el, { className: cn(el.props.className, 'hidden') });
+}
+
+/**
  * The side column's panes: one at a time on a phone behind the switcher,
  * all of them down the column on a desktop. Moves above the trainer's
  * own panel, because they are what you read while solving and the engine
@@ -86,13 +104,13 @@ export function TrainerPanes({
   return (
     <>
       {!wide && <PaneTabs variant="header" value={shownPane} onChange={setPane} tabs={panes} />}
-      {(wide || paneSwipe.shows('moves')) && moves}
-      {!wide && analysing && paneSwipe.shows('engine') && (
-        <Panel className="min-h-0 flex-1">
+      {shown(moves, wide || paneSwipe.shows('moves'))}
+      {!wide && analysing && (
+        <Panel className={cn('min-h-0 flex-1', !paneSwipe.shows('engine') && 'hidden')}>
           <EngineBlock standalone />
         </Panel>
       )}
-      {(wide || paneSwipe.shows('info')) && info}
+      {shown(info, wide || paneSwipe.shows('info'))}
       {analysing && <ColumnControls className="wide:hidden" />}
     </>
   );

@@ -22,7 +22,7 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Disclosure } from '@/components/disclosure';
 import { autoFocusField } from '@/lib/media';
-import { navigate } from '@/lib/router';
+import { afterRouteSettled, navigate } from '@/lib/router';
 
 import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/segmented';
@@ -390,13 +390,16 @@ export function GamesBrowser({
       setGames(cached);
       setLoaded(true);
     }
-    void loadCollection()
+    // Both land once the page has stopped moving (lib/router): a kept
+    // list asks again on the way back, and each answer redrew every row
+    // inside the pop.
+    void afterRouteSettled(loadCollection())
       .then((games) => {
         setGames(games);
         setLoaded(true);
       })
       .catch(() => setError(t('Vault server unreachable')));
-    void api<{ keys: string[] }>('/api/games/bookmarks')
+    void afterRouteSettled(api<{ keys: string[] }>('/api/games/bookmarks'))
       .then((b) => setBookmarks(new Set(b.keys)))
       .catch(() => {});
   }, [load]);
@@ -850,9 +853,12 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
    * says so before the press and reports the counts after it, because
    * it used to keep the first game, drop the rest and close as if all
    * had gone in. The same lenient parser the server reads with, so the
-   * two agree on what a game is.
+   * two agree on what a game is. Counted a beat behind the field: a
+   * whole file is a whole parse, and inside the keystroke's own render
+   * it held the field, and the sheet's rise on a paste-on-open.
    */
-  const gameCount = pgn.trim() ? parsePgn(pgn).length : 0;
+  const countedPgn = useDeferredValue(pgn);
+  const gameCount = countedPgn.trim() ? parsePgn(countedPgn).length : 0;
 
   /**
    * iOS scrolls a focused field into view by shoving the whole window,

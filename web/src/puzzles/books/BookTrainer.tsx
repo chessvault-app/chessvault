@@ -30,7 +30,7 @@ import { usePromotion } from '@/board/usePromotion';
 import { api, retryOnce } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
-import { navigate } from '@/lib/router';
+import { afterRouteSettled, navigate } from '@/lib/router';
 
 import { announce } from '@/lib/announce';
 import { Button } from '@/components/ui/button';
@@ -136,11 +136,13 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     // instance's requests are still out — an answer for a book already
     // left must not land in the state of the one now open.
     let live = true;
-    void loadBook(slug).then((b) => {
-      if (live) setBook(b);
-    });
-    void loadSolutions(slug).then((s) => {
-      if (live) setSolutions(s);
+    // One commit for the two, and not while the page is sliding in
+    // (lib/router, afterRouteSettled): the book and its answers landed
+    // as two renders of the whole trainer inside the push.
+    void afterRouteSettled(Promise.all([loadBook(slug), loadSolutions(slug)])).then(([b, s]) => {
+      if (!live) return;
+      setBook(b);
+      setSolutions(s);
     });
     return () => {
       live = false;

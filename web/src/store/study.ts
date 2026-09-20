@@ -3,6 +3,7 @@ import { chaptersToPgn, pgnToChapters } from '@shared/pgn';
 import { createTree } from '@shared/tree';
 import type { Chapter } from '@shared/types';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
+import { afterRouteSettled } from '@/lib/router';
 import { useAnalysis } from './analysis';
 import { usePrefs } from './prefs';
 import { forgetCollection } from '@/games/collection';
@@ -283,7 +284,9 @@ export const useStudy = create<StudyState>()((set, get) => {
 
     refresh: async () => {
       try {
-        const body = await api<{ studies: StudyMeta[]; folders?: string[] }>('/api/studies');
+        // Landed once the page has stopped moving (lib/router): the kept
+        // shelf asks again on the way back from a study.
+        const body = await afterRouteSettled(api<{ studies: StudyMeta[]; folders?: string[] }>('/api/studies'));
         set({ studies: body.studies, folders: body.folders ?? [], listLoaded: true, error: null });
         // What each study's outline reserves for its player bars, from
         // the listing: without it a study never opened on this device is
@@ -341,8 +344,13 @@ export const useStudy = create<StudyState>()((set, get) => {
 
     open: async (id, base = 'studies') => {
       try {
-        const body = await api<{ pgn: string; draft?: string; draftAt?: string }>(
-          `/api/${base}/${encodeURIComponent(id)}`,
+        // The parse waits for the page to stop moving, as the page's own
+        // drawing does (lib/router, useRouteSettled): held alone, the
+        // render left this on the main thread mid-slide, every node of
+        // every chapter replayed and then written back out below. The
+        // page waits on the same promise, so nothing is on screen later.
+        const body = await afterRouteSettled(
+          api<{ pgn: string; draft?: string; draftAt?: string }>(`/api/${base}/${encodeURIComponent(id)}`),
         );
         const chapters = pgnToChapters(body.pgn);
         if (chapters.length === 0) {

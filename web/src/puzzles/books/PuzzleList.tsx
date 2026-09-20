@@ -217,6 +217,20 @@ function useGridWindow(
       });
     };
     measure();
+    // One measure a frame, however many listeners heard the scroll: each
+    // scroller and the window's capture report the same event, so a
+    // single scroll was two or three layout reads and setStates, on the
+    // thread the pinned header's reveal is drawn from. The frame it runs
+    // in is the one the scroll paints in, so the slice is never a frame
+    // behind what is on screen.
+    let frame = 0;
+    const onScroll = (): void => {
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        measure();
+      });
+    };
     // Listen on the element that actually scrolls as well as on the window
     // in capture. Either alone is nearly enough — which is the problem: a
     // missed event here does not degrade the grid, it empties it, so it is
@@ -226,18 +240,19 @@ function useGridWindow(
       const overflow = getComputedStyle(el).overflowY;
       if (overflow === 'auto' || overflow === 'scroll') scrollers.push(el);
     }
-    for (const target of scrollers) target.addEventListener('scroll', measure, { passive: true });
+    for (const target of scrollers) target.addEventListener('scroll', onScroll, { passive: true });
     // Passive as well: measure never cancels a scroll, and a bare `true`
     // third argument is a non-passive listener the browser must wait on.
-    globalThis.addEventListener('scroll', measure, { capture: true, passive: true });
+    globalThis.addEventListener('scroll', onScroll, { capture: true, passive: true });
     globalThis.addEventListener('resize', measure);
     // Last line of defence: the grid's own size settling (fonts, images,
     // a filter changing the count) without any scroll at all.
     const observer = new ResizeObserver(measure);
     if (grid.current) observer.observe(grid.current);
     return () => {
-      for (const target of scrollers) target.removeEventListener('scroll', measure);
-      globalThis.removeEventListener('scroll', measure, true);
+      for (const target of scrollers) target.removeEventListener('scroll', onScroll);
+      globalThis.removeEventListener('scroll', onScroll, true);
+      if (frame) cancelAnimationFrame(frame);
       globalThis.removeEventListener('resize', measure);
       observer.disconnect();
     };

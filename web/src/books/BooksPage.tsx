@@ -33,7 +33,7 @@ import { apiErrorMessage } from '@/lib/api';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
 import { t } from '@/lib/i18n';
 import { TitleTip } from '@/components/title-tip';
-import { navigate } from '@/lib/router';
+import { afterRouteSettled, navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
 
 import {
@@ -119,7 +119,9 @@ export function BooksPage() {
       // list at once and the new or re-versioned cover popped in later.
       // Bounded, because a cover is a nicety: if the images are slow or
       // missing the shelf draws anyway.
-      await decodeImages(next.filter((b) => b.cover).map((b) => coverUrl(b.id, b.bytes)));
+      // And not while the page is moving (lib/router): a kept shelf asks
+      // again on the way back from the reader.
+      await afterRouteSettled(decodeImages(next.filter((b) => b.cover).map((b) => coverUrl(b.id, b.bytes))));
       setBooks(next);
       setFolders(libraryMemory.folders);
       setError(null);

@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
+import { prefersReducedMotion } from '@/lib/motion';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { CoverParent } from '@/hooks/cover-parent';
 import { registerOpenDialog, soleTextField } from '@/hooks/dialog-focus';
@@ -85,6 +86,29 @@ export { CoverParent };
 const PHONE = '(max-width: 39.9375rem)';
 
 /** Which primitive this Root is: true = the Drawer (a phone sheet). */
+/**
+ * Whether the window this is drawn in has finished arriving. A phone
+ * sheet rises for the length of the spring, and a body that mounts a
+ * board, an editor or a long outline as the rise starts does it on the
+ * thread the rise is drawn from (the home customise sheet's 224ms body
+ * mount landed there, d4ca0055). A heavy body draws its placeholder
+ * until this says true: the sheet's counterpart to the router's
+ * useRouteSettled. True from the start wherever nothing rises: a desktop
+ * card's 100ms fade, a page inside a window, reduced motion, outside any
+ * window.
+ */
+const DialogEnteredContext = React.createContext(true);
+export function useDialogEntered(): boolean {
+  return React.useContext(DialogEnteredContext);
+}
+/** A heavy body, drawn once the window has arrived; its placeholder until then. */
+export function DialogAfterEnter({ fallback, children }: { fallback: React.ReactNode; children: React.ReactNode }) {
+  return useDialogEntered() ? children : fallback;
+}
+/** Past the spring's tail: the entrance that never reports an end (a
+    handed-over window, `animate-none`) is not waited on for ever. */
+const ENTER_BACKSTOP_MS = 500;
+
 const SheetContext = React.createContext(false);
 /**
  * Whether the phone's sheet is resting BELOW its tallest snap point. A
@@ -910,8 +934,33 @@ function DialogContent({
   // room to take, and a short list left the field mid-sheet with the
   // sheet's own fill empty beneath it. A window sized by its content is
   // unchanged: there is nothing to grow into.
+  const [entered, setEntered] = React.useState(() => !phone || page || prefersReducedMotion());
+  React.useEffect(() => {
+    if (entered) return;
+    const timer = setTimeout(() => setEntered(true), ENTER_BACKSTOP_MS);
+    return () => clearTimeout(timer);
+  }, [entered]);
+
   const stack = (
-    <div className="grid min-w-0 grow">
+    <DialogEnteredContext.Provider value={entered}>
+    <div
+      className={cn(
+        'grid min-w-0 grow',
+        // The content keeps its width while the sheet's edges stand in.
+        // `sheet-corners` insets a dropped sheet by a margin, a sixtieth
+        // of the drop, so every dragged frame made the box a fraction
+        // narrower and laid out everything in it again. Measured on the
+        // demo, the customise sheet dragged 180px down and back at CPU
+        // x4: a 33ms median frame and 419 to 681ms of long tasks; with
+        // the content handed the inset back, 16.7ms and about 55. The
+        // box's own px-4 is wider than the inset ever gets, so nothing
+        // leaves it; what changes is that a sheet resting low (the map's
+        // panel at its half rest, 7px) wears that much less padding
+        // instead of a narrower column. Zero where no sheet sets it, and
+        // a page inside a window sits in this grid and takes none again.
+        !page && 'mx-[calc(var(--sheet-inset,0px)*-1)]',
+      )}
+    >
       <div
         data-slot="dialog-under"
         // `inert`: the content under a page is neither read nor reached
@@ -932,6 +981,7 @@ function DialogContent({
       </div>
       <div ref={setHost} className="contents" />
     </div>
+    </DialogEnteredContext.Provider>
   );
 
   if (page) {
@@ -1102,6 +1152,10 @@ function DialogContent({
                 'data-handover:animate-none!',
               )}
               {...props}
+              onAnimationEnd={(e) => {
+                props.onAnimationEnd?.(e);
+                if (e.target === e.currentTarget) setEntered(true);
+              }}
             >
               {stack}
             </DrawerPrimitive.Popup>

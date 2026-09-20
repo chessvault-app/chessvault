@@ -2,7 +2,7 @@ import { BookMarked, Check, ChevronRight, Eraser, Puzzle, RotateCcw, X } from 'l
 import { DASH_SHAPE_KEY, readDashboardShape, storedDashboardShape } from './reservation';
 import { useCallback, useEffect, useEffectEvent, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
-import { navigate, up } from '@/lib/router';
+import { afterRouteSettled, navigate, up } from '@/lib/router';
 import { formatAgo, formatUntil, formatWhen } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
 import { ListRow } from '@/components/list-row';
@@ -115,8 +115,9 @@ export function DashboardPage() {
     setHistoryFailed(false);
     setMetaFailed(false);
     setBooksFailed(false);
-    void api<{ user: MetaUser; failed?: number; due?: number; nextDue?: string | null }>(
-      '/api/puzzles/meta',
+    // Each lands once the page has stopped moving (lib/router).
+    void afterRouteSettled(
+      api<{ user: MetaUser; failed?: number; due?: number; nextDue?: string | null }>('/api/puzzles/meta'),
     )
       .then((d) => {
         setUser(d.user);
@@ -128,14 +129,14 @@ export function DashboardPage() {
         setMetaFailed(true);
         setError(apiErrorMessage(e));
       });
-    void api<{ attempts: HistoryEntry[] }>('/api/puzzles/history?limit=500')
+    void afterRouteSettled(api<{ attempts: HistoryEntry[] }>('/api/puzzles/history?limit=500'))
       .then((d) => setHistory(d.attempts))
       .catch((e: unknown) => {
         setHistory((prev) => prev ?? []);
         setHistoryFailed(true);
         setError(apiErrorMessage(e));
       });
-    void api<{ books: BookSummary[] }>('/api/puzzlebooks')
+    void afterRouteSettled(api<{ books: BookSummary[] }>('/api/puzzlebooks'))
       .then((d) => setBooks(d.books))
       .catch(() => {
         setBooks((prev) => prev ?? []);

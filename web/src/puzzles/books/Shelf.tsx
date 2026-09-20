@@ -11,7 +11,7 @@ import {
   parseShelfShape,
   storedShelfShape,
 } from '@/components/shelf-reservation';
-import { navigate } from '@/lib/router';
+import { afterRouteSettled, navigate } from '@/lib/router';
 
 import { BookCoverCard } from '@/components/book-cover-card';
 import { Button } from '@/components/ui/button';
@@ -124,8 +124,10 @@ export function Shelf() {
       // wait; hot, the cards on screen stay until the fresh set is
       // whole. Bounded, because a cover is a nicety: if the images are
       // slow or missing the shelf draws anyway.
-      await decodeImages(
-        fresh.map((b) => `/api/puzzlebooks/${encodeURIComponent(b.slug)}/diagrams/cover.jpg`),
+      // And not while the page is moving (lib/router): a kept shelf asks
+      // again on the way back.
+      await afterRouteSettled(
+        decodeImages(fresh.map((b) => `/api/puzzlebooks/${encodeURIComponent(b.slug)}/diagrams/cover.jpg`)),
       );
       shelfMemory.books = fresh;
       setBooks(fresh);

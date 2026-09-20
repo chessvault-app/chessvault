@@ -13,7 +13,7 @@ import {
 import { Suspense, memo, useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { lazyRoute, routePlaceholderShown } from '@/lib/lazyRoute';
 import { KeepAlive } from '@/lib/keep-alive';
-import { decodeSegment, navigate } from '@/lib/router';
+import { afterRouteSettled, decodeSegment, navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { ShelfCard, type ShelfLayout } from '@/components/shelf-card';
 import { LetterTile } from '@/components/letter-tile';
@@ -198,7 +198,9 @@ function NoteList() {
       { outgoing: { notes: Record<string, number> } } | null,
     ];
     try {
-      answers = await Promise.all([
+      // Read once the page has stopped moving (lib/router): a kept shelf
+      // asks again on the way back, and its cards redrew inside the pop.
+      answers = await afterRouteSettled(Promise.all([
         api<{ studies: NoteMeta[]; folders: string[] }>(API),
         // Missing bookmarks are an empty set, not a broken shelf.
         api<{ ids: string[] }>(`${API}/bookmarks`).catch(() => null),
@@ -206,7 +208,7 @@ function NoteList() {
         // a card without its count is a card with one fact fewer, not a
         // broken shelf.
         api<{ outgoing: { notes: Record<string, number> } }>('/api/links/index').catch(() => null),
-      ]);
+      ]));
     } catch (error) {
       setLoaded(true);
       setError(t(apiErrorMessage(error)));

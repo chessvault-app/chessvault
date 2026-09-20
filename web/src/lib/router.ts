@@ -331,6 +331,24 @@ export function routeSettled(): Promise<void> {
 }
 
 /**
+ * A request's answer, handed over once the page has stopped moving.
+ *
+ * The request leaves at once and only its landing waits, so with no
+ * turn in flight, or an answer slower than the slide, this costs
+ * nothing. It is for the answer whose setState is the expensive part: a
+ * leaf's record arriving tens of milliseconds into the push it mounted
+ * in, and a kept list revalidating on the way back, since <Activity>
+ * re-runs a shown page's effects and the pop is over in 200ms
+ * (useRouteSettled has the measurements for the first; the second is
+ * the same commit on the other direction).
+ */
+export async function afterRouteSettled<T>(answer: Promise<T>): Promise<T> {
+  const value = await answer;
+  await routeSettled();
+  return value;
+}
+
+/**
  * Whether a page change is being drawn right now. A placeholder that
  * waits its usual beat before admitting to a load (useSlowLoad) has no
  * flash to avoid while the page it stands in is still sliding in, and
