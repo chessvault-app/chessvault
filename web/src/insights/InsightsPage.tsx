@@ -483,7 +483,7 @@ function Tables({ report }: { report: Report }) {
                 <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap">
                   {t('Opening')}
                 </th>
-                <th scope="col" className="w-14 py-1 pr-2 text-right font-medium whitespace-nowrap">
+                <th scope="col" className="w-14 py-1 pr-2 text-right font-medium whitespace-nowrap max-md:w-16">
                   {t('Games')}
                 </th>
                 <th scope="col" className="w-36 py-1 pr-2 text-left font-medium whitespace-nowrap max-sm:hidden">
@@ -505,15 +505,15 @@ function Tables({ report }: { report: Report }) {
                   <td className="py-(--row-py-tight) pr-2">
                     <OpeningName row={row} />
                   </td>
-                  <td className="text-muted-foreground py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+                  <td className="text-muted-foreground py-(--row-py-tight) pr-2 text-right font-mono whitespace-nowrap tabular-nums">
                     {exact.format(row.games)}
                   </td>
                   <td className="py-(--row-py-tight) pr-2 max-sm:hidden">
                     <ResultBar w={row.w} d={row.d} b={row.l} pov="mine" />
                   </td>
-                  <td className="py-(--row-py-tight) text-right font-mono tabular-nums">{pct(scorePct(row))}</td>
+                  <td className="py-(--row-py-tight) text-right font-mono whitespace-nowrap tabular-nums">{pct(scorePct(row))}</td>
                   {judged && (
-                    <td className="py-(--row-py-tight) pl-2 text-right font-mono tabular-nums">
+                    <td className="py-(--row-py-tight) pl-2 text-right font-mono whitespace-nowrap tabular-nums">
                       {row.accuracy === null ? '' : `${row.accuracy.toFixed(1)}%`}
                     </td>
                   )}
@@ -579,14 +579,14 @@ function Tables({ report }: { report: Report }) {
                     <td className="py-(--row-py-tight) pr-2">
                       <OpeningName row={row} />
                     </td>
-                    <td className="text-muted-foreground py-(--row-py-tight) pr-2 text-right font-mono tabular-nums max-sm:hidden">
+                    <td className="text-muted-foreground py-(--row-py-tight) pr-2 text-right font-mono whitespace-nowrap tabular-nums max-sm:hidden">
                       {exact.format(row.exits)}
                     </td>
-                    <td className="py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+                    <td className="py-(--row-py-tight) pr-2 text-right font-mono whitespace-nowrap tabular-nums">
                       {row.meanExitPly === null ? '' : moveOfPly(row.meanExitPly).toFixed(1)}
                     </td>
-                    <td className="py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">{row.youLeft}</td>
-                    <td className="py-(--row-py-tight) text-right font-mono tabular-nums">{row.theyLeft}</td>
+                    <td className="py-(--row-py-tight) pr-2 text-right font-mono whitespace-nowrap tabular-nums">{row.youLeft}</td>
+                    <td className="py-(--row-py-tight) text-right font-mono whitespace-nowrap tabular-nums">{row.theyLeft}</td>
                   </tr>
                 ))}
               </tbody>
@@ -811,10 +811,10 @@ function EndingsCard({
                               <span className="min-w-0 truncate">{t(ENDING_LABEL[s.ending])}</span>
                             </span>
                           </td>
-                          <td className="text-muted-foreground w-10 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+                          <td className="text-muted-foreground w-10 py-(--row-py-tight) pr-2 max-md:w-16 text-right font-mono whitespace-nowrap tabular-nums">
                             {exact.format(s.games)}
                           </td>
-                          <td className="w-12 py-(--row-py-tight) text-right font-mono tabular-nums">{pct(s.share)}</td>
+                          <td className="w-12 py-(--row-py-tight) text-right font-mono whitespace-nowrap tabular-nums">{pct(s.share)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1102,7 +1102,7 @@ function MeanTable({
           <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap">
             {caption}
           </th>
-          <th scope="col" className="w-14 py-1 pr-2 text-right font-medium whitespace-nowrap">
+          <th scope="col" className="w-14 py-1 pr-2 text-right font-medium whitespace-nowrap max-md:w-20">
             {unit === 'games' ? t('Games') : t('Moves')}
           </th>
           <th scope="col" className="w-16 py-1 text-right font-medium whitespace-nowrap">
@@ -1114,10 +1114,10 @@ function MeanTable({
         {rows.map((row, at) => (
           <tr key={row.key} className={cn(at % 2 === 1 && 'bg-muted/50')}>
             <td className={cn('py-(--row-py-tight) pr-2', mono && 'font-mono tabular-nums')}>{row.label}</td>
-            <td className="text-muted-foreground w-14 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+            <td className="text-muted-foreground w-14 py-(--row-py-tight) pr-2 max-md:w-20 text-right font-mono whitespace-nowrap tabular-nums">
               {exact.format(row.n)}
             </td>
-            <td className="w-16 py-(--row-py-tight) text-right font-mono tabular-nums">
+            <td className="w-16 py-(--row-py-tight) text-right font-mono whitespace-nowrap tabular-nums">
               {row.mean === null ? '' : `${row.mean.toFixed(1)}%`}
             </td>
           </tr>
@@ -1172,7 +1172,7 @@ function MoveQualityCard({ analysis }: { analysis: Report['analysis'] }) {
               <th scope="col" className="py-1 pr-2 text-left font-medium whitespace-nowrap">
                 {t('Verdict')}
               </th>
-              <th scope="col" className="w-16 py-1 pr-2 text-right font-medium whitespace-nowrap">
+              <th scope="col" className="w-16 py-1 pr-2 text-right font-medium whitespace-nowrap max-md:w-20">
                 {t('Moves')}
               </th>
               <th scope="col" className="w-14 py-1 text-right font-medium whitespace-nowrap">
@@ -1190,10 +1190,10 @@ function MoveQualityCard({ analysis }: { analysis: Report['analysis'] }) {
                     {q.glyph && <span className="text-muted-foreground font-mono text-xs">{q.glyph}</span>}
                   </span>
                 </td>
-                <td className="text-muted-foreground py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+                <td className="text-muted-foreground py-(--row-py-tight) pr-2 text-right font-mono whitespace-nowrap tabular-nums">
                   {exact.format(quality[q.key])}
                 </td>
-                <td className="py-(--row-py-tight) text-right font-mono tabular-nums">
+                <td className="py-(--row-py-tight) text-right font-mono whitespace-nowrap tabular-nums">
                   {pct((100 * quality[q.key]) / total)}
                 </td>
               </tr>
@@ -1261,7 +1261,7 @@ function TallyTable({
           <th scope="col" className={cn('py-1 pr-2 text-left font-medium whitespace-nowrap', !dense && 'sm:w-44')}>
             {caption}
           </th>
-          <th scope="col" className="w-12 py-1 pr-2 text-right font-medium whitespace-nowrap">
+          <th scope="col" className="w-12 py-1 pr-2 text-right font-medium whitespace-nowrap max-md:w-16">
             {t('Games')}
           </th>
           {/* Below sm the bar steps aside, as the openings table's does:
@@ -1288,7 +1288,7 @@ function TallyTable({
         {rows.map((row, at) => (
           <tr key={row.key} className={cn(at % 2 === 1 && 'bg-muted/50')}>
             <td className={cn('py-(--row-py-tight) pr-2', mono && 'font-mono tabular-nums')}>{row.label}</td>
-            <td className="text-muted-foreground w-12 py-(--row-py-tight) pr-2 text-right font-mono tabular-nums">
+            <td className="text-muted-foreground w-12 py-(--row-py-tight) pr-2 max-md:w-16 text-right font-mono whitespace-nowrap tabular-nums">
               {exact.format(row.tally.games)}
             </td>
             {/* The bar's own label threshold was measured against the
@@ -1299,9 +1299,9 @@ function TallyTable({
                 <ResultBar w={row.tally.w} d={row.tally.d} b={row.tally.l} pov="mine" />
               </td>
             )}
-            <td className="w-12 py-(--row-py-tight) text-right font-mono tabular-nums">{pct(scorePct(row.tally))}</td>
+            <td className="w-12 py-(--row-py-tight) text-right font-mono whitespace-nowrap tabular-nums">{pct(scorePct(row.tally))}</td>
             {withAccuracy && (
-              <td className="w-16 py-(--row-py-tight) pl-2 text-right font-mono tabular-nums">
+              <td className="w-16 py-(--row-py-tight) pl-2 text-right font-mono whitespace-nowrap tabular-nums">
                 {accuracyOf(row.tally) === null ? '' : `${accuracyOf(row.tally)!.toFixed(1)}%`}
               </td>
             )}
