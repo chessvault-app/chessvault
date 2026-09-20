@@ -50,6 +50,16 @@ export interface MenuAction {
   onSelect: () => void;
 }
 
+/**
+ * As wide as its longest verb, from 14rem up to 24rem or the room the
+ * screen has, whichever is less; past that a verb wraps.
+ * It was a fixed w-56, which leaves a phone's row 174px for its text:
+ * measured at the phone's row type, 7 of the app's 74 menu labels need
+ * more (the widest 282px, and one in Korean), and they wrapped to a
+ * second line inside a menu of one-line rows (lanph3re, 2026-09-20).
+ */
+const MENU_WIDTH = 'w-auto min-w-56 max-w-[min(var(--available-width),24rem)]';
+
 /** Where a menu stops being a sheet and becomes a popover. */
 const WIDE = '(min-width: 40rem)';
 
@@ -136,7 +146,7 @@ export function ActionMenu({
     return (
       <DropdownMenu open={isOpen} onOpenChange={setOpen}>
         <DropdownMenuTrigger render={children} />
-        <DropdownMenuContent align={align} className="w-56">
+        <DropdownMenuContent align={align} className={MENU_WIDTH}>
           {/* One group holding the label and its verbs: Base UI's
               GroupLabel only exists inside a Group (the registry's own
               composition rule too). */}
@@ -231,7 +241,7 @@ export function ActionContextMenu({
             if (beforeOpen && !beforeOpen(event)) event.preventBaseUIHandler();
           }}
         />
-        <ContextMenuContent className="w-56">
+        <ContextMenuContent className={MENU_WIDTH}>
           <ContextMenuGroup>
             <ContextMenuLabel>{t(title)}</ContextMenuLabel>
             {actions.map((action) => (
