@@ -428,12 +428,6 @@ export function StudyView({
             // is the useful thing to see while reading it — the study's own
             // title is already in the header above.
             title={movesTitle}
-            // A game's title is the line's opening name, read once over a
-            // moves table with type of its own, so it keeps body (14px) at
-            // every width, the size it had before the phone row lift; a
-            // rung under that was tried and was too small (lanph3re,
-            // 2026-09-15). A chapter's name stays a row title.
-            titleSize={kind === 'game' ? 'body' : 'row'}
             actions={
               <>
                 <SidelinesToggle />

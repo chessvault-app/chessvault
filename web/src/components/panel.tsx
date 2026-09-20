@@ -237,23 +237,9 @@ interface PanelHeaderProps {
       their own line rather than letting them squeeze the title. */
   actionsClassName?: string;
   className?: string;
-  /**
-   * 'row' (the default) takes the phone row rung under md, because the
-   * rows under most panels do. 'body' stays on text-sm at every width:
-   * for a header whose title is not a line the reader chooses by, such
-   * as the moves panel's opening name over a moves table that has its
-   * own type (lanph3re's call, 2026-09-15).
-   */
-  titleSize?: 'row' | 'body';
 }
 
-export function PanelHeader({
-  title,
-  actions,
-  actionsClassName,
-  className,
-  titleSize = 'row',
-}: PanelHeaderProps) {
+export function PanelHeader({ title, actions, actionsClassName, className }: PanelHeaderProps) {
   return (
     // No rule under the title: the registry's card header draws none, and
     // neither does its dialog title row, so panels and windows agree (the
@@ -292,10 +278,18 @@ export function PanelHeader({
           rows is a hierarchy upside down: the dashboard's Training panel
           measured 14 over 16 after the phone row lift. As a variant and
           not the bare class, since CardTitle's own text-base is emitted
-          after .type-row and would win the cascade. */}
-      <CardTitle
-        className={cn('min-w-0 flex-1 truncate text-sm', titleSize === 'row' && 'max-md:type-row')}
-      >
+          after .type-row and would win the cascade.
+
+          EVERY panel title, with no opt-out. The moves panel used to keep
+          body (14px) on a phone, on the reading that an opening name is a
+          caption over a table with type of its own — but it is the one
+          panel a board page opens on, and beside the Explorer's and the
+          Engine's 16px its own name read as the smaller thing (measured
+          on the demo at 375: 14/20 against 16/24, in a header both draw
+          at the same 44px). Its own placeholder never took the opt-out
+          either, so the title grew a rung the moment the page arrived.
+          One rung for all of them settles both (lanph3re, 2026-09-20). */}
+      <CardTitle className="min-w-0 flex-1 truncate text-sm max-md:type-row">
         {typeof title === 'string' ? t(title) : title}
       </CardTitle>
       {/* The actions take exactly their own width and the title takes the

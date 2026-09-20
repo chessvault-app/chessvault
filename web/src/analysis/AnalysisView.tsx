@@ -245,11 +245,6 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
             // it is the one thing up here that follows the cursor (see
             // LineTitle for what subscribing the page to it cost).
             title={<LineTitle />}
-            // The opening name is a caption over the moves, not a line to
-            // choose by; it keeps the desktop size on a phone, as do the
-            // controls beside it (lanph3re, 2026-09-15). The game page's
-            // copy of this header goes a rung further (StudyView).
-            titleSize="body"
             actions={
               <>
                 <SidelinesToggle />
@@ -718,8 +713,9 @@ export function MovesOverflow({
           // since the row that used to hold them went away.
           title={t('More')}
           active={open}
-          // The moves header's controls keep the desktop glyph on a phone,
-          // with the title beside them (PanelHeader titleSize="body").
+          // The moves header's controls keep the desktop glyph on a phone:
+          // this row holds more of them than any other panel's, and the
+          // title beside them is what has to survive the squeeze.
           className="max-md:[&_svg]:size-3.5"
         >
           <MoreHorizontal className="glyph" />
