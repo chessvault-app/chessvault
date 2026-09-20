@@ -912,9 +912,27 @@ closes with no exit and is deaf to hover while the turn plays; the
 Popover, DropdownMenu, ContextMenu and Select roots register their close
 while open, and `index.css` turns a popup's closing animation off while
 the root carries `data-nav`, so Base UI sees its end inside the router's
-own flush, before the transition exists to be skipped. On a phone every
-one of those is a bottom sheet, which the parent unmounts on choose, so
-the desktop roots are the belt to the tooltip's braces.
+own flush, before the transition exists to be skipped. A popup that was
+already closing when the turn began is not on that list, having stopped
+being open when its verb was pressed, and the stylesheet's `none` only
+lands at the browser's next style pass, inside the turn; so the router
+also finishes any exit still running on those four roots, which resolves
+it in a microtask before React renders the transition (`lib/popups`,
+2026-09-20). On an Android phone every one of those is a bottom sheet,
+which the parent unmounts on choose. On an iPhone a row's menu is the
+DropdownMenu, and this is the path it takes on every verb that
+navigates: a book's Read verb turns the page about 150ms after the
+press, and the turn played with a 100ms exit and was skipped with a
+200ms one until the router finished it.
+
+An iPhone's **menu** grows out of its button and goes back into it on
+the same spring: from half size at the corner Base UI anchors it to,
+over `--pane-turn` in and 200ms on the reversed trace out. Desktop keeps
+the registry's 100ms pop from 95%. Measured on the demo at four times
+CPU throttle, the frames during the open are the same as under the old
+animation (one long frame as the menu mounts, then 16.7ms); what a
+scaling glass surface costs the phone's compositor is owed from the
+device.
 
 A **sheet** slides from the bottom edge and does not fade; only the
 scrim fades. The one sheet that raises the keyboard as it opens does

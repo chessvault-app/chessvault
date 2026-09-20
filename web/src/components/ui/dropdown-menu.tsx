@@ -70,6 +70,15 @@ function DropdownMenuContent({
             // menu read as squared beside the capsule and the glass circles
             // (lanph3re, on the phone, 2026-09-20).
             'ios:glass max-md:ios:rounded-2xl',
+            // On an iOS phone the menu grows out of its button and goes back
+            // into it, on the app's one spring: the entrance on
+            // --pane-turn, the exit on the same trace run backwards in
+            // 200ms, as a sheet and a page do ("Motion" in
+            // docs/design-principles.md). The registry's 100ms pop from 95%
+            // is a desktop's; from half size the origin Base UI sets, the
+            // button's corner, is where the eye sees it come from.
+            'max-md:ios:data-open:zoom-in-50 max-md:ios:data-open:duration-(--pane-turn) max-md:ios:data-open:ease-(--pane-turn-ease)',
+            'max-md:ios:data-closed:zoom-out-50 max-md:ios:data-closed:duration-200 max-md:ios:data-closed:ease-(--pane-turn-ease-out)',
             'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-closed:overflow-hidden data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
             className,
           )}
