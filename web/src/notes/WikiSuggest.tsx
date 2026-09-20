@@ -102,7 +102,10 @@ export function WikiSuggest({
         collisionPadding={8}
         initialFocus={false}
         finalFocus={false}
-        className="w-72 gap-0 p-1"
+        // A typing aid that follows the caret, not a window opened from a
+        // control: it keeps the registry's quick pop on iOS, where a
+        // popover otherwise grows out of its button on the spring.
+        className="w-72 gap-0 p-1 max-md:ios:data-open:zoom-in-95 max-md:ios:data-open:duration-100 max-md:ios:data-open:ease-out max-md:ios:data-closed:zoom-out-95 max-md:ios:data-closed:duration-100 max-md:ios:data-closed:ease-out"
         role="listbox"
         id={listId}
         aria-label={t('Link to a note, study or game')}
