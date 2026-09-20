@@ -30,7 +30,7 @@ import { TrainerBoard, TrainerNavBar, TrainerPanes } from '@/components/trainer-
 import { useAnalyseInPlace } from '@/hooks/use-analyse-in-place';
 import { AnswerPanel } from '@/puzzles/AnswerPanel';
 import { playSound } from '@/board/sound';
-import { navigate, up } from '@/lib/router';
+import { afterRouteSettled, navigate, up } from '@/lib/router';
 import { formatUntil } from '@/lib/dates';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { announce } from '@/lib/announce';
@@ -377,7 +377,11 @@ export function RepertoireView() {
     const ctl = new AbortController();
     setDrillChapters(null);
     setChapterPick('0');
-    void api<{ pgn?: string } | null>(`/api/studies/${encodeURIComponent(drillStudy)}`, { signal: ctl.signal })
+    // Parsed once the page has stopped moving (lib/router): a whole
+    // study through the codec, as the study page's own open.
+    void afterRouteSettled(
+      api<{ pgn?: string } | null>(`/api/studies/${encodeURIComponent(drillStudy)}`, { signal: ctl.signal }),
+    )
       .then((body) => {
         if (ctl.signal.aborted) return;
         const chapters = typeof body?.pgn === 'string' ? pgnToChapters(body.pgn) : [];
