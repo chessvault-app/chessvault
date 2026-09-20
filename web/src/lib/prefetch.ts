@@ -23,6 +23,8 @@
  * fallback is a plain timeout, which is what React's own scheduler does.
  */
 
+import { routeSettled } from './router';
+
 const IDLE_TIMEOUT_MS = 2_000;
 /** How long after `load` the first warm may start; the app's own first
     fetches (the launch section's rows, the fonts) get the link first. */
@@ -69,6 +71,10 @@ export function prefetchWhenIdle(warms: readonly Warm[]): () => void {
       if (!live) return;
       if (dataConstrained()) return;
       await whenIdle();
+      // Idle is a 50ms timer where there is no requestIdleCallback
+      // (Safari), and a chunk's evaluation is a long task wherever it
+      // lands: not inside a page turn.
+      await routeSettled();
       if (!live) return;
       // A chunk that will not come (offline, a stale deploy) is
       // lazyRoute's to handle when the route is drawn; here it only ends
