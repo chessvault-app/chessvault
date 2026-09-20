@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { currentPlatform } from '@/lib/platform';
+import { routeChanging, routeSettled } from '@/lib/router';
 
 /** Within this many pixels of the top the page counts as unscrolled. */
 const TOP = 16;
 /** A move smaller than this is a finger settling, not a scroll. */
 const SLACK = 4;
+/** How many times one route may be walked for a scroller, and how far apart. */
+const WALKS = 4;
+const WALK_GAP_MS = 400;
 
 /**
  * Whether the iOS capsule should be small: the page is being read.
@@ -59,16 +63,54 @@ export function useBarMinimized(route: string): { minimized: boolean; expand: ()
     // the priming follows the DOM: once a frame while main's subtree
     // changes, until a scroller is held and stays visible. The walk of
     // every element is the expensive part and runs only until then.
+    //
+    // And it is kept off anything that moves. The walk asks every element
+    // under main, the hidden kept pages included, for its computed style
+    // and its scroll height, which is a forced style and layout pass over
+    // the whole document; following the DOM, it ran inside the page turn
+    // (the effect re-arms on the route, and the skeleton's swap is a
+    // mutation), and on a page with no scroller to find, a board that
+    // fits the screen, it never held one and ran again on every mutation
+    // after: each engine flush, 90ms apart, through every piece slide and
+    // pane flick. So the walk waits for the turn to end, is spent after
+    // WALKS tries on one route, and no sooner than WALK_GAP_MS apart. A
+    // page it gives up on loses only its first flick, as before there was
+    // any priming: onScroll adopts whatever scrolls.
     let primed = 0;
+    let walks = 0;
+    let walkedAt = -WALK_GAP_MS;
+    let live = true;
+    let retry = 0;
     const prime = (): void => {
       primed = 0;
       if (target?.isConnected && target.checkVisibility()) return;
-      const el =
-        [...main.querySelectorAll<HTMLElement>('[data-page-scroll]')].find((n) => n.checkVisibility()) ??
-        [...main.querySelectorAll<HTMLElement>('*')].find((n) => {
+      let el = [...main.querySelectorAll<HTMLElement>('[data-page-scroll]')].find((n) => n.checkVisibility());
+      if (!el) {
+        if (routeChanging()) {
+          void routeSettled().then(() => {
+            if (live) schedule();
+          });
+          return;
+        }
+        const now = performance.now();
+        if (walks >= WALKS) return;
+        if (now - walkedAt < WALK_GAP_MS) {
+          // The page that arrives inside the gap is still looked at.
+          if (!retry) {
+            retry = window.setTimeout(() => {
+              retry = 0;
+              schedule();
+            }, WALK_GAP_MS - (now - walkedAt));
+          }
+          return;
+        }
+        walks += 1;
+        walkedAt = now;
+        el = [...main.querySelectorAll<HTMLElement>('*')].find((n) => {
           const s = getComputedStyle(n);
           return (s.overflowY === 'auto' || s.overflowY === 'scroll') && n.scrollHeight > n.clientHeight && n.checkVisibility();
         });
+      }
       if (el) {
         target = el;
         last = el.scrollTop;
@@ -107,6 +149,8 @@ export function useBarMinimized(route: string): { minimized: boolean; expand: ()
     return () => {
       main.removeEventListener('scroll', onScroll, { capture: true });
       mo.disconnect();
+      live = false;
+      if (retry) clearTimeout(retry);
       if (primed) cancelAnimationFrame(primed);
       if (frame) cancelAnimationFrame(frame);
     };
