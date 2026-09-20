@@ -3,6 +3,7 @@ import { chaptersToPgn, pgnToChapters } from '@shared/pgn';
 import { createTree } from '@shared/tree';
 import type { Chapter } from '@shared/types';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
+import { afterRouteSettled } from '@/lib/router';
 import { useAnalysis } from './analysis';
 import { usePrefs } from './prefs';
 import { forgetCollection } from '@/games/collection';
@@ -341,8 +342,13 @@ export const useStudy = create<StudyState>()((set, get) => {
 
     open: async (id, base = 'studies') => {
       try {
-        const body = await api<{ pgn: string; draft?: string; draftAt?: string }>(
-          `/api/${base}/${encodeURIComponent(id)}`,
+        // The parse waits for the page to stop moving, as the page's own
+        // drawing does (lib/router, useRouteSettled): held alone, the
+        // render left this on the main thread mid-slide, every node of
+        // every chapter replayed and then written back out below. The
+        // page waits on the same promise, so nothing is on screen later.
+        const body = await afterRouteSettled(
+          api<{ pgn: string; draft?: string; draftAt?: string }>(`/api/${base}/${encodeURIComponent(id)}`),
         );
         const chapters = pgnToChapters(body.pgn);
         if (chapters.length === 0) {
