@@ -677,7 +677,9 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   THREE pictures a route — the chunk held, then the answers held, then
   settled — because "one picture over both waits" is precisely the claim
   that the first two are the same picture, and holding the chunk alone
-  cannot tell you.
+  cannot tell you. `npm run check:skeletons` reads the same three states
+  as landmark positions and fails when anything drawn in two of them has
+  moved; it runs in CI beside `check:contrast` and `check:page-turn`.
 - **A section is warmed before it is asked for.** The placeholder covers
   a cold chunk; `lib/prefetch` sees to it that few are cold. Once the app
   has loaded and the browser is idle, the sections' chunks are fetched
