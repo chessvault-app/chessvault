@@ -713,10 +713,6 @@ export function MovesOverflow({
           // since the row that used to hold them went away.
           title={t('More')}
           active={open}
-          // The moves header's controls keep the desktop glyph on a phone:
-          // this row holds more of them than any other panel's, and the
-          // title beside them is what has to survive the squeeze.
-          className="max-md:[&_svg]:size-3.5"
         >
           <MoreHorizontal className="glyph" />
         </Button>

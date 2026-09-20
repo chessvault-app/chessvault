@@ -97,8 +97,6 @@ export function SidelinesToggle() {
     <Button
       variant="ghost"
       size="icon-sm"
-      // The moves header keeps the desktop glyph on a phone (AnalysisView).
-      className="max-md:[&_svg]:size-3.5"
       active={on}
       onClick={toggle}
       aria-pressed={on}
