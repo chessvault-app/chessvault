@@ -1,6 +1,7 @@
 import { Eye } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { BoardPeekCard, PEEK_CARD } from '@/components/board-peek-card';
+import { BoardPeekCard, BoardPeekOverlay, PEEK_CARD } from '@/components/board-peek-card';
+import { useCloseRequest } from '@/hooks/dialog-focus';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -27,9 +28,10 @@ import { isCoarsePointer } from '@/lib/media';
  *  - an anchor that unmounted while the fetch was out measures 0,0 and
  *    would draw the preview in the corner, so a disconnected node is
  *    dropped;
- *  - a coarse pointer has no hover to leave, so touch TAPS it open and a
- *    tap anywhere dismisses — a scrim handles that, and only for touch,
- *    because on a mouse it would sit between the cursor and every row.
+ *  - a coarse pointer has no hover to leave, so touch TAPS it open as the
+ *    centred overlay the game lists draw, and a tap on its scrim
+ *    dismisses. Only for touch, because on a mouse a scrim would sit
+ *    between the cursor and every row.
  */
 interface Preview {
   fen: string;
@@ -72,22 +74,12 @@ export function usePuzzlePreview(): {
     if (seq !== seqRef.current) return; // pointer moved on
     if (!anchor.isConnected) return; // row went away mid-fetch
     // Beside the eye under a mouse, where the row is 700px wide and the
-    // card has room to its left. Under a thumb "left of the eye" is on
-    // top of the row it belongs to, the filters and the bottom bar (a
-    // 176px card on a 390px screen), so the card goes ABOVE the row,
-    // flipping below it near the top, inside the scrolling region
-    // rather than the window: the bar is in flow under `main`, and a
-    // viewport that counts it lets the card be drawn over it.
-    const coarse = isCoarsePointer();
-    const region = anchor.closest('main')?.getBoundingClientRect();
+    // card has room to its left. Under a thumb the placement is unused:
+    // the peek is the centred overlay every other eye draws.
     const { top, left } = placeNear(anchor.getBoundingClientRect(), PEEK_CARD, {
-      side: coarse ? 'top' : 'left',
-      align: coarse ? 'end' : 'center',
-      gap: coarse ? 8 : 16,
-      viewport: {
-        width: window.innerWidth,
-        height: coarse && region ? region.bottom : window.innerHeight,
-      },
+      side: 'left',
+      align: 'center',
+      gap: 16,
     });
     setPreview({
       fen: positionAt(puzzle, 1).fen,
@@ -142,25 +134,29 @@ export function usePuzzlePreview(): {
     },
   });
 
-  const layer = preview && (
-    <>
-      {coarse && (
-        <div
-          className="fixed inset-0 z-40"
-          onPointerDown={() => {
-            hide();
-            suppressNextClick();
-          }}
-        />
-      )}
+  // The touch peek is the modal one, and on Android the Back gesture is
+  // how a scrimmed layer is put away.
+  useCloseRequest(hide, coarse && preview !== null);
+
+  const layer =
+    preview &&
+    (coarse ? (
+      <BoardPeekOverlay
+        fen={preview.fen}
+        orientation={preview.orientation}
+        onDismiss={() => {
+          hide();
+          suppressNextClick();
+        }}
+      />
+    ) : (
       <BoardPeekCard
         top={preview.top}
         left={preview.left}
         fen={preview.fen}
         orientation={preview.orientation}
       />
-    </>
-  );
+    ));
 
   return { eyeProps, layer };
 }

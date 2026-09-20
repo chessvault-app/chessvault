@@ -8,8 +8,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import { Board } from '@/board/Board';
-import { BoardPeekCard, PEEK_CARD } from '@/components/board-peek-card';
+import { BoardPeekCard, BoardPeekOverlay, PEEK_CARD } from '@/components/board-peek-card';
 
 import { cn } from '@/lib/utils';
 import { placeNear } from '@/lib/floating';
@@ -117,14 +116,7 @@ export function GamePreview({ preview, onClose }: { preview: Preview | null; onC
 
   if (!preview) return null;
   if (preview.pinned) {
-    return (
-      <div className="fixed inset-0 z-50 grid place-items-center p-8">
-        <div className="bg-scrim absolute inset-0" />
-        <div ref={card} className="bg-card relative w-64 max-w-[80vw] rounded-xl ring-1 ring-window-ring p-1.5 shadow-lg">
-          <Board fen={preview.fen} orientation={preview.orientation} viewOnly coordinates={false} className="rounded-lg" />
-        </div>
-      </div>
-    );
+    return <BoardPeekOverlay cardRef={card} fen={preview.fen} orientation={preview.orientation} />;
   }
   return (
     <BoardPeekCard

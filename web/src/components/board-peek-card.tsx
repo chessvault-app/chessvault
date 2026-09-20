@@ -52,6 +52,38 @@ export function BoardPeekCard({
 }
 
 /**
+ * The same peek under a thumb: centred over a scrim rather than beside
+ * the eye, where a 176px card on a 390px screen lands on the row it
+ * belongs to. Every eye that shows a board on a coarse pointer draws
+ * this one. The puzzle log once anchored the small card above its row
+ * instead, and the same tap meant two things on two pages.
+ *
+ * It is the modal peek, so the caller owes it `useCloseRequest` (Android
+ * Back puts a scrimmed layer away). `onDismiss` fires on a press of the
+ * scrim, never of the board.
+ */
+export function BoardPeekOverlay({
+  fen,
+  orientation,
+  cardRef,
+  onDismiss,
+}: {
+  fen: string;
+  orientation: 'white' | 'black';
+  cardRef?: Ref<HTMLDivElement>;
+  onDismiss?: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center p-8">
+      <div className="bg-scrim absolute inset-0" onPointerDown={onDismiss} />
+      <div ref={cardRef} className="bg-card relative w-64 max-w-[80vw] rounded-xl ring-1 ring-window-ring p-1.5 shadow-lg">
+        <Board fen={fen} orientation={orientation} viewOnly coordinates={false} className="rounded-lg" />
+      </div>
+    </div>
+  );
+}
+
+/**
  * The default card's box, MEASURED rather than derived: it is `w-44` with
  * `p-1`, so the width is 176 and the board inside it should make the
  * height 176 too — but chessground floors a board to a whole number of
