@@ -36,7 +36,7 @@ import {
   useFiltersFolded,
 } from './GameFilters';
 import { Field } from '@/components/ui/field';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogAfterEnter, DialogContent } from '@/components/ui/dialog';
 import { CustomMaterialWindow, EMPTY_CUSTOM, type CustomDraft, type CustomSpec } from './CustomMaterialWindow';
 import { BOARD_SCROLL_SHELL, BOARD_WIDE_COLUMN, EDITOR_WINDOW_SIZE } from '@/components/layout';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
@@ -1994,6 +1994,10 @@ export function DatabaseGames({
                 window said "something is happening" and nothing about
                 what; the shape is a board with its palette over it and
                 its tools under, which is what lands. */}
+            {/* And not while the sheet is rising (ui/dialog,
+                useDialogEntered): the board and palette are the
+                heaviest mount a window here has. */}
+            <DialogAfterEnter fallback={<SetupBoardOpening />}>
             <Suspense fallback={<SetupBoardOpening />}>
               <EditorView
                 key={huntFen.trim() || 'blank'}
@@ -2013,6 +2017,7 @@ export function DatabaseGames({
                 }}
               />
             </Suspense>
+            </DialogAfterEnter>
           </div>
         </DialogContent>
       </Dialog>
