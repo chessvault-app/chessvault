@@ -853,9 +853,12 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
    * says so before the press and reports the counts after it, because
    * it used to keep the first game, drop the rest and close as if all
    * had gone in. The same lenient parser the server reads with, so the
-   * two agree on what a game is.
+   * two agree on what a game is. Counted a beat behind the field: a
+   * whole file is a whole parse, and inside the keystroke's own render
+   * it held the field, and the sheet's rise on a paste-on-open.
    */
-  const gameCount = pgn.trim() ? parsePgn(pgn).length : 0;
+  const countedPgn = useDeferredValue(pgn);
+  const gameCount = countedPgn.trim() ? parsePgn(countedPgn).length : 0;
 
   /**
    * iOS scrolls a focused field into view by shoving the whole window,
