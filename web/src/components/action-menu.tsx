@@ -53,6 +53,16 @@ export interface MenuAction {
 const WIDE = '(min-width: 40rem)';
 
 /**
+ * Which of the two a menu opens as. One answer for both menus, so the
+ * rule for what a phone gets is written once: `fine` adds the right-click
+ * menu's second question, whether there is a mouse to right-click with.
+ */
+function useMenuShape(fine = false): 'popover' | 'sheet' {
+  const wide = useMediaQuery(WIDE);
+  return wide && !(fine && isCoarsePointer()) ? 'popover' : 'sheet';
+}
+
+/**
  * The child rendered as itself with these props merged on — Base UI's
  * render machinery, standing where Radix's Slot used to: the phone
  * branches have no Trigger part to hand the child to.
@@ -102,7 +112,7 @@ export function ActionMenu({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
-  const wide = useMediaQuery(WIDE);
+  const shape = useMenuShape();
   // Uncontrolled unless the caller holds the state (to light its trigger).
   const [own, setOwn] = useState(false);
   const isOpen = open ?? own;
@@ -111,7 +121,7 @@ export function ActionMenu({
     onOpenChange?.(next);
   };
 
-  if (wide) {
+  if (shape === 'popover') {
     return (
       <DropdownMenu open={isOpen} onOpenChange={setOpen}>
         <DropdownMenuTrigger render={children} />
@@ -192,12 +202,12 @@ export function ActionContextMenu({
   // shape for a thumb, and Base UI's trigger brings touch handlers of its
   // own that swallowed the touchstart, which left the pane swipe dead on
   // the one pane that has this menu in it (hooks/use-pane-swipe).
-  const wide = useMediaQuery(WIDE) && !isCoarsePointer();
+  const shape = useMenuShape(true);
   const [open, setOpen] = useState(false);
 
   if (disabled) return children;
 
-  if (wide) {
+  if (shape === 'popover') {
     return (
       <ContextMenu>
         {/* The guard rides the trigger, not the child: Base UI runs a
