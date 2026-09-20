@@ -1,4 +1,5 @@
 import { BarChart3, ChevronRight, Eye, Info, Lightbulb, ListOrdered, Puzzle, Settings2, X } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { SearchInput } from '@/components/text-fields';
 import { PageShell } from '@/components/page-shell';
@@ -90,9 +91,11 @@ function HubOutline() {
           cards below stay 8px apart. Without it every row here stood
           8px high of where it lands. */}
       <PageHeader title={t('Puzzles')} className="mb-2" />
-      <HubPlaceRow />
-      <HubPlaceRow />
-      <HubPlaceRow />
+      <HubPlaces>
+        <HubPlaceRow />
+        <HubPlaceRow />
+        <HubPlaceRow />
+      </HubPlaces>
       {/* The boards take the page's slack and sit on the bottom edge,
           which is what the launcher's height is for. */}
       <div className="flex flex-1 flex-col justify-end gap-2">
@@ -124,7 +127,38 @@ export const HUB_BOARD_FILL = 'h-full max-h-48 w-auto';
  * only its hover, its press and `text-left`.
  */
 export const HUB_CARD_SHAPE = 'bg-card ring-card-ring flex w-full items-stretch gap-3 rounded-xl ring-1 px-2.5 py-1.5';
-export const HUB_PLACE_SHAPE = 'bg-card ring-card-ring flex w-full shrink-0 items-center gap-3 rounded-xl ring-1 px-3 py-2.5';
+export const HUB_PLACE_SHAPE = cn(
+  'bg-card ring-card-ring flex w-full shrink-0 items-center gap-3 rounded-xl ring-1 px-3 py-2.5',
+  // Inside the group on iOS the row is not a card: no corners of its
+  // own, no ring, and a hairline above every row but the first.
+  // border-border, not the card ring, for the reason more-page.tsx
+  // records: the ring is transparent on the light page at rest, and a
+  // grouped list with no line between its rows is one tall card.
+  'ios:rounded-none ios:ring-0 ios:border-border ios:not-first:border-t',
+);
+
+/**
+ * The three places, as one group.
+ *
+ * On iOS a list of places to go is a grouped inset list ("Platform-specific
+ * design", docs/design-principles.md): the rows in one rounded card with a
+ * hairline between them and the chevron each already draws. The hub is that
+ * list by the same document's account, which calls the page its destinations
+ * and nothing else; it kept a card per row for one release after the More
+ * page was grouped (2026-09-20). The docked platforms keep the card per row,
+ * so the wrapper is `contents` there and their markup is what it was.
+ *
+ * A component rather than a class string because these rows are drawn in
+ * THREE places: the page's wait, the page settled, and this outline. The
+ * group has to be the same box in all three or the placeholder drifts.
+ */
+export function HubPlaces({ children }: { children: ReactNode }) {
+  return (
+    <div className="contents ios:bg-card ios:flex ios:shrink-0 ios:flex-col ios:overflow-hidden ios:rounded-xl ios:ring-1 ios:ring-card-ring">
+      {children}
+    </div>
+  );
+}
 
 /** One of the three PLACES to go, waiting: PlaceCard with its words out. */
 export function HubPlaceRow() {

@@ -17,6 +17,7 @@ import {
   HUB_CARD_SHAPE,
   HUB_PLACE_SHAPE,
   HubPlaceRow,
+  HubPlaces,
   HubPuzzleRow,
 } from './PuzzlesView.skeleton';
 import { t } from '@/lib/i18n';
@@ -622,14 +623,14 @@ function Hub() {
       {/* The three places, in the order the sidebar lists them. Fixed
           rows: the slack below is for the boards. */}
       {skeleton && (
-        <>
+        <HubPlaces>
           <HubPlaceRow />
           <HubPlaceRow />
           <HubPlaceRow />
-        </>
+        </HubPlaces>
       )}
       {settled && (
-        <>
+        <HubPlaces>
           <PlaceCard icon={LayoutGrid} title={t('Themes')} go={() => navigate('puzzles', 'themes')}>
             {weak ? (
               // The theme this vault is worst at, as the place to start. The
@@ -673,7 +674,7 @@ function Hub() {
                 : t('Solved today, and what is due for review.')}
             </PlaceDetail>
           </PlaceCard>
-        </>
+        </HubPlaces>
       )}
 
       {/* The boards. This cluster takes the page's slack (flex-1) and
