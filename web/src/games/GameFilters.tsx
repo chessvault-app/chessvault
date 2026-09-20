@@ -26,6 +26,7 @@ import { DatePicker } from '@/components/date-picker';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
+import { useInHeaderTwin } from './header-slots';
 
 /**
  * The one filter vocabulary for every list of games.
@@ -354,6 +355,7 @@ export function StructuredFiltersWindow({
       outcome above, instead of letting Apply produce a silent zero. */
   draftResult?: ResultFilter;
 }) {
+  const twin = useInHeaderTwin();
   const [draft, setDraft] = useState<StructuredFilters>(initial);
   const patch = (part: Partial<StructuredFilters>): void => setDraft((d) => ({ ...d, ...part }));
 
@@ -382,6 +384,8 @@ export function StructuredFiltersWindow({
     allowedResults !== null &&
     !allowedResults.includes(draftResult);
 
+  // One window, however many places its caller's fragment is drawn in.
+  if (twin) return null;
   return (
     <Dialog
       open

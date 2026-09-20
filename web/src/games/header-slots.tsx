@@ -83,6 +83,21 @@ export function useGamesHeader(): GamesHeaderSlots | null {
   return useContext(Slots);
 }
 
+/**
+ * Whether this render is the bar's copy of a title-row slot. The twin is
+ * a second RENDER of the same children, which is right for a button and
+ * wrong for a window: a list that keeps its filter window in the same
+ * fragment as the button that opens it mounted two sheets, one over the
+ * other. The top one took the drag and played the exit, and the one under
+ * it stood still until both unmounted, which read as the sheet leaving
+ * an afterimage behind (lanph3re's recording, 2026-09-20). A window
+ * written inside a slot asks this and draws only in the original.
+ */
+const Twin = createContext(false);
+export function useInHeaderTwin(): boolean {
+  return useContext(Twin);
+}
+
 /** Draw `children` into one of the lent places; nothing until it exists. */
 export function InGamesHeader({ slot, children }: { slot: Slot; children: ReactNode }) {
   const slots = useContext(Slots);
@@ -92,7 +107,7 @@ export function InGamesHeader({ slot, children }: { slot: Slot; children: ReactN
   return (
     <>
       {target ? createPortal(children, target) : null}
-      {twin ? createPortal(children, twin) : null}
+      {twin ? createPortal(<Twin value>{children}</Twin>, twin) : null}
     </>
   );
 }
