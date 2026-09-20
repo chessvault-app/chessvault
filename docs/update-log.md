@@ -12,7 +12,22 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   bottom sheet on every phone. On an iPhone the same verbs now hang from
   the button as a glass menu, turning upward near the tab bar, and a tap
   anywhere else closes it. Android keeps the sheet. A menu's rows are
-  44px tall under a thumb on every touch screen; they measured 32px.
+  44px tall under a thumb on every touch screen; they measured 32px. The
+  menu has the rounder glass corner, grows out of its button and goes
+  back into it, and is as wide as its longest verb, so a long Korean or
+  English verb no longer wraps (on a desktop too). The date picker's
+  calendar opens the same way on an iPhone. Pressing a shelf card's ⋯ no
+  longer tints the whole card.
+- **A sheet slides away when it is answered, not only when it is
+  dismissed.** Done on a rename and a folder picked in Move to cut the
+  sheet off the screen, on every phone. It now leaves the way it does
+  when it is dragged or tapped away, and the rename or the move runs
+  once it has.
+- **A rename sheet can be dragged away.** With the name selected, as it
+  is when the sheet opens, a drag on the sheet did nothing. A touch off
+  the field now lets go of the selection first.
+- **A page turn is no longer skipped after a menu verb.** A verb that
+  opens a page while its menu is still closing could lose the slide.
 - **A sidebar row opens its section's first page.** Clicking Studies
   with a study left open in it went back to that study, which a tab bar
   does and a sidebar does not. The row now opens the list. The phone's

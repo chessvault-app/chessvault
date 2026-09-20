@@ -935,12 +935,31 @@ scaling glass surface costs the phone's compositor is owed from the
 device.
 
 A **sheet** slides from the bottom edge and does not fade; only the
-scrim fades. The one sheet that raises the keyboard as it opens does
-not slide, because its height changes under it while the keyboard rises
-and a slide measured from that height jumps: the keyboard's own motion
-is its entrance. Its exit still plays. See the note at the top of
-`components/ui/dialog.tsx` for how the wrapper makes the primitive see
-the close.
+scrim fades. The one sheet that raises the keyboard as it opens rises
+too, from a length the keyboard cannot change: its height changes under
+it while the keyboard comes up, and a slide measured from that height
+jumped, so for one release that sheet did not slide at all. It now
+starts a full viewport height down (`100dvh`), which is off screen
+whatever the sheet's box does. Recorded on the demo, it animates like
+any other sheet; against a real iOS keyboard it is still unchecked, and
+if it jumps there the cause is not the one this fixed.
+
+A sheet leaves the same way however it is closed. The wrapper holds the
+exit for a close that comes through it (the scrim, a drag, Back; the
+note at the top of `components/ui/dialog.tsx` says how it makes the
+primitive see the close), and a window's own answer asks for the same
+hold with `useDialogDepart`: a prompt's Done and a folder picked in Move
+to used to go straight to the caller, which unmounted the sheet in that
+commit, and the sheet that slid away when dismissed was cut when
+answered (2026-09-20). On a phone the answer runs once the sheet has
+left. A window that closes itself on a choice of its own should do the
+same.
+
+A prompt's sheet can be dragged while its text is selected. The Drawer
+ignores a swipe while the focused field has a selection, to leave the
+selection's handles alone, and a prompt selects its whole value as it
+opens; a touch that lands on the sheet and not on a field collapses the
+selection first (`releaseFieldSelection`).
 
 A **press** is colour, not scale: a touched button or row takes the
 tint it would have under a mouse, plus the registry's 1px nudge. A
