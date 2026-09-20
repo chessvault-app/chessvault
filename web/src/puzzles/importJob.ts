@@ -27,9 +27,10 @@ import {
   classifyInWorker,
   leasePool,
   POOL_SIZE,
-  yieldToUi,
+  yieldToUi as yieldTask,
   type DetailedReading,
 } from './ocr/cellnetPool';
+import { routeSettled } from '@/lib/router';
 import { labelsToFen } from './ocr/classify';
 import { grayFromCanvas, cropDiagram } from './ocr/browser';
 import {
@@ -52,6 +53,21 @@ import {
   savePage,
   type ImportCheckpoint,
 } from './importCheckpoint';
+
+/**
+ * The scan's pause between steps, which also waits out a page turn.
+ *
+ * The import is a background job the reader is told to browse away from,
+ * and its steps are long tasks wherever they land: a page's raster and
+ * grayscale pass, a crop's JPEG, a board's hundreds of replays, the
+ * whole book's solve. A yield hands the thread back between them; it
+ * does not stop the next one starting inside a slide. Every step here
+ * already goes through this one call, so the turn is waited for here.
+ */
+async function yieldToUi(): Promise<void> {
+  await yieldTask();
+  await routeSettled();
+}
 
 export interface FoundDiagram {
   page: number;
@@ -706,6 +722,8 @@ async function readSolutions(
     return null;
   }
 
+  // The whole book in one task, so not inside a page turn.
+  await yieldToUi();
   let result = solveBook(texts, boards, { ...numbering, solutionsAfterPage: 0 });
 
   // The book prints its piece symbols; the scan mangled them into garbage.
