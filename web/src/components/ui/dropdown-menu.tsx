@@ -79,9 +79,15 @@ function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
   return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />;
 }
 
-/** The registry's row, shared with ContextMenu — the same menu opened two ways. */
+/**
+ * The registry's row, shared with ContextMenu — the same menu opened two ways.
+ *
+ * `pointer-coarse:py-2.5`, as SelectItem has: under a thumb the row
+ * measured 32px (py-1 round the phone's 24px row line), below the 36px
+ * floor every other control keeps, and is 44px with it.
+ */
 export const MENU_ITEM =
-  "group/menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm max-md:type-row outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive";
+  "group/menu-item relative flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm max-md:type-row pointer-coarse:py-2.5 outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive";
 
 function DropdownMenuItem({
   className,
