@@ -27,7 +27,7 @@ import { isDemo } from '@/lib/demo';
 import { t } from '@/lib/i18n';
 import { useWideLayout } from '@/lib/media';
 import { KeepAlive } from '@/lib/keep-alive';
-import { navigate } from '@/lib/router';
+import { afterRouteSettled, navigate } from '@/lib/router';
 import { announce } from '@/lib/announce';
 import { cn } from '@/lib/utils';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
@@ -311,8 +311,9 @@ function Drill({ classId }: { classId: string }) {
       return;
     }
     try {
-      const body = await api<{ fen: string; side: Color; goal: Goal }>(
-        `/api/endgames/draw?spec=${encodeURIComponent(spec)}`,
+      // Landed once the page has stopped sliding in (lib/router).
+      const body = await afterRouteSettled(
+        api<{ fen: string; side: Color; goal: Goal }>(`/api/endgames/draw?spec=${encodeURIComponent(spec)}`),
       );
       if (mine !== seq.current) return;
       setGoal(body.goal);

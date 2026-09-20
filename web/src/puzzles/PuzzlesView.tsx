@@ -27,7 +27,7 @@ import { outcomeTone } from './outcome';
 import { cn } from '@/lib/utils';
 import { BOARD_HELD_SHELL, BOARD_WIDE_SIDE } from '@/components/layout';
 import { KeepAlive } from '@/lib/keep-alive';
-import { navigate } from '@/lib/router';
+import { afterRouteSettled, navigate } from '@/lib/router';
 import { useWideLayout } from '@/lib/media';
 import { announce } from '@/lib/announce';
 import { Badge } from '@/components/ui/badge';
@@ -379,7 +379,9 @@ function Trainer({
     // and only the sequence holder may write it.
     let next: ApiPuzzle;
     try {
-      ({ puzzle: next } = await api<{ puzzle: ApiPuzzle }>(url));
+      // Landed once the page has stopped sliding in (lib/router): the
+      // puzzle swaps the outline for the board and both panes.
+      ({ puzzle: next } = await afterRouteSettled(api<{ puzzle: ApiPuzzle }>(url)));
     } catch (e) {
       if (seq !== loadSeq.current) return;
       setError(apiErrorMessage(e));
