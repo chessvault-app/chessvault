@@ -39,7 +39,7 @@ import { MORE_SECTIONS, NAV, openSection } from '@/shell/shared';
     page's edge. The safe-area padding comes off: the capsule floats
     above the indicator instead of reaching under it.
 
-    And it is glass (utilities.css, `glass`): the card's fill at 85% over
+    And it is glass (utilities.css, `glass`): the glass tint's fill over
     a 12px blur of the page scrolling under it. The docked bar was made
     opaque in 2026-09 because a 24px blur across a full-width strip was
     re-blurred on every scrolled frame; the capsule is 335px of a 375px
@@ -61,7 +61,7 @@ const OVERLAY = cn(
   // capsule carries icons only on iOS, and an icon is held to 3:1 where
   // a label is held to 4.5:1. The capsule's own fill is a token, one
   // number per theme (tokens.css, --glass-fill-capsule: 55% in light,
-  // 65% in dark), placed where the active icon on its pill still clears
+  // 70% in dark), placed where the active icon on its pill still clears
   // 3:1 over white content, the worst ground for a dark capsule.
   // lanph3re asked for clearer (2026-09-18).
   'ios:[--glass-fill:var(--glass-fill-capsule)]',

@@ -1235,7 +1235,7 @@ drawn, and what one has to prove.
   overlays and the pane strip are the same on every platform by the
   rules that already govern them.
 - **Glass is one surface, gated three ways.** A translucent surface is
-  a card fill at high alpha over a small backdrop blur with a saturate,
+  the glass tint at high alpha over a small backdrop blur with a saturate,
   a one-pixel hairline of the foreground at 12% inside its edge (dark
   in light, light in dark, so the edge shows over content of the
   surface's own colour),
@@ -1249,7 +1249,13 @@ drawn, and what one has to prove.
   opaque card. The alpha and the blur radius are the two
   numbers a glass surface has, and both are set by measurement (below),
   not by eye: 70% where the surface carries text (4.5:1) and 55% on the
-  capsule, which carries icons (3:1). Apple publishes no ratio; Liquid
+  capsule, which carries icons (3:1), 70% in dark. The tint is a step
+  AWAY from the ground (`--glass-tint`: 95% grey in light, the third
+  surface rung in dark), since glass the colour of the card under it
+  was told from that card by its hairline alone; a greyer tint moves
+  toward the contrast worst case in both themes, so changing it means
+  re-reading both fills (`tokens.css` and `tokens-dark.css` carry the
+  readings). Apple publishes no ratio; Liquid
   Glass is a dynamic material, and these are this app's numbers.
 - **What a platform variant has to prove.** The screenshot grid
   (`npm run shots:grid`) walks a `phone-ios` state beside `phone`,

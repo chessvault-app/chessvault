@@ -22,10 +22,17 @@
   --card-ring: color-mix(in oklch, var(--border) calc(100% * var(--ui-contrast)), transparent);
   --window-ring: var(--border);
   /* The glass surface's fill and blur are tokens.css's numbers, and its
-     edge follows the foreground, which is white here. The capsule's
-     fill is ten points more than light's (tokens.css says why): 60%
-     still read 2.97:1 for the active icon over white, 65% clears it. */
-  --glass-fill-capsule: 65%;
+     edge follows the foreground, which is white here. Its tint is the
+     third surface rung, 32% on a 20.5% card: glass in dark is LIFTED off
+     the ground, not smoked into it (tokens.css, --glass-tint, says why).
+     A lighter glass darkens white content less, so the lift is paid for
+     in the capsule's fill: foreground ink at the text surfaces' 70%
+     still reads 4.74:1 over white (6.34 on the card's colour), but the
+     capsule's active icon on its pill read 2.76:1 at the old 65%, and
+     70% is where it clears 3:1 (3.11). It was 65% on the card's colour,
+     where 60% read 2.97:1. */
+  --glass-tint: var(--surface-3);
+  --glass-fill-capsule: 70%;
   --switch-on: oklch(70% 0.19 145);
   --border-strong: oklch(calc(40% + (72% - 40%) * var(--ui-contrast)) calc(0.024 * var(--ui-tint)) var(--ui-hue));
 

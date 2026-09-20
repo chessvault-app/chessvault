@@ -130,7 +130,7 @@
   background-color: color-mix(in oklch, var(--primary) 12%, var(--card));
 }
 
-/* A surface over content: the card's fill at --glass-fill over a blur of
+/* A surface over content: --glass-tint at --glass-fill over a blur of
    what is under it, with a line of light along the top edge and the
    panel shadow below. The one recipe for every translucent surface the
    platform chrome draws ("Platform-specific design" in
@@ -153,7 +153,7 @@
 @utility glass {
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
     :root:not([data-glass='off']) & {
-      background-color: color-mix(in oklch, var(--card) var(--glass-fill), transparent);
+      background-color: color-mix(in oklch, var(--glass-tint) var(--glass-fill), transparent);
       -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
       backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
       /* The edge, all the way round: one hairline of the foreground at
