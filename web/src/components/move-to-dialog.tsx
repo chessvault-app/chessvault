@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ClearableInput } from '@/components/text-fields';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, useDialogDepart } from '@/components/ui/dialog';
 import { t } from '@/lib/i18n';
 
 /**
@@ -29,12 +29,6 @@ export function MoveToDialog({
   onPick: (target: string) => void;
   onClose: () => void;
 }) {
-  const [draft, setDraft] = useState('');
-  const targets = ['', ...folders].filter((f) => f !== currentFolder);
-  const pickNew = (): void => {
-    if (draft.trim()) onPick(draft.trim().replace(/\//g, '-'));
-  };
-
   return (
     <Dialog
       open
@@ -43,12 +37,40 @@ export function MoveToDialog({
       }}
     >
       <DialogContent size="sm" title="Move to">
+        <MoveToBody currentFolder={currentFolder} folders={folders} onPick={onPick} onClose={onClose} />
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** The window's contents, inside the Dialog so a pick can leave before it lands (useDialogDepart). */
+function MoveToBody({
+  currentFolder,
+  folders,
+  onPick,
+  onClose,
+}: {
+  currentFolder: string;
+  folders: string[];
+  onPick: (target: string) => void;
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState('');
+  const depart = useDialogDepart();
+  const targets = ['', ...folders].filter((f) => f !== currentFolder);
+  const pick = (target: string): void => depart(() => onPick(target));
+  const pickNew = (): void => {
+    if (draft.trim()) pick(draft.trim().replace(/\//g, '-'));
+  };
+
+  return (
+    <>
         <div className="flex max-h-64 flex-col overflow-y-auto overscroll-contain">
           {targets.map((target) => (
             <button
               key={target || '(root)'}
               type="button"
-              onClick={() => onPick(target)}
+              onClick={() => pick(target)}
               className={cn(
                 'hover:bg-accent group flex w-full items-center gap-2 rounded-md px-2 py-1.5 pointer-coarse:py-2.5',
                 'text-left type-row transition-colors duration-100',
@@ -98,7 +120,6 @@ export function MoveToDialog({
             {t('Cancel')}
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+    </>
   );
 }

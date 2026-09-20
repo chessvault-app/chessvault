@@ -115,6 +115,24 @@ const DialogLeaveContext = React.createContext<{
   setPageMode: (page: boolean) => void;
 } | null>(null);
 
+/**
+ * Leave, then do it: for a window's own answer (a prompt's Done, a folder
+ * picked), called from inside the card.
+ *
+ * The Dialog holds its exit for every close request that comes through
+ * IT (the scrim, a drag, Back), but an answer went to the caller, whose
+ * state change unmounted the window in the same commit, so the sheet
+ * that slid away when dismissed was cut when it was answered: measured
+ * on the demo at 375px, gone 40 to 48ms after the press with no frame of
+ * travel, against 200ms and twelve positions for the scrim. On a desktop
+ * `depart` runs what it is given at once, as it always did; on a phone
+ * the answer runs once the sheet has left.
+ */
+export function useDialogDepart(): (then: () => void) => void {
+  const leave = React.use(DialogLeaveContext);
+  return leave ? leave.depart : (then) => then();
+}
+
 /** Whether the reader has asked for less motion, read when it matters. */
 const reducedMotion = (): boolean =>
   typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
