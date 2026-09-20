@@ -141,9 +141,9 @@ interface UserState {
    *
    * Keyed by the question (see offerKey): the theme trainer and the hub
    * ask different questions, and one must not redraw the other's. The
-   * value records WHEN it was offered so an attempt logged before the
-   * offer (a repeat from an exhausted pool, a review) does not read as
-   * answering it. Vault state like everything else in this file, so a
+   * value records how long the attempt log was when it was offered, so
+   * an attempt logged before the offer (a repeat from an exhausted pool,
+   * a review) does not read as answering it. Vault state like everything else in this file, so a
    * phone and a desktop see the same board.
    */
   offered?: Record<string, Offer>;
@@ -151,8 +151,15 @@ interface UserState {
 
 interface Offer {
   id: string;
-  /** When it was offered, ISO; an attempt at or after this answers it. */
+  /** When it was offered, ISO. Only orders offers written before `seen`. */
   at: string;
+  /**
+   * How many attempts the log held when it was offered; one logged past
+   * that answers it. A position and not the time, because a millisecond
+   * holds both an attempt and the offer after it, and `at` then read the
+   * earlier attempt as the answer and redrew a standing offer.
+   */
+  seen?: number;
 }
 
 /** The most standing offers kept; older ones fall off the end. */
@@ -477,7 +484,9 @@ export function puzzlesApi(
 
   /** Whether an offer has been taken up: an attempt at it since it was made. */
   const answered = (offer: Offer, entries: Attempt[]): boolean =>
-    entries.some((e) => e.id === offer.id && typeof e.at === 'string' && e.at >= offer.at);
+    typeof offer.seen === 'number'
+      ? entries.slice(offer.seen).some((e) => e.id === offer.id)
+      : entries.some((e) => e.id === offer.id && typeof e.at === 'string' && e.at >= offer.at);
 
   /**
    * The offer standing for `key`, if it is still open and not the one
@@ -503,7 +512,7 @@ export function puzzlesApi(
     const kept = Object.entries(state.offered ?? {}).filter(
       ([k, o]) => k !== key && !answered(o, entries),
     );
-    kept.push([key, { id, at: new Date().toISOString() }]);
+    kept.push([key, { id, at: new Date().toISOString(), seen: entries.length }]);
     writeState({ ...state, offered: Object.fromEntries(kept.slice(-MAX_OFFERS)) });
   };
 

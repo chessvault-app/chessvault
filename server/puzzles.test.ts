@@ -1,4 +1,4 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
 import {
@@ -802,15 +802,36 @@ describe('puzzles api (standing offer)', () => {
     // Answered; the draw is free again (and may land on the same id by
     // chance among twelve, so only the standing is asserted).
     const state = JSON.parse(readFileSync(join(dir, 'state', 'state.json'), 'utf-8')) as {
-      offered: Record<string, { id: string; at: string }>;
+      offered: Record<string, { id: string; at: string; seen: number }>;
     };
     const again = await next();
     const after = JSON.parse(readFileSync(join(dir, 'state', 'state.json'), 'utf-8')) as {
-      offered: Record<string, { id: string; at: string }>;
+      offered: Record<string, { id: string; at: string; seen: number }>;
     };
     const key = Object.keys(state.offered)[0]!;
     expect(after.offered[key]!.id).toBe(again);
-    expect(after.offered[key]!.at > state.offered[key]!.at).toBe(true);
+    // Thirteen attempts logged by now, against twelve at the first offer.
+    expect(after.offered[key]!.seen).toBe(state.offered[key]!.seen + 1);
+  });
+
+  it('tells an attempt before the offer from one after it inside one millisecond', async () => {
+    // A fast machine logs the twelve attempts and makes the offer in the
+    // same millisecond, and a timestamp cannot order them: the old attempt
+    // read as the answer and the offer was redrawn (seen once in CI as
+    // "expected 'p4' to be 'p11'"). The clock is held still so every run
+    // is that run.
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-01-01T00:00:00.000Z') });
+    try {
+      for (let i = 0; i < 12; i++) await attempt(`p${i}`, true);
+      const offered = await next();
+      for (let i = 0; i < 6; i++) expect(await next()).toBe(offered);
+      // And the attempt that follows still answers it, same millisecond or not.
+      await attempt(offered, false);
+      const again = await next();
+      for (let i = 0; i < 6; i++) expect(await next()).toBe(again);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('holds the review offer while it is still in the queue', async () => {
