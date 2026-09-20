@@ -184,11 +184,26 @@
      (shell/mobile-nav has the numbers). 12px is half the 24px blur that
      cost the docked bar its frames in 2026-09. */
   --glass-fill: 70%;
+  /* What the fill is a fill OF. It was the card's own colour, and a
+     glass surface the colour of the ground under it is told from that
+     ground by its hairline alone: a white circle over white cards in
+     light, a near-black band on a near-black page in dark. So the glass
+     is tinted a step AWAY from the ground, as the platform's materials
+     are: a faint grey here, a lift in dark (tokens-dark.css). Chosen
+     from mockups over the demo beside a stronger grey (88% here, 45% in
+     dark), which read as dirty next to white cards and as a slab across
+     a full-width header (lanph3re, 2026-09-20). A greyer tint at the
+     same fill lifts black content less, so the fills were re-read with
+     it: foreground ink at 70% reads 8.21:1 over black (9.39 on white
+     glass), and the capsule's active icon at 55% reads 3.86:1 (4.33).
+     Under the contrast knob it goes back to the card's white. */
+  --glass-tint: oklch(calc(95% + (100% - 95%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
   /* The capsule's fill (shell/mobile-nav): icons only, held to 3:1. In
      light 55% is where the active icon on its 12% wash of ink still
-     clears 3:1 over black content; dark needs 65% for the same icon
+     clears 3:1 over black content; dark needs 70% for the same icon
      over WHITE content, where the wash of white ink lightens its own
-     ground (measured 2.60:1 at 55% and 2.97:1 at 60%; tokens-dark.css). */
+     ground and the lifted tint darkens it less (tokens-dark.css has
+     the readings). */
   --glass-fill-capsule: 55%;
   /* The iOS switch's on colour (components/ui/switch): the platform's
      own green, drawn only under the ios: variant. Not the app's `good`,

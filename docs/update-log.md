@@ -42,6 +42,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   endgame drill, the puzzle trainers, puzzle entry, a book being renamed
   and the reader's phone row drew a bare chevron, and a search field
   outside a title row drew a grey Cancel.
+- **On iOS the glass is tinted away from the page.** The tab capsule, the
+  header circles, the menus and the toast were the card's own colour made
+  see-through: white over white cards in light, near-black on a near-black
+  page in dark, told apart by a hairline. The glass is now a faint grey in
+  light and a lifted grey in dark. The dark capsule is a little less clear
+  to pay for it (70% from 65%), which keeps its active icon at 3:1 over
+  white content.
 - **The repertoire page no longer scrolls on a phone.** A long line grew
   the page. Its panel scrolls inside itself now, as the other trainers' do.
 - **On a phone the shelves search from the title row.** Studies, Notes,
