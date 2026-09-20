@@ -200,12 +200,29 @@ export function createLayout(root: MapNode): LayoutSim {
   let at0 = 0;
   const relax = (): void => {
     const heat = (1 - at0 / ITERATIONS) * 10 + 2;
-    const fx = new Array<number>(bodies.length).fill(0);
-    const fy = new Array<number>(bodies.length).fill(0);
-    for (let a = 0; a < bodies.length; a += 1) {
-      for (let b = a + 1; b < bodies.length; b += 1) {
-        let dx = bodies[a]!.x - bodies[b]!.x;
-        let dy = bodies[a]!.y - bodies[b]!.y;
+    const count = bodies.length;
+    const fx = new Float64Array(count);
+    const fy = new Float64Array(count);
+    // The pair loop reads flat copies of the positions: it is n²/2 visits,
+    // 220 times over, in the render that mounts the map, and reaching
+    // through each body object for every one of them was four tenths of
+    // its time: 238ms to 140 for 1,000 positions, 64 to 37 for 500, on a
+    // desktop under node. Same doubles, same pairs, same order, so the
+    // layout is the same to the last bit (diffed over seven trees, 1 to
+    // 1,000 nodes, whole and stepped). Binning by the cutoff was tried
+    // first and was slower, 375ms: the dots sit too close for it.
+    const xs = new Float64Array(count);
+    const ys = new Float64Array(count);
+    for (let i = 0; i < count; i += 1) {
+      xs[i] = bodies[i]!.x;
+      ys[i] = bodies[i]!.y;
+    }
+    for (let a = 0; a < count; a += 1) {
+      const ax = xs[a]!;
+      const ay = ys[a]!;
+      for (let b = a + 1; b < count; b += 1) {
+        let dx = ax - xs[b]!;
+        let dy = ay - ys[b]!;
         let d2 = dx * dx + dy * dy;
         if (d2 > CUTOFF2) continue;
         if (d2 < 0.01) {
