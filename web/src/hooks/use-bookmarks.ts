@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
+import { afterRouteSettled } from '@/lib/router';
 
 /**
  * A shelf's bookmarks, kept in the vault beside what they mark.
@@ -19,7 +20,8 @@ export function useBookmarks(
 ): { marked: Set<string>; toggle: (key: string) => Promise<void> } {
   const [marked, setMarked] = useState<Set<string>>(new Set());
   useEffect(() => {
-    void api<Record<string, string[]> | undefined>(`${base}/bookmarks`)
+    // Landed once the page has stopped moving (lib/router).
+    void afterRouteSettled(api<Record<string, string[]> | undefined>(`${base}/bookmarks`))
       .then((body) => setMarked(new Set(body?.[`${field}s`] ?? [])))
       .catch(() => {});
   }, [base, field]);

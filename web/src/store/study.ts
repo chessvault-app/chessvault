@@ -284,7 +284,9 @@ export const useStudy = create<StudyState>()((set, get) => {
 
     refresh: async () => {
       try {
-        const body = await api<{ studies: StudyMeta[]; folders?: string[] }>('/api/studies');
+        // Landed once the page has stopped moving (lib/router): the kept
+        // shelf asks again on the way back from a study.
+        const body = await afterRouteSettled(api<{ studies: StudyMeta[]; folders?: string[] }>('/api/studies'));
         set({ studies: body.studies, folders: body.folders ?? [], listLoaded: true, error: null });
         // What each study's outline reserves for its player bars, from
         // the listing: without it a study never opened on this device is

@@ -5,7 +5,7 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { KeepAlive } from '@/lib/keep-alive';
 import { cn } from '@/lib/utils';
 import { byExtension, useFileDrop } from '@/lib/fileDrop';
-import { decodeSegment, navigate } from '@/lib/router';
+import { afterRouteSettled, decodeSegment, navigate } from '@/lib/router';
 import { formatAgo, formatWhen } from '@/lib/dates';
 import { chapterIsBlank, pgnToChapters, studyNameFromPgn } from '@shared/pgn';
 import { useStudy, type StudyMeta } from '@/store/study';
@@ -122,7 +122,7 @@ function StudyList() {
   const [markedIds, setMarked] = useState<Set<string>>(new Set());
   const [markedOnly, setMarkedOnly] = useState(false);
   useEffect(() => {
-    void api<{ ids: string[] }>('/api/studies/bookmarks')
+    void afterRouteSettled(api<{ ids: string[] }>('/api/studies/bookmarks'))
       .then((body) => setMarked(new Set(body?.ids ?? [])))
       // No marks is a fine answer; a shelf with no stars needs no error.
       .catch(() => {});
