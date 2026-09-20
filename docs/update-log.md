@@ -7,6 +7,26 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Less work lands inside an animation on a phone.** A page that opens
+  inside a section (a puzzle book, its trainer, the puzzle trainer, an
+  endgame drill, the book reader, a repertoire drill) now takes its
+  record once the slide has ended, as a study already did, and a study
+  is parsed then too. A list you come back to (games, notes, studies,
+  books, puzzle books, the dashboard) asks the vault again as before but
+  redraws after the slide back, not during it. With the engine on, its
+  lines wait out the piece's slide, a page turn and a pane swipe; the
+  final line never waits. A trainer's closed pane stays ready, so
+  swiping to it builds nothing mid-swipe. Dragging a sheet no longer
+  lays out everything in it on every frame: measured on the demo at a
+  4x CPU throttle, the customise sheet's drag went from a 33 ms median
+  frame to 16.7 ms. A sheet resting low (the opening map's panel) keeps
+  its column width and wears a little less side padding instead. On
+  iOS, the tab bar's search for the page's scroller no longer runs
+  during a page turn, or over and over on a page that does not scroll.
+  A running book import waits for a page turn to end before its next
+  step. The opening map's layout is about 40% faster on a large map
+  (1,000 positions: 238 ms to 140 ms), with the same result. None of
+  the page-turn changes has been timed on an iPhone yet.
 - **On iOS a row's ⋯ menu opens from the ⋯.** Studies, notes, books,
   folders, games, the reader's page menu and every other ⋯ rose as a
   bottom sheet on every phone. On an iPhone the same verbs now hang from
