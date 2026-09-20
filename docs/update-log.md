@@ -5,7 +5,15 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.11.4
+
+The phone's chrome now follows the phone. On an iPhone the bottom bar
+floats, back chevrons and search Cancel are glass, and a row's menu hangs
+from its button; Android keeps the sheet. On every phone the shelves
+search from the title row, the Games page stands two rows of chrome
+instead of four, and pages scroll under the status bar. Beside it, work
+that used to land inside an animation now waits for it to end. None of
+the page-turn changes has been timed on an iPhone yet.
 
 - **Less work lands inside an animation on a phone.** A page that opens
   inside a section (a puzzle book, its trainer, the puzzle trainer, an
@@ -165,6 +173,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   Books, puzzle books, puzzle themes), leaves the screen as a page is
   read downwards and comes back on the first scroll up. At the top of a
   page nothing has changed.
+- **A note lists its headings in the margin on a wide desktop.** A long
+  note had no way to say where in it you were, or to reach a section
+  without scrolling for it. On a wide window a note with two or more
+  headings lists them left of the column: the current one is marked, a
+  click scrolls to it, and a heading typed is listed at once. Narrower
+  windows and phones draw nothing new.
 - **A note with no board shows its initial.** On the notes shelf a note
   that opens with no board wore the same grey glyph as every other; it
   now wears its first letter on a tinted square, the tint picked by its
