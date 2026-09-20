@@ -22,7 +22,7 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Disclosure } from '@/components/disclosure';
 import { autoFocusField } from '@/lib/media';
-import { navigate } from '@/lib/router';
+import { afterRouteSettled, navigate } from '@/lib/router';
 
 import { Button } from '@/components/ui/button';
 import { Segmented } from '@/components/segmented';
@@ -390,13 +390,16 @@ export function GamesBrowser({
       setGames(cached);
       setLoaded(true);
     }
-    void loadCollection()
+    // Both land once the page has stopped moving (lib/router): a kept
+    // list asks again on the way back, and each answer redrew every row
+    // inside the pop.
+    void afterRouteSettled(loadCollection())
       .then((games) => {
         setGames(games);
         setLoaded(true);
       })
       .catch(() => setError(t('Vault server unreachable')));
-    void api<{ keys: string[] }>('/api/games/bookmarks')
+    void afterRouteSettled(api<{ keys: string[] }>('/api/games/bookmarks'))
       .then((b) => setBookmarks(new Set(b.keys)))
       .catch(() => {});
   }, [load]);

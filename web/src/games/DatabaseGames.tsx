@@ -8,7 +8,7 @@ import { isSymmetricMaterial, mirrorMaterialSpec, type MatchMode } from '@shared
 import type { MotifSide } from '@shared/scanMotif';
 
 import { api, ApiError, apiErrorMessage, apiStream } from '@/lib/api';
-import { navigate } from '@/lib/router';
+import { afterRouteSettled, navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 
 import { Button } from '@/components/ui/button';
@@ -985,7 +985,7 @@ export function DatabaseGames({
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [collectionKeys, setCollectionKeys] = useState<Set<string>>(new Set());
   useEffect(() => {
-    void loadCollection()
+    void afterRouteSettled(loadCollection())
       .then((games) => setCollectionKeys(new Set(games.map((g) => collectionKey(g)))))
       .catch(() => {});
   }, []);
