@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { SkeletonTiles, useSlowLoad } from '@/components/skeletons';
-import { navigate } from '@/lib/router';
+import { afterRouteSettled, navigate } from '@/lib/router';
 import { bookShapeKey, readBookShape } from '../reservation';
 import { cyclesProse } from '../PuzzlesView.skeleton';
 
@@ -202,7 +202,9 @@ export function BookPage({ slug }: { slug: string }) {
   // The shelf page always re-reads: it is where imports, re-reads and
   // deletes land, and it is entered rarely.
   const load = useCallback(async () => {
-    const detail = await loadBook(slug, true);
+    // Landed once the page has stopped moving (lib/router): the grid this
+    // sets off is the heaviest commit the page has.
+    const detail = await afterRouteSettled(loadBook(slug, true));
     if (!detail) {
       setMissing(true);
       return;
