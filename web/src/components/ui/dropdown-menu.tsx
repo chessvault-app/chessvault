@@ -14,8 +14,18 @@ function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
 }
 
+/**
+ * A trigger rendered as another element keeps that element's slot. The
+ * registry stamps its own over it, and a Button that stopped saying
+ * `data-slot="button"` fell out of every rule that finds a button that
+ * way: on iOS the page chrome's glass circles (styles/shell.css), which
+ * the grid showed bare the day a phone first drew this menu.
+ */
 function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
-  return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
+  // No key at all, not an undefined one: Base UI's merge lets an
+  // undefined here stand over the rendered element's own value.
+  const slot = props.render ? {} : { 'data-slot': 'dropdown-menu-trigger' };
+  return <MenuPrimitive.Trigger {...slot} {...props} />;
 }
 
 function DropdownMenuContent({
