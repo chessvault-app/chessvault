@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { PageShell } from '@/components/page-shell';
 import { pageTitleClass } from '@/components/page-header';
-import { SkeletonSettingRow } from '@/components/setting-row';
+import { SettingRow, SkeletonSettingRow } from '@/components/setting-row';
 import { TitleTip } from '@/components/title-tip';
 import { SkeletonVaultTree } from '@/components/skeletons';
 import { VAULT_ROWS } from '@/components/vault-tree';
@@ -136,13 +136,46 @@ const IOS_GROUP =
   'max-md:ios:[&>[data-slot=separator]]:hidden';
 
 /**
+ * The same list in Material's flavour, for an Android phone.
+ *
+ * Android is not the platform that has to keep the desktop page. Its own
+ * Settings (Android 16) and Material 3 Expressive's list guidance draw a
+ * grouped list too, and the two platforms differ in the DRAWING rather
+ * than in the idea: iOS runs the rows together inside one card and rules
+ * between them; Material gives every row a card of its own, separated by
+ * a 2px gap, with the group's outer corners large and the ones facing
+ * the gap small, and no hairline anywhere. So the two rules say the same
+ * thing about which element is a row and disagree only about its box.
+ *
+ * 48px and not 44: Material's minimum touch target is 48dp where Apple's
+ * is 44pt, and a settings row is the one control on this page under a
+ * thumb for its whole height.
+ *
+ * `rounded-sm` before `rounded-t-xl` relies on Tailwind emitting the
+ * shorthand before the longhand, which is how every corner override in
+ * the app is written.
+ */
+const ANDROID_GROUP =
+  'max-md:android:gap-0.5 ' +
+  'max-md:android:[&>*]:bg-card max-md:android:[&>*]:min-h-12 max-md:android:[&>*]:rounded-sm max-md:android:[&>*]:px-4 max-md:android:[&>*]:py-3 ' +
+  'max-md:android:[&>*:first-child]:rounded-t-xl max-md:android:[&>*:last-child]:rounded-b-xl ' +
+  // A switch row gives up its own well and becomes the group's segment,
+  // the same handover the iOS rule makes, by the same data-slot.
+  'max-md:android:[&>[data-slot=setting-row]]:rounded-sm max-md:android:[&>[data-slot=setting-row]]:border-0 max-md:android:[&>[data-slot=setting-row]]:bg-card max-md:android:[&>[data-slot=setting-row]]:px-4 max-md:android:[&>[data-slot=setting-row]]:py-3 ' +
+  'max-md:android:[&>[data-slot=setting-row]:first-child]:rounded-t-xl max-md:android:[&>[data-slot=setting-row]:last-child]:rounded-b-xl ' +
+  // Material separates its rows by the gap, so a rule between two of
+  // them is a second separator drawn over the first.
+  'max-md:android:[&>[data-slot=separator]]:hidden';
+
+/**
  * One settings card: the page's own frame, used by the settled page and
  * by both of its placeholders, so a card that waits cannot be a
  * different box from the card that arrives.
  *
- * On an iOS phone it is a grouped inset list instead: the name above the
- * card in the section-label voice, and the card itself holding the rows
- * (IOS_GROUP above). Android and desktop are unchanged.
+ * On a phone it is a grouped inset list instead: the name above the
+ * group in the section-label voice, and the rows below it (IOS_GROUP and
+ * ANDROID_GROUP above, one card holding hairlined rows or one card per
+ * row). Desktop is unchanged.
  */
 export function SettingsCard({
   icon: Icon,
@@ -166,6 +199,8 @@ export function SettingsCard({
         // iOS: the box moves off the section and onto the body below, and
         // what is left is a group heading over a card.
         'max-md:ios:flex max-md:ios:flex-col max-md:ios:gap-2 max-md:ios:rounded-none max-md:ios:bg-transparent max-md:ios:p-0 max-md:ios:ring-0',
+        // Android: the same handover, Material's grouped list (below).
+        'max-md:android:flex max-md:android:flex-col max-md:android:gap-2 max-md:android:rounded-none max-md:android:bg-transparent max-md:android:p-0 max-md:android:ring-0',
       )}
       data-settings-card
     >
@@ -174,10 +209,13 @@ export function SettingsCard({
           'mb-3 flex items-center gap-2 text-base font-medium',
           // The group's name, in the voice the More page's headings use.
           'max-md:ios:type-row max-md:ios:mb-0 max-md:ios:px-4 max-md:ios:text-muted-foreground',
+          // Material names a group in the accent, which is the one thing
+          // its heading says that iOS's grey one does not.
+          'max-md:android:type-row max-md:android:mb-0 max-md:android:px-4 max-md:android:text-primary',
         )}
       >
-        {/* A group heading on iOS is words and nothing else. */}
-        <Icon className="text-muted-foreground size-4 max-md:ios:hidden" />
+        {/* A group heading on either phone is words and nothing else. */}
+        <Icon className="text-muted-foreground size-4 max-md:ios:hidden max-md:android:hidden" />
         {title}
         {/* The manual is written card by card, and nothing in the app
             pointed at it. One quiet mark per card opens the manual's
@@ -195,7 +233,7 @@ export function SettingsCard({
           </a>
         </TitleTip>
       </h2>
-      <div className={cn('flex flex-col gap-3', IOS_GROUP)}>{children}</div>
+      <div className={cn('flex flex-col gap-3', IOS_GROUP, ANDROID_GROUP)}>{children}</div>
     </section>
   );
 }
@@ -328,9 +366,13 @@ export function SettingsPlaceholder() {
         </SettingsCard>
         {isDemo() && (
           <SettingsCard icon={Palette} title={t('Appearance')}>
-            {APPEARANCE_FIELDS.map((label) => (
-              <SelectFieldPlaceholder key={label} label={label} />
-            ))}
+            {APPEARANCE_SHAPES.map(({ label, full }) =>
+              full ? (
+                <SelectFieldPlaceholder key={label} label={label} />
+              ) : (
+                <SelectRowPlaceholder key={label} label={label} />
+              ),
+            )}
             <SkeletonSettingRow title="Board coordinates" blurb="File and rank labels on the board edge." />
             <SkeletonSettingRow title="Move box" blurb="Play moves from the keyboard." />
             <DisclosurePlaceholder />
@@ -355,7 +397,28 @@ export const APPEARANCE_LABELS = {
   pieces: 'Pieces',
   castling: 'Castling',
 } as const;
-const APPEARANCE_FIELDS = Object.values(APPEARANCE_LABELS);
+
+/**
+ * Which of the two shapes each Appearance choice takes, in the card's
+ * order: a row with the control on the right, or the label over a
+ * full-width control.
+ *
+ * Here rather than in the card because the placeholder is the one that
+ * has to draw the card without importing it, and the two shapes are
+ * different HEIGHTS — a row is one line, a field is two. A list of
+ * labels alone was enough while all seven were the same shape; it is
+ * not any more. `full` is the picture-picking three (a swatch, a board,
+ * a piece set), which keep the card's width to show their art.
+ */
+const APPEARANCE_SHAPES = [
+  { label: APPEARANCE_LABELS.language, full: false },
+  { label: APPEARANCE_LABELS.theme, full: false },
+  { label: APPEARANCE_LABELS.density, full: false },
+  { label: APPEARANCE_LABELS.colours, full: true },
+  { label: APPEARANCE_LABELS.board, full: true },
+  { label: APPEARANCE_LABELS.pieces, full: true },
+  { label: APPEARANCE_LABELS.castling, full: false },
+] as const;
 
 /**
  * A labelled control, held inert: the real Field with its real label
@@ -370,9 +433,25 @@ function SelectFieldPlaceholder({ label }: { label: string }) {
   return (
     <Field label={label}>
       <div inert>
-        <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} />
+        <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} className="w-full" />
       </div>
     </Field>
+  );
+}
+
+/**
+ * The same control in the row it now stands in: the real SettingRow with
+ * its real title, and the real select on the right at the row's settled
+ * width, empty. The row is the shape the card draws (SettingRow,
+ * `control="wide"`), so the two cannot be different heights.
+ */
+function SelectRowPlaceholder({ label }: { label: string }) {
+  return (
+    <SettingRow title={t(label)} control="wide">
+      <div inert className="w-full">
+        <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} className="w-full" />
+      </div>
+    </SettingRow>
   );
 }
 

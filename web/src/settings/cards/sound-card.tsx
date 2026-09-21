@@ -1,5 +1,4 @@
 import { Volume2 } from 'lucide-react';
-import { Field } from '@/components/ui/field';
 import { SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
 import { Select } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
@@ -62,30 +61,33 @@ export function SoundCard() {
         </SettingRow>
       )}
 
-      <Field
-        label="Volume"
-        hint={
-          <span className="text-foreground font-mono text-sm tabular-nums">
+      {/* The readout rides with the slider rather than sitting up beside
+          the label, which is where the Field's hint put it: in a row the
+          label is on the other side of the card, and a percentage two
+          hundred pixels from the control it belongs to is a figure with
+          no owner. */}
+      <SettingRow title={t('Volume')} control="wide" className={cn(!sound && 'opacity-50')}>
+        <div className="flex w-full items-center gap-2">
+          <Slider
+            min={0}
+            max={100}
+            step={5}
+            value={Math.round(soundVolume * 100)}
+            disabled={!sound}
+            onValueChange={(v) => setSoundVolume((v as number) / 100)}
+            // Preview on release rather than on every step: dragging fires
+            // dozens of times and would machine-gun the sample.
+            onValueCommitted={() => previewSound('move', moveSound)}
+            aria-label={t('Volume')}
+            className="min-w-0 flex-1"
+          />
+          <span className="text-foreground w-10 shrink-0 text-right font-mono text-sm tabular-nums">
             {Math.round(soundVolume * 100)}%
           </span>
-        }
-        className={cn(!sound && 'opacity-50')}
-      >
-        <Slider
-          min={0}
-          max={100}
-          step={5}
-          value={Math.round(soundVolume * 100)}
-          disabled={!sound}
-          onValueChange={(v) => setSoundVolume((v as number) / 100)}
-          // Preview on release rather than on every step: dragging fires
-          // dozens of times and would machine-gun the sample.
-          onValueCommitted={() => previewSound('move', moveSound)}
-          aria-label={t('Volume')}
-        />
-      </Field>
+        </div>
+      </SettingRow>
 
-      <Field label="Move sound">
+      <SettingRow title={t('Move sound')} control="wide">
         <Select
           value={moveSound}
           onValueChange={(v) => {
@@ -93,11 +95,12 @@ export function SoundCard() {
             previewSound('move', v);
           }}
           ariaLabel={t('Move sound')}
+          className="w-full"
           groups={[{ options: MOVE_SOUNDS.map(soundOption('Move')) }]}
         />
-      </Field>
+      </SettingRow>
 
-      <Field label="Capture sound">
+      <SettingRow title={t('Capture sound')} control="wide">
         <Select
           value={captureSound}
           onValueChange={(v) => {
@@ -105,9 +108,10 @@ export function SoundCard() {
             previewSound('capture', v);
           }}
           ariaLabel={t('Capture sound')}
+          className="w-full"
           groups={[{ options: CAPTURE_SOUNDS.map(soundOption('Capture')) }]}
         />
-      </Field>
+      </SettingRow>
 
     </Card>
   );
