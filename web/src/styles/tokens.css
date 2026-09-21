@@ -572,3 +572,69 @@
   --radius: 0.625rem;
 }
 
+/* ---------------------------------------------------------------------------
+   Typefaces.
+
+   The stacks live here rather than in theme.css so that a platform can swap
+   one: theme.css is `@theme inline` and re-exports these as --font-sans,
+   --font-mono, --font-moves, --font-heading and --font-brand.
+
+   Pretendard replaced Inter because half this app's UI is Korean and Inter
+   has no hangul (index.css has the sizes). It is still the app's face
+   everywhere the OS does not bring a better one of its own.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --font-pretendard: 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-sans-stack: var(--font-pretendard);
+  /* The wordmark's face, pinned rather than inherited. The chrome may be
+     the platform's; the name as it is drawn beside the knight is the brand
+     and is the same letterform on every device. That it points at
+     --font-pretendard and not at --font-sans-stack is the whole of it: the
+     one above moves and this one does not. */
+  --font-brand-stack: var(--font-pretendard);
+  /* Pretendard sits in the mono stack ON PURPOSE, ahead of the generic
+     fallbacks. JetBrains Mono has no hangul, so a Korean word inside a
+     mono element fell through to whatever the OS offered, which is why
+     "엔진" and "깊이" rendered as two different typefaces two centimetres
+     apart, one of them not Pretendard. Latin still hits JetBrains Mono
+     first and keeps its fixed advance; only the characters JetBrains Mono
+     genuinely cannot draw reach Pretendard, and those were never going to
+     be monospaced anyway. */
+  --font-mono-stack: 'JetBrains Mono', 'Pretendard Variable', Pretendard, ui-monospace, 'SF Mono',
+    Menlo, monospace;
+}
+
+/* iOS draws its UI in the system's own face.
+
+   San Francisco is the letterform every other app on the phone is set in,
+   it is already on the device, and it carries its own optical sizing and
+   tracking per size, which a bundled face cannot. Apple SD Gothic Neo is
+   the system's hangul companion, named explicitly so the Korean UI is the
+   platform's too rather than a fallback nobody chose. -apple-system is
+   first because Safari resolves it to the real UI face at every optical
+   size; system-ui is behind it for any other engine on the platform.
+
+   Pretendard stays at the TAIL, and that is load-bearing rather than
+   leftover. Fallback is per character, so the only characters that reach
+   it are the ones neither system face draws: the figurine pieces
+   (U+2654 and up) that the move list, the explorer and the PV set in
+   --font-moves. They keep exactly the shapes they have today, while the
+   Latin and hangul chunks of the dynamic subset are no longer asked for.
+
+   The mono stack changes in the same one way. The FACE is still JetBrains
+   Mono, first and untouched; only the hangul that falls out of it lands on
+   the system companion instead of Pretendard, so a Korean word inside an
+   eval or a clock matches the sentence beside it.
+
+   Nothing else moves: Android and desktop never match this selector, and
+   the wordmark is pinned above. Headless Chromium on Windows has no San
+   Francisco, so the screenshot grid can only prove `phone` and `desktop`
+   did not move; the iOS look is read on the device. */
+:root[data-platform='ios'] {
+  --font-sans-stack: -apple-system, system-ui, 'Apple SD Gothic Neo', 'Pretendard Variable',
+    Pretendard, sans-serif;
+  --font-mono-stack: 'JetBrains Mono', 'Apple SD Gothic Neo', 'Pretendard Variable', Pretendard,
+    ui-monospace, 'SF Mono', Menlo, monospace;
+}
