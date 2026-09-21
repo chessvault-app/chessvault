@@ -10,8 +10,12 @@
     /* iOS standalone (home-screen) mode under-reports the viewport height
        until the first scroll, exposing the WKWebView's own black canvas
        below the app. Painting html in the app colour makes any such band
-       invisible on every device. */
-    background-color: var(--background);
+       invisible on every device. Reads --window-ground, not
+       --background: the two are the same colour everywhere but inside
+       the desktop shell with an OS window material behind the window,
+       where the document has to get out of the material's way
+       (styles/tokens.css). */
+    background-color: var(--window-ground);
     height: 100%;
     /* The document never scrolls (the shell is a fixed box, measured 0px
        of overflow on every route at 375x812), so a scroll that reaches it
@@ -93,7 +97,8 @@
   }
 
   body {
-    background-color: var(--background);
+    /* The window ground, as html above. */
+    background-color: var(--window-ground);
     color: var(--foreground);
     font-family: var(--font-sans);
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss03';

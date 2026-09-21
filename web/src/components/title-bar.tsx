@@ -61,6 +61,8 @@ interface TitleBarBridge {
   height: number;
   command: (name: string) => Promise<boolean>;
   setColors: (colors: { color: string; symbolColor: string }) => Promise<void>;
+  /** Newer than the bridge: an older shell simply does not have it. */
+  setTheme?: (resolved: 'light' | 'dark') => Promise<void>;
 }
 
 const bridge = (): TitleBarBridge | null =>
@@ -122,6 +124,11 @@ export function TitleBar() {
   const scheme = usePrefs((s) => s.scheme);
   useEffect(() => {
     if (!shell) return;
+    // The window's own theme, which is what tints an OS window material:
+    // Mica and vibrancy are drawn by the shell, not by the page, so
+    // without this a light app on a dark desktop gets a dark material
+    // under it. The APP's resolved theme, never the OS's.
+    void shell.setTheme?.(resolved);
     const frame = requestAnimationFrame(() => {
       // The band's own fill, which is the card's, not the page's: the
       // caption buttons the OS draws at its right end have to sit on

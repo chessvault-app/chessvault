@@ -157,6 +157,7 @@
      chosen for legibility, and its structure is the ring, restored
      below. lanph3re's call, 2026-09-07, from a mockup over the demo. */
   --background: oklch(calc(97% + (100% - 97%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+<<<<<<< HEAD
   /* The WINDOW's ground, from md: the tint the desktop shell is, that the
      sidebar and the title band share, with the page inset in it as one
      rounded panel (App.tsx). It is one rung below --background so that
@@ -173,6 +174,20 @@
      made before, where the panel's --window-ring is the structure that
      comes back at exactly that point. */
   --app-ground: oklch(calc(95% + (100% - 95%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+=======
+  /* The WINDOW's ground: what html and body paint (styles/base.css), as
+     opposed to what `bg-background` paints on an element. The same
+     colour everywhere but one place, and the indirection exists for
+     that place: inside the desktop shell, with the OS drawing a
+     material behind the window (Mica on Windows 11, sidebar vibrancy on
+     macOS), the document's own ground has to get out of the way or the
+     material is behind an opaque sheet and invisible. The override is
+     below, under the root attribute the shell bridge sets
+     (lib/platform.ts, startWindowMaterial); everywhere else, which is
+     every browser, Linux, Windows 10, the demo, and a desktop window
+     with the switch off, this is --background and nothing has moved. */
+  --window-ground: var(--background);
+>>>>>>> worktree-agent-a7bc42fbdf084edf1
   /* The card's edge. Transparent on the tonal page, where the fill is
      the edge; the full hairline at the top of the contrast knob, where
      the page is white again and the ring is the only structure. One
@@ -653,4 +668,25 @@
     Pretendard, sans-serif;
   --font-mono-stack: 'JetBrains Mono', 'Apple SD Gothic Neo', 'Pretendard Variable', Pretendard,
     ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* The OS's window material, the one override --window-ground has. Set by
+   the desktop shell alone (lib/platform.ts, startWindowMaterial), so no
+   browser, no phone and no demo ever matches this.
+
+   Two values, because the two materials are not the same thing. Mica is
+   near-opaque: the wallpaper reaches it as a tint, the app's ink keeps
+   its contrast against it, and the ground can go all the way out of the
+   way. macOS sidebar vibrancy is genuinely translucent and whatever is
+   behind the window comes through it, so the ground stays at 70% and
+   the material tints it rather than replacing it; at 0 the text over it
+   had no fixed thing to hold 4.5:1 against. Neither number is measured
+   against a real window yet, which is why the shell ships the material
+   off and the Settings switch is how it gets seen. */
+:root[data-window-material='mica'] {
+  --window-ground: transparent;
+}
+
+:root[data-window-material='vibrancy'] {
+  --window-ground: color-mix(in oklab, var(--background) 70%, transparent);
 }
