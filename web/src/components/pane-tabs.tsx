@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PANE_ICON, PANE_MARKER, paneMarkerStyle } from '@/components/pane-strip';
 import { t } from '@/lib/i18n';
 
 export interface PaneTab<T extends string> {
@@ -105,20 +106,15 @@ export function PaneTabs<T extends string>({
           className,
         )}
       >
-        {/* Ahead of the tabs in the DOM, so the icons paint over it. */}
+        {/* Ahead of the tabs in the DOM, so the icons paint over it.
+            Its face is in components/pane-strip, which is where the
+            outline that stands in for this strip reads it too. */}
         {header && (
           <span
             aria-hidden
             data-pane-indicator
-            className="bg-muted absolute inset-y-[3px] rounded-lg"
-            style={{
-              width: `calc(${100 / tabs.length}% - 6px)`,
-              left: `calc(${(at * 100) / tabs.length}% + 3px)`,
-              // Dragging left pulls the next pane in, so the fill goes
-              // right: a pane's travel is a tab's width here. --pane-dx is
-              // the column's, inherited; at rest it is unset and this is 0.
-              transform: `translateX(calc(var(--pane-dx, 0px) / -${tabs.length}))`,
-            }}
+            className={PANE_MARKER}
+            style={paneMarkerStyle(tabs.length, at)}
           />
         )}
         {tabs.map((tab) => {
@@ -152,7 +148,7 @@ export function PaneTabs<T extends string>({
                 header && 'rounded-none after:hidden',
               )}
             >
-              {Icon ? <Icon className={header ? 'size-[1.125rem]' : 'size-3.5'} /> : t(tab.label)}
+              {Icon ? <Icon className={header ? PANE_ICON : 'size-3.5'} /> : t(tab.label)}
             </TabsTrigger>
           );
         })}
