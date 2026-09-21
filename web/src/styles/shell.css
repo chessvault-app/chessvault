@@ -143,6 +143,17 @@
   :root[data-platform='ios'] [data-chrome] button[data-search-cancel]:not([aria-hidden='true']) {
     @apply glass text-foreground h-10 rounded-full px-4 shadow-md ring-1 ring-window-ring active:opacity-70;
   }
+
+  /* A sheet's own close, in its band's trailing corner (dialog.tsx). The
+     same circle as the chrome rows above, and the same vocabulary, but
+     scoped to the window rather than to a [data-chrome] row: marking the
+     band data-chrome would hand the back chevron and the row's actions
+     the chrome shapes of BOTH platforms, and this is an iPhone-only
+     control. The button is drawn only for an iOS phone sheet, so the
+     rule has nothing else to exclude. */
+  :root[data-platform='ios'] [data-slot='dialog-content'] button[data-chrome-circle] {
+    @apply glass size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring active:opacity-70;
+  }
 }
 
 /* Android: a page's chrome buttons take Material 3 Expressive's shapes.

@@ -649,6 +649,11 @@ function DialogContent({
   const alertCard = React.use(AlertCardContext);
   const lowered = React.use(SheetLoweredContext);
   const small = size === 'sm';
+  // The iPhone's own way out of a sheet, in the title row below. SHEETS
+  // only: `phone` is the SheetContext, which is false for a desktop card
+  // and false for the centred `ask` card, whose two answers ARE its way
+  // out and which is not dragged away from anywhere.
+  const sheetClose = phone && currentPlatform() === 'ios';
 
   // The second-page bookkeeping. `covered` counts the pages currently
   // drawn over this window's content; `cover` is what those pages call,
@@ -951,9 +956,23 @@ function DialogContent({
               {t(title)}
             </DialogTitle>
             {actions}
-            {/* A way out for the mouse, and only for the mouse: a phone
-                has three already — drag the sheet down, tap the scrim,
-                press Back.
+            {/* A way out for the mouse, and on an iPhone for the thumb.
+
+                On a desktop this is the registry's X and the only visible
+                way out of a window with no button row. An Android phone
+                shows none: the sheet drags away from anywhere on itself,
+                the scrim closes it, and Back is a gesture the platform
+                always has. An iPHONE has neither of the last two to speak
+                of — a `fill` sheet leaves the scrim a strip, and there is
+                no Back inside a sheet — which left the drag alone, so it
+                takes the close iOS 26 puts in a sheet's own top corner
+                (lanph3re's call, 2026-09-21): the glass circle the page
+                headers' icon actions wear, drawn by the one rule in
+                styles/shell.css that reads `data-chrome-circle` inside a
+                window, with the 44px hit area on the pseudo-element the
+                small controls here use. It sits after the row's own
+                `actions`, and it closes THE SHEET even on a page that
+                shows a chevron, which is the verb below.
 
                 Out, not back: it shuts this window and every window this
                 one was opened inside, so it means the same thing on page
@@ -961,14 +980,25 @@ function DialogContent({
                 primitive's own Close, which shuts one Root — and one Root
                 is one PAGE here, so on a nested page the X uncovered the
                 parent and read as a second chevron. The chevron beside it
-                is the control that steps back; this one leaves. */}
+                is the control that steps back; this one leaves.
+
+                `dismissAll` starts with this window's own `close`, which
+                is the Dialog's held exit (depart), so the sheet slides
+                away before the caller hears anything — the same door the
+                quick switcher's Cancel goes through. */}
             <Button
               data-slot="dialog-close"
+              data-chrome-circle={sheetClose ? '' : undefined}
               variant="ghost"
               size="icon-sm"
               title={t('Close')}
               aria-label={t('Close')}
-              className="-my-1 -mr-1.5 hidden shrink-0 sm:inline-flex"
+              className={cn(
+                'shrink-0',
+                sheetClose
+                  ? "relative -mr-0.5 inline-flex after:absolute after:-inset-0.5 after:content-['']"
+                  : '-my-1 -mr-1.5 hidden sm:inline-flex',
+              )}
               onClick={dismissAll}
             >
               <XIcon />
