@@ -296,6 +296,7 @@ export function usePullRefresh({
     let still = false;
     let ios = false;
     let live = true;
+    let settle = 0;
 
     /**
      * Move the indicator, and on iOS the page under it. Written to the
@@ -312,14 +313,35 @@ export function usePullRefresh({
       const node = indicator.current;
       const col = content.current;
       if (col && ios) {
+        // The page header stays where it is and what is under it moves:
+        // the gap opens BELOW the title row and the indicator sits in it
+        // (lanph3re, 2026-09-21; the first version moved the whole column
+        // and put the spinner above the title). So the column is not
+        // transformed. It carries the distance, and one rule in
+        // styles/pull-refresh.css moves every child of it that is not the
+        // header, only while `data-pull-live` is on the column: a transform
+        // left on those children at rest would re-anchor anything fixed
+        // inside them.
+        //
         // No transition while the finger is down: the content answers it
-        // frame by frame. On release the hold is taken instantly (the
-        // browser's own band is still springing back out from under it)
-        // and only the close at the end is animated, on the app's spring.
-        col.style.transition =
-          state === null && !still ? 'transform var(--pane-turn) var(--pane-turn-ease)' : 'none';
-        if (own > 0) col.style.transform = `translate3d(0,${own}px,0)`;
-        else col.style.removeProperty('transform');
+        // frame by frame. On release the hold is taken instantly and only
+        // the close at the end is animated, on the app's spring, after
+        // which the attribute comes off.
+        window.clearTimeout(settle);
+        const closing = state === null;
+        col.style.setProperty(
+          '--pull-transition',
+          closing && !still ? 'transform var(--pane-turn) var(--pane-turn-ease)' : 'none',
+        );
+        col.style.setProperty('--pull-own', `${Math.max(0, own)}px`);
+        if (!closing) col.dataset.pullLive = '';
+        else {
+          settle = window.setTimeout(() => {
+            delete col.dataset.pullLive;
+            col.style.removeProperty('--pull-own');
+            col.style.removeProperty('--pull-transition');
+          }, 500);
+        }
       }
       if (!node) return;
       if (state === null) {
@@ -383,6 +405,18 @@ export function usePullRefresh({
       if (claimed(e.target, scroller)) return;
       indicator.current = scroller.querySelector<HTMLElement>('[data-slot="pull-refresh"]');
       content.current = scroller.querySelector<HTMLElement>('[data-slot="pull-content"]');
+      // Where the header ends, measured from the scroller's top as the pull
+      // begins: the indicator hangs from the scroller's top edge and is
+      // placed this far down, under the title row. A page with no header
+      // leaves it unset and the placement falls back to the top inset.
+      const heads = content.current?.querySelectorAll<HTMLElement>(':scope > [data-page-header]');
+      const head = heads?.length ? heads[heads.length - 1] : null;
+      if (indicator.current) {
+        if (head) {
+          const foot = head.getBoundingClientRect().bottom - scroller.getBoundingClientRect().top;
+          indicator.current.style.setProperty('--pull-head', `${Math.max(0, foot)}px`);
+        } else indicator.current.style.removeProperty('--pull-head');
+      }
       const touch = e.touches[0]!;
       still = prefersReducedMotion();
       ios = iosLook();
@@ -423,6 +457,7 @@ export function usePullRefresh({
     scroller.addEventListener('touchcancel', onEnd, { passive: true });
     return () => {
       live = false;
+      window.clearTimeout(settle);
       scroller.removeEventListener('touchstart', onStart);
       scroller.removeEventListener('touchmove', onMove);
       scroller.removeEventListener('touchend', onEnd);

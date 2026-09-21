@@ -117,6 +117,11 @@ export function PageShell({
         // overlay bars varies by browser, so coarse pointers never
         // trust it).
         scroll && 'overflow-y-auto md:pointer-fine:[scrollbar-gutter:stable_both-edges]',
+        // A page that refreshes on a pull opens that gap itself, under its
+        // header. Safari's own rubber band would drag the header down with
+        // everything else, so this scroller asks for none on iOS; where the
+        // browser bands anyway the hook subtracts what it moved.
+        scroll && onRefresh !== undefined && 'ios:overscroll-y-none',
       )}
     >
       {/* Outside the column, not in it: the column is a flex box with a

@@ -1339,12 +1339,16 @@ drawn, and what one has to prove.
   one shared drawing could not: Android keeps Material's raised circle
   travelling over content that stays put, resting clear of the header's
   row, while iOS has no container at all, the bare 28px spoke indicator
-  centred in the gap and the content held 56px down until the refetch
-  settles. `contain` does not stop Safari's elasticity, so the gap is
-  whichever is larger, its rubber band or the app's own curve, and the
-  app translates only the difference; drawn against a fixed spot instead,
-  the indicator sat on the header's buttons in the middle of the band
-  (lanph3re, 2026-09-21). Both phones share through the system
+  centred in a gap that opens UNDER the page header, the title row
+  staying where it is (the header's two elements carry
+  `data-page-header`, and one rule moves every other child of the column
+  by `--pull-own`), and the content held 56px down until the refetch
+  settles. The adopting scroller asks Safari for no overscroll on iOS so
+  the app opens the whole gap; where the browser bands anyway the app
+  translates only the difference. Two earlier drawings were read on the
+  phone and dropped the same day: a circle at a fixed spot, which sat on
+  the header's buttons in the middle of the band, and the whole column
+  moved with the spinner above the title (lanph3re, 2026-09-21). Both phones share through the system
   sheet where one exists (`lib/share.ts`, a feature test and never the
   platform attribute; only the glyph reads the platform; nothing carrying
   book evidence is shareable). The theme-color metas are written from

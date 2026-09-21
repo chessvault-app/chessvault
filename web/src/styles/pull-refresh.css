@@ -23,17 +23,25 @@
       rotate(calc(var(--pull-p, 0) * 180deg));
   }
 
-  /* iOS: the bare indicator centred in the band, with no container to
-     travel. This element rides down with the content, so the gap's own
-     top is `--pull-gap` above it and the middle of what that leaves
-     under the status-bar inset is half of (--page-t - --pull-gap) from
-     here; `--pull-own` puts back the part of the drop the app made
-     rather than Safari, which this element did NOT ride down. The
-     spinner scales from 60% as it fades in, iOS's own reveal minus the
+  /* iOS: the bare indicator, UNDER the page header. The title row stays
+     where it is and the gap opens below it (the hook carries the distance
+     on the column as --pull-own and the rule below moves everything in the
+     column but the header). `--pull-head` is where the header ends,
+     measured from the scroller's top as the pull begins; the indicator is
+     centred in the gap under that, which is --pull-own plus the
+     column's own 1rem gap. With no header it falls back to the
+     top inset. If Safari still rubber-bands the scroller, the header and
+     this element ride that together, so the two stay in step. The spinner
+     scales from 60% as it fades in, iOS's own reveal minus the
      spoke-by-spoke fill, which the drawing cannot do from one variable
      without eight more rules. */
   [data-platform='ios'] [data-slot='pull-refresh'] > [data-slot='pull-indicator'] {
-    transform: translate3d(0, calc((var(--page-t) - var(--pull-gap, 0px)) / 2 + var(--pull-own, 0px)), 0)
+    transform: translate3d(0, calc(var(--pull-head, var(--page-t)) + (var(--pull-own, 0px) + 1rem) / 2), 0)
       scale(calc(0.6 + var(--pull-p, 0) * 0.4));
+  }
+
+  [data-platform='ios'] [data-slot='pull-content'][data-pull-live] > :not([data-page-header]) {
+    transform: translate3d(0, var(--pull-own, 0px), 0);
+    transition: var(--pull-transition, none);
   }
 }
