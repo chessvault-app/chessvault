@@ -6,6 +6,7 @@ import {
   LayoutGrid,
   PanelLeftClose,
   PanelLeftOpen,
+  Search,
   Settings,
   SquareMousePointer,
 } from 'lucide-react';
@@ -13,6 +14,8 @@ import { Fragment, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { navigate, sectionHref, type Section } from '@/lib/router';
 import { BrandMark, Wordmark } from '@/components/brand-mark';
+import { openQuickSwitcher } from '@/components/quick-switcher';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { TitleTip } from '@/components/title-tip';
 import { t } from '@/lib/i18n';
@@ -95,6 +98,77 @@ const NAV_ROW =
  */
 const navLabel = (folded: boolean): string =>
   cn('whitespace-nowrap transition-opacity duration-150 ease-out', folded && 'opacity-0');
+
+/**
+ * The way into the quick switcher, written on the screen.
+ *
+ * Ctrl/⌘ K has opened it since 2026-09-07 and nothing in a browser said
+ * so: the only visible entrance was Home's phone bar and, on the desktop
+ * shell, the band's centred button. A shortcut nobody is told about is a
+ * feature for whoever already knew. Under the wordmark is where every
+ * app of this shape puts it (Linear, Notion, Slack, VS Code's command
+ * centre), and the sidebar is the one column on every page at every
+ * desktop width.
+ *
+ * A BUTTON wearing a field's clothes, not a field. Typing happens in the
+ * switcher's own input, which takes focus when the window opens; a real
+ * input here would be a second place to type that forwards its letters,
+ * and two search boxes on one screen. The shape says "you can search"
+ * and the keycaps say how, which is all it is for.
+ *
+ * Folded, the rail has 68px and no room for a word: the glyph alone, on
+ * the rows' own geometry (NAV_ROW), with the tip every folded row takes.
+ */
+function SearchEntry({ folded }: { folded: boolean }) {
+  // The same test the switcher itself uses for its key hints.
+  const mod = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
+  if (folded) {
+    return (
+      <div className="px-2 pb-1">
+        <TitleTip title={t('Search')} side="right">
+          <button
+            type="button"
+            onClick={openQuickSwitcher}
+            aria-label={t('Search')}
+            className={cn(
+              NAV_ROW,
+              'text-muted-foreground hover:bg-accent hover:text-foreground w-full',
+              'outline-none focus-visible:ring-3 focus-visible:ring-ring',
+            )}
+          >
+            <Search className="size-[1.15rem] shrink-0" strokeWidth={2} />
+          </button>
+        </TitleTip>
+      </div>
+    );
+  }
+  return (
+    <div className="px-2 pb-1">
+      <button
+        type="button"
+        onClick={openQuickSwitcher}
+        className={cn(
+          // A field's box on the window's ground: the card's fill and the
+          // input's border, which is what every other field in this app
+          // is made of. The ink is the placeholder tier a field's own
+          // prompt would be written in.
+          'bg-card border-input text-muted-foreground hover:text-foreground flex h-9 w-full items-center gap-2 rounded-lg border px-2.5 text-sm',
+          'transition-colors duration-150',
+          // A button's focus ring, at the app's full alpha: this control
+          // is not a text field, so the halo IS the indicator here.
+          'outline-none focus-visible:ring-3 focus-visible:ring-ring',
+        )}
+      >
+        <Search className="size-4 shrink-0" />
+        <span className="truncate">{t('Search')}</span>
+        <KbdGroup className="ml-auto">
+          <Kbd>{mod}</Kbd>
+          <Kbd>K</Kbd>
+        </KbdGroup>
+      </button>
+    </div>
+  );
+}
 
 /** An indented child row under a top-level sidebar entry. */
 function SubNavItem({
@@ -238,6 +312,14 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
         </TitleTip>
         {!folded && foldSwitch}
       </div>
+
+      {/* Under the wordmark, and outside the scroller: it is an entrance,
+          not a destination, and it stays put while sixteen rows move.
+          Not drawn under the desktop shell's band, which carries the same
+          button centred on the window — the fold switch above is left out
+          for that reason too, and the same control twice on one screen is
+          the reason. */}
+      {!hasTitleBar() && <SearchEntry folded={folded} />}
 
       {/* The rows scroll; the brand row above and the footer below do not.
           The column used to be one clipped box, and under a laptop height
