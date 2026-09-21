@@ -86,6 +86,16 @@ const KNOWN: { shot: string; pair: 'O~D' | 'D~L'; key: string; why: string }[] =
     key: 'input|',
     why: 'the same toolbar: the page field itself, on a desktop.',
   },
+  // Owed.
+  {
+    shot: 'workspace',
+    pair: 'O~D',
+    // Every landmark below the board, 27 of them, by the same 4px: one
+    // phenomenon, so one entry rather than 27.
+    key: '',
+    why:
+      "OWED. The outline and the page's wait disagree by 4px on the board's size, so the whole column under it sits 4px low. Both run board-budget's arithmetic, and the disagreement is upstream of it, in the shell height each one measures; what changed on 2026-09-22 is only that it became visible. The panel's gutter went from 8px to Linear's 2px (App.tsx), the row grew 4px, and `capW - MOVES_MIN - EXPLORER_MIN - GAPS` stopped being the binding term in that Math.min: it had been clamping BOTH states to the same width and hiding the difference. Proved by rebuilding with the old gutter, where the run is clean, and with the gutter tight on three sides only, where the drift is identical, so it is the width and not the left edge. Not the eval lane either: the page passes EVAL_LANE_PX only while the engine is on, the outline passes 0, and 36 is not 4.",
+  },
 ];
 
 const SRC = resolve(REPO_ROOT, 'web/src');

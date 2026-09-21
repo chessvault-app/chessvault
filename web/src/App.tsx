@@ -300,7 +300,7 @@ function Shell() {
 // ladder's nearest rung to 7. The left margin comes back with the rest:
 // Linear gutters that side too, though ours cannot be seen while the
 // window ground and the sidebar are one colour.
-          'md:bg-background md:m-0.5 md:rounded-md md:ring-1 md:ring-panel-ring',
+          'md:bg-background md:m-0.5 md:ml-0 md:rounded-md md:ring-1 md:ring-panel-ring',
         )}
       >
         {/*
