@@ -1309,7 +1309,20 @@ function DialogContent({
         // the empty states follow. `grid` is passed alongside so the merge
         // retires the overlay's own `flex`; its `justify-center` is a
         // no-op on the utility's single full-width column.
-        className="grid optical-center p-4"
+        className={cn(
+          'grid optical-center p-4',
+          // Under the iPhone's glass alert the scrim dims and does NOT blur.
+          // The first glass card stood over this overlay's usual blur, and
+          // its ground sampled 40 to 44 in dark and 227 to 230 in light
+          // across the whole card: the material had a flat grey to refract
+          // and showed nothing for its cost. The platform's own alert dims
+          // the page lightly and leaves it sharp, which is what gives the
+          // glass something to be glass over; the card's own 12px blur is
+          // then the only one on screen. A quarter black, a little over the
+          // usual tenth, since the dim is now doing the blur's share of
+          // setting the alert apart.
+          alertCard === 'ios' && 'bg-black/25 supports-backdrop-filter:backdrop-blur-none',
+        )}
         // Hidden by its caller: gone from layout entirely.
         style={shut ? { display: 'none' } : undefined}
       >
