@@ -63,7 +63,10 @@ import {
   type ResultFilter,
   type SideFilter,
   type StructuredFilters,
-  QUICK_SELECT,
+  quickChip,
+  ClearFiltersButton,
+  CHIP_ON,
+  CHIP_SHAPE,
   useFiltersFolded,
 } from './GameFilters';
 
@@ -968,18 +971,18 @@ export function ArchiveBrowser({
             // Not below sm: the phone's row has room for the handle, the
             // globe and the filters button, and the account's whole span
             // ("Any date") is what loads there.
-            className={cn('min-w-0 flex-1 max-sm:hidden', merged && 'flex-none')}
+            className={cn('min-w-0 max-sm:hidden', CHIP_SHAPE, month !== ALL_MONTHS && CHIP_ON)}
             groups={monthGroups}
           />
           <SideSelect
             value={sideFilter}
             onChange={setSideFilter}
-            className={cn(QUICK_SELECT, merged && 'flex-none')}
+            className={quickChip(sideFilter !== 'any')}
           />
           <ResultSelect
             value={resultFilter}
             onChange={setResultFilter}
-            className={cn(QUICK_SELECT, merged && 'flex-none')}
+            className={quickChip(resultFilter !== 'any')}
           />
           {/* The same More-filters window the collection and the elite
               browser carry, answered client-side against the loaded
@@ -993,6 +996,20 @@ export function ArchiveBrowser({
               setEditingFilters(true);
             }}
           />
+          {(sideFilter !== 'any' ||
+            resultFilter !== 'any' ||
+            hasStructuredFilters(structured)) && (
+            // The month is not cleared: it is which month was LOADED, not
+            // a filter over what is in hand, and dropping it would put a
+            // fetch behind a button that says it only clears.
+            <ClearFiltersButton
+              onClick={() => {
+                setSideFilter('any');
+                setResultFilter('any');
+                setStructured(EMPTY_STRUCTURED_FILTERS);
+              }}
+            />
+          )}
           {editingFilters && (
             <StructuredFiltersWindow
               initial={structured}
@@ -1099,9 +1116,10 @@ export function ArchiveBrowser({
    * left as the rows came in. In the band above md the shell drew
    * `SkeletonFilterRow`, which is the COLLECTION's three selects —
    * "Anyone's games", "Any result", "All games" — on a row that says
-   * "Any date", "Either side" and "Any result". Nothing moved there
-   * (every select in both rows is `min-w-0 flex-1`); three wrong words
-   * flashed, on the one list whose filters are not the collection's.
+   * "Any date", "Either side" and "Any result". Three wrong words
+   * flashed, on the one list whose filters are not the collection's —
+   * and now that a chip is as wide as its own label, they would move the
+   * row as well as misname it.
    */
   const waitingFilters =
     filters ??
@@ -1112,11 +1130,11 @@ export function ArchiveBrowser({
           ariaLabel={t('Archive month')}
           size="sm"
           disabled
-          className={cn('min-w-0 flex-1 max-sm:hidden', merged && 'flex-none')}
+          className={cn('min-w-0 max-sm:hidden', CHIP_SHAPE)}
           groups={monthGroups}
         />
-        <SideSelect value="any" onChange={NOOP} className={cn(QUICK_SELECT, merged && 'flex-none')} />
-        <ResultSelect value="any" onChange={NOOP} className={cn(QUICK_SELECT, merged && 'flex-none')} />
+        <SideSelect value="any" onChange={NOOP} className={quickChip(false)} />
+        <ResultSelect value="any" onChange={NOOP} className={quickChip(false)} />
         <MoreFiltersButton on={false} onClick={NOOP} />
       </Inert>
     ) : undefined);

@@ -27,6 +27,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
 import { useInHeaderTwin } from './header-slots';
+import { MORE_FILTERS_CHIP, MORE_FILTERS_LABEL } from './filter-chips';
 
 /**
  * The one filter vocabulary for every list of games.
@@ -78,12 +79,23 @@ export function MoreFiltersButton({
       // after the name it derives from `title`, so an explicit undefined
       // would erase that fallback and leave the button unnamed.
       {...(quick > 0 ? { 'aria-label': t('More filters, {n} on', { n: quick }) } : {})}
-      className="relative shrink-0"
+      className={cn('relative shrink-0', MORE_FILTERS_CHIP)}
       onClick={onClick}
     >
       <SlidersHorizontal className="glyph" />
+      {/* The bar's last chip says what it opens, from `md` up — where the
+          chips beside it are all words, an unlabelled square was the one
+          control in the row you had to hover to read. Below md the row is
+          this button alone and the label would be most of the width, so
+          it stays the icon it has always been and keeps its count badge. */}
+      <span className="max-md:hidden">{t(MORE_FILTERS_LABEL)}</span>
       {on && (
-        <span aria-hidden className="bg-primary absolute right-1 top-1 size-1.5 rounded-full" />
+        // Corner dot while it is a square; inline after the label once it
+        // is a pill, where a corner is off the fill.
+        <>
+          <span aria-hidden className="bg-primary absolute right-1 top-1 size-1.5 rounded-full md:hidden" />
+          <span aria-hidden className="bg-primary hidden size-1.5 shrink-0 rounded-full md:block" />
+        </>
       )}
       {quick > 0 && (
         <span
@@ -97,9 +109,26 @@ export function MoreFiltersButton({
   );
 }
 
-/** The class a quick select wears in the row: from `md` up it stands in
-    the row, below it lives in the More filters window alone. */
-export const QUICK_SELECT = 'max-md:hidden';
+/**
+ * The bar's own vocabulary lives in a module with no components in it
+ * (filter-chips), so the placeholder that stands in for this row and the
+ * page's outline can both draw the same chips without importing the page.
+ */
+export { CHIP_ON, CHIP_SHAPE, MORE_FILTERS_LABEL, QUICK_SELECT, quickChip } from './filter-chips';
+
+/**
+ * Clear every filter this list is holding, shown only while it is
+ * holding one. It says the same thing as walking the chips back to their
+ * defaults and pressing Clear filters in the window; it is not a new
+ * constraint, and the caller owns what "clear" means for its own state.
+ */
+export function ClearFiltersButton({ onClick }: { onClick: () => void }) {
+  return (
+    <Button variant="ghost" size="sm" className="max-md:hidden shrink-0" onClick={onClick}>
+      {t('Clear all')}
+    </Button>
+  );
+}
 
 /**
  * True below `md`, where QUICK_SELECT hides the selects: the same edge, so
