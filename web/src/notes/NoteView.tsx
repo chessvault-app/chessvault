@@ -26,6 +26,7 @@ import { useMediaQuery } from '@/lib/media';
 import { usePinnedBand } from '@/hooks/use-pinned-band';
 import { JumpColumn, useJumpTargets, type JumpTarget } from '@/components/jump-list';
 import { t } from '@/lib/i18n';
+import { MARKDOWN_TYPE, shareFileName } from '@/lib/share-doc';
 import { api, apiErrorMessage } from '@/lib/api';
 
 const AUTOSAVE_MS = 1500;
@@ -574,6 +575,21 @@ function NoteEditor({
           }}
           mentions={{ section: 'notes', id }}
           history={{ kind: 'notes', id, name: id.split('/').at(-1)!, onRestored }}
+          // The note as the markdown file it is stored as, front matter
+          // and all: that block is the note's own other names, and a note
+          // that arrives somewhere else without them is a different
+          // document. Read out of the editor in the tap's own turn, so
+          // what is shared is what is on screen, saved or not.
+          share={
+            editor
+              ? {
+                  label: 'Share note',
+                  filename: shareFileName(id.split('/').at(-1)!, '.md'),
+                  type: MARKDOWN_TYPE,
+                  text: () => docToMarkdown(editor.state.doc, front.current),
+                }
+              : undefined
+          }
         />
         <Button data-chrome-circle=""
           variant={editable ? 'default' : 'secondary'}

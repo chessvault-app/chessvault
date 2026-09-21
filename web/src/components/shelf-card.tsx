@@ -35,6 +35,7 @@ export function ShelfCard({
   error,
   menuTitle,
   actions,
+  onMenuOpen,
   onOpen,
   onSwipeAway,
   children,
@@ -59,6 +60,12 @@ export function ShelfCard({
   /** What the ⋯ sheet is called; the title by default. */
   menuTitle?: string;
   actions: MenuAction[];
+  /**
+   * Either menu is about to open. Opt-in, and for one thing only: a verb
+   * whose content the card does not hold yet (hooks/use-shared-document).
+   * It runs on every open, so it has to be cheap and idempotent.
+   */
+  onMenuOpen?: () => void;
   onOpen: () => void;
   /** Touch: swiping the card's contents left removes it (undoably). */
   onSwipeAway: () => void;
@@ -96,7 +103,17 @@ export function ShelfCard({
           same verbs, the game rows' own shape (lanph3re's call). Under a
           thumb the primitive stands aside, since the swipe and the ⋯
           already answer there. */}
-      <ActionContextMenu title={menuTitle ?? title} actions={actions}>
+      <ActionContextMenu
+        title={menuTitle ?? title}
+        actions={actions}
+        beforeOpen={
+          onMenuOpen &&
+          (() => {
+            onMenuOpen();
+            return true;
+          })
+        }
+      >
       <div
         // The surface answers a click, and only a click: it is not a
         // button. It was `role="button"` with the bookmark and the ⋯
@@ -303,7 +320,10 @@ export function ShelfCard({
             title={menuTitle ?? title}
             actions={actions}
             open={menuOpen}
-            onOpenChange={setMenuOpen}
+            onOpenChange={(next) => {
+              setMenuOpen(next);
+              if (next) onMenuOpen?.();
+            }}
           >
             <Button
               variant="ghost"

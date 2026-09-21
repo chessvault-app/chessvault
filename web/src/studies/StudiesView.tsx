@@ -44,6 +44,8 @@ import { MoveToDialog } from '@/components/move-to-dialog';
 import { StudyView } from './StudyView';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
+import { PGN_TYPE, shareFileName } from '@/lib/share-doc';
+import { useSharedDocument } from '@/hooks/use-shared-document';
 
 /** Router shell for the Studies section: list, or one open study. The
     list stays mounted under an open study (lib/keep-alive), so Back
@@ -913,6 +915,12 @@ function StudyCard({
 
   const name = study.id.split('/').at(-1)!;
   const folder = study.id.includes('/') ? study.id.slice(0, study.id.lastIndexOf('/')) : '';
+  const sharing = useSharedDocument({
+    label: 'Share study',
+    url: `/api/studies/${encodeURIComponent(study.id)}`,
+    filename: shareFileName(name, '.pgn'),
+    type: PGN_TYPE,
+  });
 
   const rename = async (value: string): Promise<void> => {
     setRenaming(false);
@@ -967,9 +975,14 @@ function StudyCard({
           onSelect: onToggleMark,
         },
         { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+        // The study as the .pgn file it is, without opening it first.
+        // The card holds only the shelf's summary, so the text is
+        // fetched as the menu opens; the hook says why not later.
+        ...sharing.actions,
         { label: 'Move to a folder', icon: FolderInput, onSelect: () => setMoving(true) },
         { label: 'Remove', icon: Trash2, danger: true, onSelect: onRemove },
       ]}
+      onMenuOpen={sharing.prime}
     >
       {/* Renaming and moving both ask one question, and both used to ask it
           inside the row — an input where the title was, a popover pinned to
