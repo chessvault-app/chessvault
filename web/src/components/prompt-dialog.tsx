@@ -57,8 +57,9 @@ export function PromptDialog({
   const titleId = useId();
   return (
     // `ask`: an alert with a single text field is the platform's own
-    // shape for "name this" on an iPhone, so there it is the centred
-    // card and not a sheet. The keyboard is already handled: the card
+    // shape for "name this" on both phones (iOS's text-field alert,
+    // M3's basic dialog with a field), so there it is the centred card
+    // and not a sheet. The keyboard is already handled: the card
     // is centred inside the layer the keyboard leaves visible (`vv-band`
     // on the overlay, `dialog.tsx`), which is the same band the sheet
     // was pinned to, so the card rises with it rather than being covered.
@@ -142,7 +143,7 @@ function PromptBody({
           }}
         />
         {error && <p className="text-destructive text-sm">{error}</p>}
-        <div className={cn('flex justify-end gap-2', alertCard && 'max-sm:[&>*]:flex-1')}>
+        <div className={cn('flex justify-end gap-2', alertCard === 'ios' && 'max-sm:[&>*]:flex-1')}>
           {/* On a desktop, a way out that is not the scrim: tapping outside
               works, but a dialog asking for one value should say so rather
               than expect you to know. A phone's sheet already says so, with
@@ -150,9 +151,10 @@ function PromptBody({
               of; a Cancel beside the one answer was a second button for the
               thumb to tell apart, so the answer takes the whole row there.
 
-              The iOS alert card has neither the handle nor the X, and its
-              two answers sit side by side the way the platform's own
-              prompt draws them, so Cancel comes back there. */}
+              An alert card has neither the handle nor the X, so Cancel
+              comes back on both of them: side by side, each half the
+              card, the way iOS's own prompt draws them, and at the end of
+              the row at its own width on the Material card. */}
           <Button
             variant="ghost"
             size="sm"
@@ -164,7 +166,7 @@ function PromptBody({
           <Button
             variant="default"
             size="sm"
-            className="max-sm:flex-1"
+            className={alertCard === 'material' ? undefined : 'max-sm:flex-1'}
             disabled={!draft.trim()}
             onClick={submit}
           >

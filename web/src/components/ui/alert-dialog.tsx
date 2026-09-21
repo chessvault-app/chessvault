@@ -23,10 +23,9 @@ import {
  * way out). What a confirmation owes a screen reader it keeps:
  * `role="alertdialog"`.
  *
- * `ask`: this IS the question, so on an iPhone it is the platform's
- * centred alert rather than a bottom sheet (AlertCardContext in
- * `dialog.tsx` says why, and what that changes). Nothing moves on
- * Android or on a desktop.
+ * `ask`: this IS the question, so on a phone it is the platform's centred
+ * alert rather than a bottom sheet (AlertCardContext in `dialog.tsx` says
+ * why, and what that changes). Nothing moves on a desktop.
  */
 function AlertDialog(props: React.ComponentProps<typeof Dialog>) {
   return <Dialog data-slot="alert-dialog" ask {...props} />;
@@ -52,11 +51,17 @@ function AlertDialogContent({ size = 'sm', className, ...props }: DialogContentP
 }
 
 function AlertDialogHeader({ className, ...props }: React.ComponentProps<typeof DialogHeader>) {
+  // The Material card aligns its title and its body to the start, which
+  // is M3's own rule for the basic dialog and reads as the rest of the
+  // app: every other block of prose here starts at the same edge. The
+  // centred stack is the phone sheet's and the iOS card's.
+  const alertCard = useAlertCard();
   return (
     <DialogHeader
       data-slot="alert-dialog-header"
       className={cn(
         'grid grid-rows-[auto_1fr] place-items-center gap-1.5 text-center has-data-[slot=alert-dialog-media]:grid-rows-[auto_auto_1fr] has-data-[slot=alert-dialog-media]:gap-x-4 sm:group-data-[size=default]/alert-dialog-content:place-items-start sm:group-data-[size=default]/alert-dialog-content:text-left sm:group-data-[size=default]/alert-dialog-content:has-data-[slot=alert-dialog-media]:grid-rows-[auto_1fr]',
+        alertCard === 'material' && 'max-sm:place-items-start max-sm:text-left',
         className,
       )}
       {...props}
@@ -85,13 +90,17 @@ function AlertDialogFooter({ className, ...props }: React.ComponentProps<typeof 
   // this one: the danger tone passes `max-sm:flex-col` to keep Cancel
   // out from under the thumb that just pressed the trigger, and that is
   // the same call on a card as on a sheet.
+  // The Material card puts its answers in a row at the END, each as wide
+  // as its own words: text buttons, not a split pair. Same row, different
+  // division of the width.
   const alertCard = useAlertCard();
   return (
     <DialogFooter
       data-slot="alert-dialog-footer"
       className={cn(
         'sm:group-data-[size=sm]/alert-dialog-content:grid sm:group-data-[size=sm]/alert-dialog-content:grid-cols-2',
-        alertCard && 'max-sm:flex-row max-sm:[&>*]:flex-1',
+        alertCard === 'ios' && 'max-sm:flex-row max-sm:[&>*]:flex-1',
+        alertCard === 'material' && 'max-sm:flex-row max-sm:justify-end',
         className,
       )}
       {...props}
@@ -133,6 +142,11 @@ function AlertDialogDescription({ className, ...props }: React.ComponentProps<ty
  * removal, the way the registry's own destructive example does it. It
  * should name its action ("Reset all progress"): "Confirm" answers a
  * question you have already stopped reading.
+ *
+ * On the Material card it is a TEXT button: M3's basic dialog has no
+ * filled answer, and a destructive one is drawn in the destructive ink
+ * rather than in a destructive fill. Both of the app's own colours, not
+ * the platform's.
  */
 function AlertDialogAction({
   className,
@@ -140,10 +154,23 @@ function AlertDialogAction({
   size = 'default',
   ...props
 }: React.ComponentProps<typeof Button>) {
+  const text = useAlertCard() === 'material';
   return (
     <DialogClose
       render={
-        <Button data-slot="alert-dialog-action" variant={variant} size={size} className={cn(className)} {...props} />
+        <Button
+          data-slot="alert-dialog-action"
+          variant={text ? 'ghost' : variant}
+          size={size}
+          className={cn(
+            text &&
+              (variant === 'destructive'
+                ? 'text-destructive hover:text-destructive hover:bg-destructive/10'
+                : 'text-primary hover:text-primary'),
+            className,
+          )}
+          {...props}
+        />
       }
     />
   );
@@ -162,15 +189,17 @@ function AlertDialogCancel({
   autoFocus = true,
   ...props
 }: React.ComponentProps<typeof Button>) {
+  // Material's dismissive answer is a text button beside the other one.
+  const text = useAlertCard() === 'material';
   return (
     <DialogClose
       render={
         <Button
           data-slot="alert-dialog-cancel"
-          variant={variant}
+          variant={text ? 'ghost' : variant}
           size={size}
           autoFocus={autoFocus}
-          className={cn(className)}
+          className={cn(text && 'text-primary hover:text-primary', className)}
           {...props}
         />
       }

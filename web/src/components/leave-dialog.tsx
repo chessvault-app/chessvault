@@ -85,9 +85,10 @@ export function LeaveDialog() {
     // which is an action sheet's job on iOS — and an action sheet is
     // anchored to the control that raised it, of which there is none
     // here (a navigation raised this, not a press). The HIG's own
-    // fallback is the alert, so on an iPhone this is the centred card
-    // with its three buttons still stacked, in the same order and the
-    // same weights.
+    // fallback is the alert, and Material's is the basic dialog for the
+    // same reason, so on either phone this is the centred card with its
+    // three buttons still stacked, in the same order and the same
+    // weights: three answers do not fit in a row, on either card.
     <Dialog
       ask
       open
