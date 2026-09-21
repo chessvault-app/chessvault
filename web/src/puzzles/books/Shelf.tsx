@@ -243,7 +243,9 @@ export function Shelf() {
   return (
     // `block`: this page spaces its sections with their own margins, not
     // the shell's column gap.
-    <PageShell width="medium">
+    // A pull asks /api/puzzlebooks again: the counts on these cards move
+    // as the books are solved, wherever they are being solved.
+    <PageShell width="medium" onRefresh={load}>
         <ShelfToolbar
           title={t('Puzzle books')}
           back={() => navigate('puzzles', 'hub')}

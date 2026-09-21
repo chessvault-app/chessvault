@@ -301,7 +301,9 @@ function NoteList() {
   return (
     // The studies shelf's tier, exactly: the two shelves hold the same kind
     // of thing and had no business being different sizes.
-    <PageShell width="wide">
+    // The same refetch the shelf runs on arrival, on a pull: notes,
+    // marks and link counts together.
+    <PageShell width="wide" onRefresh={refresh}>
       <ShelfToolbar
         title={t('Notes')}
         subtitle={
