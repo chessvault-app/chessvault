@@ -421,14 +421,16 @@
        read is already correct. The colour still arrives in one step; what
        goes is the 10-microsecond fade under it.
 
-       apply() reads the ROOT as well, for the theme-color metas, and this
-       rule does not reach that read. index.html's inline `html {
-       background-color }` is unlayered, so it outranks the layered rule in
-       this file and the metas take the OS scheme's colour rather than the
-       chosen theme's, under either motion setting: across that same switch,
-       with this rule and without it, the metas and the root's computed
-       colour both stayed rgb(245, 245, 245). That is a separate bug, older
-       than this block, and nothing here fixes it. */
+       The theme-color metas are written from that same body read, which is
+       why they are not listed separately here. apply() used to read the
+       ROOT for them, and the root cannot answer: index.html's inline
+       `html { background-color }` is unlayered, so it outranks the layered
+       rule in this file and the root takes the OS scheme's colour rather
+       than the chosen theme's, under either motion setting (across that
+       same switch, with this rule and without it, the metas and the root's
+       computed colour both stayed rgb(245, 245, 245)). That read moved to
+       the body in store/theme.ts, so the clamp above now governs the metas
+       too. */
     html,
     body {
       transition-property: none !important;
