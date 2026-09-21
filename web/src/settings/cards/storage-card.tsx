@@ -53,11 +53,14 @@ export function StorageCard({ storage }: { storage: StorageReport | null }) {
       <p className="text-muted-foreground text-sm leading-relaxed">
         {t('What the app keeps on disk. The vault is your documents. The rest is rebuilt or refetched after it is cleared from its own place.')}
       </p>
-      {/* iOS: the well gives up its own frame and its share of the row's
-          padding, so its rows sit flush in the group's card and read as
-          the group's own rows rather than as a list inside a list. Its
-          dividers are what separates them there. */}
-      <ul className="divide-border border-border divide-y rounded-lg border max-md:ios:-mx-4 max-md:ios:-my-2.5 max-md:ios:rounded-none max-md:ios:border-0">
+      {/* On a phone the well gives up its own frame and its share of the
+          row's padding, so its rows sit flush in the group's card and
+          read as the group's own rows rather than as a list inside a
+          list. Its dividers are what separates them there; on Android
+          the surrounding rows are separated by a gap instead, and this
+          one list keeps its rules, because a gap between every figure
+          would break a table of them into six cards. */}
+      <ul className="divide-border border-border divide-y rounded-lg border max-md:ios:-mx-4 max-md:ios:-my-2.5 max-md:ios:rounded-none max-md:ios:border-0 max-md:android:-mx-4 max-md:android:-my-3 max-md:android:rounded-none max-md:android:border-0">
         {STORAGE_AREAS.map(({ keys, label, section, anchor }) => {
           const area = areas && { bytes: keys.reduce((s, k) => s + (areas[k]?.bytes ?? 0), 0) };
           // A card that is not on this page (the demo has no Browsed
@@ -65,7 +68,7 @@ export function StorageCard({ storage }: { storage: StorageReport | null }) {
           const target = anchor ? document.getElementById(anchor) : null;
           const go = section ? () => navigate(section) : target ? () => target.scrollIntoView({ block: 'start' }) : null;
           return (
-            <li key={label} className="flex items-baseline gap-2 px-3 py-(--row-py) max-md:ios:min-h-11 max-md:ios:items-center max-md:ios:px-4">
+            <li key={label} className="flex items-baseline gap-2 px-3 py-(--row-py) max-md:ios:min-h-11 max-md:ios:items-center max-md:ios:px-4 max-md:android:min-h-12 max-md:android:items-center max-md:android:px-4">
               {go ? (
                 <button
                   type="button"
