@@ -157,6 +157,40 @@
      chosen for legibility, and its structure is the ring, restored
      below. lanph3re's call, 2026-09-07, from a mockup over the demo. */
   --background: oklch(calc(97% + (100% - 97%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  /* The WINDOW's ground, from md: the tint the desktop shell is, that the
+     sidebar and the title band share, with the page inset in it as one
+     rounded panel (App.tsx). It is one rung below --background so that
+     the panel reads as the thing in the frame rather than as the frame,
+     and the page inside the panel is unchanged: every card, skeleton and
+     tone a page draws still sits on --background exactly as before, so
+     only the frame moved. 95% is the step --glass-tint already uses for
+     "away from the ground", the one lanph3re measured as a faint grey
+     rather than a dirty one (2026-09-20). Under md this token is never
+     spent: a phone has no frame to be.
+
+     It follows the contrast knob to white like --background, and at the
+     top of the knob the two meet — which is the same trade the sidebar
+     made before, where the panel's --window-ring is the structure that
+     comes back at exactly that point. */
+  --app-ground-base: oklch(calc(95% + (100% - 95%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  /* What the frame paints, one step of indirection from the colour it
+     is. The window-material block at the foot of this file mixes the
+     frame's own colour with transparency, and a token cannot be
+     defined from itself; the dark theme overrides the BASE and takes
+     this line as it stands. */
+  --app-ground: var(--app-ground-base);
+  /* The WINDOW's ground: what html and body paint (styles/base.css), as
+     opposed to what `bg-background` paints on an element. The same
+     colour everywhere but one place, and the indirection exists for
+     that place: inside the desktop shell, with the OS drawing a
+     material behind the window (Mica on Windows 11, sidebar vibrancy on
+     macOS), the document's own ground has to get out of the way or the
+     material is behind an opaque sheet and invisible. The override is
+     below, under the root attribute the shell bridge sets
+     (lib/platform.ts, startWindowMaterial); everywhere else, which is
+     every browser, Linux, Windows 10, the demo, and a desktop window
+     with the switch off, this is --background and nothing has moved. */
+  --window-ground: var(--background);
   /* The card's edge. Transparent on the tonal page, where the fill is
      the edge; the full hairline at the top of the contrast knob, where
      the page is white again and the ring is the only structure. One
@@ -170,6 +204,12 @@
      is a card's, so the line is the one cue left. Outranks the registry's
      own ring-border on those files (lanph3re's call, 2026-09-08). */
   --window-ring: var(--card-ring);
+  /* The edge of the desktop's inset page panel (App.tsx). In light it is
+     the window ring: transparent on the tonal page, where the panel's fill
+     is its edge, and the hairline at the top of the contrast knob, where
+     frame and panel are both white and the ring is all that is left. Dark
+     sets it to nothing (tokens-dark.css). */
+  --panel-ring: var(--window-ring);
   /* The glass surface (utilities.css, `glass`): how much of the card's
      fill it keeps, how far it blurs what is under it, and the hairline
      at its edge. The fill and the blur are the two numbers a
@@ -572,3 +612,115 @@
   --radius: 0.625rem;
 }
 
+/* ---------------------------------------------------------------------------
+   Typefaces.
+
+   The stacks live here rather than in theme.css so that a platform can swap
+   one: theme.css is `@theme inline` and re-exports these as --font-sans,
+   --font-mono, --font-moves, --font-heading and --font-brand.
+
+   Pretendard replaced Inter because half this app's UI is Korean and Inter
+   has no hangul (index.css has the sizes). It is still the app's face
+   everywhere the OS does not bring a better one of its own.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --font-pretendard: 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-sans-stack: var(--font-pretendard);
+  /* The wordmark's face, pinned rather than inherited. The chrome may be
+     the platform's; the name as it is drawn beside the knight is the brand
+     and is the same letterform on every device. That it points at
+     --font-pretendard and not at --font-sans-stack is the whole of it: the
+     one above moves and this one does not. */
+  --font-brand-stack: var(--font-pretendard);
+  /* Pretendard sits in the mono stack ON PURPOSE, ahead of the generic
+     fallbacks. JetBrains Mono has no hangul, so a Korean word inside a
+     mono element fell through to whatever the OS offered, which is why
+     "엔진" and "깊이" rendered as two different typefaces two centimetres
+     apart, one of them not Pretendard. Latin still hits JetBrains Mono
+     first and keeps its fixed advance; only the characters JetBrains Mono
+     genuinely cannot draw reach Pretendard, and those were never going to
+     be monospaced anyway. */
+  --font-mono-stack: 'JetBrains Mono', 'Pretendard Variable', Pretendard, ui-monospace, 'SF Mono',
+    Menlo, monospace;
+}
+
+/* iOS draws its UI in the system's own face.
+
+   San Francisco is the letterform every other app on the phone is set in,
+   it is already on the device, and it carries its own optical sizing and
+   tracking per size, which a bundled face cannot. Apple SD Gothic Neo is
+   the system's hangul companion, named explicitly so the Korean UI is the
+   platform's too rather than a fallback nobody chose. -apple-system is
+   first because Safari resolves it to the real UI face at every optical
+   size; system-ui is behind it for any other engine on the platform.
+
+   Pretendard stays at the TAIL, and that is load-bearing rather than
+   leftover. Fallback is per character, so the only characters that reach
+   it are the ones neither system face draws: the figurine pieces
+   (U+2654 and up) that the move list, the explorer and the PV set in
+   --font-moves. They keep exactly the shapes they have today, while the
+   Latin and hangul chunks of the dynamic subset are no longer asked for.
+
+   The mono stack changes in the same one way. The FACE is still JetBrains
+   Mono, first and untouched; only the hangul that falls out of it lands on
+   the system companion instead of Pretendard, so a Korean word inside an
+   eval or a clock matches the sentence beside it.
+
+   Nothing else moves: Android and desktop never match this selector, and
+   the wordmark is pinned above. Headless Chromium on Windows has no San
+   Francisco, so the screenshot grid can only prove `phone` and `desktop`
+   did not move; the iOS look is read on the device. */
+:root[data-platform='ios'] {
+  --font-sans-stack: -apple-system, system-ui, 'Apple SD Gothic Neo', 'Pretendard Variable',
+    Pretendard, sans-serif;
+  --font-mono-stack: 'JetBrains Mono', 'Apple SD Gothic Neo', 'Pretendard Variable', Pretendard,
+    ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* The OS's window material, the only override --window-ground and
+   --app-ground have. Set by the desktop shell alone (lib/platform.ts,
+   startWindowMaterial), so no browser, no phone and no demo ever
+   matches this.
+
+   Two values, because the two materials are not the same thing. Mica is
+   near-opaque: the wallpaper reaches it as a tint, the app's ink keeps
+   its contrast against it, and the ground can go all the way out of the
+   way. macOS sidebar vibrancy is genuinely translucent and whatever is
+   behind the window comes through it, so the ground stays at 70% and
+   the material tints it rather than replacing it; at 0 the text over it
+   had no fixed thing to hold 4.5:1 against, and the sidebar's ink is
+   over the frame's mix rather than the page's. Neither number is
+   measured against a real window yet, which is why the shell ships the
+   material off and the Settings switch is how it gets seen. */
+/* From md only, and the breakpoint is the point: a material shows where
+   the window has a FRAME to show it in. From md the shell is one quiet
+   ground with the page inset in it as an opaque panel (App.tsx), which
+   is the division of labour both systems draw themselves: material
+   behind the title band, the navigation column and the gutter around
+   the content, and the content itself on a surface of its own. So the
+   FRAME's ground steps aside with the document's, and nothing else
+   does: the panel, and every card, sheet, popover, menu and toast on
+   it, keeps the fill it has today, because none of them is named here.
+   Under md there is no frame to be, the page fills the window, and a
+   material behind the reading surface is not what either system means
+   by one. Both tokens keep their opaque values there, so a narrow
+   window is exactly the window that shipped. */
+@media (min-width: 48rem) {
+  :root[data-window-material='mica'] {
+    --window-ground: transparent;
+    --app-ground: transparent;
+  }
+
+  :root[data-window-material='vibrancy'] {
+    --window-ground: color-mix(in oklab, var(--background) 70%, transparent);
+    /* The frame's own colour at the same 70%, not the page's: the
+       sidebar and the band are a rung below the panel and stay there,
+       tinted by what is behind the window rather than replaced by it.
+       The number is what the ink over it has to hold 4.5:1 against,
+       and it is the one thing in this block that a real window still
+       has to settle. */
+    --app-ground: color-mix(in oklab, var(--app-ground-base) 70%, transparent);
+  }
+}

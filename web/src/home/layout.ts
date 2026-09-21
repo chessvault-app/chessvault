@@ -37,7 +37,7 @@ export interface HomeLayout {
   off: string[];
 }
 
-/** Fifteen destinations and six cards exist; the cap is only there so a
+/** Fifteen destinations and seven cards exist; the cap is only there so a
     hand-edited value cannot make the page arbitrarily long. */
 export const MAX_HOME_TILES = 40;
 const MAX_HOME_ID = 64;
@@ -145,6 +145,13 @@ export const HOME_CARDS: readonly HomeCard[] = [
     label: 'Training',
     blurb: 'Solved today, and what is due for review.',
     phone: false,
+    desktop: true,
+  },
+  {
+    id: 'activity',
+    label: 'Activity',
+    blurb: 'Puzzles solved each day over the last six months.',
+    phone: true,
     desktop: true,
   },
   {

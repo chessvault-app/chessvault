@@ -277,6 +277,11 @@ export const ko: Record<string, string> = {
   'Najdorf, B90': '나이도르프, B90',
   'Other names for this study': '이 스터디의 다른 이름',
   'Other names for this game': '이 게임의 다른 이름',
+  // The document header's Share verb, beside those three. 공유 is the
+  // word for share throughout (the board's Share FEN and Share PGN).
+  'Share study': '스터디 공유',
+  'Share game': '게임 공유',
+  'Share note': '노트 공유',
   'Separated by commas. A [[link]] to any of these opens this document.': '쉼표로 구분합니다. 이 중 어떤 이름으로 [[링크]]해도 이 문서가 열립니다.',
   'Nothing in the vault is named this': '보관함에 이 이름을 가진 항목이 없습니다',
   'More than one document is named this': '이 이름을 가진 문서가 둘 이상입니다',
@@ -298,8 +303,24 @@ export const ko: Record<string, string> = {
   'Wide screens only.': '넓은 화면에서만 보입니다.',
   'The latest games in your collection, with their results.': '모음의 최신 게임과 그 결과.',
   'Solved today, and what is due for review.': '오늘 푼 수와 복습할 것.',
+  'Puzzles solved each day over the last six months.': '지난 6개월 동안 하루에 푼 퍼즐 수.',
   'The books you are in the middle of.': '풀고 있는 책.',
   'The studies and notes last touched.': '마지막으로 만진 스터디와 노트.',
+  // --- home, the activity grid ---------------------------------------------
+  // 'Activity' itself is in the insights section below, where the same
+  // word was already settled on for the same concept.
+  '{n} solved in the last 7 days': '최근 7일 동안 {n}개를 풀었습니다',
+  'Nothing solved in the last 7 days': '최근 7일 동안 푼 퍼즐이 없습니다',
+  'Nothing solved yet. A square fills in for each day you train.':
+    '아직 푼 퍼즐이 없습니다. 훈련한 날마다 칸이 하나씩 채워집니다.',
+  '{n} solved on {date}': '{date}에 {n}개를 풀었습니다',
+  'Nothing solved on {date}': '{date}에는 푼 퍼즐이 없습니다',
+  'Older than the attempts kept here': '여기에 보관된 기록보다 이전입니다',
+  'Puzzles solved each day over the last {w} weeks: {n} on {d} days.':
+    '최근 {w}주 동안 하루에 푼 퍼즐 수입니다. {d}일에 걸쳐 {n}개.',
+  'Puzzles solved each day over the last {w} weeks: none yet.':
+    '최근 {w}주 동안 하루에 푼 퍼즐 수입니다. 아직 없습니다.',
+
   'Off the page': '홈에서 숨김',
   'Nothing. Every destination is on home.': '없음. 모든 항목이 홈에 있습니다.',
   'Bring back': '되돌리기',
@@ -1085,7 +1106,11 @@ export const ko: Record<string, string> = {
   // The moves panel's overflow menu.
   'Load a position': '포지션 불러오기',
   'Copy FEN': 'FEN 복사',
+  'Share FEN': 'FEN 공유',
   'Copy PGN': 'PGN 복사',
+  'Share PGN': 'PGN 공유',
+  'Sharing is not available. Copied instead.': '공유를 사용할 수 없습니다. 대신 복사했습니다.',
+  'Could not share this': '공유하지 못했습니다',
   'Engine review': '엔진 리뷰',
   // The puzzle filters, as menus.
   Status: '상태',
@@ -1142,6 +1167,9 @@ export const ko: Record<string, string> = {
   'Point this window at a server, or host a folder on this device.':
     '이 창을 서버에 연결하거나, 이 기기의 폴더를 사용하세요.',
   'Switch…': '전환…',
+  'Window material': '창 재질',
+  'Lets the desktop show through behind the app, the way the system draws its own windows. The window reloads when you change it.':
+    '시스템이 자체 창을 그리는 방식대로 앱 뒤로 바탕 화면이 비치게 합니다. 바꾸면 창이 새로 고쳐집니다.',
   'Usernames pre-fill the archive browser on the Games page.':
     '사용자명은 게임 페이지의 온라인 기보 브라우저에 미리 채워집니다.',
   'Save profile': '프로필 저장',

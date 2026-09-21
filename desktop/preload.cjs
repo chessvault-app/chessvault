@@ -41,5 +41,16 @@ contextBridge.exposeInMainWorld('vaultShell', {
     // language, and on Windows it clipped its descenders).
     command: (name) => ipcRenderer.invoke('window:command', name),
     setColors: (colors) => ipcRenderer.invoke('window:title-bar-colors', colors),
+    // The OS's window material (Mica on Windows 11, sidebar vibrancy on
+    // macOS). `material()` is what the page asks at startup so it can
+    // put `data-window-material` on the root and let its ground go
+    // transparent; `setMaterial` is the Settings switch. Both answer
+    // { supported: false } anywhere the OS has no such thing, which is
+    // every browser, Linux and Windows 10.
+    material: () => ipcRenderer.invoke('window:material'),
+    setMaterial: (on) => ipcRenderer.invoke('window:material-set', on),
+    // The window's own theme, so the material is tinted by the APP's
+    // theme and not by the OS's.
+    setTheme: (resolved) => ipcRenderer.invoke('window:theme', resolved),
   },
 });

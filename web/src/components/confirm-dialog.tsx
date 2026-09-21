@@ -160,14 +160,12 @@ export function ConfirmDialog(
               <AlertDialogTitle>{t(confirmLabel)}</AlertDialogTitle>
               <AlertDialogDescription>{t(question)}</AlertDialogDescription>
             </AlertDialogHeader>
-            {/* On a phone the footer stacks column-reverse, which puts
-                the action on top: right for an ordinary dialog, where
-                the primary belongs under the thumb, and wrong for a
-                destructive one, where the thumb that just opened the
-                sheet is resting exactly there. The danger tone keeps
-                Cancel on top on a phone, so the irreversible answer
-                takes a deliberate reach. */}
-            <AlertDialogFooter className={tone === 'danger' ? 'max-sm:flex-col' : undefined}>
+            {/* The danger tone used to stack Cancel over the action on a phone,
+                because the thumb that opened a SHEET rests on its bottom edge,
+                where the action would have been. A question is a centred card
+                on every phone now, with no edge under the thumb, so both tones
+                take the platform's own button row (lanph3re, 2026-09-21). */}
+            <AlertDialogFooter>
               {/* Cancel takes the focus (AlertDialogCancel autofocuses): a
                   confirmation opens under the keyboard on the answer that
                   loses nothing. */}

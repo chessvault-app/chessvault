@@ -1,0 +1,47 @@
+/* Where a pull to refresh puts its indicator (components/pull-refresh,
+   hooks/use-pull-refresh). Two placements, one per platform's own
+   control, from the two custom properties the hook writes: `--pull-gap`,
+   how tall the gap at the top of the scroller is, and `--pull-own`, how
+   much of that gap the app opened rather than the browser's own rubber
+   band.
+
+   Here rather than in an arbitrary Tailwind value because both are
+   expressions over three variables, and a class name that spells one out
+   with underscores for its spaces is not something the next reader can
+   check. In @layer components, so a caller's own utility still wins. */
+
+@layer components {
+  /* Material: a raised circle travelling down over content that never
+     moves. One to one with the finger, offset past the status-bar inset
+     and the page header's 44px row so it comes to rest clear of the
+     header's buttons instead of on them, which is where Material puts it
+     under a top app bar. At the 64px that commits, the circle's middle
+     is 76px down and its box runs 60 to 92, and the header row ends at
+     60. */
+  [data-slot='pull-refresh'] > [data-slot='pull-indicator'] {
+    transform: translate3d(0, calc(var(--page-t) + var(--pull-gap, 0px) + 0.75rem), 0)
+      rotate(calc(var(--pull-p, 0) * 180deg));
+  }
+
+  /* iOS: the bare indicator, UNDER the page header. The title row stays
+     where it is and the gap opens below it (the hook carries the distance
+     on the column as --pull-own and the rule below moves everything in the
+     column but the header). `--pull-head` is where the header ends,
+     measured from the scroller's top as the pull begins; the indicator is
+     centred in the gap under that, which is --pull-own plus the
+     column's own 1rem gap. With no header it falls back to the
+     top inset. If Safari still rubber-bands the scroller, the header and
+     this element ride that together, so the two stay in step. The spinner
+     scales from 60% as it fades in, iOS's own reveal minus the
+     spoke-by-spoke fill, which the drawing cannot do from one variable
+     without eight more rules. */
+  [data-platform='ios'] [data-slot='pull-refresh'] > [data-slot='pull-indicator'] {
+    transform: translate3d(0, calc(var(--pull-head, var(--page-t)) + (var(--pull-own, 0px) + 1rem) / 2), 0)
+      scale(calc(0.6 + var(--pull-p, 0) * 0.4));
+  }
+
+  [data-platform='ios'] [data-slot='pull-content'][data-pull-live] > :not([data-page-header]) {
+    transform: translate3d(0, var(--pull-own, 0px), 0);
+    transition: var(--pull-transition, none);
+  }
+}

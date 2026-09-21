@@ -1,7 +1,8 @@
 import type { ComponentProps } from 'react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
+import { SettingRow } from '@/components/setting-row';
 import { FilePicker } from '@/components/file-picker';
 import { Inert } from '@/components/skeletons';
 import { cn } from '@/lib/utils';
@@ -44,7 +45,9 @@ export function ExistingChoice({
           ] as const
         ).map(([value, label, blurb]) => (
           <label key={value} className="flex cursor-pointer items-start gap-2">
-            <RadioGroupItem value={value} className="mt-0.5" />
+            {/* mt-0.5 lines the dot up with the first line of the label;
+                on iOS the mark is a checkmark centred on the whole row. */}
+            <RadioGroupItem value={value} className="mt-0.5 ios:mt-0" />
             <span className="text-base">
               {t(label)}
               <span className="text-muted-foreground block text-sm">{t(blurb)}</span>
@@ -68,12 +71,16 @@ function Option({
   blurb: string;
 }) {
   return (
-    <label className="text-muted-foreground flex cursor-pointer items-start gap-2 text-sm">
-      <Checkbox checked={checked} onCheckedChange={(on) => onChange(on === true)} className="mt-0.5" />
-      <span>
-        {title}
-        <span className="text-muted-foreground block">{blurb}</span>
-      </span>
+    // A lone boolean is a switch (lanph3re, 2026-09-21), and a switch with
+    // a title and a blurb is the app's settings row, so the row is reused
+    // rather than drawn again here. The label stays around it: Base UI's
+    // switch carries a hidden input, so the wrapper is both the control's
+    // accessible name and what makes the whole row toggle it, which is
+    // what the checkbox in this spot already did.
+    <label className="block cursor-pointer">
+      <SettingRow title={title} blurb={blurb}>
+        <Switch checked={checked} onCheckedChange={(on) => onChange(on)} />
+      </SettingRow>
     </label>
   );
 }

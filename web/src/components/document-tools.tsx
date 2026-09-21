@@ -1,4 +1,4 @@
-import { History, Link, MoreHorizontal, Tags } from 'lucide-react';
+import { History, Link, MoreHorizontal, Share, Share2, Tags } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,8 @@ import { AliasEditor } from '@/notes/AliasEditor';
 import { LinkedMentions } from '@/notes/LinkedMentions';
 import type { LinkSection } from '@shared/wikiLinks';
 import { useMediaQuery } from '@/lib/media';
+import { shareIcon } from '@/lib/share';
+import { CAN_SHARE, shareDocument } from '@/lib/share-doc';
 import { t } from '@/lib/i18n';
 
 /**
@@ -26,16 +28,28 @@ import { t } from '@/lib/i18n';
  *
  * Linked mentions drops its button when the document has none, and the
  * menu drops the verb on the same count, so a phone never offers a press
- * that opens nothing.
+ * that opens nothing. Share is dropped the same way where the browser has
+ * no sheet, which is every desktop one.
  */
 export function DocumentTools({
   aliases,
   mentions,
   history,
+  share,
 }: {
   aliases: { title: string; names: string[]; onSave: (names: string[]) => void };
   mentions: { section: LinkSection; id: string };
   history: { kind: HistoryKind; id: string; name: string; onRestored: () => void };
+  /**
+   * Send this document to another app, where the browser has a share
+   * sheet. Opt-in from the caller, because only the caller knows what
+   * its document IS: a study and a game are a `.pgn`, a note is a `.md`,
+   * and each reads its own text out of its own editor.
+   *
+   * `text` is called in the tap's own turn and must stay synchronous:
+   * `navigator.share` needs the gesture, and an await loses it.
+   */
+  share?: { label: string; filename: string; type: string; text: () => string };
 }) {
   // The md fold, as the moves panel reads it: below this the bar is a
   // phone's and the buttons go behind the ⋯.
@@ -79,7 +93,33 @@ export function DocumentTools({
       />
     </>
   );
-  if (!phone) return tools;
+  // Last on the bar and last in the menu, both. The three above are what
+  // this document points at and has been, read in that order; sending it
+  // somewhere else is not one of them, and putting it first would have
+  // pushed the reference verbs down the list a phone reads first.
+  const shareVerb = share && CAN_SHARE ? share : null;
+  const ShareGlyph = shareIcon();
+  if (!phone)
+    return (
+      <>
+        {tools}
+        {shareVerb && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="shrink-0"
+            title={t(shareVerb.label)}
+            onClick={() => shareDocument(shareVerb.text(), shareVerb.filename, shareVerb.type)}
+          >
+            {/* shareIcon()'s two icons, named rather than rendered
+                through the variable: a component chosen during render is
+                a component that remounts, and the lint rule that says so
+                is right even when this one never changes. */}
+            {ShareGlyph === Share ? <Share className="glyph" /> : <Share2 className="glyph" />}
+          </Button>
+        )}
+      </>
+    );
 
   const actions: MenuAction[] = [
     { label: aliases.title, icon: Tags, onSelect: () => setOpen('aliases') },
@@ -87,6 +127,17 @@ export function DocumentTools({
       ? [{ label: 'Linked mentions', icon: Link, onSelect: () => setOpen('mentions') }]
       : []),
     { label: 'Earlier versions', icon: History, onSelect: () => setOpen('history') },
+    // The sheet row's own press is the gesture navigator.share wants: the
+    // menu closes and calls onSelect in the same turn (action-menu.tsx).
+    ...(shareVerb
+      ? [
+          {
+            label: shareVerb.label,
+            icon: ShareGlyph,
+            onSelect: () => shareDocument(shareVerb.text(), shareVerb.filename, shareVerb.type),
+          },
+        ]
+      : []),
   ];
   return (
     <>

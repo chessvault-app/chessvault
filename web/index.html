@@ -32,9 +32,16 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <!-- Match the app background so the OS chrome (status bar area, Android
-         task switcher) blends with the page instead of flashing brand blue. -->
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
+    <!-- Match the app background so the OS chrome (an installed app's status
+         bar and, on the Android versions that tint it, the navigation band,
+         and the task switcher) blends with the page instead of flashing
+         brand blue. Both schemes are declared here so the colour is right at
+         parse time, before any script: the light one is #f5f5f5, the same
+         --background the ground below pins, and NOT white, which was a
+         lighter strip along the top of the app until the theme store's
+         first write landed. store/theme.ts overwrites both with the ground
+         the page actually resolved to, tint and contrast included. -->
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f5f5" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Chess Vault" />

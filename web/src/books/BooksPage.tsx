@@ -214,7 +214,9 @@ export function BooksPage() {
     ));
 
   return (
-    <PageShell width="medium">
+    // Forced past the library's own cache, which is what a pull means:
+    // the reader is asking the server, not the last answer it gave.
+    <PageShell width="medium" onRefresh={() => load(true)}>
       {/* The drop target is the page's content column: a PDF let go
           anywhere on the shelf is an upload. */}
       <div {...drop.handlers} className="contents">

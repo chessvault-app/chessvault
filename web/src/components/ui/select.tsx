@@ -441,6 +441,9 @@ function SelectField({
           id={root.id}
           aria-labelledby={`${prefix ? '' : label ? labelId : (fieldLabelId ?? '')} ${valueId}`.trim()}
           aria-description={description}
+          // The slot the popup trigger carries, so a rule written for "the
+          // select's trigger" finds the phone's button too; it had none.
+          data-slot="select-trigger"
           aria-haspopup="dialog"
           aria-expanded={open}
           onClick={() => setOpen(true)}

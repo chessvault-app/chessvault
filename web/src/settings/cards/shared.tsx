@@ -101,6 +101,12 @@ export interface VaultShell {
   updateStatus?: () => Promise<UpdateStatus>;
   onUpdateStatus?: (fn: (state: UpdateStatus) => void) => () => void;
   restartToUpdate?: () => Promise<boolean>;
+  /** The window's own chrome. Newer than the bridge, and the material
+      half is newer still, so every field here is asked for before use. */
+  titleBar?: {
+    material?: () => Promise<{ supported: boolean; enabled: boolean; kind: string } | undefined>;
+    setMaterial?: (on: boolean) => Promise<boolean>;
+  };
 }
 
 /** Bytes as something readable; a cache of a few megabytes should not be

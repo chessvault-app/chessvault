@@ -27,6 +27,7 @@
   --color-card-ring: var(--card-ring);
   --color-switch-on: var(--switch-on);
   --color-window-ring: var(--window-ring);
+  --color-panel-ring: var(--panel-ring);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-field-halo: var(--field-halo);
@@ -37,6 +38,8 @@
      but are no utilities: everything on the page speaks the registry's
      vocabulary above. */
   --color-background-accent: var(--background-accent);
+  /* The desktop window's ground, spent by the shell alone (App.tsx). */
+  --color-app-ground: var(--app-ground);
 
   /* The colour grammar (docs/design-principles.md): green, amber and blue
      each mean one thing; destructive above is the red. */
@@ -110,26 +113,28 @@
      moves — SAN. It is prose, not data: "Nf3" read aloud is a word, and the
              move lists it sits in already align by cell, not by character.
              Mono made every move list look like a terminal.
+     brand — the wordmark, and only the wordmark. The name as it is DRAWN
+             (components/brand-mark), which does not follow the platform
+             the way the chrome around it does.
 
      `moves` resolving to the same family as `sans` is not an accident to be
      collapsed away — the two answer different questions, and a move list is
-     exactly the place someone will want to change one without the other. */
-  --font-sans: 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system,
-    'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+     exactly the place someone will want to change one without the other.
+
+     The families themselves are in tokens.css and these are the re-export.
+     The indirection is not decoration: this block is `@theme inline`, so a
+     family written HERE as a literal is inlined into every `font-sans` and
+     `font-mono` utility at build time, and an override of the token would
+     then reach `var(--font-sans)` in base.css but not `placeholder:font-sans`
+     on a textarea. Pointing at a variable keeps the utility and the raw
+     `var()` reading the same value. */
+  --font-sans: var(--font-sans-stack);
   --font-moves: var(--font-sans);
   /* The registry's heading face is Geist; it has no hangul, and the app
-     has one voice — Pretendard, set so its Latin is Inter-shaped. */
+     has one voice, the same one the UI is set in. */
   --font-heading: var(--font-sans);
-  /* Pretendard sits in the mono stack ON PURPOSE, ahead of the generic
-     fallbacks. JetBrains Mono has no hangul, so a Korean word inside a
-     mono element fell through to whatever the OS offered — which is why
-     "엔진" and "깊이" rendered as two different typefaces two centimetres
-     apart, one of them not Pretendard. Latin still hits JetBrains Mono
-     first and keeps its fixed advance; only the characters JetBrains Mono
-     genuinely cannot draw reach Pretendard, and those were never going to
-     be monospaced anyway. */
-  --font-mono: 'JetBrains Mono', 'Pretendard Variable', Pretendard, ui-monospace, 'SF Mono',
-    Menlo, monospace;
+  --font-brand: var(--font-brand-stack);
+  --font-mono: var(--font-mono-stack);
 
   /* Three lifts, all cast in --shadow-color so they agree with each
      other and with the theme's hue — Tailwind's own shadow-sm/md are

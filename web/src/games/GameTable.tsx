@@ -24,8 +24,9 @@ import { TitleTip } from '@/components/title-tip';
  * real width can afford instead.
  *
  * Not an HTML table: the rows are `li` in GameListShell's ul, which is
- * what carries the virtualization, the zebra stripe and the scroll
- * sentinel. Header and rows agree on one grid template because both
+ * what carries the virtualization, the hairlines between rows and the
+ * scroll sentinel (the stripe that used to band them is the card rows'
+ * alone now — see the ul's classes). Header and rows agree on one grid template because both
  * read it from the SAME variable — `--gt-cols`, set by the pane on the
  * shell's table wrapper (listVars) from useGameTableVars, which folds
  * in the per-column widths the header's drag handles write. A pane too
@@ -372,7 +373,7 @@ export function GameTableHeader({
         {t('Column widths')}
       </button>
       <div
-        className={cn(GRID, 'text-muted-foreground min-h-7 py-1 text-xs font-medium')}
+        className={cn(GRID, 'group/gt-header text-muted-foreground min-h-7 py-1 text-xs font-medium')}
       >
         {colsOf(withStanding, withNotation).map((c, gripIndex) =>
           c.id === 'standing' ? (
@@ -416,13 +417,19 @@ export function GameTableHeader({
             ) : (
               <span className="truncate">{c.label ? t(c.label) : ''}</span>
             )}
-            {/* The column's edge, draggable: a slim nub standing in the
-                gap between headings. Width is written to the shared
-                store, so every table's rows follow the same template
-                the moment it moves. */}
+            {/* The column's edge, draggable. The nub is drawn only while
+                the pointer is on the header or the grip has focus: at
+                rest a vertical rule between every pair of headings is
+                the ruled column head of a reference-database grid, and
+                it was the loudest ink on a page whose own rows draw
+                none. The hit area, the cursor, the keyboard door and
+                the tooltip are untouched, so nothing about resizing
+                moved; only the standing rule did. Width is written to
+                the shared store, so every table's rows follow the same
+                template the moment it moves. */}
             <TitleTip title={t('Drag to resize · double-click to reset')}>
               <span
-                className="hover:bg-border absolute inset-y-0 -right-2 flex w-2.5 cursor-col-resize touch-none items-center justify-center rounded-sm"
+                className="hover:bg-border focus-visible:*:opacity-100 absolute inset-y-0 -right-2 flex w-2.5 cursor-col-resize touch-none items-center justify-center rounded-sm"
                 // The keyboard half, the rule the pane and panel grips
                 // share: arrows along the edge step it, Enter resets it.
                 role="separator"
@@ -479,7 +486,7 @@ export function GameTableHeader({
                 }}
                 onDoubleClick={() => setColWidth(c.id, null)}
               >
-                <span className="bg-border/60 h-3.5 w-px" />
+                <span className="bg-border/60 h-3.5 w-px opacity-0 transition-opacity duration-100 group-hover/gt-header:opacity-100" />
               </span>
             </TitleTip>
           </span>

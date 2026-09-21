@@ -15,6 +15,7 @@
    board-themes.css  Promotion picker, piece compositing, the board colour presets.
    shell.css         The sweep keyframes, the keyboard band (vv-band, kb-open), safe-area names, forced-colors.
    motion.css        View transitions: page turns, toasts, the shared board, reduced motion.
+   pull-refresh.css  Where the pull-to-refresh indicator sits, per platform.
    vault-tree.css    The Vault card's listing. */
 
 /* Cascade layer order, declared before anything else so it wins.
@@ -81,4 +82,7 @@
 @import './styles/board-themes.css';
 @import './styles/shell.css';
 @import './styles/motion.css';
+@import './styles/spinner.css';
+@import './styles/progress.css';
+@import './styles/pull-refresh.css';
 @import './styles/vault-tree.css';

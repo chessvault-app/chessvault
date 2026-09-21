@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/skeletons';
 import { HardDrive, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
+import { SETTINGS_LIST, SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
 import { api } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { size } from '@/settings/cards/shared';
@@ -85,7 +85,7 @@ export function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
            useSlowLoad: the choice here is not flash-or-nothing, it is
            flash-or-shove. */
         <>
-          <div className="divide-border border-border divide-y rounded-lg border">
+          <div className={SETTINGS_LIST}>
             <div className="flex items-center gap-2 py-(--row-py-dense) pl-3 pr-1.5">
               {/* h-7, matching the row's clear button — the tallest thing
                   in it, and so what the row takes its height from. The
@@ -119,7 +119,7 @@ export function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
       )}
       {players !== null && players.length > 0 && (
         <>
-          <ul className="divide-border border-border divide-y rounded-lg border">
+          <ul className={SETTINGS_LIST}>
             {players.map((p) => (
               <li key={`${p.provider}/${p.user}`} className="flex items-center gap-2 py-(--row-py-dense) pl-3 pr-1.5">
                 {/* The name and its sizes keep the baseline they shared

@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { PageShell } from '@/components/page-shell';
 import { pageTitleClass } from '@/components/page-header';
-import { SkeletonSettingRow } from '@/components/setting-row';
+import { SettingRow, SkeletonSettingRow } from '@/components/setting-row';
 import { TitleTip } from '@/components/title-tip';
 import { SkeletonVaultTree } from '@/components/skeletons';
 import { VAULT_ROWS } from '@/components/vault-tree';
+import { cn } from '@/lib/utils';
 import { manualUrl } from '@/lib/manual';
 import { isDemo } from '@/lib/demo';
 import { t } from '@/lib/i18n';
@@ -103,9 +104,104 @@ function JumpRow() {
 }
 
 /**
+ * What an iOS phone gives every direct child of a card's body: a row of
+ * the group, 44px under a thumb, with an inset hairline above it.
+ *
+ * Stated once, here, so every card inherits the shape rather than
+ * restating it fifteen times ("Platform-specific design",
+ * docs/design-principles.md: grouped inset lists are the iOS form of a
+ * list, and the grouped list IS the card there, as on the More page).
+ * A control that fits a right-aligned slot is a SettingRow, flattened
+ * below; anything else (a labelled field, a slider, a listing, a
+ * paragraph, a row of buttons) takes a full-width row of its own by
+ * being a child, which is what this rule hands it.
+ *
+ * The hairline is an inset ::before and not a border, because iOS starts
+ * a separator at the label's left edge rather than at the card's; a
+ * border cannot be inset. `max-md:` because this is the phone's chrome:
+ * an iPad in landscape is `data-platform="ios"` too and draws the
+ * desktop page.
+ */
+/**
+ * A list inside a settings card: rows in one outlined box, on the desktop
+ * and on Android. Inside an iPhone group the box is a card within a card,
+ * and its full-width dividers disagreed with the group's own, which start
+ * at the label (lanph3re on the phone, 2026-09-21). So there the box goes:
+ * no outline, no corners, the rows start at the label's edge and their
+ * dividers run from there to the card's right edge, which is exactly what
+ * the group's hairlines do. One string, so every list agrees.
+ */
+export const SETTINGS_LIST =
+  'divide-border border-border divide-y rounded-lg border ' +
+  'max-md:ios:-mr-4 max-md:ios:rounded-none max-md:ios:border-0 ' +
+  'max-md:ios:[&>:is(li,div)]:min-h-11 max-md:ios:[&>:is(li,div)]:items-center max-md:ios:[&>:is(li,div)]:pl-0 max-md:ios:[&>:is(li,div)]:pr-4';
+
+const IOS_GROUP =
+  'max-md:ios:gap-0 max-md:ios:overflow-hidden max-md:ios:rounded-xl max-md:ios:bg-card max-md:ios:ring-1 max-md:ios:ring-card-ring ' +
+  'max-md:ios:[&>*]:relative max-md:ios:[&>*]:min-h-11 max-md:ios:[&>*]:px-4 max-md:ios:[&>*]:py-2.5 ' +
+  "max-md:ios:[&>*:not(:first-child)]:before:absolute max-md:ios:[&>*:not(:first-child)]:before:top-0 max-md:ios:[&>*:not(:first-child)]:before:left-4 max-md:ios:[&>*:not(:first-child)]:before:right-0 max-md:ios:[&>*:not(:first-child)]:before:h-px max-md:ios:[&>*:not(:first-child)]:before:bg-border max-md:ios:[&>*:not(:first-child)]:before:content-[''] " +
+  // A switch row gives up its own well and becomes the group's row: the
+  // label on the left, the control on the right, which is the shape it
+  // already had inside the box. Selected by its data-slot so these beat
+  // the row's own classes on specificity rather than on source order.
+  'max-md:ios:[&>[data-slot=setting-row]]:rounded-none max-md:ios:[&>[data-slot=setting-row]]:border-0 max-md:ios:[&>[data-slot=setting-row]]:bg-transparent max-md:ios:[&>[data-slot=setting-row]]:px-4 max-md:ios:[&>[data-slot=setting-row]]:py-2.5 ' +
+  // A rule between two rows is the hairline's job here, and a Separator
+  // beside it draws the same line twice.
+  'max-md:ios:[&>[data-slot=separator]]:hidden ' +
+  // Fewer lines (lanph3re on the phone, 2026-09-21: the page had more
+  // hairlines than it needed). Three were not separating rows at all. A
+  // note under a control belongs to that control, so it joins the row
+  // above it with no rule between them. A select drew its own box inside
+  // a ruled row, two line systems for one value, so inside a group it is
+  // the platform's plain value: no box, the muted ink, its chevron. And a
+  // disclosure is content-width, which cut its rule off a third of the
+  // way across; it takes the row's width so the rule is a whole one.
+  'max-md:ios:[&>p:not(:first-child)]:min-h-0 max-md:ios:[&>p:not(:first-child)]:pt-0 max-md:ios:[&>p:not(:first-child)]:before:hidden ' +
+  'max-md:ios:[&_[data-slot=select-trigger]]:border-transparent max-md:ios:[&_[data-slot=select-trigger]]:bg-transparent max-md:ios:[&_[data-slot=select-trigger]]:px-0 max-md:ios:[&_[data-slot=select-trigger]]:shadow-none max-md:ios:[&_[data-slot=select-trigger]]:text-muted-foreground ' +
+  'max-md:ios:[&_[data-slot=setting-row]_[data-slot=select-trigger]]:justify-end max-md:ios:[&_[data-slot=setting-row]_[data-slot=select-trigger]]:gap-1 max-md:ios:[&_[data-slot=setting-row]_[data-slot=select-trigger]>span>span]:justify-end ' +
+  'max-md:ios:[&>button]:self-stretch';
+
+/**
+ * The same list in Material's flavour, for an Android phone.
+ *
+ * Android is not the platform that has to keep the desktop page. Its own
+ * Settings (Android 16) and Material 3 Expressive's list guidance draw a
+ * grouped list too, and the two platforms differ in the DRAWING rather
+ * than in the idea: iOS runs the rows together inside one card and rules
+ * between them; Material gives every row a card of its own, separated by
+ * a 2px gap, with the group's outer corners large and the ones facing
+ * the gap small, and no hairline anywhere. So the two rules say the same
+ * thing about which element is a row and disagree only about its box.
+ *
+ * 48px and not 44: Material's minimum touch target is 48dp where Apple's
+ * is 44pt, and a settings row is the one control on this page under a
+ * thumb for its whole height.
+ *
+ * `rounded-sm` before `rounded-t-xl` relies on Tailwind emitting the
+ * shorthand before the longhand, which is how every corner override in
+ * the app is written.
+ */
+const ANDROID_GROUP =
+  'max-md:android:gap-0.5 ' +
+  'max-md:android:[&>*]:bg-card max-md:android:[&>*]:min-h-12 max-md:android:[&>*]:rounded-sm max-md:android:[&>*]:px-4 max-md:android:[&>*]:py-3 ' +
+  'max-md:android:[&>*:first-child]:rounded-t-xl max-md:android:[&>*:last-child]:rounded-b-xl ' +
+  // A switch row gives up its own well and becomes the group's segment,
+  // the same handover the iOS rule makes, by the same data-slot.
+  'max-md:android:[&>[data-slot=setting-row]]:rounded-sm max-md:android:[&>[data-slot=setting-row]]:border-0 max-md:android:[&>[data-slot=setting-row]]:bg-card max-md:android:[&>[data-slot=setting-row]]:px-4 max-md:android:[&>[data-slot=setting-row]]:py-3 ' +
+  'max-md:android:[&>[data-slot=setting-row]:first-child]:rounded-t-xl max-md:android:[&>[data-slot=setting-row]:last-child]:rounded-b-xl ' +
+  // Material separates its rows by the gap, so a rule between two of
+  // them is a second separator drawn over the first.
+  'max-md:android:[&>[data-slot=separator]]:hidden';
+
+/**
  * One settings card: the page's own frame, used by the settled page and
  * by both of its placeholders, so a card that waits cannot be a
  * different box from the card that arrives.
+ *
+ * On a phone it is a grouped inset list instead: the name above the
+ * group in the section-label voice, and the rows below it (IOS_GROUP and
+ * ANDROID_GROUP above, one card holding hairlined rows or one card per
+ * row). Desktop is unchanged.
  */
 export function SettingsCard({
   icon: Icon,
@@ -122,9 +218,30 @@ export function SettingsCard({
 }) {
   return (
     // data-settings-card is what the jump list above the cards reads.
-    <section id={anchor} className="bg-card rounded-xl ring-1 ring-card-ring scroll-mt-14 p-4" data-settings-card>
-      <h2 className="mb-3 flex items-center gap-2 text-base font-medium">
-        <Icon className="text-muted-foreground size-4" />
+    <section
+      id={anchor}
+      className={cn(
+        'bg-card rounded-xl ring-1 ring-card-ring scroll-mt-14 p-4',
+        // iOS: the box moves off the section and onto the body below, and
+        // what is left is a group heading over a card.
+        'max-md:ios:flex max-md:ios:flex-col max-md:ios:gap-2 max-md:ios:rounded-none max-md:ios:bg-transparent max-md:ios:p-0 max-md:ios:ring-0',
+        // Android: the same handover, Material's grouped list (below).
+        'max-md:android:flex max-md:android:flex-col max-md:android:gap-2 max-md:android:rounded-none max-md:android:bg-transparent max-md:android:p-0 max-md:android:ring-0',
+      )}
+      data-settings-card
+    >
+      <h2
+        className={cn(
+          'mb-3 flex items-center gap-2 text-base font-medium',
+          // The group's name, in the voice the More page's headings use.
+          'max-md:ios:type-row max-md:ios:mb-0 max-md:ios:px-4 max-md:ios:text-muted-foreground',
+          // Material names a group in the accent, which is the one thing
+          // its heading says that iOS's grey one does not.
+          'max-md:android:type-row max-md:android:mb-0 max-md:android:px-4 max-md:android:text-primary',
+        )}
+      >
+        {/* A group heading on either phone is words and nothing else. */}
+        <Icon className="text-muted-foreground size-4 max-md:ios:hidden max-md:android:hidden" />
         {title}
         {/* The manual is written card by card, and nothing in the app
             pointed at it. One quiet mark per card opens the manual's
@@ -142,7 +259,7 @@ export function SettingsCard({
           </a>
         </TitleTip>
       </h2>
-      <div className="flex flex-col gap-3">{children}</div>
+      <div className={cn('flex flex-col gap-3', IOS_GROUP, ANDROID_GROUP)}>{children}</div>
     </section>
   );
 }
@@ -275,9 +392,13 @@ export function SettingsPlaceholder() {
         </SettingsCard>
         {isDemo() && (
           <SettingsCard icon={Palette} title={t('Appearance')}>
-            {APPEARANCE_FIELDS.map((label) => (
-              <SelectFieldPlaceholder key={label} label={label} />
-            ))}
+            {APPEARANCE_SHAPES.map(({ label, full }) =>
+              full ? (
+                <SelectFieldPlaceholder key={label} label={label} />
+              ) : (
+                <SelectRowPlaceholder key={label} label={label} />
+              ),
+            )}
             <SkeletonSettingRow title="Board coordinates" blurb="File and rank labels on the board edge." />
             <SkeletonSettingRow title="Move box" blurb="Play moves from the keyboard." />
             <DisclosurePlaceholder />
@@ -302,7 +423,28 @@ export const APPEARANCE_LABELS = {
   pieces: 'Pieces',
   castling: 'Castling',
 } as const;
-const APPEARANCE_FIELDS = Object.values(APPEARANCE_LABELS);
+
+/**
+ * Which of the two shapes each Appearance choice takes, in the card's
+ * order: a row with the control on the right, or the label over a
+ * full-width control.
+ *
+ * Here rather than in the card because the placeholder is the one that
+ * has to draw the card without importing it, and the two shapes are
+ * different HEIGHTS — a row is one line, a field is two. A list of
+ * labels alone was enough while all seven were the same shape; it is
+ * not any more. `full` is the picture-picking three (a swatch, a board,
+ * a piece set), which keep the card's width to show their art.
+ */
+const APPEARANCE_SHAPES = [
+  { label: APPEARANCE_LABELS.language, full: false },
+  { label: APPEARANCE_LABELS.theme, full: false },
+  { label: APPEARANCE_LABELS.density, full: false },
+  { label: APPEARANCE_LABELS.colours, full: true },
+  { label: APPEARANCE_LABELS.board, full: true },
+  { label: APPEARANCE_LABELS.pieces, full: true },
+  { label: APPEARANCE_LABELS.castling, full: false },
+] as const;
 
 /**
  * A labelled control, held inert: the real Field with its real label
@@ -317,9 +459,25 @@ function SelectFieldPlaceholder({ label }: { label: string }) {
   return (
     <Field label={label}>
       <div inert>
-        <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} />
+        <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} className="w-full" />
       </div>
     </Field>
+  );
+}
+
+/**
+ * The same control in the row it now stands in: the real SettingRow with
+ * its real title, and the real select on the right at the row's settled
+ * width, empty. The row is the shape the card draws (SettingRow,
+ * `control="wide"`), so the two cannot be different heights.
+ */
+function SelectRowPlaceholder({ label }: { label: string }) {
+  return (
+    <SettingRow title={t(label)} control="wide">
+      <div inert className="w-full">
+        <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} className="w-full" />
+      </div>
+    </SettingRow>
   );
 }
 

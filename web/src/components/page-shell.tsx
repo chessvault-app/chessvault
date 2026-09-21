@@ -1,5 +1,11 @@
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { PullRefresh } from '@/components/pull-refresh';
+import { usePullRefresh } from '@/hooks/use-pull-refresh';
+
+/** The handler a shell with nothing to refetch never runs. Module scope,
+    so it is one identity for every render. */
+const NO_REFRESH = (): void => {};
 
 /**
  * How wide a scrolling page's column is allowed to get. Three named
@@ -61,16 +67,33 @@ const WIDTHS: Record<PageWidth, string> = {
 export function PageShell({
   width,
   scroll = true,
+  onRefresh,
   className,
   children,
 }: {
   width: PageWidth;
   scroll?: boolean;
+  /**
+   * Fetch this page's data again when the reader pulls the top of it
+   * down on a phone (hooks/use-pull-refresh). Given by pages whose data
+   * can change outside this client, which is most of them: the vault is
+   * written by the desktop app while a phone is looking at it.
+   *
+   * Only where the shell owns the scrolling. A page that manages its own
+   * (`scroll={false}`) has to wire the hook where its scroller is, since
+   * this element is not one.
+   */
+  onRefresh?: () => void | Promise<unknown>;
   className?: string;
   children: ReactNode;
 }) {
+  const pullRef = usePullRefresh({
+    onRefresh: onRefresh ?? NO_REFRESH,
+    enabled: scroll && onRefresh !== undefined,
+  });
   return (
     <div
+      ref={pullRef}
       // Marks the page's scroller for the screenshot grid (shot-grid.ts),
       // which scrolls it to picture the header's compact state.
       data-page-scroll={scroll ? '' : undefined}
@@ -94,9 +117,25 @@ export function PageShell({
         // overlay bars varies by browser, so coarse pointers never
         // trust it).
         scroll && 'overflow-y-auto md:pointer-fine:[scrollbar-gutter:stable_both-edges]',
+        // A page that refreshes on a pull opens that gap itself, under its
+        // header. Safari's own rubber band would drag the header down with
+        // everything else, so this scroller asks for none on iOS; where the
+        // browser bands anyway the hook subtracts what it moved.
+        scroll && onRefresh !== undefined && 'ios:overscroll-y-none',
       )}
     >
+      {/* Outside the column, not in it: the column is a flex box with a
+          gap, and a zero-height child there would still be worth one gap
+          at the top of every adopting page. */}
+      {scroll && onRefresh !== undefined && <PullRefresh />}
       <div
+        // What a pull to refresh moves on iOS, where the control is a gap
+        // above the content rather than a circle over it
+        // (hooks/use-pull-refresh writes a transform here). The column
+        // itself, not a wrapper around it: a box between the scroller and
+        // this one would be a new percentage base under every `min-h-full`
+        // a page passes in through className.
+        data-slot="pull-content"
         className={cn(
           // The top adds --page-t, the phone's status-bar inset (styles/
           // shell.css): the column starts under it, and what scrolls

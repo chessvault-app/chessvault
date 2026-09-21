@@ -5,6 +5,41 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+Each platform takes its own controls, and the ones that were never a
+platform's come out from behind the guard. Nothing here has been read on
+a phone or in the desktop window yet; the pixel grid is the proof so far.
+
+- **On every phone, a question is a centred card.** Confirmations, the
+  name prompt and the unsaved-changes question no longer rise as sheets:
+  iOS's alert on an iPhone, Material's dialog on Android.
+- **Settings is rows.** Nine choices that were a label over a full-width
+  list (App language, App theme, Density, Castling, Corners, Annotation
+  size, Move sound, Capture sound, Volume) are a label on the left and
+  the control on the right, everywhere. An iPhone groups them as inset
+  lists, an Android phone as Material's grouped rows.
+- **iPhone:** circles for selecting rows, checkmark lists for one of
+  many, the compact date picker, the system font, the spoke spinner, the
+  capsule slider, buttons that dim when pressed, plainer empty states, a
+  Cancel beside the quick switcher's field, and a segmented control whose
+  thumb slides (it slides on every platform where a track is drawn).
+- **Android:** round header buttons and capsule text buttons that tighten
+  when pressed, the board's move controls as a floating toolbar, a
+  rounded-square action button, Material's loading indicator on the
+  larger spinners, and progress bars with a gap and a stop dot. The
+  status bar and the navigation band follow the app's theme and tint.
+- **Both phones:** pull down on Games, Studies, Notes, Books and Puzzle
+  books to fetch the list again, and Share FEN and Share PGN under their
+  Copy items wherever the system has a share sheet.
+- **Desktop:** the window is a frame with the page inset in it, the
+  sidebar has a Search button (Ctrl/Cmd K), the games table has lost its
+  stripes and shows its column handles on hover, the quick filters are
+  chips with Clear all, Home's rows lose their chevrons under a mouse,
+  and Home has an Activity card: puzzles solved per day over six months.
+  Settings → Desktop app can ask Windows 11 or macOS to draw its material
+  behind the window; it is off until it has been seen in a window.
+
 ## 0.11.4
 
 The phone's chrome now follows the phone. On an iPhone the bottom bar

@@ -8,6 +8,8 @@ import {
   saveAndLeave,
   useLeaveAsk,
 } from '@/lib/leaveGuard';
+import { IOS_ALERT_QUIET } from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
@@ -81,7 +83,16 @@ export function LeaveDialog() {
   if (!name) return null;
 
   return (
+    // `ask`: three answers about something the person already started,
+    // which is an action sheet's job on iOS — and an action sheet is
+    // anchored to the control that raised it, of which there is none
+    // here (a navigation raised this, not a press). The HIG's own
+    // fallback is the alert, and Material's is the basic dialog for the
+    // same reason, so on either phone this is the centred card with its
+    // three buttons still stacked, in the same order and the same
+    // weights: three answers do not fit in a row, on either card.
     <Dialog
+      ask
       open
       onOpenChange={(open) => {
         if (!open) cancelLeave();
@@ -104,7 +115,15 @@ export function LeaveDialog() {
             when it was the tinted `danger` variant, which put the one
             irreversible answer directly under the thumb aiming for Save and
             gave it more ink than the harmless one. */}
-        <div className="mt-1 flex flex-col gap-2">
+        {/* Three answers stay stacked on either card, and on the iOS one
+            each is the same 48px capsule the two-answer alert draws.
+            Written as `ios:max-sm:` rather than from useAlertCard()
+            because this component renders the Dialog root itself, so the
+            context it provides is not readable here; the two conditions
+            are the same one (AlertCardContext is `ios` exactly when the
+            platform is iOS and the window is under the phone
+            breakpoint). */}
+        <div className={cn('mt-1 flex flex-col gap-2 ios:max-sm:gap-2.5 ios:max-sm:[&>*]:h-12 ios:max-sm:[&>*]:rounded-full ios:max-sm:[&>*]:pointer-coarse:h-12', IOS_ALERT_QUIET)}>
           <Button
             variant="default"
             size="default"
@@ -128,12 +147,20 @@ export function LeaveDialog() {
           {/* Red text on no panel at all — quieter than every `danger`
               trigger in the app, deliberately. Losing work is the one answer
               here that cannot be undone, so it should cost a deliberate look
-              to find, not sit level with the other two. */}
+              to find, not sit level with the other two.
+
+              On the iPhone's glass card the red cannot stay. Red ink over a
+              translucent ground measured 2.5 to 3.1:1 on the demo in both
+              themes, and at 80% on the bare glass it was weaker still. So
+              there it is the quiet wash capsule in the ordinary ink, with
+              its words and its bin saying what it does: still the quietest
+              of the three, and readable over whatever is under the card. */}
           <Button
             variant="ghost"
             size="default"
             disabled={busy}
-            className="text-destructive/80 hover:bg-destructive/10 hover:text-destructive w-full justify-center"
+            data-alert-quiet=""
+            className="text-destructive/80 hover:bg-destructive/10 hover:text-destructive ios:max-sm:text-foreground w-full justify-center"
             onClick={discardAndLeave}
           >
             <Trash2 className="glyph" data-icon="inline-start" />

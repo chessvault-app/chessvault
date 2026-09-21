@@ -39,6 +39,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/empty-state';
 import { t } from '@/lib/i18n';
+import { MARKDOWN_TYPE, shareFileName } from '@/lib/share-doc';
+import { useSharedDocument } from '@/hooks/use-shared-document';
 import { api, apiErrorMessage } from '@/lib/api';
 // The note EDITOR is TipTap and ProseMirror — by a distance the heaviest
 // thing in the app. The list needs none of it, so opening Notes no longer
@@ -301,7 +303,9 @@ function NoteList() {
   return (
     // The studies shelf's tier, exactly: the two shelves hold the same kind
     // of thing and had no business being different sizes.
-    <PageShell width="wide">
+    // The same refetch the shelf runs on arrival, on a pull: notes,
+    // marks and link counts together.
+    <PageShell width="wide" onRefresh={refresh}>
       <ShelfToolbar
         title={t('Notes')}
         subtitle={
@@ -599,6 +603,12 @@ const NoteCard = memo(function NoteCard({
 
   const name = note.id.split('/').at(-1)!;
   const folder = note.id.includes('/') ? note.id.slice(0, note.id.lastIndexOf('/')) : '';
+  const sharing = useSharedDocument({
+    label: 'Share note',
+    url: `${API}/${encodeURIComponent(note.id)}`,
+    filename: shareFileName(name, '.md'),
+    type: MARKDOWN_TYPE,
+  });
 
   const rename = async (value: string): Promise<void> => {
     setRenaming(false);
@@ -657,9 +667,14 @@ const NoteCard = memo(function NoteCard({
           onSelect: () => onToggleMark(note.id),
         },
         { label: 'Rename', icon: Pencil, onSelect: () => setRenaming(true) },
+        // The note as the .md file it is stored as, without opening it
+        // first: the card holds an excerpt, not the note, so the text is
+        // fetched as the menu opens (hooks/use-shared-document).
+        ...sharing.actions,
         { label: 'Move to a folder', icon: FolderInput, onSelect: () => setMoving(true) },
         { label: 'Remove', icon: Trash2, danger: true, onSelect: () => onRemove(note.id) },
       ]}
+      onMenuOpen={sharing.prime}
     >
       {renaming && (
         <PromptDialog

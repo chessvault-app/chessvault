@@ -1,6 +1,7 @@
 import { Skeleton } from '@/components/skeletons';
 import { HardDrive } from 'lucide-react';
-import { SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
+import { cn } from '@/lib/utils';
+import { SETTINGS_LIST, SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
 import { navigate, type Section } from '@/lib/router';
 import { t } from '@/lib/i18n';
 import { size, type StorageReport } from '@/settings/cards/shared';
@@ -53,7 +54,14 @@ export function StorageCard({ storage }: { storage: StorageReport | null }) {
       <p className="text-muted-foreground text-sm leading-relaxed">
         {t('What the app keeps on disk. The vault is your documents. The rest is rebuilt or refetched after it is cleared from its own place.')}
       </p>
-      <ul className="divide-border border-border divide-y rounded-lg border">
+      {/* On a phone the well gives up its own frame and its share of the
+          row's padding, so its rows sit flush in the group's card and
+          read as the group's own rows rather than as a list inside a
+          list. Its dividers are what separates them there; on Android
+          the surrounding rows are separated by a gap instead, and this
+          one list keeps its rules, because a gap between every figure
+          would break a table of them into six cards. */}
+      <ul className={cn(SETTINGS_LIST, 'max-md:ios:-my-2.5 max-md:android:-mx-4 max-md:android:-my-3 max-md:android:rounded-none max-md:android:border-0')}>
         {STORAGE_AREAS.map(({ keys, label, section, anchor }) => {
           const area = areas && { bytes: keys.reduce((s, k) => s + (areas[k]?.bytes ?? 0), 0) };
           // A card that is not on this page (the demo has no Browsed
@@ -61,7 +69,7 @@ export function StorageCard({ storage }: { storage: StorageReport | null }) {
           const target = anchor ? document.getElementById(anchor) : null;
           const go = section ? () => navigate(section) : target ? () => target.scrollIntoView({ block: 'start' }) : null;
           return (
-            <li key={label} className="flex items-baseline gap-2 px-3 py-(--row-py)">
+            <li key={label} className="flex items-baseline gap-2 px-3 py-(--row-py) max-md:android:min-h-12 max-md:android:items-center max-md:android:px-4">
               {go ? (
                 <button
                   type="button"

@@ -61,27 +61,29 @@ export function AppearanceCard() {
     <Card icon={Palette} title={t('Appearance')}>
       {/* Language leads: it changes every other label on this page, so
           reading it first is what makes the rest of the card make sense. */}
-      <Field label={APPEARANCE_LABELS.language}>
+      <SettingRow title={t(APPEARANCE_LABELS.language)} control="wide">
         <Select
           value={getLang()}
           onValueChange={(v) => setLang(v as Lang)}
           ariaLabel={t('App language')}
+          className="w-full"
           groups={[{ options: LANGS.map((l) => ({ value: l.id, label: l.label })) }]}
         />
-      </Field>
+      </SettingRow>
 
-      <Field label={APPEARANCE_LABELS.theme}>
+      <SettingRow title={t(APPEARANCE_LABELS.theme)} control="wide">
         <Select
           value={theme}
           onValueChange={(v) => setTheme(v as ThemePreference)}
           ariaLabel={t('App theme')}
+          className="w-full"
           groups={[{ options: [
             { value: 'system', label: 'Follow system' },
             { value: 'light', label: 'Light' },
             { value: 'dark', label: 'Dark' },
           ] }]}
         />
-      </Field>
+      </SettingRow>
 
       {/* Above the fold, and not with Corners: this is not how the app
           looks, it is how much of your vault is on the screen at once. On
@@ -89,20 +91,27 @@ export function AppearanceCard() {
           scroll, which is a working setting and not a decorative one.
           Per-device, so the same vault is compact on a monitor and
           comfortable under a thumb. */}
-      <Field label={APPEARANCE_LABELS.density}>
+      <SettingRow title={t(APPEARANCE_LABELS.density)} control="wide">
         <Select
           value={density}
           onValueChange={(v) => setDensity(v as Density)}
           ariaLabel={t('Density')}
+          className="w-full"
           groups={[{ options: DENSITIES.map(({ id, label }) => ({ value: id, label })) }]}
         />
-      </Field>
+      </SettingRow>
 
       {/* A dropdown like the rest of the card (lanph3re's call) — the row
           of swatches was the one control here that did not look like its
           neighbours. The list's headings stand in for the swatches' hint:
           shadcn's own five greys, the app's coloured ones, and the
           contrast one, each under its own label. */}
+      {/* These three keep the label over a full-width control while the
+          text-only choices above and below became rows. What you are
+          choosing here is a PICTURE — a swatch, a checker, a knight — and
+          the row's right-hand slot is sized for a word: the option rows
+          carry their art, and the list wants the card's width to show it
+          rather than a quarter of it. */}
       <Field label={APPEARANCE_LABELS.colours}>
         <Select
           value={schemeId}
@@ -171,14 +180,15 @@ export function AppearanceCard() {
         />
       </Field>
 
-      <Field label={APPEARANCE_LABELS.castling}>
+      <SettingRow title={t(APPEARANCE_LABELS.castling)} control="wide">
         <Select
           value={castleStyle}
           onValueChange={(v) => setCastleStyle(v as CastleStyle)}
           ariaLabel={t('How to castle')}
+          className="w-full"
           groups={[{ options: CASTLE_STYLES.map(({ id, label }) => ({ value: id, label })) }]}
         />
-      </Field>
+      </SettingRow>
 
       {/* Above the fold with the board it labels, not behind More options.
           It went in with Corners and Annotation size on the grounds that
@@ -226,7 +236,7 @@ export function AppearanceCard() {
         <div className="flex flex-col gap-3">
           {/* shadcn's own second knob: every corner in the app is a multiple
               of one radius, so one number squares or rounds the whole thing. */}
-          <Field label="Corners">
+          <SettingRow title={t('Corners')} control="wide">
             <Select
               value={radius}
               onValueChange={(v) => setRadius(v as RadiusId)}
@@ -234,21 +244,22 @@ export function AppearanceCard() {
               className="w-full"
               groups={[{ options: RADIUS_PRESETS.map(({ id, label }) => ({ value: id, label })) }]}
             />
-          </Field>
+          </SettingRow>
 
           {/* Appearance rather than Documents: it changes how one panel is
               drawn on THIS device, and nothing about the document — the same
               study read on a phone and a desktop is the same file either way.
               Named for the size rather than the subject, so it cannot be read
               as a switch for whether annotations show at all. */}
-          <Field label="Annotation size">
+          <SettingRow title={t('Annotation size')} control="wide">
             <Select
               value={annotationSize}
               onValueChange={(v) => setAnnotationSize(v as AnnotationSize)}
               ariaLabel={t('Annotation size')}
+              className="w-full"
               groups={[{ options: ANNOTATION_SIZES.map(({ id, label }) => ({ value: id, label })) }]}
             />
-          </Field>
+          </SettingRow>
 
           {/* Under the fold (lanph3re's call, 2026-09-18): it is set once,
               by someone the offer has started to bother, and is nothing a

@@ -11,6 +11,11 @@ import { cn } from '@/lib/utils';
 import { useMediaQuery, useTabbedPanes } from '@/lib/media';
 import { up } from '@/lib/router';
 import { copyText } from '@/lib/clipboard';
+import { share, shareIcon } from '@/lib/share';
+// The three facts every Share verb in the app needs, stated once beside
+// the sheet itself rather than here: the Board's menu was the first
+// caller, and a document's menu is the next.
+import { CAN_SHARE, PGN_TYPE, reportShare, shareDocument } from '@/lib/share-doc';
 import { forgetCollection } from '@/games/collection';
 import { toast } from '@/components/ui/toast';
 import { holdsWork, snapshotBoard, useAnalysis, type BoardSnapshot } from '@/store/analysis';
@@ -603,6 +608,11 @@ export function MovesOverflow({
   // into the collection at all (lanph3re's report). A row cannot turn
   // into a check the way the button does, so the answer is a toast.
   const collectGame = useCollectGame();
+  // The one platform branch here: iOS draws the square with the arrow
+  // out of it, Android the three connected nodes, and each reads as
+  // nothing on the other. Which glyph is chrome, whether to offer the
+  // verb at all is not.
+  const ShareGlyph = shareIcon();
 
   const actions: MenuAction[] = [
     // First, and at every width, unlike everything below them.
@@ -649,7 +659,40 @@ export function MovesOverflow({
       icon: Copy,
       onSelect: () => void copyText(getNode(tree, cursorId).fen),
     },
+    // Directly after the Copy each one shares, and only where the
+    // browser has a sheet: on a phone the clipboard is the long way to
+    // another app, and this is the platform's own short one. Both build
+    // their payload and call in the same turn as the tap, which is the
+    // user gesture navigator.share requires.
+    ...(CAN_SHARE
+      ? [
+          {
+            label: 'Share FEN',
+            icon: ShareGlyph,
+            onSelect: () => {
+              const fen = getNode(tree, cursorId).fen;
+              void share({ text: fen }, fen).then(reportShare);
+            },
+          } as MenuAction,
+        ]
+      : []),
     { label: 'Copy PGN', icon: Copy, onSelect: () => void copyText(exportPgn()) },
+    ...(CAN_SHARE
+      ? [
+          {
+            label: 'Share PGN',
+            icon: ShareGlyph,
+            onSelect: () => {
+              // A .pgn file opens in another chess app; the same moves as
+              // text only ever land in a message. shareDocument asks for
+              // the file first and sends text where the sheet refuses one.
+              // The board's moves are nobody's document yet, so the name
+              // is the generic one.
+              shareDocument(exportPgn(), 'game.pgn', PGN_TYPE);
+            },
+          } as MenuAction,
+        ]
+      : []),
     // Takes the moves off and leaves the position they were played from
     // — the only clear a study can have, and on the Board the one that
     // spares a loaded position. Undoable, like every other clear here.

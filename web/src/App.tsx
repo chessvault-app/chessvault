@@ -204,6 +204,17 @@ function Shell() {
         // shell that is wrong while nobody is typing is worse than a
         // keyboard that misbehaves while somebody is.
         'bg-background text-foreground vv-band app-shell flex h-[var(--app-h,100svh)] flex-col overflow-hidden',
+        // From md the window has a FRAME: one quiet tint the sidebar and
+        // the title band share, with the page inset in it as a single
+        // rounded panel (`main` below). The shell was the reverse — a
+        // white sidebar column flush against a toned page — and a
+        // borderless frame around an inset panel is what every desktop
+        // shell this app is measured against now draws (macOS Tahoe's
+        // sidebars, Linear, Notion, and shadcn's own sidebar
+        // variant="inset"). Under md nothing of this applies: the page
+        // fills the width, there is no frame to be, and the phone keeps
+        // --background exactly as before.
+        'md:bg-app-ground',
         // The containing block for everything absolutely positioned under
         // it. Without this an `sr-only` span (position: absolute) placed
         // past the shell's bottom edge, which the puzzle dashboard's log
@@ -266,7 +277,31 @@ function Shell() {
       <main
         id="main"
         tabIndex={-1}
-        className="min-h-0 min-w-0 flex-1 overflow-hidden pb-(--bottom-bar-h) outline-none"
+        className={cn(
+          'min-h-0 min-w-0 flex-1 overflow-hidden pb-(--bottom-bar-h) outline-none',
+          // The panel. From md only: `main` already clips (it always
+          // has), so the radius clips what scrolls inside it without
+          // moving the scroller — every page keeps its own
+          // `data-page-scroll` element, and the sticky headers, the
+          // scroll restoration and the view transitions that hang off it
+          // are untouched. Its fill is --background, which is what the
+          // page was standing on yesterday, so a page's interior is
+          // pixel-identical and only the frame around it has moved.
+          // `ml-0`: the seam between the sidebar and the panel is the
+          // 8px the frame shows on the other three sides, once, not
+          // twice. The ring is a window's, not a card's: this is the
+          // frame's opening, and in light it is transparent until the
+          // contrast knob brings it back, which is the moment the ground
+          // and the panel have met at white.
+          // The gutter and the radius are Linear's, measured off their own window
+// at 9x: about 2px of window ground all round the panel and a corner near
+// 7px, where this shipped with shadcn's 8px and 14px and read looser than
+// either (lanph3re, 2026-09-22). m-0.5 is 2px and rounded-md is 8px, the
+// ladder's nearest rung to 7. The left margin comes back with the rest:
+// Linear gutters that side too, though ours cannot be seen while the
+// window ground and the sidebar are one colour.
+          'md:bg-background md:m-0.5 md:rounded-md md:ring-1 md:ring-panel-ring',
+        )}
       >
         {/*
           A safety net, no longer the route loader. Sections are fetched by

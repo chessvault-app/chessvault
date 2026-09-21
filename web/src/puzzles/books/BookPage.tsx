@@ -389,7 +389,7 @@ export function BookPage({ slug }: { slug: string }) {
                 if (e.key === 'Escape') setRenaming(false);
               }}
               className="min-w-0 flex-1"
-              inputClassName="text-xl font-semibold tracking-tight"
+              inputClassName="text-xl font-semibold tracking-tight ios:tracking-normal"
             />
           </div>
         ) : (

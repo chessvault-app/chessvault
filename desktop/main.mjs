@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, session, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, session, shell } from 'electron';
 import { spawn } from 'node:child_process';
 import { createWriteStream, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -214,6 +214,65 @@ const TITLE_BAR =
         titleBarOverlay: { color: '#0a0a0a', symbolColor: '#fafafa', height: TITLE_BAR_HEIGHT },
       };
 
+/**
+ * The OS's own window material behind the app's chrome, off by default.
+ *
+ * Windows 11 (22H2, build 22621 and up) draws Mica: a wallpaper-tinted,
+ * near-opaque sheet the shell paints behind a window's title bar and
+ * navigation column. macOS draws sidebar vibrancy. Both need a window
+ * whose background can be seen through (`#00000000`) and a page whose
+ * ground is transparent over it, which is what `data-window-material`,
+ * `--window-ground` and `--app-ground` do on the web side: from md the
+ * FRAME steps aside (the title band, the sidebar, the gutter) and the
+ * page stays on its own opaque panel, which is the division of labour
+ * both systems draw themselves.
+ *
+ * Still OFF unless the user asks for it in Settings, and now for one
+ * reason only: no window has been opened to look at it. Neither the
+ * mica nor the vibrancy number has been read against a real desktop,
+ * and the sidebar's ink has to hold 4.5:1 over whatever comes through.
+ * Nothing about the window changes for anyone who leaves it alone.
+ */
+function materialSupported() {
+  if (process.platform === 'darwin') return true;
+  if (process.platform !== 'win32') return false;
+  // getSystemVersion is "10.0.22621" shaped; Mica needs 22H2 or newer,
+  // and Electron silently ignores backgroundMaterial below it.
+  const build = Number(process.getSystemVersion().split('.')[2] ?? 0);
+  return build >= 22621;
+}
+
+const materialOn = () => materialSupported() && readSettings().material === true;
+
+/** The window options the material needs, or nothing at all. */
+function materialOptions() {
+  if (!materialOn()) return {};
+  return {
+    // Transparent, so the material shows. The launch flash this would
+    // otherwise bring back is held off by `show: false` below: the
+    // window appears only once the page has painted, and what it paints
+    // first is index.html's inline opaque ground, pinned to the theme
+    // the app last resolved to.
+    backgroundColor: '#00000000',
+    show: false,
+    // The caption buttons sit on the band, and under a material the band
+    // has no fill to give them: the OS composites the strip over the
+    // material instead. The page pushes the same value once its
+    // stylesheet has resolved (components/title-bar, toOverlayColor);
+    // this is so the window never opens with the opaque strip the
+    // non-material window opens with.
+    ...(process.platform === 'win32' && TITLE_BAR.titleBarOverlay
+      ? { titleBarOverlay: { ...TITLE_BAR.titleBarOverlay, color: '#00000000' } }
+      : {}),
+    ...(process.platform === 'darwin'
+      ? // The sidebar material, and `followWindow` rather than `active`:
+        // a native sidebar goes flat when its window loses focus, and
+        // forcing it on makes a background window look focused.
+        { vibrancy: 'sidebar', visualEffectState: 'followWindow' }
+      : { backgroundMaterial: 'mica' }),
+  };
+}
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
@@ -241,7 +300,11 @@ function createWindow() {
       sandbox: true,
       nodeIntegration: false,
     },
+    // Last, so a material run overrides backgroundColor; empty otherwise
+    // and every window below is exactly the window that shipped.
+    ...materialOptions(),
   });
+  if (!win.isVisible()) win.once('ready-to-show', () => win.show());
   // Links to lichess/chess.com open in the real browser, not a new shell —
   // but only http(s), so a hostile page can't hand the OS an arbitrary URI
   // scheme (file:, smb:, ms-msdt:, …) to launch.
@@ -587,6 +650,38 @@ app.whenReady().then(async () => {
   // where there is an overlay (not macOS), and only colours: the page
   // may be a remote server's, so nothing else about the window is
   // taken from it.
+  // Is the material available here, and is it on? Asked by the page at
+  // startup (the root attribute the ground token hangs off) and by the
+  // Settings switch. No machine detail leaves the shell: two booleans.
+  ipcMain.handle('window:material', (event) => {
+    if (!fromVaultPage(event)) return { supported: false, enabled: false };
+    return {
+      supported: materialSupported(),
+      enabled: materialOn(),
+      kind: process.platform === 'darwin' ? 'vibrancy' : 'mica',
+    };
+  });
+  // Turning it on or off, live: both OSes take the change on an open
+  // window, so nothing here asks for a restart. The page reloads after,
+  // since the ground token is decided once at startup.
+  ipcMain.handle('window:material-set', (event, on) => {
+    if (!fromVaultPage(event) || !materialSupported()) return false;
+    writeSettings({ material: on === true });
+    const enabled = materialOn();
+    win.setBackgroundColor(enabled ? '#00000000' : '#0a0a0a');
+    if (process.platform === 'darwin') win.setVibrancy(enabled ? 'sidebar' : null);
+    else win.setBackgroundMaterial?.(enabled ? 'mica' : 'auto');
+    win.webContents.reload();
+    return true;
+  });
+  // Which theme the OS should draw ITS parts of the window in. Mica and
+  // vibrancy are both tinted by nativeTheme, not by the page, so a dark
+  // material under a light app is what you get unless the app says so:
+  // the window's theme follows the APP's resolved theme, never the OS's.
+  ipcMain.handle('window:theme', (event, resolved) => {
+    if (!fromVaultPage(event)) return;
+    if (resolved === 'light' || resolved === 'dark') nativeTheme.themeSource = resolved;
+  });
   ipcMain.handle('window:title-bar-colors', (_e, colors) => {
     if (process.platform === 'darwin' || !win.setTitleBarOverlay) return;
     const ok = (v) => typeof v === 'string' && /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%/]+\))$/i.test(v.trim());

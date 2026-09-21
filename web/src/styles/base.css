@@ -10,8 +10,12 @@
     /* iOS standalone (home-screen) mode under-reports the viewport height
        until the first scroll, exposing the WKWebView's own black canvas
        below the app. Painting html in the app colour makes any such band
-       invisible on every device. */
-    background-color: var(--background);
+       invisible on every device. Reads --window-ground, not
+       --background: the two are the same colour everywhere but inside
+       the desktop shell with an OS window material behind the window,
+       where the document has to get out of the material's way
+       (styles/tokens.css). */
+    background-color: var(--window-ground);
     height: 100%;
     /* The document never scrolls (the shell is a fixed box, measured 0px
        of overflow on every route at 375x812), so a scroll that reaches it
@@ -93,7 +97,8 @@
   }
 
   body {
-    background-color: var(--background);
+    /* The window ground, as html above. */
+    background-color: var(--window-ground);
     color: var(--foreground);
     font-family: var(--font-sans);
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss03';
@@ -366,6 +371,22 @@
       animation-duration: 2s !important;
     }
 
+    /* The Android indicator's shape change is the one part of a spinner
+       that the paragraph above does NOT cover. Slowing it to 2s would be
+       the same argument, but it is not the same kind of motion: the turn
+       says "still working" while staying one picture, and the morph is
+       the picture itself changing five times a cycle, which is the large
+       local change this setting is asked to take away. So the shape
+       stops and the ring keeps turning at the 2s above, which is the
+       calm version of this indicator rather than a stilled one. Stopping
+       it also has to be said out loud, because the clamp cannot: the
+       morph is `d`, and a 0.01ms infinite `d` animation is the same few
+       hundred restarts a frame that the spinner rule exists to prevent,
+       on a shape rather than on an angle. */
+    [data-slot='spinner-shape'] {
+      animation: none !important;
+    }
+
     /* And the placeholders stop, which is the other half of that
        argument. A skeleton is not moving in order to say anything: it
        says a page is loading by standing where the content will be, and
@@ -421,14 +442,16 @@
        read is already correct. The colour still arrives in one step; what
        goes is the 10-microsecond fade under it.
 
-       apply() reads the ROOT as well, for the theme-color metas, and this
-       rule does not reach that read. index.html's inline `html {
-       background-color }` is unlayered, so it outranks the layered rule in
-       this file and the metas take the OS scheme's colour rather than the
-       chosen theme's, under either motion setting: across that same switch,
-       with this rule and without it, the metas and the root's computed
-       colour both stayed rgb(245, 245, 245). That is a separate bug, older
-       than this block, and nothing here fixes it. */
+       The theme-color metas are written from that same body read, which is
+       why they are not listed separately here. apply() used to read the
+       ROOT for them, and the root cannot answer: index.html's inline
+       `html { background-color }` is unlayered, so it outranks the layered
+       rule in this file and the root takes the OS scheme's colour rather
+       than the chosen theme's, under either motion setting (across that
+       same switch, with this rule and without it, the metas and the root's
+       computed colour both stayed rgb(245, 245, 245)). That read moved to
+       the body in store/theme.ts, so the clamp above now governs the metas
+       too. */
     html,
     body {
       transition-property: none !important;

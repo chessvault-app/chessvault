@@ -43,7 +43,15 @@ export function DatePicker({
           <Button
             variant="outline"
             data-empty={!selected}
-            className={cn('justify-start text-left font-normal data-[empty=true]:text-muted-foreground', className)}
+            className={cn(
+              'justify-start text-left font-normal data-[empty=true]:text-muted-foreground',
+              // iOS draws its compact date picker as a filled tinted
+              // capsule showing the date, not as an outlined field. The
+              // calendar icon stays: with no date chosen the capsule has
+              // only placeholder text to say what it opens.
+              'ios:bg-muted ios:rounded-full ios:border-transparent ios:data-[empty=false]:text-primary',
+              className,
+            )}
             {...props}
           />
         }

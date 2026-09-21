@@ -25,13 +25,23 @@ function EmptyHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+// iOS draws an unavailable state as a large muted symbol on the page
+// itself (ContentUnavailableView), not as a filled tile with a small
+// glyph in it: the tile is the registry's (and Material's) shape, and on
+// an iPhone it read as a badge nobody could press. So on iOS the tile's
+// fill and its rounding go, the box grows to 48px and the symbol fills
+// it in the muted ink the description below is already in. The `!` is
+// not emphasis: `ios:` is a zero-specificity `:where()` variant, so
+// these tie with the classes they replace and would be settled by the
+// order Tailwind happened to emit them in. Nothing else about the state
+// changes, on any platform: same copy, same title, same press.
 const emptyMediaVariants = cva(
   "mb-2 flex shrink-0 items-center justify-center [&_svg]:pointer-events-none [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         default: "bg-transparent",
-        icon: "flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4",
+        icon: "flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4 ios:size-12! ios:rounded-none! ios:bg-transparent! ios:text-muted-foreground! ios:[&_svg:not([class*='size-']):not([class*='glyph'])]:size-12!",
       },
     },
     defaultVariants: {

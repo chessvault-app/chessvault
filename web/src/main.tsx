@@ -7,7 +7,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toast';
 import { startKeyboardTracking } from './lib/keyboardInset';
 import { startInstallTracking } from './lib/install';
-import { applyGlassOverride, startPlatform } from './lib/platform';
+import { applyGlassOverride, startPlatform, startWindowMaterial } from './lib/platform';
 import { startPixelGridTracking } from './board/pixelGrid';
 import { initLang } from './lib/i18n';
 import { sweepStorage } from './lib/storageSweep';
@@ -34,6 +34,11 @@ initPrefs();
 // decided by it, and a paint without it would be the desktop's.
 startPlatform();
 applyGlassOverride();
+// The desktop shell's window material, if the OS is drawing one. Not
+// awaited: the opening frames wear index.html's opaque ground whatever
+// the answer, and the attribute only decides what the ground becomes
+// after it.
+void startWindowMaterial();
 // NOT awaited, unlike the three above. Those decide the first paint, so
 // the frame waits for them; the difficulty word does not — the echo in
 // localStorage already draws it, and this only replaces that with the

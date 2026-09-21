@@ -16,7 +16,8 @@ import { t } from '@/lib/i18n';
  * 20px on a desktop, the phone's 24px large title under `md`; see the
  * component's own note below and DESIGN.md, Typography.
  */
-export const pageTitleClass = 'text-2xl font-semibold tracking-tight md:text-xl';
+export const pageTitleClass =
+  'text-2xl font-semibold tracking-tight ios:tracking-normal md:text-xl';
 
 /**
  * The heading every scrolling page starts with: the page's name, its
@@ -206,6 +207,8 @@ export function PageHeader({
       {pinned && (
         <div
           ref={pinRef}
+          // What a pull to refresh leaves where it is (hooks/use-pull-refresh).
+          data-page-header=""
           // At the column's very top, above its padding, so the bar
           // translated off by its own height is wholly off: hung at the
           // padding's foot its last 32px showed at rest. The top margin
@@ -282,6 +285,7 @@ export function PageHeader({
         // row below takes it too.
         data-ground=""
         data-chrome=""
+        data-page-header=""
         className={cn(
           'flex items-center gap-x-3 gap-y-2',
           truncate ? 'flex-nowrap' : 'flex-wrap',

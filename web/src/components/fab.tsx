@@ -136,7 +136,19 @@ export function Fab({
         // footprint reaches higher than the docked bar's: the disc clears
         // the measured footprint by 1rem instead (styles/shell.css).
         'ios:bottom-[calc(var(--bottom-bar-h)+1rem)]',
+        // Android: the same sum, which is the same number at rest (the
+        // docked bar's 3.75rem plus its inset plus 1rem IS 4.75rem plus
+        // the inset) and the right one when a page claims the edge, since
+        // a claimed bar is the floating toolbar there now and stands
+        // taller than the tab bar (shell/mobile-nav). The opening map is
+        // both the one page with this disc and a page that claims the
+        // edge, so the constant would have put the disc on the pill.
+        'android:bottom-[calc(var(--bottom-bar-h)+1rem)]',
         'bg-primary text-primary-foreground hover:bg-primary-hover grid size-14 place-items-center rounded-full',
+        // Android: Material 3 Expressive's FAB is a rounded SQUARE, 56px
+        // with a 16px corner, not a disc. The size is already the M3
+        // one; only the corner changes.
+        'android:rounded-2xl',
         'border border-primary-foreground/30',
         'shadow-lg transition-opacity duration-100 active:opacity-80',
         'focus-visible:shadow-none',

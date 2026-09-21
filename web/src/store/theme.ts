@@ -31,20 +31,18 @@ const resolve = (p: ThemePreference): 'light' | 'dark' =>
  * Every tinted or High contrast ground drifted the same way. Once the
  * class is set the stylesheet owns the ground, so the pin comes off, and
  * the theme-color metas (media-query only, so they followed the OS, not
- * the choice) take the colour the root actually resolved to.
+ * the choice) take the colour the page actually resolved to.
  *
- * That last step does not land yet, and the reduced-motion clamp is not
- * why. index.html's inline `html { background-color }` is unlayered, so
- * it outranks index.css's layered `html { background-color:
+ * That last step used to read the ROOT, and the root is the one element
+ * that cannot answer: index.html's inline `html { background-color }` is
+ * unlayered, so it outranks index.css's layered `html { background-color:
  * var(--background) }`, and with the pin off the root resolves to the OS
  * scheme's colour rather than the chosen theme's. Measured on the demo,
  * reading the root after a load and after a switch, with reduced motion
  * and without: OS light gives rgb(245, 245, 245) and OS dark
- * rgb(10, 10, 10) under BOTH themes, so the metas still carry the OS's
- * answer and so does the band that root paints. Not fixed here, and it is
- * the inline rule in index.html that has to move, not this file. The body
- * is a separate read and is correct, which is why rememberGround below
- * takes the ground from there.
+ * rgb(10, 10, 10) under BOTH themes, so the metas carried the OS's answer.
+ * The body is a separate read and is correct, so both the launch pin and
+ * the metas are written from it now, in rememberGround below.
  */
 /**
  * Where index.html's launch script finds the ground the page will settle
@@ -58,13 +56,37 @@ const resolve = (p: ThemePreference): 'light' | 'dark' =>
  * open of the app on a phone that had chosen a scheme. What the page
  * actually resolves to is stored here whenever it changes, and the next
  * launch pins that.
+ *
+ * The same read is what the OS chrome is told. Android draws an installed
+ * app's status bar and, on the versions that tint it, the navigation band
+ * from theme-color, so a stale meta is a strip of the wrong colour along
+ * the top and the bottom of the app. Both metas are written, not the one
+ * whose media matches: the app's theme can disagree with the OS's, and
+ * then the matching meta is the other one. Called from here on a theme
+ * change and from prefs.ts on a tint, contrast or board-follow change,
+ * which is every way the ground moves.
  */
 const GROUND_KEY = 'chess-vault:ground';
 export function rememberGround(): void {
   // The body, not the root: the root may still wear the launch pin when
-  // the scheme is applied, and reading it back would store the pin.
+  // the scheme is applied, and reading it back would store the pin. It is
+  // also the only element whose colour is the CHOSEN theme's; see apply().
+  // Not while an OS window material is behind the window: from md the
+  // body's ground is then transparent or a mix, and pinning either is
+  // pinning a hole. The launch pin's whole job is to be OPAQUE before
+  // the page paints (index.html), so what is already stored — the ground
+  // this app last resolved to without a material, or the default — is
+  // what the next launch should wear, and the handover to the real
+  // ground is unchanged: apply() takes the pin off and the frame goes
+  // translucent from there. A tint or contrast change made while the
+  // material is on therefore leaves the pin one theme behind, which is
+  // an opaque neutral either way.
+  if (document.documentElement.dataset.windowMaterial) return;
   const ground = getComputedStyle(document.body).backgroundColor;
   if (!ground || ground === 'rgba(0, 0, 0, 0)') return;
+  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+    meta.content = ground;
+  }
   const resolved = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
   try {
     const raw = localStorage.getItem(GROUND_KEY);
@@ -80,12 +102,9 @@ const apply = (resolved: 'light' | 'dark'): void => {
   const root = document.documentElement;
   root.classList.toggle('dark', resolved === 'dark');
   root.style.removeProperty('background-color');
+  // Pins the next launch's ground and paints the OS chrome, both off the
+  // body: the root still answers the OS scheme here, whatever was chosen.
   rememberGround();
-  const ground = getComputedStyle(root).backgroundColor;
-  if (!ground || ground === 'rgba(0, 0, 0, 0)') return;
-  for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
-    meta.content = ground;
-  }
 };
 
 export const useTheme = create<ThemeState>()(

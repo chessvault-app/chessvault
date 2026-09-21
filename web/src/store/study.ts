@@ -126,6 +126,13 @@ interface StudyState {
   renameChapter: (index: number, name: string) => void;
   deleteChapter: (index: number) => void;
   save: () => Promise<void>;
+  /**
+   * This document as the .pgn it would be saved as, right now: every
+   * chapter, with the live tree folded into the open one. Synchronous,
+   * because the one caller is the Share verb and the share sheet wants
+   * the tap's own turn (lib/share-doc.ts).
+   */
+  currentPgn: () => string;
   /** Other names `[[links]]` may use for this document. */
   setAliases: (names: string[]) => Promise<void>;
   /** Throw the pending changes away and go back to what the vault has. */
@@ -513,6 +520,8 @@ export const useStudy = create<StudyState>()((set, get) => {
       loadIntoAnalysis(next[nextIndex]!);
       scheduleAutosave();
     },
+
+    currentPgn: () => chaptersToPgn(stashCurrent()),
 
     park: async () => {
       const { openId, openBase, saveState } = get();

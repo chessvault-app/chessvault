@@ -49,6 +49,7 @@ import { PromptDialog } from '@/components/prompt-dialog';
 import { RecoveryDialog } from '@/components/recovery-dialog';
 import { SaveControl } from '@/components/save-control';
 import { DocumentTools } from '@/components/document-tools';
+import { PGN_TYPE, shareFileName } from '@/lib/share-doc';
 import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { AnnotationPane } from './AnnotationPane';
 import { t } from '@/lib/i18n';
@@ -269,11 +270,14 @@ export function StudyView({
             iOS they show, dimmed and inert: the docked strip is the
             page's edge and stands empty without remark, but the capsule
             is a thing of its own, and an empty one through the wait read
-            as the bar broken (lanph3re's recording, 2026-09-18). */}
+            as the bar broken (lanph3re's recording, 2026-09-18). Android's
+            floating toolbar is a pill over the page in the same way, so
+            it takes the same treatment: an empty one standing through
+            the wait would read the same. */}
         {pending && (
           <MobileActionBar>
             <BoardControls
-              className="py-1.5 ios:py-0 ios:justify-evenly ios:gap-0 invisible ios:visible ios:opacity-40 ios:pointer-events-none"
+              className="py-1.5 ios:py-0 ios:justify-evenly ios:gap-0 invisible ios:visible android:visible ios:opacity-40 android:opacity-40 ios:pointer-events-none android:pointer-events-none"
               aria-hidden
             />
           </MobileActionBar>
@@ -281,6 +285,10 @@ export function StudyView({
       </div>
     );
   }
+
+  // The last segment of the id: a document inside a folder is called by
+  // its own name, on the history panel and on the file the sheet sends.
+  const docName = id.split('/').at(-1)!;
 
   // Rendered twice — at the page top on stacked layouts, in the side column
   // on wide ones — because CSS cannot reparent. Only one is ever visible.
@@ -324,11 +332,22 @@ export function StudyView({
         history={{
           kind: kind === 'game' ? 'games' : 'studies',
           id,
-          name: id.split('/').at(-1)!,
+          name: docName,
           // Re-open rather than patch the store: a restore replaced the file
           // on disk, and the document in the tab is now a stale copy of
           // something that no longer exists.
           onRestored: () => void open(id, base),
+        }}
+        // The whole document, chapters and all, as the file another chess
+        // app opens. What is on screen and not yet saved goes with it:
+        // this is the document as the reader has it, not as the vault
+        // last wrote it, and holding back their last five moves would be
+        // the surprise. Read in the tap's own turn, never fetched.
+        share={{
+          label: kind === 'game' ? 'Share game' : 'Share study',
+          filename: shareFileName(docName, '.pgn'),
+          type: PGN_TYPE,
+          text: () => useStudy.getState().currentPgn(),
         }}
       />
       {/* One edit button for the whole document, in the header — the shape
