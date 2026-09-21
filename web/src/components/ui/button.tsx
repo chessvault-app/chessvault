@@ -45,6 +45,19 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  *     the more specific rule and wins on those rows. `transition-none`
  *     while pressed so the dim is instant; the release falls back to the
  *     base `transition-all`, which is the registry's own 150ms.
+ *   - `android:active:before:*`, the state layer, which is how Material
+ *     answers a touch: 10% of the CONTENT colour laid over whatever fill
+ *     the face already has. One declaration for every variant, because
+ *     `bg-current` reads each one's own ink, where the coarse-pointer
+ *     fills above are seven hand-picked tints. It sits under the label
+ *     (`isolate` plus `-z-10`, which paints a positioned child above the
+ *     element's background and below its text) and takes the button's
+ *     own radius, so it follows the shapes styles/shell.css gives the
+ *     chrome. Those coarse fills are therefore gated `not-android:`: the
+ *     two together were the press answered twice, a tint AND a wash. A
+ *     ripple would be a third, and a second animation clock besides; the
+ *     other half of Material's answer is a shape, and it is a transition
+ *     on border-radius in styles/shell.css.
  *
  * There is nothing to do about a hover fill lingering after a tap:
  * Tailwind v4 already emits every `hover:` utility inside
@@ -52,7 +65,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
  * touch-only iPhone (checked against the compiler, 4.3.3).
  */
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm max-md:type-row font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring active:not-aria-[haspopup]:translate-y-px ios:active:transition-none disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4",
+  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm max-md:type-row font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring active:not-aria-[haspopup]:translate-y-px ios:active:transition-none android:active:relative android:active:isolate android:active:before:absolute android:active:before:inset-0 android:active:before:-z-10 android:active:before:rounded-[inherit] android:active:before:bg-current android:active:before:opacity-10 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4",
   {
     variants: {
       variant: {
@@ -62,16 +75,16 @@ const buttonVariants = cva(
         // white text's floor (3.88:1 measured on the Blue board's accent).
         // The token is a darker rung of the same hue in light and a
         // lighter one in dark, and the contrast knob reaches it.
-        // Each hover tint again under `pointer-coarse:active:`: a finger
+        // Each hover tint again under `not-android:pointer-coarse:active:`: a finger
         // never hovers, so on a phone a pressed button showed only the
         // 1px nudge below, which reads as unresponsive. The press takes
         // the colour the mouse would have had, and nothing new.
         default:
-          'bg-primary text-primary-foreground hover:bg-(--primary-hover) pointer-coarse:active:bg-(--primary-hover) ios:active:opacity-80',
+          'bg-primary text-primary-foreground hover:bg-(--primary-hover) not-android:pointer-coarse:active:bg-(--primary-hover) ios:active:opacity-80',
         outline:
-          'border-border bg-background hover:bg-muted hover:text-foreground pointer-coarse:active:bg-muted pointer-coarse:active:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 dark:pointer-coarse:active:bg-input/50 ios:active:opacity-60',
+          'border-border bg-background hover:bg-muted hover:text-foreground not-android:pointer-coarse:active:bg-muted not-android:pointer-coarse:active:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50 not-android:dark:pointer-coarse:active:bg-input/50 ios:active:opacity-60',
         secondary:
-          'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] pointer-coarse:active:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground ios:active:opacity-80',
+          'bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] not-android:pointer-coarse:active:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground ios:active:opacity-80',
         // On the page ground (an ancestor with `data-ground`, the way the
         // base classes read `data-slot=button-group`) the hover fill is a
         // rung up, --accent: in light --muted IS the ground's 97% rung, so
@@ -82,7 +95,7 @@ const buttonVariants = cva(
         // this rung and the plain hover agree; the class still picks the
         // dark hover, --accent over the /50 wash.
         ghost:
-          'hover:bg-muted hover:text-foreground pointer-coarse:active:bg-muted pointer-coarse:active:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50 dark:pointer-coarse:active:bg-muted/50 in-data-[ground]:hover:bg-accent in-data-[ground]:pointer-coarse:active:bg-accent in-data-[ground]:aria-expanded:bg-accent dark:in-data-[ground]:hover:bg-accent dark:in-data-[ground]:pointer-coarse:active:bg-accent ios:active:opacity-60',
+          'hover:bg-muted hover:text-foreground not-android:pointer-coarse:active:bg-muted not-android:pointer-coarse:active:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50 not-android:dark:pointer-coarse:active:bg-muted/50 in-data-[ground]:hover:bg-accent not-android:in-data-[ground]:pointer-coarse:active:bg-accent in-data-[ground]:aria-expanded:bg-accent dark:in-data-[ground]:hover:bg-accent dark:not-android:in-data-[ground]:pointer-coarse:active:bg-accent ios:active:opacity-60',
         // The ink follows the fill on hover, the way the ghost and outline
         // variants above take hover:text-foreground with their hover:bg.
         // Here it is not a look but the readability floor: this variant is
@@ -95,10 +108,10 @@ const buttonVariants = cva(
         // the same declaration darkens the light theme and lightens the
         // dark one.
         destructive:
-          'bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-[color-mix(in_oklch,var(--destructive),var(--foreground)_10%)] pointer-coarse:active:bg-destructive/20 pointer-coarse:active:text-[color-mix(in_oklch,var(--destructive),var(--foreground)_10%)] focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/25 dark:pointer-coarse:active:bg-destructive/25 dark:focus-visible:ring-destructive/40 ios:active:opacity-80',
+          'bg-destructive/10 text-destructive hover:bg-destructive/20 hover:text-[color-mix(in_oklch,var(--destructive),var(--foreground)_10%)] not-android:pointer-coarse:active:bg-destructive/20 not-android:pointer-coarse:active:text-[color-mix(in_oklch,var(--destructive),var(--foreground)_10%)] focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/25 not-android:dark:pointer-coarse:active:bg-destructive/25 dark:focus-visible:ring-destructive/40 ios:active:opacity-80',
         'destructive-solid':
-          'bg-destructive text-destructive-foreground hover:bg-destructive/90 pointer-coarse:active:bg-destructive/90 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 ios:active:opacity-80',
-        link: 'text-primary underline-offset-4 hover:underline pointer-coarse:active:underline ios:active:opacity-60',
+          'bg-destructive text-destructive-foreground hover:bg-destructive/90 not-android:pointer-coarse:active:bg-destructive/90 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 ios:active:opacity-80',
+        link: 'text-primary underline-offset-4 hover:underline not-android:pointer-coarse:active:underline ios:active:opacity-60',
       },
       size: {
         default:
