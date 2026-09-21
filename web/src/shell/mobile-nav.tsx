@@ -95,6 +95,35 @@ export function MobileBottom({ active }: { active: Section }) {
           // (ui/button, max-md:[&_svg]:size-5) and a media variant sorts
           // after this one; the iOS variant sorts after both and needs none.
           'min-h-15 items-center [&_svg]:size-6! ios:[&_svg]:size-7!',
+          // Android: the same claimed row is Material 3 Expressive's
+          // FLOATING TOOLBAR ("Platform-specific design",
+          // docs/design-principles.md). M3E retired the bottom app bar
+          // for a page's contextual actions: they belong in a pill
+          // raised over the content, hugging its own controls rather
+          // than filling the width, with no full-bleed band and no top
+          // hairline. The docked navigation bar below (MobileNav) is
+          // still Material's navigation bar and does not change; this is
+          // the other component, and only a page that claims the edge
+          // draws it.
+          //
+          // 64px, which is the toolbar's own height (the docked band is
+          // 60), centred by left-1/2 and a half-width translate rather
+          // than by inset-x, so the box is as wide as what is in it; a
+          // transform, so the measured footprint (hooks/use-bottom-bar
+          // reads offsets) never sees it. Capped short of the screen so
+          // the one claimant whose content is text and not a button
+          // strip (the opening map's selection row) still truncates
+          // inside the pill instead of running off both ends.
+          //
+          // The lift is 16px, or the gesture inset where that is larger,
+          // so the pill rests above the system's navigation area. Opaque
+          // bg-card with the raised shadow, and the window ring the iOS
+          // capsule carries for the same reason: a card fill floating on
+          // a page whose ground is the same tone has no edge otherwise
+          // (lanph3re, 2026-09-13, on the docked bar's hairline).
+          'android:left-1/2 android:right-auto android:-translate-x-1/2 android:max-w-[calc(100%-2rem)]',
+          'android:bottom-[max(1rem,var(--safe-b))] android:min-h-16 android:rounded-full',
+          'android:border-0 android:pb-0 android:px-2 android:shadow-lg android:ring-1 android:ring-window-ring',
           // With the tab bar below: what is IN the bar arrives on the
           // slide's clock during a page change (motion.css, `bar-in`).
           'bottom-bar',
@@ -103,7 +132,9 @@ export function MobileBottom({ active }: { active: Section }) {
           // the tab bar steps aside) would float an empty capsule on
           // iOS: a ring around no height. Nothing to show, nothing drawn,
           // and the note clears the indicator on its own (--page-b).
-          'ios:empty:hidden',
+          // Android's floating toolbar is a thing over the page in the
+          // same way, so it takes the same rule.
+          'ios:empty:hidden android:empty:hidden',
         )}
       />
       {!claimed && <MobileNav active={active} />}

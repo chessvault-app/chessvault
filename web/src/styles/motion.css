@@ -179,6 +179,14 @@ html[data-nav='pop'] .bottom-bar > * {
 html[data-platform='ios'][data-nav] .bottom-bar > * {
   animation: none;
 }
+/* And not in Android's floating toolbar, for exactly that reason. There
+   the docked navigation bar IS still the page's edge and keeps the fade;
+   it is the CLAIMED slot that is a pill raised over the content
+   (shell/mobile-nav), so the rule is scoped to the slot rather than to
+   the platform, and the tab bar below is untouched. */
+html[data-platform='android'][data-nav] #mobile-action-bar-slot > * {
+  animation: none;
+}
 /* The page snapshots clip to their box on the way. On iOS a page's
    scroller reaches under the capsule (PageShell and the pages that scroll
    themselves, --bottom-bar-h), and a snapshot carries its element's ink
