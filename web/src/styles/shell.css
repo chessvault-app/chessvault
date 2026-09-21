@@ -145,6 +145,79 @@
   }
 }
 
+/* Android: a page's chrome buttons take Material 3 Expressive's shapes.
+
+   The same rows the iOS rules above reach (data-chrome), by the same
+   attributes, so no page composes a shape of its own. What the registry
+   draws is a 36px tile with a 12px radius, which is a web look and was
+   the one thing left on the phone that said neither platform
+   ("Platform-specific design", docs/design-principles.md). M3E's top app
+   bar and its button groups are round: 40px icon buttons, capsules for
+   the ones carrying a word, and each keeps the fill its variant already
+   gives it, so the tonal ones stay --secondary and the primary one stays
+   primary. No new colour, and no call site changes.
+
+   The radius is written as a number, 20px, and not `rounded-full`: the
+   press below animates it, and `rounded-full` is calc(infinity), which
+   cannot be interpolated towards 12px. 20px is half of 40, which is the
+   same circle.
+
+   Under md only, the band where the phone chrome is; a tablet from md
+   keeps the docked platforms' shape, as on iOS. The back chevron is
+   ghost-faced and so has no container at any of this: Material's top app
+   bar does not put one round it, and only its hit area grows. */
+@media (max-width: 47.9375rem) {
+  :root[data-platform='android'] [data-chrome] button[data-slot='button'][data-size='icon-sm'],
+  :root[data-platform='android'] [data-chrome] button[data-slot='toggle'],
+  :root[data-platform='android'] [data-chrome] button[data-chrome-circle] {
+    @apply size-10 shrink-0 rounded-[1.25rem] px-0;
+  }
+  /* Text buttons in the chrome are capsules of the same height: a
+     shelf's Create and Import. The primary one keeps its fill; an
+     outline-faced neighbour takes the tonal one, because an outlined
+     capsule beside a filled one is the M3 pair for a dialog's two
+     answers, not for a bar's actions. Ghost-faced text stays bare, as
+     on iOS. */
+  :root[data-platform='android'] [data-chrome] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']) {
+    @apply h-10 shrink-0 rounded-[1.25rem] px-4;
+  }
+  :root[data-platform='android'] [data-chrome] button[data-slot='button'][data-size='sm'][data-variant='outline']:not([data-chrome-circle]) {
+    @apply bg-secondary text-secondary-foreground border-transparent;
+  }
+
+  /* The press, and the one state that changes SHAPE rather than fill.
+
+     M3E answers a touch by tightening the corners, and marks a selected
+     toggle by squaring them: a round button becomes a rounded square and
+     comes back. Both land on the same property, so both are written here
+     rather than in the button's own file, where the shapes above are
+     set. border-radius is paint-only, so this is a cheap animation to
+     run on a phone; it is not free to ANIMATE colour at the app's spring
+     length, so the two timings are separate. Going in is short (150ms,
+     the registry's own transition length); coming out is the app's page
+     spring, which is the one clock the phone chrome runs on
+     (--pane-turn, styles/pane-swipe.css). prefers-reduced-motion is
+     honoured by base.css's blanket rule, which zeroes every transition
+     duration. */
+  :root[data-platform='android'] [data-chrome] button[data-slot='button'],
+  :root[data-platform='android'] [data-chrome] button[data-slot='toggle'] {
+    transition-property: border-radius, background-color, color, box-shadow, opacity;
+    transition-duration: var(--pane-turn), 150ms, 150ms, 150ms, 150ms;
+    transition-timing-function: var(--pane-turn-ease), ease, ease, ease, ease;
+  }
+  :root[data-platform='android'] [data-chrome] button[data-slot='button']:active,
+  :root[data-platform='android'] [data-chrome] button[data-slot='toggle']:active {
+    border-radius: 0.75rem;
+    transition-duration: 150ms;
+    transition-timing-function: ease-out;
+  }
+  /* A selected toggle (a shelf's bookmark filter) holds the squared
+     shape while it is on, and springs back when it is let go. */
+  :root[data-platform='android'] [data-chrome] button[data-slot='toggle'][aria-pressed='true'] {
+    border-radius: 0.75rem;
+  }
+}
+
 /* The top clearance, named for the same reason, and because on iOS 27 the
    env() is not the whole of it. The system lays a blur and dim band over
    the top of an installed app, reaching below the status bar, and reports
