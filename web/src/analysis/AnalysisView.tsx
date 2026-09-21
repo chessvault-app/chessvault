@@ -11,7 +11,11 @@ import { cn } from '@/lib/utils';
 import { useMediaQuery, useTabbedPanes } from '@/lib/media';
 import { up } from '@/lib/router';
 import { copyText } from '@/lib/clipboard';
-import { canShare, share, shareIcon, textFile, type ShareResult } from '@/lib/share';
+import { share, shareIcon } from '@/lib/share';
+// The three facts every Share verb in the app needs, stated once beside
+// the sheet itself rather than here: the Board's menu was the first
+// caller, and a document's menu is the next.
+import { CAN_SHARE, PGN_TYPE, reportShare, shareDocument } from '@/lib/share-doc';
 import { forgetCollection } from '@/games/collection';
 import { toast } from '@/components/ui/toast';
 import { holdsWork, snapshotBoard, useAnalysis, type BoardSnapshot } from '@/store/analysis';
@@ -549,29 +553,6 @@ export function MoveActions({
  * away: the menu used to repeat the review, both clears and the loader
  * on a desktop, which read as a header full of duplicates.
  */
-/**
- * Whether this browser has a share sheet at all, asked once as the chunk
- * loads. `navigator.share` does not appear later in a session, and the
- * question is behaviour rather than which chrome the phone draws, so it
- * is a feature test and not `data-platform` (lib/share.ts says why). A
- * desktop browser and the Electron shell answer no and see Copy alone.
- */
-const CAN_SHARE = canShare();
-
-/** What a .pgn is on the wire, and what the sheet hands the next app. */
-const PGN_TYPE = 'application/x-chess-pgn';
-
-/**
- * Speak only where the sheet did not open. A share that went through,
- * and a share the person waved away, are both silent: the sheet was
- * itself the feedback, and a toast after it is a second dismissal.
- */
-function reportShare(result: ShareResult): void {
-  if (result === 'copied')
-    toast.add({ title: t('Sharing is not available. Copied instead.'), timeout: 3000 });
-  else if (result === 'failed') toast.add({ title: t('Could not share this') });
-}
-
 export function MovesOverflow({
   allowReset = true,
   allowClear = false,
@@ -702,13 +683,12 @@ export function MovesOverflow({
             label: 'Share PGN',
             icon: ShareGlyph,
             onSelect: () => {
-              const pgn = exportPgn();
               // A .pgn file opens in another chess app; the same moves as
-              // text only ever land in a message. So ask for the file
-              // first, and send text where the sheet will not take one.
-              const file = textFile(pgn, 'game.pgn', PGN_TYPE);
-              const data = file && canShare({ files: [file] }) ? { files: [file] } : { text: pgn };
-              void share(data, pgn).then(reportShare);
+              // text only ever land in a message. shareDocument asks for
+              // the file first and sends text where the sheet refuses one.
+              // The board's moves are nobody's document yet, so the name
+              // is the generic one.
+              shareDocument(exportPgn(), 'game.pgn', PGN_TYPE);
             },
           } as MenuAction,
         ]
