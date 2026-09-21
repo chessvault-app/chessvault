@@ -10,6 +10,7 @@ import {
   BOARD_WIDE_COLUMN,
   BOARD_WIDE_SIDE,
 } from '@/components/layout';
+import { PANE_ICON, PANE_MARKER, paneMarkerStyle } from '@/components/pane-strip';
 import { Panel, PanelHeader, panelStoredHeight } from '@/components/panel';
 import { t } from '@/lib/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -247,6 +248,9 @@ export function SkeletonBoard({
       <InertSaveState />
     </>
   );
+  // The strip's tabs, and with them the width the marker takes: the two
+  // were counted separately, in two expressions that had to agree.
+  const paneIcons = panes ?? (chapters ? [ListOrdered, Cpu, Files, Table2] : [ListOrdered, Cpu, Table2]);
   const playerBar = (
     // In the lane, like the row it stands in for — the board it is drawn
     // beside is indented by the eval bar's reservation, and a placeholder
@@ -373,27 +377,31 @@ export function SkeletonBoard({
           )}
           aria-hidden
         >
-          {(panes ?? (chapters ? [ListOrdered, Cpu, Files, Table2] : [ListOrdered, Cpu, Table2])).map((Icon, i) => (
+          {/* What marks the open pane, in the strip's own face
+              (components/pane-strip) and ahead of the tabs as the real
+              strip draws it, so the icons paint over it. This drew the
+              2px line on the card's edge that the fill replaced on
+              2026-09-18, and went on drawing it, because the two boxes
+              are the same box and no landmark is read from either. */}
+          {paneIcons.length > 0 && (
+            <span aria-hidden className={PANE_MARKER} style={paneMarkerStyle(paneIcons.length, openPane)} />
+          )}
+          {paneIcons.map((Icon, i) => (
             <div
               key={i}
               className={cn(
-                'flex flex-1 items-center justify-center',
+                // `relative`, as the real tab is (ui/tabs): the marker is
+                // positioned and would otherwise paint over the open
+                // tab's icon rather than behind it, which is a strip with
+                // one icon missing.
+                'relative flex flex-1 items-center justify-center',
                 i === openPane ? 'text-foreground' : 'text-muted-foreground',
               )}
             >
-              <Icon className="glyph" />
+              {/* The strip's own icon rung, not a row's glyph. */}
+              <Icon className={PANE_ICON} />
             </div>
           ))}
-          {/* The line that marks the open pane, which the strip draws
-              itself and a swipe moves. */}
-          <span
-            aria-hidden
-            className="bg-foreground absolute bottom-0 left-0 h-0.5 rounded-full"
-            style={{
-              width: `${100 / (panes?.length ?? (chapters ? 4 : 3))}%`,
-              translate: `${openPane * 100}%`,
-            }}
-          />
         </div>
         {/* The panels below are the wide layout's: a phone shows one pane
             at a time behind the tabs above, and that one is the panel that
