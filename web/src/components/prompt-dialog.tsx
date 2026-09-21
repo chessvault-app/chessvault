@@ -1,5 +1,6 @@
 import { useId, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { IOS_ALERT_QUIET } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { ClearableInput } from '@/components/text-fields';
 import { Dialog, DialogContent, useAlertCard, useDialogDepart } from '@/components/ui/dialog';
@@ -152,6 +153,7 @@ function PromptBody({
             // own 16px rhythm.
             alertCard === 'ios' &&
               'max-sm:gap-2.5 max-sm:[&>*]:h-12 max-sm:[&>*]:flex-1 max-sm:[&>*]:rounded-full max-sm:[&>*]:pointer-coarse:h-12',
+            alertCard === 'ios' && IOS_ALERT_QUIET,
           )}
         >
           {/* On a desktop, a way out that is not the scrim: tapping outside

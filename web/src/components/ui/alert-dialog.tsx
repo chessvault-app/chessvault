@@ -83,6 +83,22 @@ function AlertDialogHeader({ className, ...props }: React.ComponentProps<typeof 
  * DialogFooter's own col-reverse stands: one button per row, full width,
  * the action on top.
  */
+/**
+ * The quiet capsule on the iPhone's glass alert (Cancel, and a destructive
+ * action, which is the same capsule in red ink). `secondary` is an opaque
+ * near-white in light and a near-black in dark, chosen for a card's solid
+ * fill; on glass it read as a pale lozenge lighter than the card in light
+ * and a hole darker than it in dark (lanph3re on the phone, 2026-09-21).
+ * On a material the platform fills a quiet control with a wash of the
+ * label's own colour, so it is always one step INTO the glass, whichever
+ * theme and whatever is under it. One string, for the three footers that
+ * draw these capsules.
+ */
+export const IOS_ALERT_QUIET =
+  // `data-alert-quiet` for a button that is quiet here without being
+  // `secondary` everywhere else (the leave question's Discard).
+  'ios:max-sm:[&>[data-variant=secondary]]:bg-foreground/10 ios:max-sm:[&>[data-alert-quiet]]:bg-foreground/10';
+
 function AlertDialogFooter({ className, ...props }: React.ComponentProps<typeof DialogFooter>) {
   // On the iOS alert card two buttons sit side by side, each half the
   // card, which is the platform's own two-answer alert. The stack is
@@ -109,6 +125,7 @@ function AlertDialogFooter({ className, ...props }: React.ComponentProps<typeof 
         'sm:group-data-[size=sm]/alert-dialog-content:grid sm:group-data-[size=sm]/alert-dialog-content:grid-cols-2',
         alertCard === 'ios' &&
           'max-sm:flex-row max-sm:gap-2.5 max-sm:[&>*]:h-12 max-sm:[&>*]:flex-1 max-sm:[&>*]:rounded-full max-sm:[&>*]:pointer-coarse:h-12',
+        alertCard === 'ios' && IOS_ALERT_QUIET,
         alertCard === 'material' && 'max-sm:flex-row max-sm:justify-end',
         className,
       )}
@@ -169,13 +186,18 @@ function AlertDialogDescription({ className, ...props }: React.ComponentProps<ty
  * rather than in a destructive fill. Both of the app's own colours, not
  * the platform's.
  *
- * On the iOS card the DEFAULT answer is the tinted capsule, and a
- * DESTRUCTIVE one is not a red button: it is the same quiet capsule the
- * Cancel beside it wears, with the destructive ink and a semibold
- * label. iOS reserves the fill for the thing you are most likely to
- * want, and a delete is never that. The variant is swapped rather than
- * overpainted, so the capsule keeps `secondary`'s own press dim
- * (`ios:active:opacity-80`, ui/button.tsx).
+ * On the iOS card the answer is always the FILLED capsule and Cancel
+ * always the quiet wash beside it: the primary fill for a default
+ * answer, `destructive-solid` for a destructive one. It was the quiet
+ * capsule in red ink for a day, as the platform draws it, and that does
+ * not survive glass. Once the quiet capsule became a wash of the ink
+ * over the material (IOS_ALERT_QUIET above), the red label on it
+ * measured 2.5 to 3.1:1 in both themes, and no wash can fix it: red ink
+ * needs a near-white ground in light and a near-black one in dark, which
+ * is the opaque `secondary` that looked wrong on glass in the first
+ * place. A solid fill carries its own ground, so it holds over anything.
+ * The variant is swapped rather than overpainted, so the capsule keeps
+ * its own press dim (`ios:active:opacity-80`, ui/button.tsx).
  */
 function AlertDialogAction({
   className,
@@ -185,20 +207,19 @@ function AlertDialogAction({
 }: React.ComponentProps<typeof Button>) {
   const alertCard = useAlertCard();
   const text = alertCard === 'material';
-  const quiet = alertCard === 'ios' && variant === 'destructive';
+  const solid = alertCard === 'ios' && variant === 'destructive';
   return (
     <DialogClose
       render={
         <Button
           data-slot="alert-dialog-action"
-          variant={text ? 'ghost' : quiet ? 'secondary' : variant}
+          variant={text ? 'ghost' : solid ? 'destructive-solid' : variant}
           size={size}
           className={cn(
             text &&
               (variant === 'destructive'
                 ? 'text-destructive hover:text-destructive hover:bg-destructive/10'
                 : 'text-primary hover:text-primary'),
-            quiet && 'text-destructive font-semibold',
             className,
           )}
           {...props}
