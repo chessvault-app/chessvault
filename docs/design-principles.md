@@ -1353,12 +1353,20 @@ drawn, and what one has to prove.
   platform attribute; only the glyph reads the platform; nothing carrying
   book evidence is shareable). The theme-color metas are written from
   the body's resolved ground on every ground change. The desktop took
-  the inset shell: `--app-ground`, one rung under `--background`, is the
-  window's ground from md, the sidebar and the title band share it
-  without a fill or a border of their own, and the page is one
-  `rounded-xl ring-window-ring` panel inset in it, so every page's
-  interior is what it was and only the frame moved (this reopens the
-  white sidebar of 2026-09-07); a field-shaped Search button under the
+  the inset shell: `--app-ground` is the window's ground from md, the
+  sidebar and the title band share it without a fill or a border of
+  their own, and the page is one `rounded-xl` panel inset in it, so
+  every page's interior is what it was and only the frame moved (this
+  reopens the white sidebar of 2026-09-07). The frame is a rung UNDER
+  the page in light (95% to 97%) and a rung OVER it in dark
+  (`--surface`, the card's own rung, which is what the sidebar was
+  before this): dark elevation runs the other way, and 11% under a
+  14.5% page read as a void with the sidebar's labels floating in it
+  (lanph3re, at the real window, 2026-09-21). `--panel-ring` draws the
+  panel's edge only where the two fills do not: the window ring in
+  light, which is transparent until the contrast knob turns frame and
+  panel both white, and nothing at all in dark, where six points of
+  lightness at rest are the edge; a field-shaped Search button under the
   wordmark that opens the quick switcher; a games table without stripes
   (they were recorded for two-line card rows, which keep them) whose
   resize handles show on hover or focus; filters as chips at content
