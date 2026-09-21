@@ -1,0 +1,71 @@
+/* Material 3 Expressive's linear progress shape, on Android only.
+
+   M3 stopped drawing a bar as one continuous stripe: the active track has
+   rounded ends, then a 4px gap, then the inactive track, and a dot sits at
+   the far end marking where full would be. That is three changes to one
+   box, so all three are drawn here on the pseudo-elements of the track
+   rather than as extra nodes in components/ui/progress: the component
+   keeps one child per fill on every platform, and an iPhone or a desktop
+   never matches these selectors.
+
+   The value has to reach CSS for the gap to sit in the right place, so the
+   component writes it as --progress-pct, with --progress-gap beside it
+   holding the 4px only while there IS an active track: at value 0 the gap
+   would otherwise be a notch at the left end of an empty bar, which the
+   placeholders draw (Progress value={0}) more often than any real bar.
+
+   Only the single-fill bars. A bar whose fill is split into parts already
+   says something with a boundary inside the track (the solved/failed bar's
+   green and striped red), and a gap and a stop dot beside those are two
+   more marks in a 4px box: components/progress-bar asks for data-fills
+   "many" and keeps the shape it has on every platform, which is also what
+   leaves the thin book bars inside Home's cards alone.
+
+   4px is the height these numbers are drawn for, and it is the height
+   every bar in the app has (the registry's h-1). A caller that makes one
+   taller gets the same 4px gap and a dot the height of its track; nothing
+   in the app does that today. */
+[data-platform='android'] [data-slot='progress'][data-fills='one'] {
+  /* The track is now two boxes with a hole between them, so the root
+     cannot paint it. */
+  background-color: transparent;
+}
+
+/* The inactive track: from the end of the fill plus the gap, to the end. */
+[data-platform='android'] [data-slot='progress'][data-fills='one']::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(var(--progress-pct, 0%) + var(--progress-gap, 0px));
+  inset-inline-end: 0;
+  border-radius: calc(infinity * 1px);
+  background-color: var(--color-muted);
+}
+
+/* The stop indicator: a dot the height of the track, at the far end, in
+   the colour the fill is coming to meet. */
+[data-platform='android'] [data-slot='progress'][data-fills='one']::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  aspect-ratio: 1;
+  border-radius: calc(infinity * 1px);
+  background-color: var(--color-primary);
+}
+
+/* Rounded ends on the fill. The track's own clip already rounds the
+   leading end; this is the end that stops in the middle. */
+[data-platform='android'] [data-slot='progress'][data-fills='one'] > [data-slot='progress-indicator'] {
+  border-radius: calc(infinity * 1px);
+}
+
+/* The indeterminate bar is a segment sweeping a track (@keyframes sweep),
+   and it takes the rounded ends of the same shape. It takes neither of the
+   other two. The gap would have to travel with the segment, which is a
+   hole in the track moving every frame and so a mask animated by script;
+   and the stop dot says how far is left, which is exactly the claim an
+   indeterminate bar is drawn this way in order not to make. */
+[data-platform='android'] [data-motion='status'] {
+  border-radius: calc(infinity * 1px);
+}
