@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Info, ListOrdered } from 'lucide-react';
 import { ListRow } from '@/components/list-row';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
@@ -31,7 +31,43 @@ import { t } from '@/lib/i18n';
  * leaving is the one thing a reader on a slow link may want.
  */
 export default function EndgamesOutline({ params = [] }: { params?: string[] }) {
-  return params[0] ? <SkeletonBoard /> : <PickerOutline />;
+  return params[0] ? <DrillOutline /> : <PickerOutline />;
+}
+
+/**
+ * A drill is a TRAINER, and it stands where the puzzle trainer stands:
+ * one word in a flat h-8 row with the chevron a phone leaves by, two
+ * panes (its own, then the moves), and the drill panel filling the
+ * column behind them.
+ *
+ * It drew a bare board, which is a DOCUMENT: the title as a bar, the
+ * document tools, an Edit button and a save state, over a page that has
+ * none of the four; three panes where the page has two, so every tab
+ * stood at the wrong third of the strip; and the column's panel called
+ * Moves, where a phone opens on the drill's own. A document's row also
+ * grows to the 36px coarse rung where a trainer's stays 32, so the
+ * board and the whole column under it sat 4px low (measured against the
+ * page's own wait at 390x844, 2026-09-22).
+ *
+ * The word is the page's own and fixed (EndgamesView, `title`), so it
+ * is printed rather than reserved. What is NOT drawn is the drill panel
+ * at the column's foot on a wide screen, which the puzzle trainer's
+ * outline does draw: those bands are the page's, and the demo reaches
+ * no tablebase, so a second drawing of them could not be held against
+ * the first here. Nothing above it moves meanwhile, which is why that
+ * one is owed rather than wrong.
+ */
+function DrillOutline() {
+  return (
+    <SkeletonBoard
+      name={t('Endgame drill')}
+      // The trainer's two panes while an ending is being played: its own
+      // first, then the moves. The engine joins them only once the
+      // attempt is over (hooks/use-analyse-in-place).
+      panes={[Info, ListOrdered]}
+      stackedPanel={t('Endgame drill')}
+    />
+  );
 }
 
 /** Ragged name widths, so the list does not read as a barcode. */
