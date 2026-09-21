@@ -48,11 +48,11 @@ export function InstallCard() {
  *
  * Windows 11 draws Mica behind a window's chrome and macOS draws
  * sidebar vibrancy; the shell can ask for either (desktop/main.mjs) and
- * the page's ground then gets out of the way (--window-ground). What
- * stops it being simply on is that the app's reading area has no fill
- * of its own, so today the material is behind the content as well as
- * behind the chrome. The row is absent wherever the OS has no such
- * material, and absent in a browser, where the bridge is.
+ * the window's frame then gets out of the way from md, leaving the page
+ * on its own opaque panel (--window-ground, --app-ground). What stops
+ * it being simply on is that neither material has been looked at in a
+ * real window yet, on either system. The row is absent wherever the OS
+ * has no such material, and absent in a browser, where no bridge is.
  */
 function useWindowMaterial(shell: VaultShell | undefined) {
   const [state, setState] = useState<{ supported: boolean; enabled: boolean } | null>(null);

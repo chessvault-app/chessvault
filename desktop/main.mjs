@@ -221,17 +221,17 @@ const TITLE_BAR =
  * near-opaque sheet the shell paints behind a window's title bar and
  * navigation column. macOS draws sidebar vibrancy. Both need a window
  * whose background can be seen through (`#00000000`) and a page whose
- * ground is transparent over it, which is what `data-window-material`
- * and `--window-ground` do on the web side.
+ * ground is transparent over it, which is what `data-window-material`,
+ * `--window-ground` and `--app-ground` do on the web side: from md the
+ * FRAME steps aside (the title band, the sidebar, the gutter) and the
+ * page stays on its own opaque panel, which is the division of labour
+ * both systems draw themselves.
  *
- * OFF unless the user asks for it in Settings, and the reason is
- * honest rather than cautious: the app's content area has no fill of
- * its own, so with the ground transparent the material is behind the
- * READING surface as well as behind the chrome, which is not what
- * either OS means by it. The inset shell that gives the content its own
- * opaque panel is what makes this the default; until then the switch is
- * how someone sees it, and nothing about the window changes for anyone
- * who leaves it alone.
+ * Still OFF unless the user asks for it in Settings, and now for one
+ * reason only: no window has been opened to look at it. Neither the
+ * mica nor the vibrancy number has been read against a real desktop,
+ * and the sidebar's ink has to hold 4.5:1 over whatever comes through.
+ * Nothing about the window changes for anyone who leaves it alone.
  */
 function materialSupported() {
   if (process.platform === 'darwin') return true;
@@ -255,6 +255,15 @@ function materialOptions() {
     // the app last resolved to.
     backgroundColor: '#00000000',
     show: false,
+    // The caption buttons sit on the band, and under a material the band
+    // has no fill to give them: the OS composites the strip over the
+    // material instead. The page pushes the same value once its
+    // stylesheet has resolved (components/title-bar, toOverlayColor);
+    // this is so the window never opens with the opaque strip the
+    // non-material window opens with.
+    ...(process.platform === 'win32' && TITLE_BAR.titleBarOverlay
+      ? { titleBarOverlay: { ...TITLE_BAR.titleBarOverlay, color: '#00000000' } }
+      : {}),
     ...(process.platform === 'darwin'
       ? // The sidebar material, and `followWindow` rather than `active`:
         // a native sidebar goes flat when its window loses focus, and

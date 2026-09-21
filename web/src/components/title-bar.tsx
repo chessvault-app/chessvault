@@ -52,7 +52,11 @@ import { useTheme } from '@/store/theme';
  * window's ground from md (App.tsx, --app-ground), which is what the
  * sidebar is now; under md there is no frame and the band keeps the
  * card's white. The caption buttons the OS draws are sent whatever this
- * element resolves to, so they follow it without being told.
+ * element resolves to, so they follow it without being told, with the
+ * one case that has no colour to send handled in toOverlayColor below:
+ * with an OS window material behind the window the band's own fill is
+ * what steps aside, and a hex of it would put an opaque strip back over
+ * the material at the one corner the material is most visible in.
  */
 
 /** The shell's window-chrome bridge; absent everywhere but the desktop. */
@@ -69,19 +73,50 @@ const bridge = (): TitleBarBridge | null =>
   (window as unknown as { vaultShell?: { titleBar?: TitleBarBridge } }).vaultShell?.titleBar ?? null;
 
 /**
- * A computed colour as hex, which is what the overlay takes. The
- * stylesheet's colours are oklch, and getComputedStyle hands them back
- * that way (measured: `oklch(1 0 264)` for the light ground); a canvas
- * resolves any CSS colour to its sRGB bytes.
+ * A computed colour's sRGB bytes. The stylesheet's colours are oklch,
+ * and getComputedStyle hands them back that way (measured: `oklch(1 0
+ * 264)` for the light ground); a canvas resolves any CSS colour, an
+ * oklch or a color-mix alike, to bytes. The canvas starts transparent
+ * and the bytes come back premultiplied, so the alpha is the one to
+ * read and the three beside it mean what they say only at 255.
  */
-export function toHex(css: string): string | null {
+function toBytes(css: string): [number, number, number, number] | null {
   const ctx = document.createElement('canvas').getContext('2d');
   if (!ctx) return null;
   ctx.fillStyle = '#000';
   ctx.fillStyle = css;
   ctx.fillRect(0, 0, 1, 1);
-  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-  return `#${[r, g, b].map((v) => v!.toString(16).padStart(2, '0')).join('')}`;
+  const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+  return [r!, g!, b!, a!];
+}
+
+const hex = (bytes: number[]): string =>
+  `#${bytes.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+
+/** A computed colour as hex, which is what the overlay takes. */
+export function toHex(css: string): string | null {
+  const bytes = toBytes(css);
+  return bytes ? hex(bytes.slice(0, 3)) : null;
+}
+
+/**
+ * The same, for the strip the OS draws its caption buttons on, which is
+ * the one colour here that can have nothing behind it.
+ *
+ * With a window material the band's ground is transparent (mica) or a
+ * mix that lets the desktop through (vibrancy), and a hex of either is a
+ * lie the OS would paint as a solid block: transparent resolves to black
+ * and a 70% mix flattens to a colour nothing else on the screen is. Any
+ * fill that is not fully opaque therefore sends `#00000000`, which is
+ * what a Mica window gives its overlay, and the buttons sit on the
+ * material with the app's own ink on them. Fully opaque, which is every
+ * window with the switch off and every window under md, is the hex it
+ * always was.
+ */
+export function toOverlayColor(css: string): string | null {
+  const bytes = toBytes(css);
+  if (!bytes) return null;
+  return bytes[3] === 255 ? hex(bytes.slice(0, 3)) : '#00000000';
 }
 
 /** Whether the desktop shell draws the app's title bar. */
@@ -132,9 +167,10 @@ export function TitleBar() {
     const frame = requestAnimationFrame(() => {
       // The band's own fill, which is the card's, not the page's: the
       // caption buttons the OS draws at its right end have to sit on
-      // the colour the band is.
+      // the colour the band is, or on the material where the band has
+      // stepped aside for one (toOverlayColor).
       const band = document.getElementById('title-bar');
-      const color = toHex(getComputedStyle(band ?? document.body).backgroundColor);
+      const color = toOverlayColor(getComputedStyle(band ?? document.body).backgroundColor);
       // The glyphs keep the page's ink: the band's own text is the muted
       // tier, and a caption button is a control, not a caption.
       const symbolColor = toHex(getComputedStyle(document.body).color);

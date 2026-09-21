@@ -71,6 +71,17 @@ export function rememberGround(): void {
   // The body, not the root: the root may still wear the launch pin when
   // the scheme is applied, and reading it back would store the pin. It is
   // also the only element whose colour is the CHOSEN theme's; see apply().
+  // Not while an OS window material is behind the window: from md the
+  // body's ground is then transparent or a mix, and pinning either is
+  // pinning a hole. The launch pin's whole job is to be OPAQUE before
+  // the page paints (index.html), so what is already stored — the ground
+  // this app last resolved to without a material, or the default — is
+  // what the next launch should wear, and the handover to the real
+  // ground is unchanged: apply() takes the pin off and the frame goes
+  // translucent from there. A tint or contrast change made while the
+  // material is on therefore leaves the pin one theme behind, which is
+  // an opaque neutral either way.
+  if (document.documentElement.dataset.windowMaterial) return;
   const ground = getComputedStyle(document.body).backgroundColor;
   if (!ground || ground === 'rgba(0, 0, 0, 0)') return;
   for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
