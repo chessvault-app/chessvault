@@ -1085,7 +1085,11 @@ export const ko: Record<string, string> = {
   // The moves panel's overflow menu.
   'Load a position': '포지션 불러오기',
   'Copy FEN': 'FEN 복사',
+  'Share FEN': 'FEN 공유',
   'Copy PGN': 'PGN 복사',
+  'Share PGN': 'PGN 공유',
+  'Sharing is not available. Copied instead.': '공유를 사용할 수 없습니다. 대신 복사했습니다.',
+  'Could not share this': '공유하지 못했습니다',
   'Engine review': '엔진 리뷰',
   // The puzzle filters, as menus.
   Status: '상태',
