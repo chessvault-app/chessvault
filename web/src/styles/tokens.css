@@ -572,3 +572,30 @@
   --radius: 0.625rem;
 }
 
+/* ---------------------------------------------------------------------------
+   Typefaces.
+
+   The stacks live here rather than in theme.css so that a platform can swap
+   one: theme.css is `@theme inline` and re-exports these as --font-sans,
+   --font-mono, --font-moves and --font-heading.
+
+   Pretendard replaced Inter because half this app's UI is Korean and Inter
+   has no hangul (index.css has the sizes). It is still the app's face
+   everywhere the OS does not bring a better one of its own.
+   --------------------------------------------------------------------------- */
+
+:root {
+  --font-pretendard: 'Pretendard Variable', Pretendard, ui-sans-serif, system-ui, -apple-system,
+    'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --font-sans-stack: var(--font-pretendard);
+  /* Pretendard sits in the mono stack ON PURPOSE, ahead of the generic
+     fallbacks. JetBrains Mono has no hangul, so a Korean word inside a
+     mono element fell through to whatever the OS offered, which is why
+     "엔진" and "깊이" rendered as two different typefaces two centimetres
+     apart, one of them not Pretendard. Latin still hits JetBrains Mono
+     first and keeps its fixed advance; only the characters JetBrains Mono
+     genuinely cannot draw reach Pretendard, and those were never going to
+     be monospaced anyway. */
+  --font-mono-stack: 'JetBrains Mono', 'Pretendard Variable', Pretendard, ui-monospace, 'SF Mono',
+    Menlo, monospace;
+}
