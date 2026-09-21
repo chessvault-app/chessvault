@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { prefersReducedMotion } from '@/lib/motion';
+import { currentPlatform } from '@/lib/platform';
 
 /**
  * How far a finger must travel before the gesture has an axis at all.
@@ -34,6 +35,63 @@ const VERTICAL_RATIO = 1.5;
  */
 const PULL_REST = 64;
 const PULL_MAX = 160;
+
+/**
+ * How far down the content is held on iOS while the refetch is out.
+ *
+ * UIRefreshControl's own band is 60pt and the content settles into it
+ * rather than back to where the finger left it; 56 is that band less the
+ * couple of points the app's own 28px indicator needs to sit centred in
+ * it without touching either edge. Android has no hold at all: its
+ * content never moved, so there is nothing to hold.
+ */
+const PULL_HOLD = 56;
+
+/** Whether this phone draws iOS's control. Read once per gesture: the
+    platform is decided before the first render and never changes. */
+function iosLook(): boolean {
+  return currentPlatform() === 'ios';
+}
+
+/**
+ * Where the indicator rests while the refetch is out.
+ *
+ * Two numbers because the two platforms are resting two different
+ * things. On iOS the number is the band the CONTENT is held open by, and
+ * the spinner is centred in it; on Android it is how far the circle
+ * itself has travelled down over content that never moved, which is the
+ * same distance that committed, so the release does not move it.
+ */
+export function pullRest(ios: boolean): number {
+  return ios ? PULL_HOLD : PULL_REST;
+}
+
+/**
+ * How wide the gap is, for a finger that has gone `dy` on a scroller
+ * whose own rubber band has already opened `band` of it.
+ *
+ * iOS Safari rubber-bands an `overflow-y: auto` element at its top
+ * whatever `overscroll-behavior` says (contain stops the chain, not the
+ * elasticity), and reports the bounce as a NEGATIVE scrollTop. That band
+ * is the gap the indicator has to sit in, and the app cannot fight it:
+ * nothing here preventDefaults. So the gap is whichever is larger, the
+ * browser's band or this hook's own curve, and the difference is what
+ * the app adds by translating the content (`pullOwn`). Where the band is
+ * the larger the app adds nothing and the browser is doing all of it;
+ * where there is no band at all — Android, a desktop window, a WebView
+ * without the bounce — the app is doing all of it and the curve is
+ * exactly what it always was.
+ */
+export function pullGap(dy: number, band: number): number {
+  return Math.max(pullDistance(dy), Math.max(0, band));
+}
+
+/** How much of that gap the app has to open itself. Zero whenever the
+    browser's band is already wider, which is what keeps the two from
+    fighting. */
+export function pullOwn(gap: number, band: number): number {
+  return Math.max(0, gap - Math.max(0, band));
+}
 
 /**
  * How far the indicator has travelled for a finger that has gone `dy`.
@@ -155,8 +213,12 @@ function fieldFocused(): boolean {
  * lists had exactly one way to ask again, which was to leave the page and
  * come back, and on an installed PWA there is no reload button to fall
  * back to. This is both platforms' answer to that (iOS's own control and
- * Material's are the same gesture), so it is not gated by platform; only
- * the indicator is drawn, and it is drawn one way on both.
+ * Material's are the same gesture), so the GESTURE is not gated by
+ * platform. What it DRAWS is, because the two platforms disagree about
+ * what moves: Material drops a raised circle down over content that
+ * stays put, and iOS opens a gap above the content and stands a bare
+ * activity indicator in it. This hook feeds both the same two numbers
+ * and `components/pull-refresh` places them.
  *
  * Touch only, from the very top of the scroller, and only for a pull that
  * is clearly vertical: the board pages' panes are flicked sideways on the
@@ -176,8 +238,14 @@ function fieldFocused(): boolean {
  * tab, and an installed PWA in standalone has it on Android and not on
  * iOS. So the app is already contained everywhere this gesture can run,
  * and a scroller that lost the rule would be a page that also bounced the
- * whole shell. iOS's native rubber band still moves the page under the
- * indicator, which is left alone: that is what its own control looks like.
+ * whole shell. What `contain` does NOT do on iOS is stop the elasticity:
+ * Safari still rubber-bands the scroller itself at its top, which the
+ * first pass read as "that is what its own control looks like" and which
+ * lanph3re's screenshot showed it is not. The band dragged the page
+ * header 200pt down and the indicator, pinned to a fixed spot, landed on
+ * the header's buttons: two systems moving, neither knowing about the
+ * other. They are one system now (`pullGap`), and the app adds only the
+ * part of the gap the browser did not open.
  *
  * Nor does anything here preventDefault, so the listeners stay passive and
  * the scroll they ride on is never blocked on this hook's main thread.
@@ -206,6 +274,14 @@ export function usePullRefresh({
    * gave us.
    */
   const indicator = useRef<HTMLElement | null>(null);
+  /**
+   * What the app moves to open the gap on iOS: the scrolling page's own
+   * column, found the same way and for the same reason. It is the
+   * element PageShell already draws, not a wrapper added for this: a box
+   * between the scroller and the column would be a new percentage base
+   * under every `min-h-full` a page passes.
+   */
+  const content = useRef<HTMLElement | null>(null);
   /** Running, so a second pull cannot start a second refetch. */
   const busy = useRef(false);
 
@@ -218,21 +294,45 @@ export function usePullRefresh({
     let distance = 0;
     /** Read once per gesture, so a setting changed mid-session is honoured. */
     let still = false;
+    let ios = false;
     let live = true;
 
-    /** Move the circle. Written to the node, not to state. */
-    const paint = (state: 'pulling' | 'refreshing' | null, at: number): void => {
+    /**
+     * Move the indicator, and on iOS the page under it. Written to the
+     * nodes, not to state.
+     *
+     * Two numbers reach the CSS and the CSS does the geometry: `--pull-gap`
+     * is how tall the gap at the top of the scroller is, and `--pull-own`
+     * is how much of it this hook opened rather than the browser. The
+     * indicator's own box rides the content, so where the spinner has to
+     * be drawn inside it depends on both, and both platforms' placements
+     * are one expression each in `components/pull-refresh`.
+     */
+    const paint = (state: 'pulling' | 'refreshing' | null, gap: number, own: number): void => {
       const node = indicator.current;
+      const col = content.current;
+      if (col && ios) {
+        // No transition while the finger is down: the content answers it
+        // frame by frame. On release the hold is taken instantly (the
+        // browser's own band is still springing back out from under it)
+        // and only the close at the end is animated, on the app's spring.
+        col.style.transition =
+          state === null && !still ? 'transform var(--pane-turn) var(--pane-turn-ease)' : 'none';
+        if (own > 0) col.style.transform = `translate3d(0,${own}px,0)`;
+        else col.style.removeProperty('transform');
+      }
       if (!node) return;
       if (state === null) {
         delete node.dataset.pull;
-        node.style.removeProperty('--pull-y');
+        node.style.removeProperty('--pull-gap');
+        node.style.removeProperty('--pull-own');
         node.style.removeProperty('--pull-p');
         return;
       }
       node.dataset.pull = state;
-      node.style.setProperty('--pull-y', `${at}px`);
-      node.style.setProperty('--pull-p', String(pullProgress(at)));
+      node.style.setProperty('--pull-gap', `${gap}px`);
+      node.style.setProperty('--pull-own', `${own}px`);
+      node.style.setProperty('--pull-p', String(pullProgress(gap)));
     };
 
     const forget = (): void => {
@@ -247,11 +347,13 @@ export function usePullRefresh({
     const release = (commit: boolean): void => {
       forget();
       if (!commit) {
-        paint(null, 0);
+        paint(null, 0, 0);
         return;
       }
       busy.current = true;
-      paint('refreshing', PULL_REST);
+      // The browser's band, if there was one, springs back on its own the
+      // moment the finger leaves, so the hold is the app's whole gap.
+      paint('refreshing', pullRest(ios), ios ? pullRest(ios) : 0);
       const shown = performance.now();
       void Promise.resolve(refresh())
         .catch(() => {
@@ -263,7 +365,7 @@ export function usePullRefresh({
           window.setTimeout(
             () => {
               busy.current = false;
-              if (live) paint(null, 0);
+              if (live) paint(null, 0, 0);
             },
             Math.max(0, left),
           );
@@ -280,8 +382,10 @@ export function usePullRefresh({
       if (layerOpen() || fieldFocused()) return;
       if (claimed(e.target, scroller)) return;
       indicator.current = scroller.querySelector<HTMLElement>('[data-slot="pull-refresh"]');
+      content.current = scroller.querySelector<HTMLElement>('[data-slot="pull-content"]');
       const touch = e.touches[0]!;
       still = prefersReducedMotion();
+      ios = iosLook();
       start = { x: touch.clientX, y: touch.clientY };
     };
 
@@ -296,12 +400,16 @@ export function usePullRefresh({
       if (axis !== 'y') return;
       // The list moved under the gesture after all: it is a scroll.
       if (!canPull(scroller.scrollTop)) return void release(false);
-      distance = pullDistance(dy);
+      // One read of scrollTop per move. On iOS it is negative through the
+      // browser's own rubber band, and that band is part of the gap; on
+      // every other platform it is 0 here and the gap is the curve alone.
+      const band = ios ? -scroller.scrollTop : 0;
+      distance = pullGap(dy, band);
       // Reduced motion keeps the distance but draws none of the travel:
       // nothing on screen until the pull has committed, and then the
       // spinner at rest. The threshold is the same threshold.
       if (still) return;
-      paint('pulling', distance);
+      paint('pulling', distance, ios ? pullOwn(distance, band) : 0);
     };
 
     const onEnd = (): void => {

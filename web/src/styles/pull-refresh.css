@@ -1,0 +1,39 @@
+/* Where a pull to refresh puts its indicator (components/pull-refresh,
+   hooks/use-pull-refresh). Two placements, one per platform's own
+   control, from the two custom properties the hook writes: `--pull-gap`,
+   how tall the gap at the top of the scroller is, and `--pull-own`, how
+   much of that gap the app opened rather than the browser's own rubber
+   band.
+
+   Here rather than in an arbitrary Tailwind value because both are
+   expressions over three variables, and a class name that spells one out
+   with underscores for its spaces is not something the next reader can
+   check. In @layer components, so a caller's own utility still wins. */
+
+@layer components {
+  /* Material: a raised circle travelling down over content that never
+     moves. One to one with the finger, offset past the status-bar inset
+     and the page header's 44px row so it comes to rest clear of the
+     header's buttons instead of on them, which is where Material puts it
+     under a top app bar. At the 64px that commits, the circle's middle
+     is 76px down and its box runs 60 to 92, and the header row ends at
+     60. */
+  [data-slot='pull-refresh'] > [data-slot='pull-indicator'] {
+    transform: translate3d(0, calc(var(--page-t) + var(--pull-gap, 0px) + 0.75rem), 0)
+      rotate(calc(var(--pull-p, 0) * 180deg));
+  }
+
+  /* iOS: the bare indicator centred in the band, with no container to
+     travel. This element rides down with the content, so the gap's own
+     top is `--pull-gap` above it and the middle of what that leaves
+     under the status-bar inset is half of (--page-t - --pull-gap) from
+     here; `--pull-own` puts back the part of the drop the app made
+     rather than Safari, which this element did NOT ride down. The
+     spinner scales from 60% as it fades in, iOS's own reveal minus the
+     spoke-by-spoke fill, which the drawing cannot do from one variable
+     without eight more rules. */
+  [data-platform='ios'] [data-slot='pull-refresh'] > [data-slot='pull-indicator'] {
+    transform: translate3d(0, calc((var(--page-t) - var(--pull-gap, 0px)) / 2 + var(--pull-own, 0px)), 0)
+      scale(calc(0.6 + var(--pull-p, 0) * 0.4));
+  }
+}

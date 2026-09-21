@@ -124,6 +124,13 @@ export function PageShell({
           at the top of every adopting page. */}
       {scroll && onRefresh !== undefined && <PullRefresh />}
       <div
+        // What a pull to refresh moves on iOS, where the control is a gap
+        // above the content rather than a circle over it
+        // (hooks/use-pull-refresh writes a transform here). The column
+        // itself, not a wrapper around it: a box between the scroller and
+        // this one would be a new percentage base under every `min-h-full`
+        // a page passes in through className.
+        data-slot="pull-content"
         className={cn(
           // The top adds --page-t, the phone's status-bar inset (styles/
           // shell.css): the column starts under it, and what scrolls
