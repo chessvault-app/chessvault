@@ -1,7 +1,7 @@
 import { Keyboard, Moon, PanelLeft, Rows3, Sun, SunMoon } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { openShortcutsHelp } from '@/components/shortcuts-help';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, useDialogDepart } from '@/components/ui/dialog';
 import { Kbd } from '@/components/ui/kbd';
 import {
   Command,
@@ -17,6 +17,7 @@ import type { HomeEntryId } from '@/home/layout';
 import { SECTION_ICON, type IconSection } from '@/lib/sectionIcon';
 import { api } from '@/lib/api';
 import { useMediaQuery } from '@/lib/media';
+import { currentPlatform } from '@/lib/platform';
 import { navigate } from '@/lib/router';
 import { t } from '@/lib/i18n';
 import { usePrefs } from '@/store/prefs';
@@ -217,6 +218,34 @@ export function QuickSwitcher() {
   );
 }
 
+/**
+ * The iPhone's Cancel, beside the field.
+ *
+ * Written inside the card so it can leave through `useDialogDepart`: the
+ * sheet slides away and the caller's state change follows, rather than
+ * unmounting the sheet in the same commit and cutting the exit. The
+ * press is prevented from taking the focus, as the search field's own
+ * Cancel is, so the field stays focused until the click has run and the
+ * keyboard goes down with the sheet rather than before it.
+ */
+function SearchCancel({ close }: { close: () => void }) {
+  const depart = useDialogDepart();
+  return (
+    <button
+      type="button"
+      // The iOS chrome rule in styles/shell.css draws this: glass, a
+      // capsule, the ring and the press dip. Only the height and the
+      // side padding are the field's own business.
+      data-search-cancel=""
+      className="ml-1.5 h-8 shrink-0 rounded-full px-3 text-sm font-medium whitespace-nowrap"
+      onPointerDown={(e) => e.preventDefault()}
+      onClick={() => depart(close)}
+    >
+      {t('Cancel')}
+    </button>
+  );
+}
+
 /** The window itself, mounted only while open, so its hooks read fresh. */
 function QuickSwitcherWindow({
   query,
@@ -245,6 +274,7 @@ function QuickSwitcherWindow({
   const setFolded = useSidebar((s) => s.setFolded);
   const folded = foldedFrom(choice, lg);
   const mod = /Mac|iPhone|iPad/.test(navigator.platform) ? '\u2318' : 'Ctrl';
+  const iosPhone = !sm && currentPlatform() === 'ios';
 
   const tokens = tokensOf(query);
   // The documents this device opened last, in that order, as the index
@@ -351,7 +381,21 @@ function QuickSwitcherWindow({
           onValueChange={setValue}
           className="max-sm:min-h-0 max-sm:flex-1 max-sm:p-0"
         >
-          <CommandInput placeholder={t('Open anything…')} value={query} onValueChange={setQuery} />
+          {/* iOS puts a Cancel beside a search field rather than leaving
+              the field alone in the sheet, and this sheet had no visible
+              way out on a phone at all: the grabber, the scrim and Back.
+              An iPhone in this window has none of the last two to speak
+              of (the sheet is `fill`, so the scrim is a strip) and no
+              Back inside a sheet, which leaves the drag. Same material
+              as every other search Cancel on iOS (styles/shell.css,
+              `data-search-cancel`), so the row reads as the platform's
+              search bar and not as a button this window invented.
+              Android and desktop are not given one: their sheet keeps
+              the three ways out it was measured with. */}
+          <div className="flex items-center [&>[data-slot=command-input-wrapper]]:min-w-0 [&>[data-slot=command-input-wrapper]]:flex-1">
+            <CommandInput placeholder={t('Open anything…')} value={query} onValueChange={setQuery} />
+            {iosPhone && <SearchCancel close={close} />}
+          </div>
           <CommandList className="max-sm:min-h-0 max-sm:max-h-none max-sm:flex-1">
             <CommandEmpty>{t('Nothing matches.')}</CommandEmpty>
             {recent.length > 0 && (
