@@ -4,7 +4,7 @@ import { Crown, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { forgetTablebaseAnswers } from '@/explorer/tablebase';
 import { Field } from '@/components/ui/field';
-import { SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
+import { SETTINGS_LIST, SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
 import { ClearableInput } from '@/components/text-fields';
 import { Select } from '@/components/ui/select';
 import { SettingRow } from '@/components/setting-row';
@@ -327,7 +327,7 @@ export function TablebaseCard({
           <p className="text-muted-foreground text-sm leading-relaxed">
             {t('Answers are kept for good, so each ending is asked about once.')}
           </p>
-          <div className="border-border rounded-lg border">
+          <div className={SETTINGS_LIST}>
             <div className="flex items-center gap-2 py-(--row-py-dense) pl-3 pr-1.5">
               <div className="flex min-w-0 flex-1 items-baseline gap-2">
                 <p className="min-w-0 flex-1 truncate type-row">{t('Cached answers')}</p>

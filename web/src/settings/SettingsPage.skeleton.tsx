@@ -122,6 +122,20 @@ function JumpRow() {
  * an iPad in landscape is `data-platform="ios"` too and draws the
  * desktop page.
  */
+/**
+ * A list inside a settings card: rows in one outlined box, on the desktop
+ * and on Android. Inside an iPhone group the box is a card within a card,
+ * and its full-width dividers disagreed with the group's own, which start
+ * at the label (lanph3re on the phone, 2026-09-21). So there the box goes:
+ * no outline, no corners, the rows start at the label's edge and their
+ * dividers run from there to the card's right edge, which is exactly what
+ * the group's hairlines do. One string, so every list agrees.
+ */
+export const SETTINGS_LIST =
+  'divide-border border-border divide-y rounded-lg border ' +
+  'max-md:ios:-mr-4 max-md:ios:rounded-none max-md:ios:border-0 ' +
+  'max-md:ios:[&>:is(li,div)]:min-h-11 max-md:ios:[&>:is(li,div)]:items-center max-md:ios:[&>:is(li,div)]:pl-0 max-md:ios:[&>:is(li,div)]:pr-4';
+
 const IOS_GROUP =
   'max-md:ios:gap-0 max-md:ios:overflow-hidden max-md:ios:rounded-xl max-md:ios:bg-card max-md:ios:ring-1 max-md:ios:ring-card-ring ' +
   'max-md:ios:[&>*]:relative max-md:ios:[&>*]:min-h-11 max-md:ios:[&>*]:px-4 max-md:ios:[&>*]:py-2.5 ' +
