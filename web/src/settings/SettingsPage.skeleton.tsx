@@ -133,7 +133,19 @@ const IOS_GROUP =
   'max-md:ios:[&>[data-slot=setting-row]]:rounded-none max-md:ios:[&>[data-slot=setting-row]]:border-0 max-md:ios:[&>[data-slot=setting-row]]:bg-transparent max-md:ios:[&>[data-slot=setting-row]]:px-4 max-md:ios:[&>[data-slot=setting-row]]:py-2.5 ' +
   // A rule between two rows is the hairline's job here, and a Separator
   // beside it draws the same line twice.
-  'max-md:ios:[&>[data-slot=separator]]:hidden';
+  'max-md:ios:[&>[data-slot=separator]]:hidden ' +
+  // Fewer lines (lanph3re on the phone, 2026-09-21: the page had more
+  // hairlines than it needed). Three were not separating rows at all. A
+  // note under a control belongs to that control, so it joins the row
+  // above it with no rule between them. A select drew its own box inside
+  // a ruled row, two line systems for one value, so inside a group it is
+  // the platform's plain value: no box, the muted ink, its chevron. And a
+  // disclosure is content-width, which cut its rule off a third of the
+  // way across; it takes the row's width so the rule is a whole one.
+  'max-md:ios:[&>p:not(:first-child)]:min-h-0 max-md:ios:[&>p:not(:first-child)]:pt-0 max-md:ios:[&>p:not(:first-child)]:before:hidden ' +
+  'max-md:ios:[&_[data-slot=select-trigger]]:border-transparent max-md:ios:[&_[data-slot=select-trigger]]:bg-transparent max-md:ios:[&_[data-slot=select-trigger]]:px-0 max-md:ios:[&_[data-slot=select-trigger]]:shadow-none max-md:ios:[&_[data-slot=select-trigger]]:text-muted-foreground ' +
+  'max-md:ios:[&_[data-slot=setting-row]_[data-slot=select-trigger]]:justify-end max-md:ios:[&_[data-slot=setting-row]_[data-slot=select-trigger]]:gap-1 max-md:ios:[&_[data-slot=setting-row]_[data-slot=select-trigger]>span]:text-right ' +
+  'max-md:ios:[&>button]:self-stretch';
 
 /**
  * The same list in Material's flavour, for an Android phone.
