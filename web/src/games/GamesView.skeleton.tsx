@@ -12,7 +12,7 @@ import {
   MoreFiltersButton,
   NotesSelect,
   OwnershipSelect,
-  QUICK_SELECT,
+  quickChip,
   ResultSelect,
   useFiltersFolded,
 } from '@/games/GameFilters';
@@ -234,17 +234,17 @@ export function CollectionPaneOutline({
                 <OwnershipSelect
                   value="any"
                   onChange={NOOP}
-                  className={cn(QUICK_SELECT, merged && 'flex-none')}
+                  className={quickChip(false)}
                 />
                 <ResultSelect
                   value="any"
                   onChange={NOOP}
-                  className={cn(QUICK_SELECT, merged && 'flex-none')}
+                  className={quickChip(false)}
                 />
                 <NotesSelect
                   value="any"
                   onChange={NOOP}
-                  className={cn(QUICK_SELECT, merged && 'flex-none')}
+                  className={quickChip(false)}
                 />
                 <MoreFiltersButton on={false} onClick={NOOP} />
               </>

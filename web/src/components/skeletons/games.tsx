@@ -3,6 +3,10 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { GAME_TABLE_GRID, gameTableColumns, type GameColumn } from '@/games/GameTable';
+// The bar's own class strings, from the component-free module the three
+// lists draw their chips from — so this row is the same widths by
+// construction rather than by a copy that has to be re-measured.
+import { MORE_FILTERS_CHIP, MORE_FILTERS_LABEL, quickChip } from '@/games/filter-chips';
 import { t } from '@/lib/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
 import { INERT, Inert, Loading } from './primitives';
@@ -41,7 +45,7 @@ export function SkeletonFilterRow({ className }: { className?: string }) {
           value="any"
           ariaLabel={t('Whose games')}
           size="sm"
-          className="min-w-0 flex-1"
+          className={quickChip(false)}
           disabled
           groups={[
             {
@@ -58,7 +62,7 @@ export function SkeletonFilterRow({ className }: { className?: string }) {
           value="any"
           ariaLabel={t('Result')}
           size="sm"
-          className="min-w-0 flex-1"
+          className={quickChip(false)}
           disabled
           groups={[
             {
@@ -75,7 +79,7 @@ export function SkeletonFilterRow({ className }: { className?: string }) {
           value="any"
           ariaLabel={t('Notes')}
           size="sm"
-          className="min-w-0 flex-1"
+          className={quickChip(false)}
           disabled
           groups={[
             {
@@ -86,8 +90,14 @@ export function SkeletonFilterRow({ className }: { className?: string }) {
             },
           ]}
         />
-        <Button variant="secondary" size="icon-sm" className="relative shrink-0" {...INERT}>
+        <Button
+          variant="secondary"
+          size="icon-sm"
+          className={cn('relative shrink-0', MORE_FILTERS_CHIP)}
+          {...INERT}
+        >
           <SlidersHorizontal className="glyph" />
+          <span className="max-md:hidden">{t(MORE_FILTERS_LABEL)}</span>
         </Button>
       </Inert>
     </Loading>

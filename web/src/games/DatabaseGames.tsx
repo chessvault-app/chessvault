@@ -31,7 +31,8 @@ import {
   type ResultFilter,
   type StructuredFilters,
   type ValueSuggestion,
-  QUICK_SELECT,
+  quickChip,
+  ClearFiltersButton,
   hasStructuredFilters,
   useFiltersFolded,
 } from './GameFilters';
@@ -1237,12 +1238,12 @@ export function DatabaseGames({
       <ResultSelect
         value={resultFilter}
         onChange={setResultFilter}
-        className={cn(QUICK_SELECT, merged && 'flex-none')}
+        className={quickChip(resultFilter !== 'any')}
       />
       <StrengthSelect
         value={minElo}
         onChange={setMinElo}
-        className={cn(QUICK_SELECT, merged && 'flex-none')}
+        className={quickChip(minElo !== 0)}
       />
       {/* The rest of the constraints — who, which side, which outcome,
           which opening, which tournament, which dates — live in a window:
@@ -1255,6 +1256,15 @@ export function DatabaseGames({
           setEditingFilters(true);
         }}
       />
+      {(resultFilter !== 'any' || minElo !== 0 || structuredOn) && (
+        <ClearFiltersButton
+          onClick={() => {
+            setResultFilter('any');
+            setMinElo(0);
+            setStructured(EMPTY_STRUCTURED_FILTERS);
+          }}
+        />
+      )}
       {editingFilters && (
         <StructuredFiltersWindow
           initial={structured}

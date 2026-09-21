@@ -46,7 +46,8 @@ import {
   type OwnershipFilter,
   type ResultFilter,
   type StructuredFilters,
-  QUICK_SELECT,
+  quickChip,
+  ClearFiltersButton,
   useFiltersFolded,
 } from './GameFilters';
 import { GameRow, docId, gameKey, safeLink, type GameSummary, type Preview } from './shared';
@@ -612,17 +613,17 @@ export function CollectionList({
         <OwnershipSelect
           value={ownFilter}
           onChange={inTransition(setOwnFilter)}
-          className={cn(QUICK_SELECT, merged && 'flex-none')}
+          className={quickChip(ownFilter !== 'any')}
         />
         <ResultSelect
           value={resultFilter}
           onChange={inTransition(setResultFilter)}
-          className={cn(QUICK_SELECT, merged && 'flex-none')}
+          className={quickChip(resultFilter !== 'any')}
         />
         <NotesSelect
           value={notesFilter}
           onChange={inTransition(setNotesFilter)}
-          className={cn(QUICK_SELECT, merged && 'flex-none')}
+          className={quickChip(notesFilter !== 'any')}
         />
         <MoreFiltersButton
           on={hasStructuredFilters(structured)}
@@ -634,6 +635,24 @@ export function CollectionList({
             setEditingFilters(true);
           }}
         />
+        {/* Only while something is set: an always-there Clear is a
+            control that does nothing most of the time, and the chips
+            already say what would be cleared. */}
+        {(ownFilter !== 'any' ||
+          resultFilter !== 'any' ||
+          notesFilter !== 'any' ||
+          hasStructuredFilters(structured)) && (
+          <ClearFiltersButton
+            onClick={() =>
+              startTransition(() => {
+                setOwnFilter('any');
+                setResultFilter('any');
+                setNotesFilter('any');
+                setStructured(EMPTY_STRUCTURED_FILTERS);
+              })
+            }
+          />
+        )}
         {editingFilters && (
           <StructuredFiltersWindow
             initial={structured}
