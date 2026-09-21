@@ -923,7 +923,7 @@ function DialogContent({
             // so the row that reaches through it reaches 20 (see the Popup
             // below); and the card's `pt-5` is already the top padding, so
             // the row adds none of its own.
-            alertCard === 'ios' && '-mx-5 px-5 pt-0',
+            alertCard === 'ios' && '-mx-5 bg-transparent px-5 pt-0',
           )}
         >
           {/* The grabber, phone SHEETS only: it is a sign that the sheet
@@ -1105,7 +1105,7 @@ function DialogContent({
         className={cn(
           'bg-popover col-start-1 row-start-1 -mx-4 flex min-w-0 flex-col gap-4 px-4 [&>*]:shrink-0',
           // The iOS card's side padding (see the Popup below).
-          alertCard === 'ios' && '-mx-5 px-5',
+          alertCard === 'ios' && '-mx-5 bg-transparent px-5',
           under === 'leaving' && 'page-under-leave',
           under === 'returning' && 'page-under-return',
           under === 'hidden' && 'invisible',
@@ -1369,7 +1369,20 @@ function DialogContent({
             // rung is 26px at the default knob, the ladder's nearest to
             // M3's 28px, and it scales with the Corners setting as every
             // other corner in the app does; a hard 28px would not.
-            alertCard === 'ios' && 'w-[18.75rem] max-w-[calc(100vw-4rem)] rounded-4xl px-5 pt-5 pb-5',
+            // Glass, since 2026-09-21 (lanph3re). The SHEET was tried as
+            // glass and went back the same day; this is not that case. An
+            // alert is small, it stands over a scrim that has already
+            // dimmed and blurred the page, so what the material samples is
+            // a quiet ground and never a board square at full strength,
+            // and it is the platform's own drawing of an alert. The
+            // utility falls back to the card's opaque fill without
+            // backdrop-filter, under reduced transparency and with glass
+            // switched off, and it draws its own hairline and shadow in
+            // place of the ring.
+            // The title row and the body under it carry the popover's fill so
+            // a sheet's content scrolls behind them; on this card they give
+            // it up, or the material shows only in the card's padding.
+            alertCard === 'ios' && 'glass w-[18.75rem] max-w-[calc(100vw-4rem)] rounded-4xl px-5 pt-5 pb-5',
             alertCard === 'material' && 'w-[19.5rem] max-w-full rounded-4xl',
           )}
           {...props}
@@ -1476,7 +1489,12 @@ function DialogDescription({ className, ...props }: DialogPrimitive.Description.
       data-slot="dialog-description"
       className={cn(
         'text-muted-foreground text-sm *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground',
-        alertCard === 'ios' && 'text-[0.9375rem]',
+        // On the glass card the muted ink is not enough: sampled over the
+        // light scrim the card's ground is 227 to 230 and the muted ink on
+        // it read 3.69:1, under the 4.5 the message owes. The foreground at
+        // 75% reads as secondary beside the title and clears it in both
+        // themes (the dark ground sampled 40 to 44).
+        alertCard === 'ios' && 'text-foreground/75 text-[0.9375rem]',
         className,
       )}
       {...props}
