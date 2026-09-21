@@ -91,6 +91,43 @@ export function applyGlassOverride(off?: boolean): void {
   else delete document.documentElement.dataset.glass;
 }
 
+/**
+ * The desktop shell's window material, as one attribute on the root.
+ *
+ * `data-window-material="mica"` or `"vibrancy"` says the OS is painting
+ * a material behind this window, and the only thing the app does about
+ * it is let `--window-ground` go transparent (styles/tokens.css), so
+ * the material is what shows where the page's ground was. Absent
+ * everywhere else: a browser, Linux, Windows 10, the demo, and a
+ * desktop window whose owner has left the Settings switch off. Asked
+ * for over the shell bridge rather than guessed, because whether the
+ * OS actually has the material is the main process's answer.
+ *
+ * Deliberately NOT awaited before the first render, unlike
+ * `startPlatform`: the page's opening frames wear index.html's inline
+ * opaque ground either way, which is the whole reason a transparent
+ * window can open without the white or black flash coming back.
+ */
+interface MaterialBridge {
+  material?: () => Promise<{ supported: boolean; enabled: boolean; kind: string } | undefined>;
+}
+
+export async function startWindowMaterial(): Promise<void> {
+  const bridge = (window as unknown as { vaultShell?: { titleBar?: MaterialBridge } }).vaultShell
+    ?.titleBar;
+  if (!bridge?.material) return;
+  try {
+    const state = await bridge.material();
+    if (state?.enabled && (state.kind === 'mica' || state.kind === 'vibrancy')) {
+      document.documentElement.dataset.windowMaterial = state.kind;
+      return;
+    }
+  } catch {
+    // An older shell, or a handler that refused: no material, no attribute.
+  }
+  delete document.documentElement.dataset.windowMaterial;
+}
+
 /** What the root says. Read, not recomputed, so the whole app agrees with the stylesheet. */
 export function currentPlatform(): Platform {
   const on = document.documentElement.dataset.platform;

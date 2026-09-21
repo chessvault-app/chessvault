@@ -1146,6 +1146,9 @@ export const ko: Record<string, string> = {
   'Point this window at a server, or host a folder on this device.':
     '이 창을 서버에 연결하거나, 이 기기의 폴더를 사용하세요.',
   'Switch…': '전환…',
+  'Window material': '창 재질',
+  'Lets the desktop show through behind the app, the way the system draws its own windows. The window reloads when you change it.':
+    '시스템이 자체 창을 그리는 방식대로 앱 뒤로 바탕 화면이 비치게 합니다. 바꾸면 창이 새로 고쳐집니다.',
   'Usernames pre-fill the archive browser on the Games page.':
     '사용자명은 게임 페이지의 온라인 기보 브라우저에 미리 채워집니다.',
   'Save profile': '프로필 저장',

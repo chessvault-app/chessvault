@@ -1,6 +1,8 @@
 import { MonitorSmartphone, Smartphone } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { isInstalled, useInstallPrompt } from '@/lib/install';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
 import { SettingRow } from '@/components/setting-row';
 import { t } from '@/lib/i18n';
@@ -40,11 +42,41 @@ export function InstallCard() {
   );
 }
 
+/**
+ * The OS's window material, as a switch, because it cannot be the
+ * default yet.
+ *
+ * Windows 11 draws Mica behind a window's chrome and macOS draws
+ * sidebar vibrancy; the shell can ask for either (desktop/main.mjs) and
+ * the page's ground then gets out of the way (--window-ground). What
+ * stops it being simply on is that the app's reading area has no fill
+ * of its own, so today the material is behind the content as well as
+ * behind the chrome. The row is absent wherever the OS has no such
+ * material, and absent in a browser, where the bridge is.
+ */
+function useWindowMaterial(shell: VaultShell | undefined) {
+  const [state, setState] = useState<{ supported: boolean; enabled: boolean } | null>(null);
+  const ask = shell?.titleBar?.material;
+  useEffect(() => {
+    if (!ask) return;
+    let live = true;
+    void ask().then((next) => {
+      if (live && next) setState({ supported: next.supported, enabled: next.enabled });
+    });
+    return () => {
+      live = false;
+    };
+  }, [ask]);
+  return state;
+}
+
 export function DesktopCard() {
   const shell = (window as unknown as { vaultShell?: VaultShell }).vaultShell;
+  const material = useWindowMaterial(shell);
   // switchVault is newer than the bridge itself, so an older shell shows
   // no card rather than a button that does nothing.
   if (!shell?.switchVault) return null;
+  const setMaterial = shell.titleBar?.setMaterial;
   return (
     <Card icon={MonitorSmartphone} title={t('Desktop app')}>
       <SettingRow
@@ -55,6 +87,18 @@ export function DesktopCard() {
           {t('Switch…')}
         </Button>
       </SettingRow>
+      {material?.supported && setMaterial && (
+        <SettingRow
+          title={t('Window material')}
+          blurb={t('Lets the desktop show through behind the app, the way the system draws its own windows. The window reloads when you change it.')}
+        >
+          <Switch
+            checked={material.enabled}
+            onCheckedChange={(on) => void setMaterial(on)}
+            aria-label={t('Window material')}
+          />
+        </SettingRow>
+      )}
     </Card>
   );
 }
