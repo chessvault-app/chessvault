@@ -1,7 +1,8 @@
 import { useId, useState, type ReactNode } from 'react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ClearableInput } from '@/components/text-fields';
-import { Dialog, DialogContent, useDialogDepart } from '@/components/ui/dialog';
+import { Dialog, DialogContent, useAlertCard, useDialogDepart } from '@/components/ui/dialog';
 import { autoFocusField } from '@/lib/media';
 import { t } from '@/lib/i18n';
 
@@ -55,7 +56,14 @@ export function PromptDialog({
   // title row already says which.
   const titleId = useId();
   return (
+    // `ask`: an alert with a single text field is the platform's own
+    // shape for "name this" on an iPhone, so there it is the centred
+    // card and not a sheet. The keyboard is already handled: the card
+    // is centred inside the layer the keyboard leaves visible (`vv-band`
+    // on the overlay, `dialog.tsx`), which is the same band the sheet
+    // was pinned to, so the card rises with it rather than being covered.
     <Dialog
+      ask
       open
       onOpenChange={(open) => {
         if (!open) onClose();
@@ -106,6 +114,7 @@ function PromptBody({
 }) {
   const [draft, setDraft] = useState(initial);
   const depart = useDialogDepart();
+  const alertCard = useAlertCard();
   const submit = (): void => {
     const value = draft.trim();
     if (!value) return;
@@ -133,14 +142,23 @@ function PromptBody({
           }}
         />
         {error && <p className="text-destructive text-sm">{error}</p>}
-        <div className="flex justify-end gap-2">
+        <div className={cn('flex justify-end gap-2', alertCard && 'max-sm:[&>*]:flex-1')}>
           {/* On a desktop, a way out that is not the scrim: tapping outside
               works, but a dialog asking for one value should say so rather
               than expect you to know. A phone's sheet already says so, with
               the handle, and is dragged away, tapped away or backed out
               of; a Cancel beside the one answer was a second button for the
-              thumb to tell apart, so the answer takes the whole row there. */}
-          <Button variant="ghost" size="sm" className="max-sm:hidden" onClick={onClose}>
+              thumb to tell apart, so the answer takes the whole row there.
+
+              The iOS alert card has neither the handle nor the X, and its
+              two answers sit side by side the way the platform's own
+              prompt draws them, so Cancel comes back there. */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={alertCard ? undefined : 'max-sm:hidden'}
+            onClick={onClose}
+          >
             {t('Cancel')}
           </Button>
           <Button
