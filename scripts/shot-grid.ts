@@ -18,10 +18,11 @@
  *
  * WHAT IT WALKS. Every route `check:contrast` walks plus the pages the
  * phone reaches through More and two leaf pages that claim the bottom
- * bar. Desktop and phone widths, light and dark, and four phone-only
+ * bar. Desktop and phone widths, light and dark, and five phone-only
  * states: the phone as iOS (`chess-vault:platform` overriding the guess
  * lib/platform.ts makes, so the `ios:` variants apply in Chromium; a
- * change meant for iOS shows here and nowhere else), 320px (where six
+ * change meant for iOS shows here and nowhere else), the phone as
+ * Android the same way, 320px (where six
  * tab labels used to overprint), scrolled 240px inside the page's
  * scroller (the header's compact state), and with the keyboard flag set
  * on the root (the bar must be gone). Reduced motion is emulated so
@@ -45,7 +46,9 @@ import { existsSync } from 'node:fs';
 import { extname, join, resolve } from 'node:path';
 import { REPO_ROOT } from '../server/paths.ts';
 
-const DEMO = resolve(REPO_ROOT, 'dist-demo');
+// DEMO_DIR points the walk at another checkout's build, which is how a
+// state added here gets its baseline from the build that preceded it.
+const DEMO = resolve(REPO_ROOT, process.env.DEMO_DIR ?? 'dist-demo');
 const PORT = Number(process.env.GRID_PORT ?? 8135);
 const OUT = resolve(REPO_ROOT, process.env.OUT ?? '.shots/current');
 const BASE_DIR = process.env.BASE_DIR ? resolve(REPO_ROOT, process.env.BASE_DIR) : null;
@@ -103,6 +106,10 @@ const STATES: {
   { name: 'desktop', width: 1280, height: 900 },
   { name: 'phone', width: 375, height: 812 },
   { name: 'phone-ios', width: 375, height: 812, platform: 'ios' },
+  // The phone as Android, for the `android:` variants (Material's shapes
+  // on the chrome). Plain `phone` is neither platform: it is the desktop
+  // app's window under md, and what a platform change must leave alone.
+  { name: 'phone-android', width: 375, height: 812, platform: 'android' },
   {
     // The same scroll as phone-scrolled below, as iOS: the capsule down
     // to its current tab (hooks/use-bar-minimize).
