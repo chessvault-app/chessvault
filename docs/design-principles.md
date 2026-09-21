@@ -73,6 +73,58 @@ the text. Outcome tints are opaque tokens now (`--good-tint`,
 `--destructive-tint`, mixed at the 10% every other tint in the app already
 used), so a chip measures the same at rest as under the pointer.
 
+The dark ladder is placed against Linear's, and it is derived by ratio.
+Read off screenshots in sRGB on blank rows, Linear's dark desktop puts
+its window ground at about 14, its sidebar at 20 and its CONTENT at 23:
+the reading surface is the lightest thing in the window. This app had
+that inverted. Its page was 14.5% and measured 10 — near black, a hole
+with the app drawn on it — while the frame and the sidebar sat ten
+points above it at 23. lanph3re chose three anchors from a mockup at
+Linear's lightness on 2026-09-22: the frame 19%, the page 20.5% and the
+card 24.5%, which measure 20, 23 and 32, so the frame lands on Linear's
+sidebar and the page on its content.
+
+Everything else is derived, and the rule is the ratio and not the
+lightness. WCAG compresses near black, so six points of OKLCH lightness
+at 14.5% and four points at 20.5% are the same separation to the eye on
+an emissive screen: the card is 1.104:1 over the page where it was
+1.105:1. Every rung keeps the ratio to its anchor it was tuned at, which
+is what "the ladder keeps its spacing" means once the floor has moved.
+
+| rung | was | is | measured |
+| --- | --- | --- | --- |
+| `--app-ground-base`, the window frame | `--surface` | 19% | 1.031:1 under the page (was 1.105 over it) |
+| `--background-accent` | 12% | 19.25% | 1.026:1 under the page (1.026) |
+| `--background`, the page | 14.5% | 20.5% | the anchor |
+| `--surface`, the card | 20.5% | 24.5% | 1.104:1 over the page (1.105) |
+| `--surface-inset` | 23% | 26.5% | 1.060:1 over the card (1.061) |
+| `--surface-2`, muted and secondary | 26.9% | 29.9% | 1.186:1 over the card (1.185) |
+| `--surface-3` | 32% | 34.6% | 1.413:1 over the card (1.412) |
+| `--accent`, hover and selected | 37% | 39.4% | 1.216:1 over `--surface-3` (1.216) |
+
+The far end of the contrast knob is untouched: at knob 1 the dark ladder
+is the one that shipped, and only the frame moved there, from the card's
+rung to black with the page, which is the trade light already makes at
+that point. What did move beside the rungs is everything that was tuned
+against one of them and lost its floor when it rose. `--border` to 32%,
+because a hairline on a card fell to 1.149:1 and this theme calls 1.2 a
+line, and `--border-strong` to 42.5% so the two stroke rungs keep their
+step. `--muted-foreground` and `--text-subtle` to 77% and 72.5%, together
+so the step between them survives, because the third tier fell to 4.22:1
+on `--surface-3`. `--destructive` to 77% and `--info` to 76.5%, the two of
+the semantic four with no margin left; `--good` and `--warn` kept their
+values and their numbers are in the token file. `--ring` to 69%, holding
+3:1 on `--accent` across every scheme. `--eco-name-l` to 78%.
+`--primary-soft` to 33%, `--eval-black` to 30%, `--result-draw` to 59% and
+`--map-thread` to 54.5%, each a fill or a mark whose whole job is to be
+seen against a surface that rose. And `--glass-fill` takes a dark value
+of its own, 72% against the shared 70%, because glass is tinted with
+`--surface-3` and a lighter glass hides white content less: the ink on a
+glass band scrolled over white fell from 4.75:1 to 4.44, and 72% reads
+4.70. That one is analytic and `check:contrast` cannot hold it, because
+the check composites a glass surface over the DOM under it and not over
+what is scrolled behind it. A ladder is not the rungs alone.
+
 ## Icons
 
 A glyph names the thing, not what it evokes. Games wore crossed swords,
@@ -1358,23 +1410,27 @@ drawn, and what one has to prove.
   their own, and the page is one `rounded-xl` panel inset in it, so
   every page's interior is what it was and only the frame moved (this
   reopens the white sidebar of 2026-09-07). The frame is a rung UNDER
-  the page in light (95% to 97%) and a rung OVER it in dark
-  (`--surface`, the card's own rung, which is what the sidebar was
-  before this). The rule is not about elevation, which would have to
-  pick a direction and defend it: the PAGE takes the theme's extreme,
-  white in light and near-black in dark, and the frame steps once back
-  toward mid grey. That is what shadcn's own inset block measures at
-  (L* 100 page against 98.26 frame in light, 2.75 against 7.78 in
-  dark) and what Notion does in light (254 against 247). Linear goes
-  the other way in dark, its content a little lighter than its
-  sidebar, so the direction is a choice and not a law; what is not a
-  choice is the size of the step. 11% under a 14.5% page read as a
-  void with the sidebar's labels floating in it (lanph3re, at the real
-  window, 2026-09-21). `--panel-ring` draws the
-  panel's edge only where the two fills do not: the window ring in
-  light, which is transparent until the contrast knob turns frame and
-  panel both white, and nothing at all in dark, where six points of
-  lightness at rest are the edge; a field-shaped Search button under the
+  the page in both themes: 95% under 97% in light, and 19% under 20.5%
+  in dark since the dark ladder was lifted off the floor on 2026-09-22
+  ("The colour grammar"). The rule is not about elevation, which would
+  have to pick a direction and defend it: the frame steps once back
+  from the READING surface, whichever end of the scale that surface
+  sits at. It went the other way in dark for a release, and the reason
+  was the floor rather than the direction: with the page at 14.5%
+  anything under it was black, 11% read as a void with the sidebar's
+  labels floating in it (lanph3re, at the real window, 2026-09-21), so
+  the frame took `--surface` and the page was the well set into it.
+  Raising the page is what made one direction possible in both themes.
+  It is the direction Notion draws in light (254 against 247) and
+  Linear in dark, its content lighter than its sidebar; shadcn's own
+  inset block goes the other way in dark (L* 2.75 page against 7.78
+  frame) and with it in light (100 against 98.26), so the direction is
+  a choice and not a law. What is not a choice is the size of the
+  step. `--panel-ring` draws the panel's edge where the two fills do
+  not, which is now both themes: the window ring in light, transparent
+  until the contrast knob turns frame and panel both white, and the
+  border in dark, where the two fills are 1.031:1 apart and that theme
+  calls 1.2 a line; a field-shaped Search button under the
   wordmark that opens the quick switcher; a games table without stripes
   (they were recorded for two-line card rows, which keep them) whose
   resize handles show on hover or focus; filters as chips at content
