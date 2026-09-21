@@ -277,6 +277,11 @@ export const ko: Record<string, string> = {
   'Najdorf, B90': '나이도르프, B90',
   'Other names for this study': '이 스터디의 다른 이름',
   'Other names for this game': '이 게임의 다른 이름',
+  // The document header's Share verb, beside those three. 공유 is the
+  // word for share throughout (the board's Share FEN and Share PGN).
+  'Share study': '스터디 공유',
+  'Share game': '게임 공유',
+  'Share note': '노트 공유',
   'Separated by commas. A [[link]] to any of these opens this document.': '쉼표로 구분합니다. 이 중 어떤 이름으로 [[링크]]해도 이 문서가 열립니다.',
   'Nothing in the vault is named this': '보관함에 이 이름을 가진 항목이 없습니다',
   'More than one document is named this': '이 이름을 가진 문서가 둘 이상입니다',

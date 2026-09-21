@@ -49,6 +49,7 @@ import { PromptDialog } from '@/components/prompt-dialog';
 import { RecoveryDialog } from '@/components/recovery-dialog';
 import { SaveControl } from '@/components/save-control';
 import { DocumentTools } from '@/components/document-tools';
+import { PGN_TYPE, shareFileName } from '@/lib/share-doc';
 import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { AnnotationPane } from './AnnotationPane';
 import { t } from '@/lib/i18n';
@@ -285,6 +286,10 @@ export function StudyView({
     );
   }
 
+  // The last segment of the id: a document inside a folder is called by
+  // its own name, on the history panel and on the file the sheet sends.
+  const docName = id.split('/').at(-1)!;
+
   // Rendered twice — at the page top on stacked layouts, in the side column
   // on wide ones — because CSS cannot reparent. Only one is ever visible.
   // `inColumn` marks the copy that stands in the pane column as furniture
@@ -327,11 +332,22 @@ export function StudyView({
         history={{
           kind: kind === 'game' ? 'games' : 'studies',
           id,
-          name: id.split('/').at(-1)!,
+          name: docName,
           // Re-open rather than patch the store: a restore replaced the file
           // on disk, and the document in the tab is now a stale copy of
           // something that no longer exists.
           onRestored: () => void open(id, base),
+        }}
+        // The whole document, chapters and all, as the file another chess
+        // app opens. What is on screen and not yet saved goes with it:
+        // this is the document as the reader has it, not as the vault
+        // last wrote it, and holding back their last five moves would be
+        // the surprise. Read in the tap's own turn, never fetched.
+        share={{
+          label: kind === 'game' ? 'Share game' : 'Share study',
+          filename: shareFileName(docName, '.pgn'),
+          type: PGN_TYPE,
+          text: () => useStudy.getState().currentPgn(),
         }}
       />
       {/* One edit button for the whole document, in the header — the shape
