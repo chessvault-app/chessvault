@@ -293,7 +293,14 @@ function Shell() {
           // frame's opening, and in light it is transparent until the
           // contrast knob brings it back, which is the moment the ground
           // and the panel have met at white.
-          'md:bg-background md:m-2 md:ml-0 md:rounded-xl md:ring-1 md:ring-panel-ring',
+          // The gutter and the radius are Linear's, measured off their own window
+// at 9x: about 2px of window ground all round the panel and a corner near
+// 7px, where this shipped with shadcn's 8px and 14px and read looser than
+// either (lanph3re, 2026-09-22). m-0.5 is 2px and rounded-md is 8px, the
+// ladder's nearest rung to 7. The left margin comes back with the rest:
+// Linear gutters that side too, though ours cannot be seen while the
+// window ground and the sidebar are one colour.
+          'md:bg-background md:m-0.5 md:rounded-md md:ring-1 md:ring-panel-ring',
         )}
       >
         {/*
