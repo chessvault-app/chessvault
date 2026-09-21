@@ -23,6 +23,25 @@ exposes APIs to the app (the chooser's IPC is shell config, not app
 surface). This keeps the desktop build droppable and the web deployment
 canonical.
 
+## Window material
+
+Windows 11 (22H2 and up) draws Mica behind a window's chrome and macOS
+draws sidebar vibrancy. The shell can ask for either, and the Desktop
+app card in Settings has the switch. It is OFF until someone turns it
+on, and changing it reloads the window.
+
+What it changes is the FRAME only, and only from the `md` width where
+the window has a frame: the title band, the sidebar and the 8px gutter
+around the page let the material through, and the page itself stays on
+its own opaque panel, which is where both systems put the division. A
+narrower window has no frame and keeps the ground it always had.
+
+It ships off because no window has been opened to read it. Two things
+want a real desktop behind them before it could be the default: whether
+the sidebar's text still holds 4.5:1 over vibrancy at 70%, and whether
+the caption buttons, which are the OS's own and sit on a transparent
+strip under a material, still read against a busy wallpaper.
+
 ## Installing on macOS
 
 The app is not signed with an Apple Developer ID and is not notarised, so

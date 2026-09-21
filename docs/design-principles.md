@@ -1343,9 +1343,12 @@ drawn, and what one has to prove.
   width shared with the phone's (`games/filter-chips.ts`); Home without
   trailing chevrons under a fine pointer, and an Activity card counting
   solved puzzles by day, counts and never a rating. The desktop window
-  can ask the OS for its material (Mica, sidebar vibrancy) behind
-  `--window-ground`; it ships OFF, from Settings, because no window was
-  opened to read it. The grid walks `phone-android` beside `phone-ios`.
+  can ask the OS for its material (Mica, sidebar vibrancy), and from md
+  it is the FRAME that steps aside for it: `--app-ground` goes
+  transparent under mica and to a 70% mix under vibrancy, while the
+  panel and every surface on it stays as opaque as it is today, which is
+  where a native window puts its material too. It ships OFF, from
+  Settings, because no window was opened to read it. The grid walks `phone-android` beside `phone-ios`.
   Still to be read on a device: every item above.
 - **What did not reopen.** Five tabs with Notes under More: iOS also
   stops at five. The radius ladder: iOS 26's continuous corners cannot
