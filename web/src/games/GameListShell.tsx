@@ -230,19 +230,31 @@ export function GameListShell({
                 // shows it at all.
                 'transition-opacity duration-150',
                 listBusy && 'opacity-50',
-                // Dividers AND a faint stripe on every other row: at two
-                // lines a row is tall enough that a hairline alone leaves the
-                // list reading as one block of text. 2% of the foreground —
-                // enough to group the lines that belong together, not enough
-                // to read as a highlight. The archive list was the one of the
-                // three without it, for no reason anyone could name.
+                // Dividers AND a faint stripe on every other row, for the
+                // CARD rows only. The reason the stripe was added is
+                // written down and it is about height: at two lines a row
+                // is tall enough that a hairline alone leaves the list
+                // reading as one block of text. 2% of the foreground —
+                // enough to group the lines that belong together, not
+                // enough to read as a highlight.
+                //
+                // The dense table's rows are one line, so that reason
+                // never applied to them, and there the stripe was simply a
+                // data grid's banding: ten columns of hairline-separated
+                // text with every other line washed. What tracks a row
+                // across the width is the hover fill, which lifts a rung
+                // above the page while the selected row's sinks a rung
+                // below it (GameTable) — two fills that a stripe at 2%
+                // sits between and blurs. Card rows keep it; `dense` is
+                // the table, and the table is lg and up (TABLE_MQ), so no
+                // phone is touched.
                 //
                 // The stripe stands DOWN for a hovered or selected row: this
                 // selector (.class > li:nth-child(even)) is more specific
                 // than the row's own hover:bg-accent and bg-accent, so
                 // without the :not guards every even row swallowed both —
                 // half the list answered a pointer with nothing.
-                '[&>li:nth-child(even):not(:hover):not([data-selected])]:bg-foreground/[0.022]',
+                !dense && '[&>li:nth-child(even):not(:hover):not([data-selected])]:bg-foreground/[0.022]',
                 // The virtualization the shell bought, in its cheapest form:
                 // offscreen rows skip render and layout entirely, onscreen
                 // ones pay as before. A deep scroll through a big database
