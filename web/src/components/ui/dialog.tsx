@@ -112,20 +112,41 @@ const ENTER_BACKSTOP_MS = 500;
 
 const SheetContext = React.createContext(false);
 /**
- * Whether this window is drawn as an iOS ALERT: a small centred card,
- * not the bottom sheet every other window takes on a phone.
+ * Whether this window is drawn as an ALERT: a small centred card, not the
+ * bottom sheet every other window takes on a phone, and in which
+ * platform's flavour.
  *
  * A question that must be answered is centred on iOS and has been since
  * the platform had windows at all, and the HIG still draws it that way —
  * an alert is the one modal iOS does not slide up from the bottom edge,
  * because it interrupts rather than offers. A sheet is a place you went;
- * an alert is a stop. So `ask` on the Root (a confirmation, a prompt,
- * the leave question) takes the DIALOG primitive on an iPhone, which is
- * the same centred card a desktop already draws: no grab handle, no snap
- * points, no swipe to dismiss, and a scale-and-fade instead of a rise.
- * The scrim still closes it, which is this app's house rule for every
- * small window and not the platform's (iOS's own alert refuses), and
- * `role="alertdialog"` is unchanged.
+ * an alert is a stop. That is not an iOS argument. Material's basic
+ * dialog is a centred card for the same reason, and Material's bottom
+ * sheet is for a list of things you may do, not for a yes or no. So `ask`
+ * on the Root (a confirmation, a prompt, the leave question) takes the
+ * DIALOG primitive on EVERY phone, which is the same centred card a
+ * desktop already draws: no grab handle, no snap points, no swipe to
+ * dismiss, and a scale-and-fade instead of a rise. The scrim still closes
+ * it, which is this app's house rule for every small window and not
+ * either platform's (both refuse), and `role="alertdialog"` is unchanged.
+ *
+ * What stays platform-flavoured is the card itself, and this context says
+ * which flavour to draw:
+ *
+ *   - `ios`: 280px at every screen size, the way the platform's alert is
+ *     a fixed width and not a share of the screen; the 2xl rung; the
+ *     title centred, because it IS the question; the two answers side by
+ *     side, each half the card.
+ *   - `material`: the M3 basic dialog. 312px, capped to the layer so a
+ *     narrow phone keeps its margins; the 4xl rung, which is the ladder's
+ *     nearest to M3's 28px and scales with the Corners setting as every
+ *     other corner in the app does; title and body aligned to the start;
+ *     the answers as text buttons in a row at the end, the destructive
+ *     one in the destructive ink rather than a fill.
+ *
+ * A narrow window on a desktop is `material` too: it is the phone shell
+ * (that is what draws a sheet there today), and Material's card is the
+ * one of the two that is not a platform's own house style.
  *
  * Opaque, not glass. Glass is permitted for a surface this small over a
  * scrim, and it was not taken: the card carries the sentence you have to
@@ -136,11 +157,12 @@ const SheetContext = React.createContext(false);
  * same kind of reason (2026-09-18). The scrim's own blur is already
  * between the card and the page.
  *
- * Android and desktop are untouched: `ask` only ever narrows the iPhone.
+ * A DESKTOP is untouched: `ask` only ever narrows a phone-sized window.
  */
-const AlertCardContext = React.createContext(false);
-/** Whether the window around this is the iOS alert card (above). */
-export function useAlertCard(): boolean {
+export type AlertCard = false | 'ios' | 'material';
+const AlertCardContext = React.createContext<AlertCard>(false);
+/** Which alert card the window around this is, if it is one (above). */
+export function useAlertCard(): AlertCard {
   return React.useContext(AlertCardContext);
 }
 /**
@@ -255,9 +277,9 @@ interface DialogProps extends Omit<DialogPrimitive.Root.Props, 'onOpenChange' | 
   /**
    * This window is a QUESTION: something the person has to answer before
    * they can get on with what they were doing (a confirmation, a prompt
-   * for one value, the leave question). On an iPhone it is the centred
-   * alert card rather than a bottom sheet (see AlertCardContext); on
-   * every other platform, and on a desktop, it changes nothing.
+   * for one value, the leave question). On a phone it is the centred
+   * alert card rather than a bottom sheet, in the platform's own flavour
+   * (see AlertCardContext); on a desktop it changes nothing.
    */
   ask?: boolean;
 }
@@ -272,13 +294,14 @@ function Dialog({
   ...props
 }: DialogProps) {
   const phone = useMediaQuery(PHONE);
-  // The one branch: a question on an iPhone is the centred card, which
-  // is the DIALOG primitive — so everything the sheet is (its Root, its
+  // The one branch: a question on a phone is the centred card, which is
+  // the DIALOG primitive — so everything the sheet is (its Root, its
   // swipe, its held exit, its snap points) reads `sheet` from here on
   // and not `phone`. An iPad is `ios` too and is not a phone, so it
   // never reaches this: past the breakpoint the window is already the
-  // centred card.
-  const alertCard = phone && ask && currentPlatform() === 'ios';
+  // centred card. The platform picks the flavour, not whether there is
+  // a card at all (AlertCardContext).
+  const alertCard: AlertCard = phone && ask ? (currentPlatform() === 'ios' ? 'ios' : 'material') : false;
   const sheet = phone && !alertCard;
   const guards = React.useRef<DialogGuards | null>(null);
   // The snap point, held here so the card can tell whether it rests low
@@ -920,8 +943,10 @@ function DialogContent({
               id={titleId}
               // Centred on the iOS alert card, where the title IS the
               // question and the row has nothing else on it (the chevron
-              // and the X are both desktop-only at this width).
-              className={cn('-my-1 min-w-0 flex-1 truncate py-1', alertCard && 'text-center')}
+              // and the X are both desktop-only at this width). The
+              // Material card starts its title, which is that card's own
+              // rule and also what the row does everywhere else.
+              className={cn('-my-1 min-w-0 flex-1 truncate py-1', alertCard === 'ios' && 'text-center')}
             >
               {t(title)}
             </DialogTitle>
@@ -1274,13 +1299,22 @@ function DialogContent({
             // the top). `data-open` is on the Popup for as long as it is
             // open, so the class is there at the first paint.
             'duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-handover:animate-none!',
-            // The iOS alert card: 280px, the 2xl rung, drawn last so it
-            // beats the width and the radius above whatever size the
-            // window was given. One width at every phone size, the way
-            // the platform's alert is a fixed width and not a share of
-            // the screen; 280 sits in the middle of the band an iOS
-            // alert occupies, and is not a measurement of one.
-            alertCard && 'w-[17.5rem] max-w-[17.5rem] rounded-2xl',
+            // The alert card, drawn last so it beats the width and the
+            // radius above whatever size the window was given.
+            //
+            // iOS: 280px, the 2xl rung. One width at every phone size,
+            // the way the platform's alert is a fixed width and not a
+            // share of the screen; 280 sits in the middle of the band an
+            // iOS alert occupies, and is not a measurement of one.
+            //
+            // Material: 312px, M3's own maximum for the basic dialog,
+            // capped to the layer (`max-w-full`) so a 320px phone keeps
+            // the overlay's 16px margins rather than losing them. The 4xl
+            // rung is 26px at the default knob, the ladder's nearest to
+            // M3's 28px, and it scales with the Corners setting as every
+            // other corner in the app does; a hard 28px would not.
+            alertCard === 'ios' && 'w-[17.5rem] max-w-[17.5rem] rounded-2xl',
+            alertCard === 'material' && 'w-[19.5rem] max-w-full rounded-4xl',
           )}
           {...props}
         >
@@ -1323,12 +1357,17 @@ function DialogFooter({
         // footer in the app -- measured 20px + safe here against 8px +
         // safe there, which is the gap lanph3re spotted on a phone.
         'max-sm:-mb-[calc(1.25rem+var(--safe-b))] max-sm:rounded-b-none max-sm:pb-[calc(0.5rem+var(--safe-b))]',
-        // The iOS alert card is not standing on the screen's floor, so
-        // it takes none of that: the band keeps the card's own bottom
+        // An alert card is not standing on the screen's floor, so it
+        // takes none of that: the band keeps the card's own bottom
         // corners and its ordinary padding, as it does on a desktop.
         // Reclaiming the safe area inside a floating card would have cut
         // the band off below the corner radius.
-        alertCard && 'max-sm:-mb-4 max-sm:rounded-b-2xl max-sm:pb-4',
+        alertCard && 'max-sm:-mb-4 max-sm:pb-4',
+        alertCard === 'ios' && 'max-sm:rounded-b-2xl',
+        // Material draws no filled action band: the buttons sit on the
+        // dialog's own surface, and a tinted strip under them would read
+        // as a second surface inside a 312px card.
+        alertCard === 'material' && 'max-sm:rounded-b-4xl max-sm:border-t-0 max-sm:bg-transparent',
         className,
       )}
       {...props}
