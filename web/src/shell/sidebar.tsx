@@ -152,7 +152,7 @@ function SearchEntry({ folded }: { folded: boolean }) {
           // input's border, which is what every other field in this app
           // is made of. The ink is the placeholder tier a field's own
           // prompt would be written in.
-          'bg-card border-input text-muted-foreground hover:text-foreground flex h-9 w-full items-center gap-2 rounded-lg border px-2.5 text-sm',
+          'bg-card border-card-ring text-muted-foreground hover:text-foreground flex h-9 w-full items-center gap-2 rounded-lg border px-2.5 text-sm',
           'transition-colors duration-150',
           // A button's focus ring, at the app's full alpha: this control
           // is not a text field, so the halo IS the indicator here.
@@ -467,7 +467,7 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
 
       <div
         className={cn(
-          'border-border flex shrink-0 items-center gap-1 border-t p-2',
+          'border-card-ring flex shrink-0 items-center gap-1 border-t p-2',
           folded ? 'flex-col' : 'flex-row justify-between px-3',
         )}
       >
