@@ -158,7 +158,7 @@ const IOS_GROUP =
   // way across; it takes the row's width so the rule is a whole one.
   'max-md:ios:[&>p:not(:first-child)]:min-h-0 max-md:ios:[&>p:not(:first-child)]:pt-0 max-md:ios:[&>p:not(:first-child)]:before:hidden ' +
   'max-md:ios:[&_[data-slot=select-trigger]]:border-transparent max-md:ios:[&_[data-slot=select-trigger]]:bg-transparent max-md:ios:[&_[data-slot=select-trigger]]:px-0 max-md:ios:[&_[data-slot=select-trigger]]:shadow-none max-md:ios:[&_[data-slot=select-trigger]]:text-muted-foreground ' +
-  'max-md:ios:[&_[data-slot=setting-row]_[data-slot=select-trigger]]:justify-end max-md:ios:[&_[data-slot=setting-row]_[data-slot=select-trigger]]:gap-1 max-md:ios:[&_[data-slot=setting-row]_[data-slot=select-trigger]>span]:text-right ' +
+  'max-md:ios:[&_[data-slot=setting-row]_[data-slot=select-trigger]]:justify-end max-md:ios:[&_[data-slot=setting-row]_[data-slot=select-trigger]]:gap-1 max-md:ios:[&_[data-slot=setting-row]_[data-slot=select-trigger]>span>span]:justify-end ' +
   'max-md:ios:[&>button]:self-stretch';
 
 /**
