@@ -37,6 +37,8 @@
      but are no utilities: everything on the page speaks the registry's
      vocabulary above. */
   --color-background-accent: var(--background-accent);
+  /* The desktop window's ground, spent by the shell alone (App.tsx). */
+  --color-app-ground: var(--app-ground);
 
   /* The colour grammar (docs/design-principles.md): green, amber and blue
      each mean one thing; destructive above is the red. */

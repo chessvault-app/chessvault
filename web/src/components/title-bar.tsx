@@ -47,8 +47,12 @@ import { useTheme } from '@/store/theme';
  * with the search on it reads as a top bar with two columns under it,
  * the shape Windows 11 draws (a TitleBar over a NavigationView) and the
  * shape the search wants; the sidebar's seam still starts under it. No
- * rule under the band: the band and the sidebar are one L of card around
- * the toned page, and a line there was a browser's toolbar.
+ * rule under the band: the band and the sidebar are one L around the
+ * inset page, and a line there was a browser's toolbar. That fill is the
+ * window's ground from md (App.tsx, --app-ground), which is what the
+ * sidebar is now; under md there is no frame and the band keeps the
+ * card's white. The caption buttons the OS draws are sent whatever this
+ * element resolves to, so they follow it without being told.
  */
 
 /** The shell's window-chrome bridge; absent everywhere but the desktop. */
@@ -199,7 +203,7 @@ export function TitleBar() {
       // strip from the shell instead (desktop/main.mjs), so a server whose
       // app predates the band still gives the window something to move by.
       id="title-bar"
-      className="bg-card text-muted-foreground relative flex shrink-0 items-center"
+      className="bg-card md:bg-app-ground text-muted-foreground relative flex shrink-0 items-center"
       style={{ height: shell.height, WebkitAppRegion: 'drag' } as React.CSSProperties}
     >
       {/* The segment over the sidebar keeps the sidebar's width (shell/sidebar.tsx,

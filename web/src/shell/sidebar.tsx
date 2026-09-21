@@ -192,10 +192,13 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
     <nav
       aria-label={t('Sections')}
       className={cn(
-        // border-card-ring: the sidebar is a white column on the toned
-        // page and its fill is its edge; the line comes back under High
-        // contrast, where the page is white (the same rule as a card).
-        'bg-card border-card-ring hidden shrink-0 flex-col border-r md:flex',
+        // No fill and no seam: the sidebar IS the window's ground now
+        // (App.tsx), and the page is the panel inset in it. It used to be
+        // a white column with a card ring for its right edge, which is
+        // the reverse figure and ground — navigation drawn as the lit
+        // surface and content as the tone behind it. The panel's own ring
+        // is the only edge on this seam, and it is the panel's to draw.
+        'hidden shrink-0 flex-col md:flex',
         // The fold is a 150ms width change, the rows' own colour timing.
         // Labels stay in the tree in both states and the nav clips them,
         // so the narrowing edge wipes them out and the widening edge
