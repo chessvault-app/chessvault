@@ -76,6 +76,9 @@ export function CollectionView() {
   const clearSelection = useRef<(() => void) | null>(null);
   // The browser owns the import sheet; the title line only rings it.
   const openImport = useRef<(() => void) | null>(null);
+  // The page owns the scroller a pull is read from; the browser owns the
+  // tabs, and so knows what a pull should fetch again.
+  const refreshTab = useRef<(() => Promise<void>) | null>(null);
   // On a phone the title row is lent to the list under it: the count is
   // the subtitle and the find, bookmark and filter switches stand beside
   // Import (./header-slots). State, not refs: the lists draw into these
@@ -156,6 +159,11 @@ export function CollectionView() {
       // scroll up reveals the compact bar. The pinned rows were the one
       // page on a phone that did not move like the others.
       scroll={lend}
+      // A pull at the top asks the open tab for its rows again
+      // (hooks/use-pull-refresh). Only where the page scrolls, which is
+      // the phone: from md the lists scroll themselves and this element
+      // is not the scroller.
+      onRefresh={() => refreshTab.current?.()}
       // Scrolling (a phone), the column is PageShell's own, floor and
       // all, and only needs to fill the screen when the list is short, so
       // an empty tab's message still centres in what is left.
@@ -257,6 +265,7 @@ export function CollectionView() {
           onSelect={setSelection}
           clearRef={clearSelection}
           importRef={openImport}
+          refreshRef={refreshTab}
         />
         {/* The details column exists only where it has a column to
             stand in — mounted by the flag, not hidden by a class, so
