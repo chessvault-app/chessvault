@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { canPull, pullAxis, pullCommits, pullDistance, pullProgress } from '@/hooks/use-pull-refresh';
+import {
+  canPull,
+  pullAxis,
+  pullCommits,
+  pullDistance,
+  pullGap,
+  pullOwn,
+  pullProgress,
+  pullRest,
+} from '@/hooks/use-pull-refresh';
 
 /**
  * The four rules a pull to refresh is: whether the scroller is at a place
@@ -74,6 +83,53 @@ describe('how far the indicator follows', () => {
 
   it('stays put for a finger going the other way', () => {
     expect(pullDistance(-50)).toBe(0);
+  });
+});
+
+describe('who opens the gap', () => {
+  it('is the curve alone where nothing bounces', () => {
+    // Android, a desktop window, any scroller that reports 0 at its top:
+    // the gap is what it always was, and the app opens all of it.
+    expect(pullGap(60, 0)).toBeCloseTo(pullDistance(60), 5);
+    expect(pullOwn(pullGap(60, 0), 0)).toBeCloseTo(pullDistance(60), 5);
+  });
+
+  it("takes Safari's band when the band is the wider", () => {
+    // iOS reports the rubber band as a negative scrollTop; the hook hands
+    // that here as a positive band. Where it has already opened more than
+    // the curve would, the app adds nothing at all.
+    expect(pullGap(20, 90)).toBe(90);
+    expect(pullOwn(90, 90)).toBe(0);
+  });
+
+  it('adds only the difference otherwise', () => {
+    // The two never both open the same pixel: whatever the browser did
+    // comes off what the app does, so they cannot fight.
+    const gap = pullGap(100, 30);
+    expect(gap).toBeCloseTo(pullDistance(100), 5);
+    expect(pullOwn(gap, 30) + 30).toBeCloseTo(gap, 5);
+  });
+
+  it('ignores a scroller that is genuinely scrolled', () => {
+    // A positive scrollTop reaches this as a negative band, which is not
+    // a gap and never shrinks one.
+    expect(pullGap(50, -200)).toBeCloseTo(pullDistance(50), 5);
+    expect(pullOwn(pullDistance(50), -200)).toBeCloseTo(pullDistance(50), 5);
+  });
+});
+
+describe('where it rests while the refetch is out', () => {
+  it('holds the content 56px down on iOS', () => {
+    // UIRefreshControl's 60pt band, less the couple of points the 28px
+    // indicator needs to sit centred in it.
+    expect(pullRest(true)).toBe(56);
+  });
+
+  it('leaves the circle where it committed on Android', () => {
+    // Material's content never moved, so there is nothing to hold, and
+    // the release must not move the circle either.
+    expect(pullRest(false)).toBe(64);
+    expect(pullCommits(pullRest(false))).toBe(true);
   });
 });
 
