@@ -157,7 +157,6 @@
      chosen for legibility, and its structure is the ring, restored
      below. lanph3re's call, 2026-09-07, from a mockup over the demo. */
   --background: oklch(calc(97% + (100% - 97%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
-<<<<<<< HEAD
   /* The WINDOW's ground, from md: the tint the desktop shell is, that the
      sidebar and the title band share, with the page inset in it as one
      rounded panel (App.tsx). It is one rung below --background so that
@@ -174,7 +173,6 @@
      made before, where the panel's --window-ring is the structure that
      comes back at exactly that point. */
   --app-ground: oklch(calc(95% + (100% - 95%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
-=======
   /* The WINDOW's ground: what html and body paint (styles/base.css), as
      opposed to what `bg-background` paints on an element. The same
      colour everywhere but one place, and the indirection exists for
@@ -187,7 +185,6 @@
      every browser, Linux, Windows 10, the demo, and a desktop window
      with the switch off, this is --background and nothing has moved. */
   --window-ground: var(--background);
->>>>>>> worktree-agent-a7bc42fbdf084edf1
   /* The card's edge. Transparent on the tonal page, where the fill is
      the edge; the full hairline at the top of the contrast knob, where
      the page is white again and the ring is the only structure. One
