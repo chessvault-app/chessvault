@@ -1,113 +1,196 @@
 .dark {
   color-scheme: dark;
 
-  /* The registry's dark neutral: page 14.5%, card 20.5%, muted 26.9% —
-     six points between a card and the page behind it, enough for a card
-     to be a card without the page turning into a hole. The surface
-     LADDER keeps its rungs (surface-3, surface-inset) above those. */
-  --background: oklch(calc(14.5% + (0% - 14.5%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
-  --background-accent: oklch(calc(12% + (0% - 12%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
-  --surface: oklch(calc(20.5% + (13% - 20.5%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
-  /* The window's ground (tokens.css says what it is for). In dark it is
-     NOT a rung below the page, which is what light does and what this was
-     for a day: 11% under 14.5% is black to the eye, the frame became a
-     void with the sidebar's labels floating in it, and lanph3re's first
-     look at the real window was "too dark" (2026-09-21). Dark elevation
-     runs the other way from light: what is nearer is lighter. So the frame
-     takes --surface, the card's rung, which is exactly what the sidebar
-     was before the inset shell (it was bg-card), and the page is the
-     darker well set into it, with its cards coming back up to the frame's
-     tone. The sidebar's pill, hover and ink were all placed against this
-     ground already. Defined after --surface because it reads it. */
-  --app-ground-base: var(--surface);
-  --surface-2: oklch(calc(26.9% + (18.5% - 26.9%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
-  --surface-3: oklch(calc(32% + (24% - 32%) * var(--ui-contrast)) calc(0.019 * var(--ui-tint)) var(--ui-hue));
-  --surface-inset: oklch(calc(23% + (7% - 23%) * var(--ui-contrast)) calc(0.016 * var(--ui-tint)) var(--ui-hue));
+  /* The dark ladder, lifted off the floor on 2026-09-22.
 
-  --border: oklch(calc(29% + (52% - 29%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
-  /* Tone alone in dark too: a card is a rung above the page (20.5% on
-     14.5%), which is how Apple's dark grouped screens and Material's
+     It was the registry's dark neutral, page 14.5% and card 20.5%, and
+     the page measured sRGB 10 — near black, a hole with the app drawn
+     on it. Linear's dark desktop, read off screenshots in sRGB on blank
+     rows, puts its window ground at ~14, its sidebar at 20 and its
+     CONTENT at 23: the reading surface is the lightest thing in the
+     window, not the darkest. The app had it inverted, its content ten
+     points under its own sidebar. lanph3re chose the three anchors below
+     from a mockup at Linear's lightness (2026-09-22): the frame at 19%,
+     the page at 20.5% and the card at 24.5%, which measure sRGB 20, 23
+     and 32 on the green channel the comparison was made on, so the frame
+     lands on Linear's sidebar and the page on its content.
+
+     The rest of the ladder is derived, and the rule is the ratio and not
+     the lightness: WCAG compresses near black, so six points at 14.5%
+     and four points at 20.5% are the SAME separation to the eye on an
+     emissive screen. The card is 1.104:1 over the page where it was
+     1.105:1, and every rung below keeps the ratio to its anchor it was
+     tuned at, which is what "the ladder keeps its spacing" means once
+     the floor has moved. Measured, per rung, against the card:
+     inset 1.060 (was 1.061), muted 1.186 (1.185), surface-3 1.413
+     (1.412), and --accent 1.216 over surface-3 (1.216). Nothing
+     collapsed and nothing opened. */
+  --background: oklch(calc(20.5% + (0% - 20.5%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
+  /* A step under the page, at the 1.026:1 it always had. That puts it
+     within a quarter point of the frame below, which is coherent rather
+     than a collision: both are the page's ground stepped back once. */
+  --background-accent: oklch(calc(19.25% + (0% - 19.25%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
+  --surface: oklch(calc(24.5% + (13% - 24.5%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
+  /* The window's ground (tokens.css says what it is for), and its own
+     value again rather than an alias.
+
+     It was --surface, the card's rung, because with the page at 14.5%
+     anything under it was black to the eye: 11% read as a void with the
+     sidebar's labels floating in it (lanph3re, at the real window,
+     2026-09-21), so the frame went UP instead and the page was the well
+     set into it. Raising the page is what makes the light theme's
+     direction available again: at 19% under a 20.5% page the frame is a
+     step BACK from the reading surface, as it is in light (95% under
+     97%) and as Linear draws it, and the sidebar lands on the number
+     Linear's sidebar measures.
+     The cost is the panel's edge. Frame and page are 1.031:1 apart,
+     under the 1.2 this theme calls a visible hairline, so the fill is no
+     longer the edge and --panel-ring comes back below. At the top of the
+     contrast knob the frame goes to black with the page, exactly as
+     light's goes to white with it, and the ring is the whole of the
+     structure there. */
+  --app-ground-base: oklch(calc(19% + (0% - 19%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
+  --surface-2: oklch(calc(29.9% + (18.5% - 29.9%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
+  --surface-3: oklch(calc(34.6% + (24% - 34.6%) * var(--ui-contrast)) calc(0.019 * var(--ui-tint)) var(--ui-hue));
+  /* The one rung that is a LIFT in dark rather than a well: a sunken
+     field on a dark card reads by being lighter, not darker. It keeps
+     its 1.060:1 over the card. Its far end is the shipped 7%, which is a
+     well and not a lift, so this rung alone changes direction along the
+     knob; it did that before this commit too, only knob 0 and knob 1 are
+     ever worn (store/prefs), and both ends separate. */
+  --surface-inset: oklch(calc(26.5% + (7% - 26.5%) * var(--ui-contrast)) calc(0.016 * var(--ui-tint)) var(--ui-hue));
+
+  /* 32%, not 29%: the hairline is scored against the card it is drawn
+     on, and a card four points over a lighter page leaves less room than
+     six points over a darker one. At 29% it fell to 1.149:1 there, under
+     the 1.2 this theme's own floor sets (check-contrast.ts says why dark
+     gets 1.2 and light 1.3); 32% is the 1.269:1 it was tuned at, and
+     1.279 as drawn. The far end is unchanged. */
+  --border: oklch(calc(32% + (52% - 32%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  /* Tone alone in dark too: a card is a rung above the page (24.5% on
+     20.5%), which is how Apple's dark grouped screens and Material's
      dark containers draw an edge, and the ring was a second cue that a
      mockup over the demo showed the eye did not need (lanph3re,
-     2026-09-07). High contrast still draws it, as in light: there the
-     knob is the reader asking for every cue. */
+     2026-09-07). The rung is four points where it was six and measures
+     the same 1.10:1, for the reason the ladder's note gives. High
+     contrast still draws it, as in light: there the knob is the reader
+     asking for every cue. */
   --card-ring: color-mix(in oklch, var(--border) calc(100% * var(--ui-contrast)), transparent);
   --window-ring: var(--border);
-  /* No hairline round the inset page panel in dark. It was the panel's
-     only edge while the frame sat at 11% under a 14.5% page; with the
-     frame on --surface the two fills are six points apart at rest and
-     thirteen at the top of the contrast knob (13% over 0%), so the fill
-     is the edge, as the tonal rule has it, and the line was a second one
-     drawn over it (lanph3re, 2026-09-21). */
-  --panel-ring: transparent;
+  /* The inset page panel takes the window ring in dark now, which is
+     what light does. It had none while the frame sat on --surface six
+     points over the page and the fill was the edge (lanph3re,
+     2026-09-21); with the frame a step UNDER the page the two fills are
+     1.031:1 apart, below the 1.2 this theme calls a line, so the fill
+     has stopped being the edge and the hairline is what is left. It is
+     the only structure at the top of the knob, where frame and page are
+     both black. Inherited from :root rather than restated: --panel-ring
+     is --window-ring there, and --window-ring is --border here. */
   /* The glass surface's fill and blur are tokens.css's numbers, and its
      edge follows the foreground, which is white here. Its tint is the
-     third surface rung, 32% on a 20.5% card: glass in dark is LIFTED off
-     the ground, not smoked into it (tokens.css, --glass-tint, says why).
+     third surface rung, 34.6% on a 24.5% card: glass in dark is LIFTED
+     off the ground, not smoked into it (tokens.css, --glass-tint, says why).
      A lighter glass darkens white content less, so the lift is paid for
-     in the capsule's fill: foreground ink at the text surfaces' 70%
-     still reads 4.74:1 over white (6.34 on the card's colour), but the
-     capsule's active icon on its pill read 2.76:1 at the old 65%, and
-     70% is where it clears 3:1 (3.11). It was 65% on the card's colour,
-     where 60% read 2.97:1. */
+     in the fills: foreground ink at the text surfaces' fill has to read
+     4.5:1 over white, which is the worst backdrop a glass band can be
+     scrolled over, and the capsule's active icon on its pill has to
+     clear 3:1 there. The capsule wanted 70% for that (2.76:1 at the old
+     65%); it was 65% on the card's colour, where 60% read 2.97:1.
+
+     --glass-fill is 72% in dark, where tokens.css sets 70% for both
+     themes, and the ladder is why. That 70% was placed against a 32%
+     tint and measured 4.75:1 over white; the 2026-09-22 ladder took the
+     tint to 34.6% with --surface-3, a lighter glass hides white content
+     less, and the same ink fell to 4.44. 72% is the fill that reads
+     4.70, which is the margin it was chosen with. Analytic, ink over
+     the composited fill: check:contrast composites a glass surface over
+     the DOM under it rather than over what is scrolled behind it, so
+     this is the one number in the file that check cannot hold. */
   --glass-tint: var(--surface-3);
+  --glass-fill: 72%;
   --glass-fill-capsule: 70%;
   --switch-on: oklch(70% 0.19 145);
-  --border-strong: oklch(calc(40% + (72% - 40%) * var(--ui-contrast)) calc(0.024 * var(--ui-tint)) var(--ui-hue));
+  /* 42.5%, not 40%: the stronger stroke keeps its step over --border,
+     which moved. 1.959:1 on the card, where it was 1.944. */
+  --border-strong: oklch(calc(42.5% + (72% - 42.5%) * var(--ui-contrast)) calc(0.024 * var(--ui-tint)) var(--ui-hue));
 
   --foreground: oklch(calc(98.5% + (100% - 98.5%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
-  --muted-foreground: oklch(calc(74% + (90% - 74%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
-  /* 69.5, not 68: on --surface-3 (32%) the third tier read 4.40:1, under
-     the floor by the width of a rounding. muted-foreground stays at 74,
-     so the two tiers are still a step apart. */
-  --text-subtle: oklch(calc(69.5% + (80% - 69.5%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
+  /* 77 and 72.5, up from 74 and 69.5, and the ladder is why: --surface-3
+     is the tightest of the four backgrounds and it rose to 34.6%. The
+     third tier fell to 4.22:1 there, under the floor small text needs,
+     and the tier above would have had to stay put and close the gap
+     between them to a point and a half. Two quiet greys a point apart
+     are one grey, so both move and the step stays 4.5 points: 5.54:1 and
+     4.72:1 on --surface-3, where they measured 5.50 and 4.66. Both far
+     ends are unchanged. */
+  --muted-foreground: oklch(calc(77% + (90% - 77%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
+  --text-subtle: oklch(calc(72.5% + (80% - 72.5%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
 
   --primary-l: calc(92.2% - 19.2% * var(--accent-tint));
   --primary-hover-l: calc(85% - 7% * var(--accent-tint));
   --primary: oklch(calc(var(--primary-l) + (100% - var(--primary-l)) * var(--ui-contrast)) calc(0.135 * var(--accent-tint)) var(--accent-hue));
   --primary-hover: oklch(calc(var(--primary-hover-l) + (92% - var(--primary-hover-l)) * var(--ui-contrast)) calc(0.125 * var(--accent-tint)) var(--accent-hue));
   --primary-foreground: oklch(calc(20.5% + (0% - 20.5%) * var(--ui-contrast)) calc(0.025 * var(--accent-tint)) 235);
-  --primary-soft: oklch(calc(30% + (20% - 30%) * var(--ui-contrast)) calc(0.055 * var(--accent-tint)) var(--accent-hue));
-  /* 66%, not 55.6%: the same 3:1 the light block explains, and here
-     --accent (37%) binds it rather than --surface-3. The dark hover and
+  /* 33%, not 30%: this is the ::selection fill (base.css), and what it
+     has to do is be seen over the card it is drawn on. The card rose, so
+     the fill rose with it, back to the 1.32:1 it was drawn at (1.339 as
+     measured). Its far end is unchanged. */
+  --primary-soft: oklch(calc(33% + (20% - 33%) * var(--ui-contrast)) calc(0.055 * var(--accent-tint)) var(--accent-hue));
+  /* 69%, not 55.6%: the same 3:1 the light block explains, and here
+     --accent (39.4%) binds it rather than --surface-3. The dark hover and
      selection fill sits a rung above the ladder (see its note below),
      an inset ring on a hovered row is drawn onto it, and a neutral ring
-     crosses 3:1 there at 63.2%; the rest is the margin a tinted accent
-     eats, leaving the worst shipped scheme at 3.18:1 and the worst
-     corner of the grid at 3.09:1. At 55.6% behind a 50% wash the ring
-     measured 1.72 to 1.88:1. 100% at the top of the knob, as before. */
-  --ring: oklch(calc(66% + (100% - 66%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
+     crosses 3:1 there at 66.3%; the rest is the margin a tinted accent
+     eats, leaving the worst shipped scheme at 3.38:1 and the worst
+     corner of the grid at 3.24:1. It was 66% against a 37% --accent, and
+     three points of --accent took the worst corner to 3.02 — over the
+     floor by less than the rounding it is quoted at. At 55.6% behind a
+     50% wash the ring measured 1.72 to 1.88:1. 100% at the top of the
+     knob, as before. */
+  --ring: oklch(calc(69% + (100% - 69%) * var(--ui-contrast)) calc(0.1 * var(--accent-tint)) var(--accent-hue));
   /* See the light block: the registry's dark --ring, 55.6%, for the
      field halo alone. */
   --field-halo: oklch(55.6% calc(0.1 * var(--accent-tint)) var(--accent-hue));
 
-  --good: oklch(72% 0.16 152);
   /* 72, not the registry's 70.4: 4.39:1 on --surface-3, and a failed
-     chip sits on a hovered row often enough. 72 reads 4.53 there.
-
-     What none of these four clear in dark is --accent (37%), the hover
-     and selection fill: text-subtle would need 74, the same rung as
-     muted-foreground above it, and this red would need 81, to
+     chip sits on a hovered row often enough. 72 read 4.53 there when
+     --surface-3 was 32%, and reads 4.94 on the 34.6% it is now, because
+     the ladder's lift costs a light ink less than it costs the surface
+     under it. So this one did not move, and neither did --warn or
+     --info; --destructive below is the one of the four that did. */
+  --good: oklch(72% 0.16 152);
+  /* What none of these four clear in dark is --accent (39.4%), the hover
+     and selection fill: text-subtle would need 76.6, within half a point
+     of muted-foreground above it, and this red would need 85.3, to
      reach 4.5 on it, and the fill itself cannot come down to meet them,
-     since at 33% it is 1.04:1 from --surface-3 and a pressed control
+     since at 35.5% it is 1.04:1 from --surface-3 and a pressed control
      vanishes again, which is the measured reason --accent sits a rung
      above. So --accent in dark is a transient fill exempt from the four
      backgrounds rule, on purpose, and check:contrast walks hover and
      selection on every page to catch a string that is read there
      rather than glanced at. */
-  --destructive: oklch(72% 0.191 22.2);
+  /* 77, not 72, and the ladder is what moved it: the red is the darkest
+     of the four, so it is the one with no margin on --surface-3, and at
+     34.6% that rung took it from 4.53:1 to 4.10 — under the floor small
+     text needs on every one of the four backgrounds. 77 reads 4.54
+     there, 5.41 on the muted rung, 6.42 on a card and 7.09 on the page.
+     Hue and chroma are untouched, which is the rule the light block
+     states for this family: green stays green, and so does this red. */
+  --destructive: oklch(77% 0.191 22.2);
   --warn: oklch(80% 0.15 80);
-  /* 74, not 72, and the exception above is why it is worth two points:
+  /* 76.5, and the exception above is why the points are worth spending:
      this is the one semantic colour the app puts in a SENTENCE on a row
      that fills, and a count read on a hovered row is the case that note
-     says check:contrast exists to catch. At 72 the puzzle dashboard's
-     "{n} due" measured 4.29:1 on --accent, under the 4.5 a 12px string
-     needs; at 74 it reads 4.60, and 8.78 on the page, 7.95 on a card,
-     5.60 on --surface-3, up from 8.20, 7.42 and 5.23. The others keep
-     their values because no string wears them there: --good measures
-     4.45 on that fill and --destructive 3.70, and if either ever lands
-     on a row that fills, this check is what will say so. */
-  --info: oklch(74% 0.13 232);
+     says check:contrast exists to catch. It was 74, chosen when --accent
+     was 37% and measuring 4.60:1 on it; the ladder took that fill to
+     39.4% and the puzzle dashboard's "{n} due" fell to 4.20, under the
+     4.5 a 12px string needs. It crosses again at 75.9, and 76.5 is that
+     with the margin it had before, at 4.59 on the fill, 8.71 on the
+     page, 7.89 on a card and 5.58 on --surface-3. The others keep their
+     values because no string wears them there: --good measures 4.07 on
+     that fill and --destructive 3.74, and if either ever lands on a row
+     that fills, this check is what will say so. */
+  --info: oklch(76.5% 0.13 232);
   /* Dark mode's --destructive is a light red; white on it is unreadable. */
   --destructive-foreground: oklch(18% 0.03 25);
   --warn-foreground: oklch(20% 0.04 80);
@@ -135,31 +218,49 @@
      it. Re-measured on the demo at the default knobs as a cross-check,
      one ECO family on the accent fill reads the same 8.57:1 in light and
      8.19:1 in dark whether it is the table's selected row or the card
-     row's hovered one, and the table's lifted hover only gains. */
+     row's hovered one, and the table's lifted hover only gains.
+
+     Re-measured against the 2026-09-22 ladder, where --accent is 39.4%
+     and the wash under the chip is gone: the A family reads 5.94:1 on
+     that fill and the E family 7.47, and the code now crosses 4.5 at
+     76.7. So the chip has margin the name below it did not, and 85
+     stays. */
   --eco-l: 85%;
   --eco-dir: 1;
   --eco-c: 0.08;
   --eco-wash: 0%;
-  /* 75%, for the reason the chip above moved to 85%, and missed the
+  /* 78%, for the reason the chip above moved to 85%, and missed the
      first time: the chip and the name are one label, and only the chip
      was measured. The opening name on a hovered row read 4.13:1 at 72%
      — the row fills with --accent and the name does not move with it.
-     75% is where it crosses, at 4.63:1, and it costs nothing at rest,
-     where the name is read against the card.
+     75% was where it crossed, at 4.63:1 over a 37% fill.
+
+     The 2026-09-22 ladder took that fill to 39.4% and the name back down
+     to 4.24, so it moves with it: 76.7 is where it crosses now and 78
+     reads 4.72 on the fill, 8.10 against the card it is read on at rest,
+     which is where the name spends its life and where this costs
+     nothing.
 
      Light stays 45%: the same name on the same filled row measures 5.90
      at worst across the family hues, because --accent there is a pale
      grey under dark ink. */
-  --eco-name-l: 75%;
+  --eco-name-l: 78%;
   --eco-name-c: 0.045;
 
-  /* Lighter on the near-black page, and the wheel holds more chroma up
-     there: 0.12 against the light theme's 0.09, both the most every one
-     of 360 hues can carry at that lightness inside sRGB. */
+  /* Lighter on the dark page, and the wheel holds more chroma up there:
+     0.12 against the light theme's 0.09, both the most every one of 360
+     hues can carry at that lightness inside sRGB. Unmoved by the
+     2026-09-22 ladder: a highlighted line reads 6.91:1 on the page it
+     lifted to, where it read 7.64, and the chroma is a gamut fact rather
+     than a ratio. */
   --map-line-l: 72%;
   --map-line-c: 0.12;
-  /* 52% is 3.6:1 on the 14.5% page; the knob takes it to 72% (8:1). */
-  --map-thread: oklch(calc(52% + (72% - 52%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
+  /* 54.5% is 3.6:1 on the 20.5% page; the knob takes it to 72% (8:1).
+     It was 52% on a 14.5% page for the same 3.6, and left there it would
+     have read 3.25: a thread carries meaning and PRODUCT.md asks 3:1 of
+     one, so the margin for the antialiasing of a 1.1px line is what the
+     two and a half points buy back. */
+  --map-thread: oklch(calc(54.5% + (72% - 54.5%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
 
   /* Light chip on the dark app. Held at 90% rather than pure white: it
      has to be plainly foreign to the page, not a headlight in the corner
@@ -184,16 +285,27 @@
   --sq-dest: oklch(72% 0.11 152 / 38%);
   --sq-check: oklch(62% 0.24 27);
 
-  /* The bar's dark half sits at the board frame's lightness, not the page's,
-     so a black advantage still reads as a bar and not as the page showing
-     through. 13% here was 1.5 points off --background, and the two met at
-     pure black once the contrast slider moved. Light mode does the mirror
-     with its white half (94% on a 100% page). */
+  /* The bar's dark half stands clear of the page rather than matching
+     it, so a black advantage still reads as a bar and not as the page
+     showing through. 13% here was 1.5 points off --background, and the
+     two met at pure black once the contrast slider moved. 27% was that
+     clearance against a 14.5% page, at 1.313:1; the 2026-09-22 ladder
+     put the page at 20.5% and took it to 1.189, so the fill moves with
+     it. 30% is the same 1.313 on the page and 1.190 on a card, which is
+     what it was. Light mode does the mirror with its white half (94% on
+     a 100% page). */
   --eval-white: oklch(calc(93% + (100% - 93%) * var(--ui-contrast)) calc(0.005 * var(--ui-tint)) var(--ui-hue));
-  --eval-black: oklch(calc(27% + (0% - 27%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
+  --eval-black: oklch(calc(30% + (0% - 30%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
   --eval-border: oklch(100% 0 0 / calc(25% * var(--ui-contrast)));
-  /* 3.5:1 off both eval fills and 4.5:1 off the card (see light). */
-  --result-draw: oklch(58% 0 0);
+  /* The draw segment and the track's edge, squeezed between the two eval
+     fills: it has to stand 3:1 off both, which is what PRODUCT.md asks
+     of a mark that carries meaning, and off the card behind the bar.
+     59%, not 58%: the dark fill above rose three points and 58 fell to
+     3.18:1 against it. 59 is the balance point, 3.32 on the dark fill,
+     3.35 on the light one and 3.95 on the card. The note here used to
+     claim 3.5 and 4.5 as the floors and quote neither; as drawn it
+     measured 3.52, 3.49 and 4.18. */
+  --result-draw: oklch(59% 0 0);
 
   --shadow-color: var(--ui-hue) 40% 4%;
 }
@@ -232,14 +344,19 @@
 .dark {
   /* shadcn's own dark input chrome is translucent white, and the active
      tab's pill (`dark:bg-input/30 dark:border-input`) depends on it: over
-     the muted track, an opaque 29% grey at 30% was the track's own
-     colour, and the chosen tab could not be told from the others. */
+     the muted track, an opaque grey at 30% was the track's own colour,
+     and the chosen tab could not be told from the others. A white wash
+     rides the ladder for free, which is why this one did not have to be
+     retuned on 2026-09-22: at 15% it draws 3.29:1 over the card where it
+     drew 3.54 over the darker one. */
   --input: oklch(100% 0 0 / calc(15% + 10% * var(--ui-contrast)));
   /* The pressed/selected fill, a further step up in the dark: the
-     surface-3 rung (32%) on a card (20.5%) read as one grey on another
-     in the crops — the eye is less sensitive a step apart down here than
-     it is in the light, where surface-3 (92.8%) on white is plain. */
-  --accent: oklch(calc(37% + (28% - 37%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+     surface-3 rung on a card read as one grey on another in the crops —
+     the eye is less sensitive a step apart down here than it is in the
+     light, where surface-3 (92.8%) on white is plain. 39.4%, derived
+     with the rest of the ladder on 2026-09-22 and keeping the 1.216:1
+     over --surface-3 it was placed at; it was 37% over a 32% rung. */
+  --accent: oklch(calc(39.4% + (28% - 39.4%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
 }
 /* The page ground. Under an element that says `data-ground` (a page's
    header row, a gate, a toolbar standing on the page rather than in a
@@ -252,8 +369,9 @@
    theme gives them). A rung, not a class: bg-muted and bg-secondary
    keep the registry's names, and every fill drawn from these roles
    moves with them, wells and washes included. Dark keeps its values,
-   since there the page (14.5%) sits below the card (20.5%) and the rung
-   already separates (1.31:1 measured). The ground is marked by hand,
+   since there the page (20.5%) sits below the card (24.5%) and the rung
+   already separates (1.31:1 measured, and the same after the 2026-09-22
+   ladder, which is the point of deriving it by ratio). The ground is marked by hand,
    and only on boxes that hold no card, since a card under it would take
    the rung too. The ghost button's hover reads the same mark in
    components/ui/button. */
