@@ -7,14 +7,19 @@
      LADDER keeps its rungs (surface-3, surface-inset) above those. */
   --background: oklch(calc(14.5% + (0% - 14.5%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
   --background-accent: oklch(calc(12% + (0% - 12%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
-  /* The window's ground (tokens.css says what it is for): a rung BELOW
-     the page, 11% under 14.5%, so the inset panel is the lit thing and
-     the frame around it recedes — the same direction light takes, since
-     in both themes the frame is the quieter surface. Dark already draws
-     --window-ring as a real hairline at every contrast, so the panel's
-     edge never depends on this step alone. */
-  --app-ground-base: oklch(calc(11% + (0% - 11%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
   --surface: oklch(calc(20.5% + (13% - 20.5%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
+  /* The window's ground (tokens.css says what it is for). In dark it is
+     NOT a rung below the page, which is what light does and what this was
+     for a day: 11% under 14.5% is black to the eye, the frame became a
+     void with the sidebar's labels floating in it, and lanph3re's first
+     look at the real window was "too dark" (2026-09-21). Dark elevation
+     runs the other way from light: what is nearer is lighter. So the frame
+     takes --surface, the card's rung, which is exactly what the sidebar
+     was before the inset shell (it was bg-card), and the page is the
+     darker well set into it, with its cards coming back up to the frame's
+     tone. The sidebar's pill, hover and ink were all placed against this
+     ground already. Defined after --surface because it reads it. */
+  --app-ground-base: var(--surface);
   --surface-2: oklch(calc(26.9% + (18.5% - 26.9%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
   --surface-3: oklch(calc(32% + (24% - 32%) * var(--ui-contrast)) calc(0.019 * var(--ui-tint)) var(--ui-hue));
   --surface-inset: oklch(calc(23% + (7% - 23%) * var(--ui-contrast)) calc(0.016 * var(--ui-tint)) var(--ui-hue));
