@@ -172,7 +172,13 @@
      top of the knob the two meet — which is the same trade the sidebar
      made before, where the panel's --window-ring is the structure that
      comes back at exactly that point. */
-  --app-ground: oklch(calc(95% + (100% - 95%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  --app-ground-base: oklch(calc(95% + (100% - 95%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  /* What the frame paints, one step of indirection from the colour it
+     is. The window-material block at the foot of this file mixes the
+     frame's own colour with transparency, and a token cannot be
+     defined from itself; the dark theme overrides the BASE and takes
+     this line as it stands. */
+  --app-ground: var(--app-ground-base);
   /* The WINDOW's ground: what html and body paint (styles/base.css), as
      opposed to what `bg-background` paints on an element. The same
      colour everywhere but one place, and the indirection exists for
@@ -667,9 +673,10 @@
     ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
-/* The OS's window material, the one override --window-ground has. Set by
-   the desktop shell alone (lib/platform.ts, startWindowMaterial), so no
-   browser, no phone and no demo ever matches this.
+/* The OS's window material, the only override --window-ground and
+   --app-ground have. Set by the desktop shell alone (lib/platform.ts,
+   startWindowMaterial), so no browser, no phone and no demo ever
+   matches this.
 
    Two values, because the two materials are not the same thing. Mica is
    near-opaque: the wallpaper reaches it as a tint, the app's ink keeps
@@ -677,13 +684,37 @@
    way. macOS sidebar vibrancy is genuinely translucent and whatever is
    behind the window comes through it, so the ground stays at 70% and
    the material tints it rather than replacing it; at 0 the text over it
-   had no fixed thing to hold 4.5:1 against. Neither number is measured
-   against a real window yet, which is why the shell ships the material
-   off and the Settings switch is how it gets seen. */
-:root[data-window-material='mica'] {
-  --window-ground: transparent;
-}
+   had no fixed thing to hold 4.5:1 against, and the sidebar's ink is
+   over the frame's mix rather than the page's. Neither number is
+   measured against a real window yet, which is why the shell ships the
+   material off and the Settings switch is how it gets seen. */
+/* From md only, and the breakpoint is the point: a material shows where
+   the window has a FRAME to show it in. From md the shell is one quiet
+   ground with the page inset in it as an opaque panel (App.tsx), which
+   is the division of labour both systems draw themselves: material
+   behind the title band, the navigation column and the gutter around
+   the content, and the content itself on a surface of its own. So the
+   FRAME's ground steps aside with the document's, and nothing else
+   does: the panel, and every card, sheet, popover, menu and toast on
+   it, keeps the fill it has today, because none of them is named here.
+   Under md there is no frame to be, the page fills the window, and a
+   material behind the reading surface is not what either system means
+   by one. Both tokens keep their opaque values there, so a narrow
+   window is exactly the window that shipped. */
+@media (min-width: 48rem) {
+  :root[data-window-material='mica'] {
+    --window-ground: transparent;
+    --app-ground: transparent;
+  }
 
-:root[data-window-material='vibrancy'] {
-  --window-ground: color-mix(in oklab, var(--background) 70%, transparent);
+  :root[data-window-material='vibrancy'] {
+    --window-ground: color-mix(in oklab, var(--background) 70%, transparent);
+    /* The frame's own colour at the same 70%, not the page's: the
+       sidebar and the band are a rung below the panel and stay there,
+       tinted by what is behind the window rather than replaced by it.
+       The number is what the ink over it has to hold 4.5:1 against,
+       and it is the one thing in this block that a real window still
+       has to settle. */
+    --app-ground: color-mix(in oklab, var(--app-ground-base) 70%, transparent);
+  }
 }
