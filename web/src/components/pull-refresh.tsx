@@ -1,4 +1,3 @@
-import type { Ref } from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from '@/lib/utils';
 
@@ -27,11 +26,14 @@ import { cn } from '@/lib/utils';
  * already on, and the page says so in its own words. There is nothing
  * here for a pointer either, so it never takes a tap meant for the first
  * row.
+ *
+ * The hook finds it by `data-slot`, inside the scroller it was given, so
+ * nothing has to be threaded back: a ref handed from the hook to this
+ * component as a prop is a shape the React Compiler refuses.
  */
-export function PullRefresh({ ref, className }: { ref: Ref<HTMLDivElement>; className?: string }) {
+export function PullRefresh({ className }: { className?: string }) {
   return (
     <div
-      ref={ref}
       aria-hidden
       data-slot="pull-refresh"
       // Fine pointers have the page's own controls and never see this.

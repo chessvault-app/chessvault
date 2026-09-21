@@ -192,14 +192,19 @@ export function usePullRefresh({
   /** False where the page has nothing to refetch, or is not the one being
       read (a pane that is closed, a tab that is not open). */
   enabled?: boolean;
-}): {
-  /** The scroller the gesture is read from. */
-  scrollerRef: (node: HTMLElement | null) => void;
-  /** The indicator (components/pull-refresh), which must be inside that
-      scroller: it is what the distance is written to. */
-  indicatorRef: (node: HTMLElement | null) => void;
-} {
+}): (node: HTMLElement | null) => void {
   const [scroller, setScroller] = useState<HTMLElement | null>(null);
+  /**
+   * The indicator, found inside the scroller by its slot rather than
+   * handed over as a second ref.
+   *
+   * A ref for it would have to be returned from this hook and passed to
+   * the component, and a ref object crossing a component boundary as a
+   * prop is a shape the React Compiler refuses outright (measured: it
+   * would not compile PageShell). It is one query, once per gesture, for
+   * an element the caller has just rendered inside the element it also
+   * gave us.
+   */
   const indicator = useRef<HTMLElement | null>(null);
   /** Running, so a second pull cannot start a second refetch. */
   const busy = useRef(false);
@@ -274,6 +279,7 @@ export function usePullRefresh({
       if (!canPull(scroller.scrollTop)) return;
       if (layerOpen() || fieldFocused()) return;
       if (claimed(e.target, scroller)) return;
+      indicator.current = scroller.querySelector<HTMLElement>('[data-slot="pull-refresh"]');
       const touch = e.touches[0]!;
       still = prefersReducedMotion();
       start = { x: touch.clientX, y: touch.clientY };
@@ -316,10 +322,12 @@ export function usePullRefresh({
     };
   }, [scroller, enabled]);
 
-  return {
-    scrollerRef: setScroller,
-    indicatorRef: (node) => {
-      indicator.current = node;
-    },
+  // A callback ref of this hook's own, not the setter itself: the React
+  // Compiler refuses a component that hands a `useState` setter straight
+  // to a `ref` prop (measured on PageShell), and every other attaching
+  // hook here (use-element-height) returns a callback the same way.
+  const attach = (node: HTMLElement | null): void => {
+    setScroller(node);
   };
+  return attach;
 }
