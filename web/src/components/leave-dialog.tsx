@@ -113,7 +113,15 @@ export function LeaveDialog() {
             when it was the tinted `danger` variant, which put the one
             irreversible answer directly under the thumb aiming for Save and
             gave it more ink than the harmless one. */}
-        <div className="mt-1 flex flex-col gap-2">
+        {/* Three answers stay stacked on either card, and on the iOS one
+            each is the same 48px capsule the two-answer alert draws.
+            Written as `ios:max-sm:` rather than from useAlertCard()
+            because this component renders the Dialog root itself, so the
+            context it provides is not readable here; the two conditions
+            are the same one (AlertCardContext is `ios` exactly when the
+            platform is iOS and the window is under the phone
+            breakpoint). */}
+        <div className="mt-1 flex flex-col gap-2 ios:max-sm:gap-2.5 ios:max-sm:[&>*]:h-12 ios:max-sm:[&>*]:rounded-full ios:max-sm:[&>*]:pointer-coarse:h-12">
           <Button
             variant="default"
             size="default"

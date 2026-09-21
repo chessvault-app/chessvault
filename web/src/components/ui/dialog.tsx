@@ -916,7 +916,16 @@ function DialogContent({
         // and get clipped flush against the title's baseline, which read
         // as the title stamped over the content. 14px, not the full 16,
         // so a first-child Card's outside ring stays visible.
-        <div className="bg-popover sticky top-0 z-10 -mx-4 -mb-3.5 px-4 pt-4 pb-3.5 max-sm:touch-none max-sm:select-none">
+        <div
+          className={cn(
+            'bg-popover sticky top-0 z-10 -mx-4 -mb-3.5 px-4 pt-4 pb-3.5 max-sm:touch-none max-sm:select-none',
+            // The iOS card's own padding is 20px, not the card's usual 16,
+            // so the row that reaches through it reaches 20 (see the Popup
+            // below); and the card's `pt-5` is already the top padding, so
+            // the row adds none of its own.
+            alertCard === 'ios' && '-mx-5 px-5 pt-0',
+          )}
+        >
           {/* The grabber, phone SHEETS only: it is a sign that the sheet
               can be pushed away, and the iOS alert card cannot be — it is
               dismissed by an answer or by the scrim. `sm:hidden` alone
@@ -946,12 +955,11 @@ function DialogContent({
                 the row its height back, so nothing else moves. */}
             <DialogTitle
               id={titleId}
-              // Centred on the iOS alert card, where the title IS the
-              // question and the row has nothing else on it (the chevron
-              // and the X are both desktop-only at this width). The
-              // Material card starts its title, which is that card's own
-              // rule and also what the row does everywhere else.
-              className={cn('-my-1 min-w-0 flex-1 truncate py-1', alertCard === 'ios' && 'text-center')}
+              // Started, on every card. The iOS title was centred until
+              // 2026-09-21: iOS 26 moved the alert to leading alignment,
+              // which is also what the Material card and every other
+              // title row here already did.
+              className="-my-1 min-w-0 flex-1 truncate py-1"
             >
               {t(title)}
             </DialogTitle>
@@ -1021,6 +1029,13 @@ function DialogContent({
   const cardClass = cn(
     'bg-popover text-popover-foreground ring-window-ring flex w-full flex-col gap-4 overflow-x-hidden overflow-y-auto overscroll-contain px-4 pb-4 text-sm ring-1 outline-none [&>*]:shrink-0',
     title !== undefined ? 'pt-0' : 'pt-4 max-sm:pt-0',
+    // The untitled card's `max-sm:pt-0` is the SHEET's rule: a sheet with
+    // no title row draws the grabber strip, which carries its own pt-3.
+    // An alert card draws no grabber (`phone` is false for it), so the
+    // first thing in it — the registry's media tile — sat flush against
+    // the card's top edge and read as clipped (lanph3re's phone, iOS,
+    // 2026-09-21). Both flavours had it; both get the padding back.
+    alertCard && title === undefined && 'max-sm:pt-4',
     className,
   );
   const cardStyle: React.CSSProperties = {
@@ -1089,6 +1104,8 @@ function DialogContent({
         }}
         className={cn(
           'bg-popover col-start-1 row-start-1 -mx-4 flex min-w-0 flex-col gap-4 px-4 [&>*]:shrink-0',
+          // The iOS card's side padding (see the Popup below).
+          alertCard === 'ios' && '-mx-5 px-5',
           under === 'leaving' && 'page-under-leave',
           under === 'returning' && 'page-under-return',
           under === 'hidden' && 'invisible',
@@ -1332,10 +1349,19 @@ function DialogContent({
             // The alert card, drawn last so it beats the width and the
             // radius above whatever size the window was given.
             //
-            // iOS: 280px, the 2xl rung. One width at every phone size,
-            // the way the platform's alert is a fixed width and not a
-            // share of the screen; 280 sits in the middle of the band an
-            // iOS alert occupies, and is not a measurement of one.
+            // iOS: 300px, the 4xl rung, 20px of padding on every side.
+            // One width at every phone size, the way the platform's alert
+            // is a fixed width and not a share of the screen, capped to
+            // the viewport less the 32px margins iOS 26 leaves an alert;
+            // 300 sits in the middle of the band an iOS alert occupies,
+            // and is not a measurement of one. The rung is the ladder's
+            // largest that is not a pill — the same one the Material card
+            // takes, 26px at the default knob against the platform's 34,
+            // and it scales with the Corners setting as every other
+            // corner in the app does; a hard 34px would not. It was the
+            // 2xl rung and 280px until 2026-09-21, with 16px of padding
+            // and the buttons in the registry's filled footer band: a web
+            // dialog shrunk, in lanph3re's words, not an iOS alert.
             //
             // Material: 312px, M3's own maximum for the basic dialog,
             // capped to the layer (`max-w-full`) so a 320px phone keeps
@@ -1343,7 +1369,7 @@ function DialogContent({
             // rung is 26px at the default knob, the ladder's nearest to
             // M3's 28px, and it scales with the Corners setting as every
             // other corner in the app does; a hard 28px would not.
-            alertCard === 'ios' && 'w-[17.5rem] max-w-[17.5rem] rounded-2xl',
+            alertCard === 'ios' && 'w-[18.75rem] max-w-[calc(100vw-4rem)] rounded-4xl px-5 pt-5 pb-5',
             alertCard === 'material' && 'w-[19.5rem] max-w-full rounded-4xl',
           )}
           {...props}
@@ -1393,7 +1419,15 @@ function DialogFooter({
         // Reclaiming the safe area inside a floating card would have cut
         // the band off below the corner radius.
         alertCard && 'max-sm:-mb-4 max-sm:pb-4',
-        alertCard === 'ios' && 'max-sm:rounded-b-2xl',
+        // iOS draws no action band either, and for the stronger reason:
+        // its alert has no divider and no second tone at all — the
+        // answers stand on the card's own surface, under the message.
+        // The band was a horizontal rule and a tinted strip across the
+        // bottom third of a 300px card, which is what made it read as a
+        // web dialog. The reclaim above is undone with it: with no band
+        // there is nothing to reach the card's edges, so the row keeps
+        // the card's own 20px padding and adds none.
+        alertCard === 'ios' && 'max-sm:mx-0 max-sm:mb-0 max-sm:rounded-none max-sm:border-t-0 max-sm:bg-transparent max-sm:p-0',
         // Material draws no filled action band: the buttons sit on the
         // dialog's own surface, and a tinted strip under them would read
         // as a second surface inside a 312px card.
@@ -1414,10 +1448,17 @@ function DialogFooter({
 
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   const Title = React.use(SheetContext) ? DrawerPrimitive.Title : DialogPrimitive.Title;
+  // The iOS alert's title is the platform's 17px semibold; every other
+  // window here is named in the 16px medium of the title row.
+  const alertCard = useAlertCard();
   return (
     <Title
       data-slot="dialog-title"
-      className={cn('font-heading text-base leading-none font-medium', className)}
+      className={cn(
+        'font-heading text-base leading-none font-medium',
+        alertCard === 'ios' && 'text-[1.0625rem] font-semibold',
+        className,
+      )}
       {...props}
     />
   );
@@ -1427,10 +1468,17 @@ function DialogDescription({ className, ...props }: DialogPrimitive.Description.
   const Description = React.use(SheetContext)
     ? DrawerPrimitive.Description
     : DialogPrimitive.Description;
+  // The iOS alert's message is the platform's 15px, a rung above the
+  // app's 14px body, under a 17px title.
+  const alertCard = useAlertCard();
   return (
     <Description
       data-slot="dialog-description"
-      className={cn('text-muted-foreground text-sm *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground', className)}
+      className={cn(
+        'text-muted-foreground text-sm *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground',
+        alertCard === 'ios' && 'text-[0.9375rem]',
+        className,
+      )}
       {...props}
     />
   );
