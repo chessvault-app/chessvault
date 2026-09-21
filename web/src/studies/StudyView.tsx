@@ -269,11 +269,14 @@ export function StudyView({
             iOS they show, dimmed and inert: the docked strip is the
             page's edge and stands empty without remark, but the capsule
             is a thing of its own, and an empty one through the wait read
-            as the bar broken (lanph3re's recording, 2026-09-18). */}
+            as the bar broken (lanph3re's recording, 2026-09-18). Android's
+            floating toolbar is a pill over the page in the same way, so
+            it takes the same treatment: an empty one standing through
+            the wait would read the same. */}
         {pending && (
           <MobileActionBar>
             <BoardControls
-              className="py-1.5 ios:py-0 ios:justify-evenly ios:gap-0 invisible ios:visible ios:opacity-40 ios:pointer-events-none"
+              className="py-1.5 ios:py-0 ios:justify-evenly ios:gap-0 invisible ios:visible android:visible ios:opacity-40 android:opacity-40 ios:pointer-events-none android:pointer-events-none"
               aria-hidden
             />
           </MobileActionBar>
