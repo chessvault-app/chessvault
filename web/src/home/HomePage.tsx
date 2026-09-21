@@ -338,6 +338,26 @@ const collectionDocId = (g: Pick<RecentGame, 'file'>): string =>
   g.file.replace(/^collection\//, '').replace(/\.pgn$/, '');
 
 /**
+ * The disclosure chevron at the end of one of home's rows.
+ *
+ * A trailing chevron tells a thumb that the row goes somewhere, and a
+ * thumb is the only reader that needs telling. With a pointer, the row's
+ * hover fill and the cursor have already said it by the time the eye
+ * reaches the right edge, so on a 1280px dashboard the mark was repeated
+ * twenty-odd times down the page to say nothing, and it held each row's
+ * own fact (a date, a tally) a glyph's width in from the edge it should
+ * end at. Drawn on every touch screen and at every phone width; dropped
+ * only where a fine pointer meets a desktop-width window.
+ *
+ * Home's rows only, and no shared component moves for it: ListRow draws
+ * no chevron of its own, and every other page writes its own glyph.
+ * Home's placeholders below wear the same class for the same reason they
+ * wear the same padding, since a placeholder that kept the chevron would
+ * reserve a column the row no longer has.
+ */
+const ROW_CHEVRON = 'text-muted-foreground glyph shrink-0 md:pointer-fine:hidden';
+
+/**
  * One demoted destination as a row button. Below sm it is the phone's
  * launcher cell — icon over a label free to break ("Puzzle books") inside
  * its column. From sm it is an ordinary ghost button in a wrapping,
@@ -413,7 +433,7 @@ function PlaceholderRow({
       {/* The chevron every one of these rows ends with, drawn as the rows
           draw it: it is part of the width the label truncates inside,
           and without it the bar ran on past where the words stop. */}
-      <ChevronRight aria-hidden className="text-muted-foreground glyph shrink-0" />
+      <ChevronRight aria-hidden className={ROW_CHEVRON} />
     </div>
   );
 }
@@ -463,7 +483,7 @@ function PlaceholderChecklist() {
           <span className="text-foreground min-w-0 flex-1">{t(label)}</span>
           {/* The chevron a pending step ends with — part of the width the
               words wrap inside. */}
-          <ChevronRight aria-hidden className="text-muted-foreground glyph shrink-0" />
+          <ChevronRight aria-hidden className={ROW_CHEVRON} />
         </div>
       ))}
     </div>
@@ -539,7 +559,7 @@ function PlaceholderPanel({
               <Skeleton className="h-2 w-full" />
             </span>
             <Skeleton className="h-2.5 w-8 shrink-0" />
-            <ChevronRight aria-hidden className="text-muted-foreground glyph shrink-0" />
+            <ChevronRight aria-hidden className={ROW_CHEVRON} />
           </div>
         ) : (
           <PlaceholderRow
@@ -613,7 +633,7 @@ function RecentGamesCard({
           >
             {g.date.replaceAll('.', '-')}
           </span>
-          <ChevronRight className="text-muted-foreground glyph shrink-0" />
+          <ChevronRight className={ROW_CHEVRON} />
         </ListRow>
       ))}
     </div>
@@ -1349,7 +1369,7 @@ export function HomePage() {
                 </span>
                 {/* Gone where the title wraps under the board: a chevron
                     alone on a third line is a row of nothing. */}
-                <ChevronRight className="text-muted-foreground glyph shrink-0 max-[319px]:hidden" />
+                <ChevronRight className={cn(ROW_CHEVRON, 'max-[319px]:hidden')} />
               </button>
             )}
             {continueRows.map(({ icon: Icon, label, tail, detail, go, phoneOnly, content }) => (
@@ -1380,7 +1400,7 @@ export function HomePage() {
                 <span className={cn('text-muted-foreground shrink-0 type-row-sub', tail && 'max-[319px]:hidden')}>
                   {detail}
                 </span>
-                <ChevronRight className="text-muted-foreground glyph shrink-0" />
+                <ChevronRight className={ROW_CHEVRON} />
               </ListRow>
             ))}
           </div>
@@ -1485,7 +1505,7 @@ export function HomePage() {
                       spacer keeps the labels in one column. */}
                   <span aria-hidden className="glyph shrink-0" />
                   <span className="text-foreground min-w-0 flex-1">{step.label}</span>
-                  <ChevronRight className="text-muted-foreground glyph shrink-0" />
+                  <ChevronRight className={ROW_CHEVRON} />
                 </ListRow>
               ),
             )}
@@ -1686,7 +1706,7 @@ export function HomePage() {
                           condition this row is drawn under. */}
                       {t('Solved today: {n}', { n: data.solvedToday! })}
                     </span>
-                    <ChevronRight className="text-muted-foreground glyph shrink-0" />
+                    <ChevronRight className={ROW_CHEVRON} />
                   </ListRow>
                 )}
                 {showDue && (
@@ -1699,7 +1719,7 @@ export function HomePage() {
                             when: formatUntil(data.nextDue!),
                           })}
                     </span>
-                    <ChevronRight className="text-muted-foreground glyph shrink-0" />
+                    <ChevronRight className={ROW_CHEVRON} />
                   </ListRow>
                 )}
                 {/* The repertoire's own reminder, in the same panel and
@@ -1718,7 +1738,7 @@ export function HomePage() {
                             when: formatUntil(data.repertoire.nextDue!),
                           })}
                     </span>
-                    <ChevronRight className="text-muted-foreground glyph shrink-0" />
+                    <ChevronRight className={ROW_CHEVRON} />
                   </ListRow>
                 )}
               </div>
@@ -1761,7 +1781,7 @@ export function HomePage() {
                     <span className="text-muted-foreground shrink-0 type-row-sub">
                       <Figures text={t('{a} of {b}', { a: b.solved, b: b.puzzles })} />
                     </span>
-                    <ChevronRight className="text-muted-foreground glyph shrink-0" />
+                    <ChevronRight className={ROW_CHEVRON} />
                   </ListRow>
                 ))}
               </div>
@@ -1792,7 +1812,7 @@ export function HomePage() {
                     <span className="text-muted-foreground shrink-0 type-row-sub">
                       {formatAgo(d.updatedAt)}
                     </span>
-                    <ChevronRight className="text-muted-foreground glyph shrink-0" />
+                    <ChevronRight className={ROW_CHEVRON} />
                   </ListRow>
                 ))}
               </div>
