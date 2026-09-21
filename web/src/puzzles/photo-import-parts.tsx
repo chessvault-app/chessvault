@@ -1,6 +1,6 @@
 import { ScanSearch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Inert } from '@/components/skeletons';
 import { cn } from '@/lib/utils';
@@ -11,7 +11,7 @@ import { t } from '@/lib/i18n';
  *
  * Every way into the flow hands it a picture, so what lands is always the
  * same screen: one line of instruction, the picture with its handles, a
- * checkbox, and Cancel beside Read position. The fallback was four
+ * switch, and Cancel beside Read position. The fallback was four
  * generic bars. Measured on a 1280x900 desktop: a 290px window replaced
  * by a 604px one. The words and the controls live here so the flow and
  * its fallback draw the same ones.
@@ -26,9 +26,15 @@ export function QuadHint() {
 
 export function BlackAtBottom({ checked, onChange }: { checked: boolean; onChange: (on: boolean) => void }) {
   return (
-    <label className="text-muted-foreground flex items-center gap-1.5 text-sm">
-      <Checkbox checked={checked} onCheckedChange={(on) => onChange(on === true)} />
+    // A lone boolean is a switch (lanph3re, 2026-09-21). No settings-row
+    // frame here: this sits loose under the picture it describes, with no
+    // blurb and nothing above or below it to line a boxed row up with, so
+    // it keeps the flow's own row and only moves the control to the right
+    // where a switch belongs. The label still wraps it, so the words are
+    // its name and toggle it.
+    <label className="text-muted-foreground flex cursor-pointer items-center justify-between gap-3 text-sm">
       {t('Black at the bottom')}
+      <Switch checked={checked} onCheckedChange={(on) => onChange(on)} />
     </label>
   );
 }
