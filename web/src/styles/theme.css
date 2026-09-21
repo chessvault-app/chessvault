@@ -110,6 +110,9 @@
      moves — SAN. It is prose, not data: "Nf3" read aloud is a word, and the
              move lists it sits in already align by cell, not by character.
              Mono made every move list look like a terminal.
+     brand — the wordmark, and only the wordmark. The name as it is DRAWN
+             (components/brand-mark), which does not follow the platform
+             the way the chrome around it does.
 
      `moves` resolving to the same family as `sans` is not an accident to be
      collapsed away — the two answer different questions, and a move list is
@@ -127,6 +130,7 @@
   /* The registry's heading face is Geist; it has no hangul, and the app
      has one voice, the same one the UI is set in. */
   --font-heading: var(--font-sans);
+  --font-brand: var(--font-brand-stack);
   --font-mono: var(--font-mono-stack);
 
   /* Three lifts, all cast in --shadow-color so they agree with each

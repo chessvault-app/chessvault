@@ -45,7 +45,7 @@ export function PageGate({
         <div className="bg-muted text-muted-foreground grid size-14 place-items-center rounded-2xl">
           <Icon className="size-6" strokeWidth={1.75} />
         </div>
-        <h1 className={cn('text-xl font-semibold tracking-tight', titleClassName)}>{title}</h1>
+        <h1 className={cn('text-xl font-semibold tracking-tight ios:tracking-normal', titleClassName)}>{title}</h1>
         <p className="text-muted-foreground text-sm leading-relaxed">{body}</p>
         {actions && <div className="mt-1 flex gap-2">{actions}</div>}
       </div>

@@ -119,6 +119,13 @@
   letter-spacing: -0.015em;
   margin-top: 1em;
 }
+/* San Francisco carries its own tracking per optical size and Apple's
+   guidance is not to add more; the tightening above was set against
+   Pretendard, which has none. Only the platform whose UI face is the
+   system's (styles/tokens.css) gives it back. */
+:root[data-platform='ios'] .note-editor h1 {
+  letter-spacing: normal;
+}
 .note-editor h2 {
   font-size: 1.25em;
   font-weight: 600;

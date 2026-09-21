@@ -839,7 +839,7 @@ function Trainer({
       ) : (
         <div className="flex flex-col gap-0.5">
           {puzzle && phase !== 'loading' ? (
-            <p className="text-foreground text-2xl font-semibold tracking-tight">
+            <p className="text-foreground text-2xl font-semibold tracking-tight ios:tracking-normal">
               {solverSide === 'white' ? t('White to move') : t('Black to move')}
             </p>
           ) : null}

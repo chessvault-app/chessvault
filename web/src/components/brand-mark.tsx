@@ -30,9 +30,14 @@ import { cn } from '@/lib/utils';
  * Not translated: Korean keeps the Latin, as the dictionary did.
  * `className` sets the size: text-base on the sidebar, text-2xl on the
  * phone's home title and the lock screen.
+ *
+ * `font-brand` and not the inherited face. The chrome around it may be the
+ * platform's since 2026-09-18 (iOS draws its UI in San Francisco), and a
+ * name that changes letterform per device is not a mark. The token is the
+ * app's own face on every platform (styles/tokens.css).
  */
 export function Wordmark({ className }: { className?: string }) {
-  return <span className={cn('font-medium', className)}>chessvault</span>;
+  return <span className={cn('font-brand font-medium', className)}>chessvault</span>;
 }
 
 export function BrandMark({ className }: { className?: string }) {

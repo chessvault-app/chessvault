@@ -16,7 +16,8 @@ import { t } from '@/lib/i18n';
  * 20px on a desktop, the phone's 24px large title under `md`; see the
  * component's own note below and DESIGN.md, Typography.
  */
-export const pageTitleClass = 'text-2xl font-semibold tracking-tight md:text-xl';
+export const pageTitleClass =
+  'text-2xl font-semibold tracking-tight ios:tracking-normal md:text-xl';
 
 /**
  * The heading every scrolling page starts with: the page's name, its
