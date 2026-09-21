@@ -204,6 +204,12 @@
      is a card's, so the line is the one cue left. Outranks the registry's
      own ring-border on those files (lanph3re's call, 2026-09-08). */
   --window-ring: var(--card-ring);
+  /* The edge of the desktop's inset page panel (App.tsx). In light it is
+     the window ring: transparent on the tonal page, where the panel's fill
+     is its edge, and the hairline at the top of the contrast knob, where
+     frame and panel are both white and the ring is all that is left. Dark
+     sets it to nothing (tokens-dark.css). */
+  --panel-ring: var(--window-ring);
   /* The glass surface (utilities.css, `glass`): how much of the card's
      fill it keeps, how far it blurs what is under it, and the hairline
      at its edge. The fill and the blur are the two numbers a

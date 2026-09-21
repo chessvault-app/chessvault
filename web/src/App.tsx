@@ -293,7 +293,7 @@ function Shell() {
           // frame's opening, and in light it is transparent until the
           // contrast knob brings it back, which is the moment the ground
           // and the panel have met at white.
-          'md:bg-background md:m-2 md:ml-0 md:rounded-xl md:ring-1 md:ring-window-ring',
+          'md:bg-background md:m-2 md:ml-0 md:rounded-xl md:ring-1 md:ring-panel-ring',
         )}
       >
         {/*

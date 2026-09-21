@@ -33,6 +33,13 @@
      knob is the reader asking for every cue. */
   --card-ring: color-mix(in oklch, var(--border) calc(100% * var(--ui-contrast)), transparent);
   --window-ring: var(--border);
+  /* No hairline round the inset page panel in dark. It was the panel's
+     only edge while the frame sat at 11% under a 14.5% page; with the
+     frame on --surface the two fills are six points apart at rest and
+     thirteen at the top of the contrast knob (13% over 0%), so the fill
+     is the edge, as the tonal rule has it, and the line was a second one
+     drawn over it (lanph3re, 2026-09-21). */
+  --panel-ring: transparent;
   /* The glass surface's fill and blur are tokens.css's numbers, and its
      edge follows the foreground, which is white here. Its tint is the
      third surface rung, 32% on a 20.5% card: glass in dark is LIFTED off
