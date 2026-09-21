@@ -42,7 +42,14 @@ export function SettingRow({
   children: ReactNode;
 }) {
   return (
-    <div className="border-card-ring bg-muted flex items-center justify-between gap-3 rounded-md border px-3 py-2.5">
+    // data-slot, as the registry marks its parts: it is how a settings
+    // group flattens this row into one of its own (the iOS rules in
+    // settings/SettingsPage.skeleton, SettingsCard). Nothing reads it
+    // elsewhere, and it draws nothing by itself.
+    <div
+      data-slot="setting-row"
+      className="border-card-ring bg-muted flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
+    >
       <div className="min-w-0">
         <div className="type-row font-medium">{title}</div>
         <div className="text-muted-foreground type-row-sub">{blurb}</div>
