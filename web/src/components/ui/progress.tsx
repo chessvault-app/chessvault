@@ -9,12 +9,31 @@ import { cn } from '@/lib/utils';
  * is exported for a bar that is more than one fill (the solved/failed
  * bar in components/progress-bar), where each fill states its width and
  * that explicit style wins over the primitive's own.
+ *
+ * On Android the track takes Material 3 Expressive's shape: rounded ends
+ * on the fill, a 4px gap, then the inactive track, and a stop dot at the
+ * far end. It is drawn entirely in styles/progress.css, off the value this
+ * writes into `--progress-pct`, so there is one component on every
+ * platform and an iPhone or a desktop renders what it did before.
+ * `fills` is how a bar says the shape does not describe it: "many" is the
+ * solved/failed bar, whose track already carries a boundary of its own.
  */
-function Progress({ className, value, children, ...props }: ProgressPrimitive.Root.Props) {
+function Progress({
+  className,
+  value,
+  children,
+  fills = 'one',
+  ...props
+}: ProgressPrimitive.Root.Props & { fills?: 'one' | 'many' }) {
   return (
     <ProgressPrimitive.Root
       data-slot="progress"
+      data-fills={fills}
       value={value}
+      // The gap is 4px only while there is an active track to hold it off:
+      // at 0 it would be a notch at the left end of an empty bar, which is
+      // what every placeholder draws.
+      style={{ '--progress-pct': `${value || 0}%`, '--progress-gap': value ? '4px' : '0px' } as React.CSSProperties}
       className={cn('bg-muted relative flex h-1 w-full items-center overflow-x-hidden rounded-full', className)}
       {...props}
     >

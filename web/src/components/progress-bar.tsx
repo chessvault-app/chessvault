@@ -56,6 +56,13 @@ export function ProgressBar({
         // saying a number that means a different thing each time.
         aria-valuetext={label}
         aria-hidden={decorative || undefined}
+        // Two fills, so Android's M3 shape does not apply: the gap and the
+        // stop dot are marks about where the fill ENDS, and this track
+        // already spends its one boundary on green against striped red.
+        // Three marks in 4px is the whole bar becoming punctuation, and
+        // most of these sit inside a card, where the platform rule says
+        // nothing changes anyway.
+        fills="many"
         className={className}
       >
         {total > 0 && (
