@@ -20,6 +20,13 @@ import { t } from '@/lib/i18n';
  *
  * Not built on ConfirmDialog: that draws its own trigger, and nothing was
  * pressed to raise this.
+ *
+ * A window, not a question, so it stays a sheet on every phone and takes
+ * no `ask` (see AlertCardContext in `components/ui/dialog.tsx`). An alert
+ * is what you answer before you can carry on; this one can be closed
+ * without an answer, and closing it is a supported outcome that the app
+ * remembers (onDefer). It also carries two sentences and a timestamp to
+ * read before deciding, which is more than the platform's alert is for.
  */
 export function RecoveryDialog({
   name,

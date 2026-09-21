@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { t } from '@/lib/i18n';
 import { useMediaQuery } from '@/lib/media';
 import { prefersReducedMotion } from '@/lib/motion';
+import { currentPlatform } from '@/lib/platform';
 import { suppressNextClick } from '@/lib/suppressNextClick';
 import { CoverParent } from '@/hooks/cover-parent';
 import { registerOpenDialog, soleTextField } from '@/hooks/dialog-focus';
@@ -110,6 +111,38 @@ export function DialogAfterEnter({ fallback, children }: { fallback: React.React
 const ENTER_BACKSTOP_MS = 500;
 
 const SheetContext = React.createContext(false);
+/**
+ * Whether this window is drawn as an iOS ALERT: a small centred card,
+ * not the bottom sheet every other window takes on a phone.
+ *
+ * A question that must be answered is centred on iOS and has been since
+ * the platform had windows at all, and the HIG still draws it that way —
+ * an alert is the one modal iOS does not slide up from the bottom edge,
+ * because it interrupts rather than offers. A sheet is a place you went;
+ * an alert is a stop. So `ask` on the Root (a confirmation, a prompt,
+ * the leave question) takes the DIALOG primitive on an iPhone, which is
+ * the same centred card a desktop already draws: no grab handle, no snap
+ * points, no swipe to dismiss, and a scale-and-fade instead of a rise.
+ * The scrim still closes it, which is this app's house rule for every
+ * small window and not the platform's (iOS's own alert refuses), and
+ * `role="alertdialog"` is unchanged.
+ *
+ * Opaque, not glass. Glass is permitted for a surface this small over a
+ * scrim, and it was not taken: the card carries the sentence you have to
+ * read before answering, so its text owes 4.5:1 over whatever is behind
+ * it, and that is a reading from the phone (a dark board square, a
+ * diagram, a dark note) which no check in this repo can stand in for.
+ * The sheet was built as glass and went back opaque the same day for the
+ * same kind of reason (2026-09-18). The scrim's own blur is already
+ * between the card and the page.
+ *
+ * Android and desktop are untouched: `ask` only ever narrows the iPhone.
+ */
+const AlertCardContext = React.createContext(false);
+/** Whether the window around this is the iOS alert card (above). */
+export function useAlertCard(): boolean {
+  return React.useContext(AlertCardContext);
+}
 /**
  * Whether the phone's sheet is resting BELOW its tallest snap point. A
  * lowered sheet is not a scroller: the Drawer hands an upward drag to a
@@ -219,6 +252,14 @@ interface DialogProps extends Omit<DialogPrimitive.Root.Props, 'onOpenChange' | 
   snapPoints?: DrawerPrimitive.Root.Props['snapPoints'];
   /** Which of `snapPoints` the sheet opens at; the first when omitted. */
   defaultSnapPoint?: DrawerPrimitive.Root.Props['defaultSnapPoint'];
+  /**
+   * This window is a QUESTION: something the person has to answer before
+   * they can get on with what they were doing (a confirmation, a prompt
+   * for one value, the leave question). On an iPhone it is the centred
+   * alert card rather than a bottom sheet (see AlertCardContext); on
+   * every other platform, and on a desktop, it changes nothing.
+   */
+  ask?: boolean;
 }
 
 function Dialog({
@@ -227,9 +268,18 @@ function Dialog({
   onOpenChangeComplete,
   snapPoints,
   defaultSnapPoint,
+  ask = false,
   ...props
 }: DialogProps) {
   const phone = useMediaQuery(PHONE);
+  // The one branch: a question on an iPhone is the centred card, which
+  // is the DIALOG primitive — so everything the sheet is (its Root, its
+  // swipe, its held exit, its snap points) reads `sheet` from here on
+  // and not `phone`. An iPad is `ios` too and is not a phone, so it
+  // never reaches this: past the breakpoint the window is already the
+  // centred card.
+  const alertCard = phone && ask && currentPlatform() === 'ios';
+  const sheet = phone && !alertCard;
   const guards = React.useRef<DialogGuards | null>(null);
   // The snap point, held here so the card can tell whether it rests low
   // (SheetLoweredContext). Reset each time the sheet opens, as the
@@ -242,7 +292,7 @@ function Dialog({
   React.useEffect(() => {
     if (open) resetSnapPoint();
   }, [open]);
-  const lowered = Boolean(phone && snapPoints && snapPoint !== snapPoints.at(-1));
+  const lowered = Boolean(sheet && snapPoints && snapPoint !== snapPoints.at(-1));
   // The sheet's exit, held here. Nearly every window in the app mounts
   // its Root already open and unmounts it the moment the caller hears
   // onOpenChange(false), so the primitive never sees `open` flip and its
@@ -270,7 +320,7 @@ function Dialog({
   // page's Back was going to do.
   const pending = React.useRef<(() => void) | null>(null);
   const depart = (then: () => void) => {
-    if ((phone || pageMode.current) && open) {
+    if ((sheet || pageMode.current) && open) {
       pending.current = then;
       setLeaving(true);
     } else then();
@@ -321,13 +371,14 @@ function Dialog({
     if (nextOpen) onOpenChange?.(true);
     else close();
   };
-  const Root = phone ? DrawerPrimitive.Root : DialogPrimitive.Root;
+  const Root = sheet ? DrawerPrimitive.Root : DialogPrimitive.Root;
   // The Dialog primitive has no height to rest at and does not know the
   // props, so they are handed only to the Drawer.
   const resting =
-    phone && snapPoints ? { snapPoints, snapPoint, onSnapPointChange: setSnapPoint } : undefined;
+    sheet && snapPoints ? { snapPoints, snapPoint, onSnapPointChange: setSnapPoint } : undefined;
   return (
-    <SheetContext value={phone}>
+    <SheetContext value={sheet}>
+      <AlertCardContext value={alertCard}>
       <SheetLoweredContext value={lowered}>
       <DialogLeaveContext value={leave}>
       <DialogCloseContext value={close}>
@@ -343,6 +394,7 @@ function Dialog({
       </DialogCloseContext>
       </DialogLeaveContext>
       </SheetLoweredContext>
+      </AlertCardContext>
     </SheetContext>
   );
 }
@@ -571,6 +623,7 @@ function DialogContent({
   const close = React.use(DialogCloseContext);
   const setGuards = React.use(DialogGuardContext);
   const phone = React.use(SheetContext);
+  const alertCard = React.use(AlertCardContext);
   const lowered = React.use(SheetLoweredContext);
   const small = size === 'sm';
 
@@ -836,8 +889,11 @@ function DialogContent({
         // as the title stamped over the content. 14px, not the full 16,
         // so a first-child Card's outside ring stays visible.
         <div className="bg-popover sticky top-0 z-10 -mx-4 -mb-3.5 px-4 pt-4 pb-3.5 max-sm:touch-none max-sm:select-none">
-          {/* The grabber, phones only. */}
-          <div className="bg-border mx-auto mb-3 h-1 w-9 cursor-grab rounded-full sm:hidden" aria-hidden />
+          {/* The grabber, phone SHEETS only: it is a sign that the sheet
+              can be pushed away, and the iOS alert card cannot be — it is
+              dismissed by an answer or by the scrim. `sm:hidden` alone
+              kept drawing it on a card at a phone's width. */}
+          {phone && <div className="bg-border mx-auto mb-3 h-1 w-9 cursor-grab rounded-full sm:hidden" aria-hidden />}
           <div className="flex items-center gap-2">
             {/* The chevron: a page's way back, or a layer's once it has
                 hidden the window it was opened from. */}
@@ -860,7 +916,13 @@ function DialogContent({
                 sheared flat on every titled window. The padding gives the
                 glyphs room inside the clip box; the negative margin gives
                 the row its height back, so nothing else moves. */}
-            <DialogTitle id={titleId} className="-my-1 min-w-0 flex-1 truncate py-1">
+            <DialogTitle
+              id={titleId}
+              // Centred on the iOS alert card, where the title IS the
+              // question and the row has nothing else on it (the chevron
+              // and the X are both desktop-only at this width).
+              className={cn('-my-1 min-w-0 flex-1 truncate py-1', alertCard && 'text-center')}
+            >
               {t(title)}
             </DialogTitle>
             {actions}
@@ -1202,8 +1264,23 @@ function DialogContent({
             cardClass,
             'h-auto max-h-full rounded-xl',
             small ? 'max-w-sm' : size === 'full' ? 'max-w-4xl' : 'max-w-lg',
-            // The desktop card arrives the stock way.
+            // The desktop card arrives the stock way — a 100ms
+            // scale-and-fade, which is also what the iOS alert takes:
+            // an alert appears in place, it does not travel.
+            //
+            // It is a mount animation, not the primitive's starting
+            // style: nearly every window here mounts its Root already
+            // open, so the primitive never sees `open` flip (the note at
+            // the top). `data-open` is on the Popup for as long as it is
+            // open, so the class is there at the first paint.
             'duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-handover:animate-none!',
+            // The iOS alert card: 280px, the 2xl rung, drawn last so it
+            // beats the width and the radius above whatever size the
+            // window was given. One width at every phone size, the way
+            // the platform's alert is a fixed width and not a share of
+            // the screen; 280 sits in the middle of the band an iOS
+            // alert occupies, and is not a measurement of one.
+            alertCard && 'w-[17.5rem] max-w-[17.5rem] rounded-2xl',
           )}
           {...props}
         >
@@ -1229,6 +1306,7 @@ function DialogFooter({
   // this context is the window's OWN handle (DialogContent provides it to
   // its children), so `dismissAll` here already starts with this window.
   const chain = React.use(CoverParent);
+  const alertCard = useAlertCard();
   return (
     <div
       data-slot="dialog-footer"
@@ -1245,6 +1323,12 @@ function DialogFooter({
         // footer in the app -- measured 20px + safe here against 8px +
         // safe there, which is the gap lanph3re spotted on a phone.
         'max-sm:-mb-[calc(1.25rem+var(--safe-b))] max-sm:rounded-b-none max-sm:pb-[calc(0.5rem+var(--safe-b))]',
+        // The iOS alert card is not standing on the screen's floor, so
+        // it takes none of that: the band keeps the card's own bottom
+        // corners and its ordinary padding, as it does on a desktop.
+        // Reclaiming the safe area inside a floating card would have cut
+        // the band off below the corner radius.
+        alertCard && 'max-sm:-mb-4 max-sm:rounded-b-2xl max-sm:pb-4',
         className,
       )}
       {...props}
