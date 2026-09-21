@@ -145,6 +145,7 @@ export function GamesBrowser({
   onSelect,
   clearRef,
   importRef,
+  refreshRef,
   className,
 }: {
   /** Dense table rows instead of cards — the wide presentation.
@@ -211,6 +212,16 @@ export function GamesBrowser({
    * md the pane's own FAB is the import button, whoever hosts.
    */
   importRef?: MutableRefObject<(() => void) | null>;
+  /**
+   * Filled with "fetch what is on screen again", for the host's pull to
+   * refresh (hooks/use-pull-refresh). The host owns the scroller and
+   * this pane owns the tabs, so the two have to meet: a pull on the
+   * collection goes past the cache to the vault, a pull on either
+   * archive tab looks that player up again at their own site, and on
+   * Databases it does nothing, since a reference database is a file on
+   * the server that a gesture cannot change.
+   */
+  refreshRef?: MutableRefObject<(() => Promise<void>) | null>;
   /** Merged onto the pane's box — the host owns its size. */
   className?: string;
 }) {
@@ -403,6 +414,20 @@ export function GamesBrowser({
       .then((b) => setBookmarks(new Set(b.keys)))
       .catch(() => {});
   }, [load]);
+
+  /** The archive pane's own "look this player up again", when one is
+      mounted: only it knows whose months are on screen. */
+  const refreshArchive = useRef<(() => Promise<void>) | null>(null);
+  // Filled from a layout effect for the same reason the two above are: a
+  // ref written in render is what the React Compiler refuses, and the
+  // pull calls this from a touch, after the commit.
+  useLayoutEffect(() => {
+    if (!refreshRef) return;
+    refreshRef.current = async () => {
+      if (tab === 'chesscom' || tab === 'lichess') await refreshArchive.current?.();
+      else if (tab === 'collection') await load();
+    };
+  });
 
   /* The correction the remembered bit above cannot make itself: a
      device that has never read the collection, or last read it empty
@@ -772,6 +797,7 @@ export function GamesBrowser({
             onPreview={setPreview}
             onSelect={setArchSel}
             selectedKey={archSel?.key ?? null}
+            refreshRef={refreshArchive}
           />
         ) : (
           <CollectionList

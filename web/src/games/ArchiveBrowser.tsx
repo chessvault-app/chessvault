@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type MutableRefObject,
 } from 'react';
 import { create } from 'zustand';
 
@@ -305,6 +306,7 @@ export function ArchiveBrowser({
   inPlace = false,
   merged = false,
   besideDetails = false,
+  refreshRef,
   shape,
 }: {
   collectionKeys: Set<string>;
@@ -334,6 +336,19 @@ export function ArchiveBrowser({
       up its Notation column while it does (GameTable's
       DROPPED_WITH_DETAILS). */
   besideDetails?: boolean;
+  /**
+   * Filled with "look this player up again, for real": the host's pull
+   * to refresh (hooks/use-pull-refresh), which only this pane can answer
+   * because only it knows whose archive is on screen.
+   *
+   * It drops this player's months from the session cache first. The
+   * cache is what makes flipping between a month and all dates free, and
+   * it is also what would make a refetch a no-op: these rows are the one
+   * list in the app whose source is somebody else's server, still being
+   * played on, so a pull that returned the same answer would be the
+   * gesture saying nothing.
+   */
+  refreshRef?: MutableRefObject<(() => Promise<void>) | null>;
 }) {
   // Browse state persists across remounts (see useArchiveBrowse); setters
   // mirror the useState API so the call sites below are unchanged.
@@ -574,6 +589,24 @@ export function ArchiveBrowser({
   useEffect(() => {
     lookUpOnce();
   }, [site, provider, username, months.length, loading]);
+
+  // The host's handle, filled from a layout effect rather than during
+  // render: a ref written in render is what the React Compiler refuses,
+  // and the pull only ever calls this from a touch, after the commit.
+  useLayoutEffect(() => {
+    if (!refreshRef) return;
+    refreshRef.current = async () => {
+      const user = username.trim();
+      if (!user) return;
+      const stale = `${provider}|${user.toLowerCase()}|`;
+      useArchiveBrowse.setState((s) => ({
+        cache: Object.fromEntries(
+          Object.entries(s.cache).filter(([key]) => !key.startsWith(stale)),
+        ),
+      }));
+      await loadMonths(user);
+    };
+  });
 
 
   /**

@@ -192,7 +192,10 @@ function StudyList() {
   return (
     // Wide tier: two columns of cards on a desktop, so the shelf shows
     // twice as many studies as the single file did.
-    <PageShell width="wide">
+    // The vault is written by whatever is holding it: this phone, or the
+    // desktop app beside it. A pull asks the server again. The marks are
+    // not re-read; they are this reader's own and change here or nowhere.
+    <PageShell width="wide" onRefresh={refresh}>
       <ShelfToolbar
         title={t('Studies')}
         subtitle={
