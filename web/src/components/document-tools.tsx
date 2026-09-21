@@ -1,4 +1,4 @@
-import { History, Link, MoreHorizontal, Tags } from 'lucide-react';
+import { History, Link, MoreHorizontal, Share, Share2, Tags } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { Button } from '@/components/ui/button';
@@ -111,7 +111,11 @@ export function DocumentTools({
             title={t(shareVerb.label)}
             onClick={() => shareDocument(shareVerb.text(), shareVerb.filename, shareVerb.type)}
           >
-            <ShareGlyph className="glyph" />
+            {/* shareIcon()'s two icons, named rather than rendered
+                through the variable: a component chosen during render is
+                a component that remounts, and the lint rule that says so
+                is right even when this one never changes. */}
+            {ShareGlyph === Share ? <Share className="glyph" /> : <Share2 className="glyph" />}
           </Button>
         )}
       </>
