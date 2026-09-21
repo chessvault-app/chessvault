@@ -34,6 +34,16 @@ import { t } from '@/lib/i18n';
  * history store's is a number of git objects, which is not the same
  * question and is not asked.
  */
+/**
+ * The listing's box, stated once for the listing and its placeholder.
+ *
+ * On an iPhone the Settings group makes this box one of its rows, edge to
+ * edge, so the well repainted the whole white card in the page's own grey
+ * (measured on the grid: 245 where the card is 255). It gives the fill up
+ * there and the card shows; Android's group paints each row itself.
+ */
+export const VAULT_TREE_FRAME = 'vault-tree bg-muted max-md:ios:bg-transparent rounded-lg px-3.5 pt-3 pb-3.5';
+
 export type VaultKind = 'folder' | 'git' | 'json';
 
 /** The glyph each kind of row draws. The placeholder draws the same one (skeletons/vault-tree). */
@@ -80,7 +90,7 @@ export function VaultTree({
   const bytes = rows.reduce((sum, r) => sum + r.bytes, 0);
   const files = rows.reduce((sum, r) => sum + r.files, 0);
   return (
-    <div className="vault-tree bg-muted rounded-lg px-3.5 pt-3 pb-3.5">
+    <div className={VAULT_TREE_FRAME}>
       {/* The path is the one literal here and wears the mono face; the
           totals are a sentence, so only their figures do (the Figures
           rule). The folder count is not said: the rows below are the

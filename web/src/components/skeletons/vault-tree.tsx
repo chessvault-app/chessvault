@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { VAULT_ICONS, VAULT_ROWS, VaultNote, VaultPath, type VaultKind } from '@/components/vault-tree';
+import { VAULT_ICONS, VAULT_ROWS, VAULT_TREE_FRAME, VaultNote, VaultPath, type VaultKind } from '@/components/vault-tree';
 import { t } from '@/lib/i18n';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loading } from './primitives';
@@ -64,7 +64,7 @@ export function SkeletonVaultTree({
 }) {
   const listed = paths ? VAULT_ROWS.filter((r) => paths.includes(r.path)) : VAULT_ROWS.slice(0, rows);
   return (
-    <Loading className={cn('vault-tree bg-muted rounded-lg px-3.5 pt-3 pb-3.5', className)}>
+    <Loading className={cn(VAULT_TREE_FRAME, className)}>
       {/* The folder line: the real path, and a bar where the totals go,
           on the 20px line box of the text-sm they will be. */}
       <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3">
