@@ -366,6 +366,22 @@
       animation-duration: 2s !important;
     }
 
+    /* The Android indicator's shape change is the one part of a spinner
+       that the paragraph above does NOT cover. Slowing it to 2s would be
+       the same argument, but it is not the same kind of motion: the turn
+       says "still working" while staying one picture, and the morph is
+       the picture itself changing five times a cycle, which is the large
+       local change this setting is asked to take away. So the shape
+       stops and the ring keeps turning at the 2s above, which is the
+       calm version of this indicator rather than a stilled one. Stopping
+       it also has to be said out loud, because the clamp cannot: the
+       morph is `d`, and a 0.01ms infinite `d` animation is the same few
+       hundred restarts a frame that the spinner rule exists to prevent,
+       on a shape rather than on an angle. */
+    [data-slot='spinner-shape'] {
+      animation: none !important;
+    }
+
     /* And the placeholders stop, which is the other half of that
        argument. A skeleton is not moving in order to say anything: it
        says a page is loading by standing where the content will be, and

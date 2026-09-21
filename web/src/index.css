@@ -81,4 +81,5 @@
 @import './styles/board-themes.css';
 @import './styles/shell.css';
 @import './styles/motion.css';
+@import './styles/spinner.css';
 @import './styles/vault-tree.css';
