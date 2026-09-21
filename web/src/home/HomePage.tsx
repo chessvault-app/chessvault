@@ -19,7 +19,7 @@ import { BrandMark, Wordmark } from '@/components/brand-mark';
 import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { ApiError, api } from '@/lib/api';
-import { formatAgo, formatUntil } from '@/lib/dates';
+import { formatAgo, formatUntil, locale } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
 import { Figures } from '@/components/figures';
 import { openQuickSwitcher } from '@/components/quick-switcher';
@@ -29,11 +29,23 @@ import { EmptyState } from '@/components/empty-state';
 import { ListRow } from '@/components/list-row';
 import { MiniBoard } from '@/components/mini-board';
 import { ProgressBar } from '@/components/progress-bar';
+import { TitleTip } from '@/components/title-tip';
 import { ResultBadge } from '@/components/result-badge';
 import { Skeleton } from '@/components/skeletons';
 import { useDifficultyWord } from '@/puzzles/bands';
-import { fetchSolvedToday } from '@/puzzles/today';
+import { fetchAttempts, solvedToday, type Attempt } from '@/puzzles/today';
 import { t } from '@/lib/i18n';
+import {
+  ACTIVITY_CELL,
+  ACTIVITY_GAP,
+  ACTIVITY_LIMIT,
+  ACTIVITY_TONES,
+  ACTIVITY_UNKNOWN,
+  ACTIVITY_WEEKS,
+  activityGrid,
+  activityStep,
+  type ActivityGrid,
+} from './activity';
 import { CustomiseDialog } from './CustomiseDialog';
 import { HOME_DESTINATIONS, type Destination, type HomeCount } from './destinations';
 import {
@@ -157,6 +169,10 @@ interface HomeData {
       answer, which is not a zero. Asked at every width now that the
       Puzzles tile reads it. */
   solvedToday: number | null;
+  /** The tail of the attempt history the Activity grid is drawn from,
+      and the same tail today's count above was taken out of. Null when
+      the route did not answer; empty when it answered with nothing. */
+  history: Attempt[] | null;
   lastStudy: DocMeta | null;
   lastGame: DocMeta | null;
   /** Counted training attempts — 0 means the trainer is untouched. */
@@ -640,6 +656,153 @@ function RecentGamesCard({
   );
 }
 
+/**
+ * Half a year of training, as squares: a column a week, a square a day,
+ * five steps of `good`.
+ *
+ * Why a picture at all. Home was five cards of text rows, and the only
+ * thing on it that was not a sentence was the Continue thumbnail, which
+ * is one position. A count per day is the one thing this vault records
+ * that a sentence cannot say: "42 in the last 7 days" is a number, and
+ * what a solver wants to know is whether the last month looks like the
+ * one before it. Counts only. Nothing here is a rating, and nothing here
+ * could become one: the grid is given a tally per day and never asked
+ * where any of it sat on a scale.
+ *
+ * ONE drawing, not two. The frame is fixed - twenty-six columns of seven,
+ * whatever the vault holds - so the wait is this same component with
+ * `grid` null, and there is no second copy of the geometry to drift from
+ * this one. A null grid takes its frame from `activityGrid([])`, the
+ * page's own function, and draws the empty tone with no tooltips and a
+ * bar where the sentence lands.
+ *
+ * An empty vault gets the empty grid and a plain sentence, which is the
+ * one honest thing to draw: a chart of noughts would be a claim about
+ * nothing.
+ */
+function ActivityCard({ grid, className }: { grid: ActivityGrid | null; className?: string }) {
+  // The frame while the answer is in the air is the frame it will land
+  // in, drawn by the page's own arithmetic over no attempts at all.
+  const frame = grid ?? activityGrid([], new Date());
+  const day = new Intl.DateTimeFormat(locale(), { dateStyle: 'medium' });
+  return (
+    <div
+      role={grid === null ? 'status' : undefined}
+      aria-label={grid === null ? t('Loading') : undefined}
+      aria-live={grid === null ? 'polite' : undefined}
+      className={cn('bg-card overflow-hidden rounded-xl ring-1 ring-card-ring', className)}
+    >
+      <PanelHead title={t('Activity')} />
+      <div className="px-3 py-3">
+        {/* Twenty-six weeks is 310px, which fits the narrower of the two
+            dashboard columns; a phone is narrower than that and scrolls
+            the half year sideways rather than dropping weeks, so the two
+            widths show the same period and the same squares. */}
+        <div className="overflow-x-auto">
+          <div
+            role={grid === null ? undefined : 'img'}
+            aria-hidden={grid === null || undefined}
+            // The grid is a picture and its alternative is one sentence:
+            // a reader is not made to walk 182 squares to hear that a
+            // fortnight was quiet. What a single day holds is on that
+            // day's own tip.
+            aria-label={
+              grid === null
+                ? undefined
+                : grid.total > 0
+                  ? t('Puzzles solved each day over the last {w} weeks: {n} on {d} days.', {
+                      w: ACTIVITY_WEEKS,
+                      n: grid.total,
+                      d: grid.days,
+                    })
+                  : t('Puzzles solved each day over the last {w} weeks: none yet.', {
+                      w: ACTIVITY_WEEKS,
+                    })
+            }
+            className={cn('flex w-max', ACTIVITY_GAP)}
+          >
+            {frame.weeks.map((week) => (
+              <div key={week[0]!.date} className={cn('flex flex-col', ACTIVITY_GAP)}>
+                {week.map((d) => (
+                  <ActivitySquare key={d.date} day={d} when={day} live={grid !== null} />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* The week under the grid, in the muted voice the cards above use
+            for a fact about themselves. A bar while the count is in the
+            air, at the sentence's own line height. */}
+        {grid === null ? (
+          <p className="relative mt-2 type-row-sub">
+            {/* The height off an invisible real line and the bar painted
+                over it, as every placeholder row on this page does it:
+                iOS sizes a text line 1pt short of what desktop engines
+                do, and a bar with a height of its own is that 1pt out on
+                the one page that is centred. */}
+            <span className="invisible">&nbsp;</span>
+            <Skeleton className="absolute inset-y-0.5 left-0 w-40 max-w-full" />
+          </p>
+        ) : (
+          <p className="text-muted-foreground mt-2 type-row-sub">
+            {grid.total === 0
+              ? t('Nothing solved yet. A square fills in for each day you train.')
+              : grid.last7 > 0
+                ? t('{n} solved in the last 7 days', { n: grid.last7 })
+                : t('Nothing solved in the last 7 days')}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One day.
+ *
+ * The tip is the themed one, through TitleTip, because a raw `title` on a
+ * span is the browser's bubble and a different shape from every other tip
+ * in the app. A square that is still waiting carries none: there is
+ * nothing yet to say about it, and its grid is hidden from readers until
+ * there is.
+ */
+function ActivitySquare({
+  day,
+  when,
+  live,
+}: {
+  day: ActivityGrid['weeks'][number][number];
+  when: Intl.DateTimeFormat;
+  live: boolean;
+}) {
+  // The rest of the week today is in. Drawn as space rather than as an
+  // idle day: a day that has not happened cannot be one nobody trained.
+  if (day.kind === 'future') return <span aria-hidden className={cn(ACTIVITY_CELL, 'invisible')} />;
+  const box = (
+    <span
+      className={cn(
+        ACTIVITY_CELL,
+        day.kind === 'unknown' ? ACTIVITY_UNKNOWN : ACTIVITY_TONES[activityStep(day.count)],
+      )}
+    />
+  );
+  if (!live) return box;
+  const date = when.format(new Date(`${day.date}T00:00:00`));
+  return (
+    <TitleTip
+      title={
+        day.kind === 'unknown'
+          ? t('Older than the attempts kept here')
+          : day.count === 0
+            ? t('Nothing solved on {date}', { date })
+            : t('{n} solved on {date}', { n: day.count, date })
+      }
+    >
+      {box}
+    </TitleTip>
+  );
+}
+
 /** How many recent games the phone draws under Continue: enough to hold
     a weekend's rounds, few enough to keep the grid on the first screen. */
 const PHONE_GAMES = 3;
@@ -709,6 +872,13 @@ export function HomePage() {
     })();
   }, [attempt]);
 
+  // How much of the attempt history to ask for, which is the one thing
+  // on this page a switched-off card makes cheaper: today's count needs
+  // 200 rows and the activity grid wants the route's whole cap. Switching
+  // the card on therefore re-asks, which is also how it fills in without
+  // a reload.
+  const historyLimit = cardOn(layout, 'activity') ? ACTIVITY_LIMIT : 200;
+
   useEffect(() => {
     // Navigating away mid-flight cancels its requests, and the
     // aborted check keeps everything after the await from running once
@@ -739,7 +909,7 @@ export function HomePage() {
     void (async () => {
       // The notes/games endpoints speak the studies document API, so they
       // answer with a `studies` list.
-      const [studies, notes, games, puzzles, settings, books, library, map, repertoire, solvedToday] =
+      const [studies, notes, games, puzzles, settings, books, library, map, repertoire, history] =
         await Promise.all([
         grab('/api/studies'),
         grab('/api/notes'),
@@ -754,8 +924,10 @@ export function HomePage() {
         grab('/api/openingmap'),
         // Counts only — home links to the trainer, it does not drill.
         grab('/api/repertoire/meta'),
-        // Null, not 0, when the history did not answer.
-        fetchSolvedToday(),
+        // Null, not 0, when the history did not answer. Long enough for
+        // the activity grid when that card is on, and the 200 today's
+        // count alone ever needed when it is off.
+        fetchAttempts(historyLimit),
       ]);
       if (ctl.signal.aborted) return;
       if (asked > 0 && failures.length === asked) {
@@ -795,11 +967,14 @@ export function HomePage() {
       // tile's, not the size of the Lichess pool. Due and today are both
       // read only once the trainer is set up; before that the tile has
       // nothing to schedule.
+      // Today's count, out of the tail already in hand rather than out of
+      // a second request for the same rows.
+      const today = history === null ? null : solvedToday(history);
       const wins = meta?.user?.wins;
       const dueNow = meta?.ready === true ? (meta.due ?? 0) : 0;
       if (dueNow > 0) counts.puzzles = { n: dueNow, kind: 'due' };
-      else if (meta?.ready === true && typeof solvedToday === 'number' && solvedToday > 0)
-        counts.puzzles = { n: solvedToday, kind: 'today' };
+      else if (meta?.ready === true && today !== null && today > 0)
+        counts.puzzles = { n: today, kind: 'today' };
       else if (typeof wins === 'number' && wins > 0) counts.puzzles = total(wins);
       // The repertoire has no total worth a tile, so it says what is due
       // or nothing.
@@ -830,7 +1005,8 @@ export function HomePage() {
       writeFigures(counts);
       setData({
         counts,
-        solvedToday: typeof solvedToday === 'number' ? solvedToday : null,
+        solvedToday: today,
+        history,
         lastStudy: latest(studies),
         lastGame: latest(games),
         attempts: meta?.user?.attempts ?? 0,
@@ -851,7 +1027,7 @@ export function HomePage() {
     return () => {
       ctl.abort();
     };
-  }, [attempt]);
+  }, [attempt, historyLimit]);
 
   /** Apply and store, in one press. Reset removes the stored value rather
       than writing today's defaults, so a device put back to default is a
@@ -974,6 +1150,16 @@ export function HomePage() {
               ]
             : []),
         ];
+
+  /**
+   * The activity grid: null while the answer is in the air, and `false`
+   * when the history route answered with a failure while the rest of the
+   * page answered. The card is drawn not at all in that case, because an
+   * empty grid there would say this vault has trained nothing, which is
+   * the one thing it is not allowed to say without having been told.
+   */
+  const activity: ActivityGrid | null | false =
+    data === null ? null : data.history === null ? false : activityGrid(data.history, new Date());
 
   /** The study the board draws, when there is a position to draw. Hoisted
       so the JSX below is not re-narrowing `data` inside a branch that
@@ -1431,6 +1617,16 @@ export function HomePage() {
           />
         )}
 
+        {/* The phone's activity grid, in the same place the desktop puts
+            it: after the games and before the first-run checklist. It
+            scrolls sideways rather than dropping weeks, so the picture is
+            the same picture at both widths. Its height does not depend on
+            the answer, so the card itself holds its own place and there
+            is nothing to reserve. */}
+        {show('activity') && outage === null && activity !== false && (
+          <ActivityCard grid={activity} className="mb-4 md:hidden" />
+        )}
+
         {/* The checklist's place while the answer is in the air. Three
             fixed steps, so there is nothing to count — either last launch
             drew this card or it did not. A device that has never been here
@@ -1659,23 +1855,30 @@ export function HomePage() {
             furthest was the Continue card above — the one element here
             that was already reserved to the pixel. Measured at 1920x1080:
             306px, upwards, on every launch. */}
-        {(loading || (data !== null && dash === null)) && reservedDash !== null && (
+        {(loading || (data !== null && dash === null)) &&
+          (reservedDash !== null || show('activity')) && (
           <div
             role="status"
             aria-label={t('Loading')}
             aria-live="polite"
             className="grid gap-3 max-md:hidden lg:grid-cols-2"
           >
-            {show('training') && reservedDash.training > 0 && (
+            {show('training') && reservedDash !== null && reservedDash.training > 0 && (
               <PlaceholderPanel title={t('Training')} rows={reservedDash.training} trailing={false} />
             )}
-            {show('games') && reservedDash.games > 0 && (
+            {/* Not reserved from a stored shape, unlike its neighbours:
+                the grid is twenty-six columns of seven whatever the vault
+                holds, so the card knows its own size before the answer
+                and the first launch on a device holds the place as well
+                as the hundredth. */}
+            {show('activity') && activity !== false && <ActivityCard grid={activity} />}
+            {show('games') && reservedDash !== null && reservedDash.games > 0 && (
               <PlaceholderPanel title={t('Recent games')} rows={reservedDash.games} icon={false} tally />
             )}
-            {show('books') && reservedDash.books > 0 && (
+            {show('books') && reservedDash !== null && reservedDash.books > 0 && (
               <PlaceholderPanel title={t('Puzzle books')} rows={reservedDash.books} books />
             )}
-            {show('work') && reservedDash.docs > 0 && (
+            {show('work') && reservedDash !== null && reservedDash.docs > 0 && (
               <PlaceholderPanel title={t('Recent work')} rows={reservedDash.docs} />
             )}
           </div>
@@ -1743,6 +1946,11 @@ export function HomePage() {
                 )}
               </div>
             )}
+
+            {/* Second, so it lands beside Training in the two-column
+                grid: the two answer the same question a week apart, one
+                as a schedule and one as a habit. */}
+            {show('activity') && activity !== false && <ActivityCard grid={activity} />}
 
             {show('games') && dash.recentGames.length > 0 && (
               <RecentGamesCard games={dash.recentGames} total={dash.gamesTotal} />
@@ -1821,7 +2029,13 @@ export function HomePage() {
             {/* Only when a panel that is switched ON has nothing to say. A
                 dashboard somebody switched off entirely is a preference,
                 and an empty state under it would be a nag. */}
+            {/* Activity is not in this list and switches it off when it is
+                on: that card is drawn whatever the vault holds, and its
+                own empty sentence is already the honest version of this
+                one. Two empty states side by side would be the page
+                saying nothing twice. */}
             {(show('training') || show('games') || show('books') || show('work')) &&
+              !(show('activity') && activity !== false) &&
               !(show('training') && showTraining) &&
               !(show('games') && dash.recentGames.length > 0) &&
               !(show('books') && data.books.length > 0) &&

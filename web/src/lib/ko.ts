@@ -298,8 +298,24 @@ export const ko: Record<string, string> = {
   'Wide screens only.': '넓은 화면에서만 보입니다.',
   'The latest games in your collection, with their results.': '모음의 최신 게임과 그 결과.',
   'Solved today, and what is due for review.': '오늘 푼 수와 복습할 것.',
+  'Puzzles solved each day over the last six months.': '지난 6개월 동안 하루에 푼 퍼즐 수.',
   'The books you are in the middle of.': '풀고 있는 책.',
   'The studies and notes last touched.': '마지막으로 만진 스터디와 노트.',
+  // --- home, the activity grid ---------------------------------------------
+  // 'Activity' itself is in the insights section below, where the same
+  // word was already settled on for the same concept.
+  '{n} solved in the last 7 days': '최근 7일 동안 {n}개를 풀었습니다',
+  'Nothing solved in the last 7 days': '최근 7일 동안 푼 퍼즐이 없습니다',
+  'Nothing solved yet. A square fills in for each day you train.':
+    '아직 푼 퍼즐이 없습니다. 훈련한 날마다 칸이 하나씩 채워집니다.',
+  '{n} solved on {date}': '{date}에 {n}개를 풀었습니다',
+  'Nothing solved on {date}': '{date}에는 푼 퍼즐이 없습니다',
+  'Older than the attempts kept here': '여기에 보관된 기록보다 이전입니다',
+  'Puzzles solved each day over the last {w} weeks: {n} on {d} days.':
+    '최근 {w}주 동안 하루에 푼 퍼즐 수입니다. {d}일에 걸쳐 {n}개.',
+  'Puzzles solved each day over the last {w} weeks: none yet.':
+    '최근 {w}주 동안 하루에 푼 퍼즐 수입니다. 아직 없습니다.',
+
   'Off the page': '홈에서 숨김',
   'Nothing. Every destination is on home.': '없음. 모든 항목이 홈에 있습니다.',
   'Bring back': '되돌리기',
