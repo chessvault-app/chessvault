@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { t } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 
 /**
@@ -35,10 +36,35 @@ import { Switch } from '@/components/ui/switch';
 export function SettingRow({
   title,
   blurb,
+  control = 'compact',
+  className,
   children,
 }: {
   title: string;
-  blurb: string;
+  /** The line under the title. Optional: a named choice whose options say
+      what it does ("App theme", "Density") has nothing to add under it,
+      and an empty grey line under every one of them was the shape the
+      stacked fields had before. */
+  blurb?: string;
+  /**
+   * How much room the control on the right is given.
+   *
+   * `compact` is a switch, a small button or a menu: it takes its own
+   * width, and the words give way (see below). `wide` is a Select, a
+   * Slider, a Segmented or a short input — a control that has to show a
+   * VALUE, not just a state. Those are given one settled width so a card
+   * of them lines up in a column rather than each ending where its
+   * longest option happens to end, and a Select at its own width is 5rem
+   * for "Dark" beside 13rem for "A tablebase server of your own". 10rem
+   * under a thumb and 14rem from sm, which is inside the 12 to 16rem a
+   * desktop settings row gives a dropdown and leaves a phone's label
+   * room to finish. A wide control is passed `className="w-full"` by its
+   * caller, which is how it fills the slot; the slot does not reach into
+   * it, because the sound row puts a readout beside its slider.
+   */
+  control?: 'compact' | 'wide';
+  /** For a row that dims with a setting it depends on (Sound's volume). */
+  className?: string;
   children: ReactNode;
 }) {
   return (
@@ -48,11 +74,14 @@ export function SettingRow({
     // elsewhere, and it draws nothing by itself.
     <div
       data-slot="setting-row"
-      className="border-card-ring bg-muted flex items-center justify-between gap-3 rounded-md border px-3 py-2.5"
+      className={cn(
+        'border-card-ring bg-muted flex items-center justify-between gap-3 rounded-md border px-3 py-2.5',
+        className,
+      )}
     >
       <div className="min-w-0">
         <div className="type-row font-medium">{title}</div>
-        <div className="text-muted-foreground type-row-sub">{blurb}</div>
+        {blurb !== undefined && <div className="text-muted-foreground type-row-sub">{blurb}</div>}
       </div>
       {/* The control keeps its own width and the words give way, not the
           other way round. A row is a label and a control competing for one
@@ -62,7 +91,7 @@ export function SettingRow({
           is worse than a blurb that wraps one line further. Every control
           used in a row is compact (a switch, a small button, a menu), so
           none of them can take the row past the card by refusing. */}
-      <div className="shrink-0">{children}</div>
+      <div className={cn('shrink-0', control === 'wide' && 'w-40 sm:w-56')}>{children}</div>
     </div>
   );
 }

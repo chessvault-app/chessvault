@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { PageShell } from '@/components/page-shell';
 import { pageTitleClass } from '@/components/page-header';
-import { SkeletonSettingRow } from '@/components/setting-row';
+import { SettingRow, SkeletonSettingRow } from '@/components/setting-row';
 import { TitleTip } from '@/components/title-tip';
 import { SkeletonVaultTree } from '@/components/skeletons';
 import { VAULT_ROWS } from '@/components/vault-tree';
@@ -328,9 +328,13 @@ export function SettingsPlaceholder() {
         </SettingsCard>
         {isDemo() && (
           <SettingsCard icon={Palette} title={t('Appearance')}>
-            {APPEARANCE_FIELDS.map((label) => (
-              <SelectFieldPlaceholder key={label} label={label} />
-            ))}
+            {APPEARANCE_SHAPES.map(({ label, full }) =>
+              full ? (
+                <SelectFieldPlaceholder key={label} label={label} />
+              ) : (
+                <SelectRowPlaceholder key={label} label={label} />
+              ),
+            )}
             <SkeletonSettingRow title="Board coordinates" blurb="File and rank labels on the board edge." />
             <SkeletonSettingRow title="Move box" blurb="Play moves from the keyboard." />
             <DisclosurePlaceholder />
@@ -355,7 +359,28 @@ export const APPEARANCE_LABELS = {
   pieces: 'Pieces',
   castling: 'Castling',
 } as const;
-const APPEARANCE_FIELDS = Object.values(APPEARANCE_LABELS);
+
+/**
+ * Which of the two shapes each Appearance choice takes, in the card's
+ * order: a row with the control on the right, or the label over a
+ * full-width control.
+ *
+ * Here rather than in the card because the placeholder is the one that
+ * has to draw the card without importing it, and the two shapes are
+ * different HEIGHTS — a row is one line, a field is two. A list of
+ * labels alone was enough while all seven were the same shape; it is
+ * not any more. `full` is the picture-picking three (a swatch, a board,
+ * a piece set), which keep the card's width to show their art.
+ */
+const APPEARANCE_SHAPES = [
+  { label: APPEARANCE_LABELS.language, full: false },
+  { label: APPEARANCE_LABELS.theme, full: false },
+  { label: APPEARANCE_LABELS.density, full: false },
+  { label: APPEARANCE_LABELS.colours, full: true },
+  { label: APPEARANCE_LABELS.board, full: true },
+  { label: APPEARANCE_LABELS.pieces, full: true },
+  { label: APPEARANCE_LABELS.castling, full: false },
+] as const;
 
 /**
  * A labelled control, held inert: the real Field with its real label
@@ -370,9 +395,25 @@ function SelectFieldPlaceholder({ label }: { label: string }) {
   return (
     <Field label={label}>
       <div inert>
-        <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} />
+        <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} className="w-full" />
       </div>
     </Field>
+  );
+}
+
+/**
+ * The same control in the row it now stands in: the real SettingRow with
+ * its real title, and the real select on the right at the row's settled
+ * width, empty. The row is the shape the card draws (SettingRow,
+ * `control="wide"`), so the two cannot be different heights.
+ */
+function SelectRowPlaceholder({ label }: { label: string }) {
+  return (
+    <SettingRow title={t(label)} control="wide">
+      <div inert className="w-full">
+        <Select value="" ariaLabel={t(label)} groups={[{ options: [] }]} className="w-full" />
+      </div>
+    </SettingRow>
   );
 }
 
