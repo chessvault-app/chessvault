@@ -10,6 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  useAlertCard,
   type DialogContentProps,
 } from '@/components/ui/dialog';
 
@@ -21,9 +22,14 @@ import {
  * in this app closes on the scrim (never the advertised way out, always a
  * way out). What a confirmation owes a screen reader it keeps:
  * `role="alertdialog"`.
+ *
+ * `ask`: this IS the question, so on an iPhone it is the platform's
+ * centred alert rather than a bottom sheet (AlertCardContext in
+ * `dialog.tsx` says why, and what that changes). Nothing moves on
+ * Android or on a desktop.
  */
 function AlertDialog(props: React.ComponentProps<typeof Dialog>) {
-  return <Dialog data-slot="alert-dialog" {...props} />;
+  return <Dialog data-slot="alert-dialog" ask {...props} />;
 }
 
 /**
@@ -71,10 +77,23 @@ function AlertDialogHeader({ className, ...props }: React.ComponentProps<typeof 
  * the action on top.
  */
 function AlertDialogFooter({ className, ...props }: React.ComponentProps<typeof DialogFooter>) {
+  // On the iOS alert card two buttons sit side by side, each half the
+  // card, which is the platform's own two-answer alert. The stack is
+  // what a phone SHEET needs (a full-width row of controls at the
+  // screen's foot); a 280px card has room for both. A caller that has
+  // decided otherwise still wins, because its className is merged after
+  // this one: the danger tone passes `max-sm:flex-col` to keep Cancel
+  // out from under the thumb that just pressed the trigger, and that is
+  // the same call on a card as on a sheet.
+  const alertCard = useAlertCard();
   return (
     <DialogFooter
       data-slot="alert-dialog-footer"
-      className={cn('sm:group-data-[size=sm]/alert-dialog-content:grid sm:group-data-[size=sm]/alert-dialog-content:grid-cols-2', className)}
+      className={cn(
+        'sm:group-data-[size=sm]/alert-dialog-content:grid sm:group-data-[size=sm]/alert-dialog-content:grid-cols-2',
+        alertCard && 'max-sm:flex-row max-sm:[&>*]:flex-1',
+        className,
+      )}
       {...props}
     />
   );
