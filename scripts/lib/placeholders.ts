@@ -60,6 +60,12 @@ export const ROUTES = [
   '#/puzzles/dashboard',
   '#/puzzles/books',
   '#/endgames',
+  // A class in the address is a DRILL, which is a board page and not the
+  // list: its own outline, which nothing visited while the section was
+  // represented by its picker alone. The demo reaches no tablebase, so
+  // this route's L is the trainer's error box; its O against D is the
+  // half worth reading here (check:skeletons, KNOWN).
+  '#/endgames/pawn',
   '#/insights',
   '#/databases',
   '#/settings',
@@ -80,6 +86,15 @@ export interface Landmark {
   y: number;
   w: number;
   h: number;
+  /**
+   * Whether the landmark is the ROUTE's, inside `#main`, rather than the
+   * shell's: the skip link, the toast layers, the sidebar, the phone's
+   * tab bar. Every route carries those and they are identical in all
+   * three states, so counting them as shared says a comparison happened
+   * when none did. Absent in a report written before this field, which
+   * reads as the route's own and leaves such a report as it was.
+   */
+  own?: boolean;
 }
 export interface Shot {
   rows: Landmark[];
@@ -186,6 +201,7 @@ const LANDMARKS = (): Shot => {
     const r = el.getBoundingClientRect();
     if (r.width === 0 && r.height === 0) continue;
     const name = el.getAttribute('aria-label') ?? (el.textContent ?? '').trim().slice(0, 24);
+    const own = el.closest('#main') !== null;
     const base = [el.tagName.toLowerCase(), el.getAttribute('role') ?? '', el.dataset.slot ?? '', name].join('|');
     const n = (seen.get(base) ?? 0) + 1;
     seen.set(base, n);
@@ -195,6 +211,7 @@ const LANDMARKS = (): Shot => {
       y: Math.round(r.y),
       w: Math.round(r.width),
       h: Math.round(r.height),
+      own,
     });
   }
   const bars = [...document.querySelectorAll('[data-slot="skeleton"]')].filter(

@@ -39,6 +39,17 @@
  * (scripts/lib/placeholders.ts says how), and a check built on that would
  * have compared the page with itself and reported no drift.
  *
+ * And it fails when two states of a route share nothing INSIDE the page.
+ * Every route carries the shell's own landmarks — the skip link, the
+ * toast layers, the sidebar, the phone's tab bar — and they never move,
+ * so a route whose outline and whose wait have no element in common
+ * still came back with four of them shared and a clean bill. That is
+ * what a placeholder drawing the wrong page looks like: the endgame
+ * drill drew a document's row, a third pane and a panel called Moves
+ * over a trainer, and by sharing not one landmark with it escaped the
+ * comparison entirely. A landmark counts as the route's when it is
+ * inside `#main` (placeholders.ts, `own`).
+ *
  * KNOWN, below, is for a difference that is understood: one that is
  * meant, or one that is OWED and says so, which keeps a found drift in
  * front of whoever reads the file without holding every other change
@@ -85,6 +96,14 @@ const KNOWN: { shot: string; pair: 'O~D' | 'D~L'; key: string; why: string }[] =
     pair: 'D~L',
     key: 'input|',
     why: 'the same toolbar: the page field itself, on a desktop.',
+  },
+  {
+    shot: 'endgames-pawn',
+    pair: 'D~L',
+    // The whole column, by 6px and by 28: one phenomenon, one entry.
+    key: '',
+    why:
+      "the demo reaches no tablebase, so the drill never gets an ending: where the page draws a board it draws its error box and a Try again, which is a different height, and the panel's footer loses the buttons a running attempt has. On a server that answers, D and L are the same page. The half of this route worth reading here is O against D, which is held.",
   },
   // Owed.
   {
@@ -170,20 +189,25 @@ interface Move {
   from: Landmark;
 }
 
-function compare(a: Shot, b: Shot): { shared: number; moved: Move[] } {
+/** `own` counts only the shared landmarks that are the route's own, which
+    is what says a comparison of the PAGE happened; see the head of this
+    file and `Landmark.own`. */
+function compare(a: Shot, b: Shot): { shared: number; own: number; moved: Move[] } {
   const A = unique(a);
   const B = unique(b);
   const moved: Move[] = [];
   let shared = 0;
+  let own = 0;
   for (const [key, ra] of A) {
     const rb = B.get(key);
     if (!rb) continue;
     shared++;
+    if (ra.own !== false) own++;
     const dx = shift(ra.x, ra.w, rb.x, rb.w);
     const dy = shift(ra.y, ra.h, rb.y, rb.h);
     if (Math.abs(dx) > TOLERANCE || Math.abs(dy) > TOLERANCE) moved.push({ key, dx, dy, from: ra });
   }
-  return { shared, moved };
+  return { shared, own, moved };
 }
 
 function checkReport(report: Report, names: string[]): void {
@@ -197,6 +221,10 @@ function checkReport(report: Report, names: string[]): void {
     const od = compare(shot.O, shot.D);
     const dl = compare(shot.D, shot.L);
     if (od.shared === 0) problems.push(`${name}: the outline and the page's wait share no landmark, so nothing was compared`);
+    else if (od.own === 0)
+      problems.push(
+        `${name}: the outline and the page's wait share ${od.shared} landmarks and every one of them is the shell's, so nothing of the page was compared`,
+      );
     for (const [pair, result] of [['O~D', od], ['D~L', dl]] as const) {
       for (const m of result.moved) {
         const k = KNOWN.findIndex((e) => (e.shot === name || name.startsWith(`${e.shot}--`)) && e.pair === pair && m.key.startsWith(e.key));

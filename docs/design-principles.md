@@ -731,7 +731,12 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   that the first two are the same picture, and holding the chunk alone
   cannot tell you. `npm run check:skeletons` reads the same three states
   as landmark positions and fails when anything drawn in two of them has
-  moved; it runs in CI beside `check:contrast` and `check:page-turn`.
+  moved, and when a route's outline and its wait share no landmark
+  INSIDE the page, which is what a placeholder standing over a different
+  page looks like: the endgame drill's drew a document's row, a third
+  pane and a panel called Moves over a trainer, and shared only the skip
+  link and the toast layers with it. It runs in CI beside
+  `check:contrast` and `check:page-turn`.
 - **A section is warmed before it is asked for.** The placeholder covers
   a cold chunk; `lib/prefetch` sees to it that few are cold. Once the app
   has loaded and the browser is idle, the sections' chunks are fetched
@@ -1305,8 +1310,19 @@ drawn, and what one has to prove.
   reduce` (as an override, never as a grant under `no-preference`: a
   browser that does not know the feature, Safari among them, reads an
   unknown feature as false, and the grant form left the phone opaque),
-  and only on a phone; under any of the three it falls back to the
-  opaque card. The alpha and the blur radius are the two
+  and only on a phone — `max-md:ios:`, not `ios:`, which reaches an iPad
+  too and drew a glass menu over a desktop page with nothing else glassy
+  on it (measured at 834px, 2026-09-22); under any of the three it falls
+  back to the opaque card. Two things beyond the fill belong to the
+  utility rather than to its callers. The focus ring: the glass
+  box-shadow outranks `focus-visible:ring-3`, so a keyboard-focused
+  glass surface changed zero pixels until the utility drew the ring
+  itself, in the registry's shape (3px of `--ring`, the border taking it
+  too) — the slider thumb's fault over again, and the same fix. And the
+  edge width, which a full-bleed surface sets to zero: it is registered
+  with `@property ... inherits: false`, because set on the compact header
+  it reached the glass circles standing on that header and they drew no
+  hairline at all. The alpha and the blur radius are the two
   numbers a glass surface has, and both are set by measurement (below),
   not by eye: 70% where the surface carries text (4.5:1) and 55% on the
   capsule, which carries icons (3:1), 70% in dark. The tint is a step
