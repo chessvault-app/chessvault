@@ -11,6 +11,7 @@ import { SkeletonSettingRow } from '@/components/setting-row';
 import { TitleTip } from '@/components/title-tip';
 import { SkeletonVaultTree } from '@/components/skeletons';
 import { VAULT_ROWS } from '@/components/vault-tree';
+import { cn } from '@/lib/utils';
 import { manualUrl } from '@/lib/manual';
 import { isDemo } from '@/lib/demo';
 import { t } from '@/lib/i18n';
@@ -103,9 +104,45 @@ function JumpRow() {
 }
 
 /**
+ * What an iOS phone gives every direct child of a card's body: a row of
+ * the group, 44px under a thumb, with an inset hairline above it.
+ *
+ * Stated once, here, so every card inherits the shape rather than
+ * restating it fifteen times ("Platform-specific design",
+ * docs/design-principles.md: grouped inset lists are the iOS form of a
+ * list, and the grouped list IS the card there, as on the More page).
+ * A control that fits a right-aligned slot is a SettingRow, flattened
+ * below; anything else (a labelled field, a slider, a listing, a
+ * paragraph, a row of buttons) takes a full-width row of its own by
+ * being a child, which is what this rule hands it.
+ *
+ * The hairline is an inset ::before and not a border, because iOS starts
+ * a separator at the label's left edge rather than at the card's; a
+ * border cannot be inset. `max-md:` because this is the phone's chrome:
+ * an iPad in landscape is `data-platform="ios"` too and draws the
+ * desktop page.
+ */
+const IOS_GROUP =
+  'max-md:ios:gap-0 max-md:ios:overflow-hidden max-md:ios:rounded-xl max-md:ios:bg-card max-md:ios:ring-1 max-md:ios:ring-card-ring ' +
+  'max-md:ios:[&>*]:relative max-md:ios:[&>*]:min-h-11 max-md:ios:[&>*]:px-4 max-md:ios:[&>*]:py-2.5 ' +
+  "max-md:ios:[&>*:not(:first-child)]:before:absolute max-md:ios:[&>*:not(:first-child)]:before:top-0 max-md:ios:[&>*:not(:first-child)]:before:left-4 max-md:ios:[&>*:not(:first-child)]:before:right-0 max-md:ios:[&>*:not(:first-child)]:before:h-px max-md:ios:[&>*:not(:first-child)]:before:bg-border max-md:ios:[&>*:not(:first-child)]:before:content-[''] " +
+  // A switch row gives up its own well and becomes the group's row: the
+  // label on the left, the control on the right, which is the shape it
+  // already had inside the box. Selected by its data-slot so these beat
+  // the row's own classes on specificity rather than on source order.
+  'max-md:ios:[&>[data-slot=setting-row]]:rounded-none max-md:ios:[&>[data-slot=setting-row]]:border-0 max-md:ios:[&>[data-slot=setting-row]]:bg-transparent max-md:ios:[&>[data-slot=setting-row]]:px-4 max-md:ios:[&>[data-slot=setting-row]]:py-2.5 ' +
+  // A rule between two rows is the hairline's job here, and a Separator
+  // beside it draws the same line twice.
+  'max-md:ios:[&>[data-slot=separator]]:hidden';
+
+/**
  * One settings card: the page's own frame, used by the settled page and
  * by both of its placeholders, so a card that waits cannot be a
  * different box from the card that arrives.
+ *
+ * On an iOS phone it is a grouped inset list instead: the name above the
+ * card in the section-label voice, and the card itself holding the rows
+ * (IOS_GROUP above). Android and desktop are unchanged.
  */
 export function SettingsCard({
   icon: Icon,
@@ -122,9 +159,25 @@ export function SettingsCard({
 }) {
   return (
     // data-settings-card is what the jump list above the cards reads.
-    <section id={anchor} className="bg-card rounded-xl ring-1 ring-card-ring scroll-mt-14 p-4" data-settings-card>
-      <h2 className="mb-3 flex items-center gap-2 text-base font-medium">
-        <Icon className="text-muted-foreground size-4" />
+    <section
+      id={anchor}
+      className={cn(
+        'bg-card rounded-xl ring-1 ring-card-ring scroll-mt-14 p-4',
+        // iOS: the box moves off the section and onto the body below, and
+        // what is left is a group heading over a card.
+        'max-md:ios:flex max-md:ios:flex-col max-md:ios:gap-2 max-md:ios:rounded-none max-md:ios:bg-transparent max-md:ios:p-0 max-md:ios:ring-0',
+      )}
+      data-settings-card
+    >
+      <h2
+        className={cn(
+          'mb-3 flex items-center gap-2 text-base font-medium',
+          // The group's name, in the voice the More page's headings use.
+          'max-md:ios:type-row max-md:ios:mb-0 max-md:ios:px-4 max-md:ios:text-muted-foreground',
+        )}
+      >
+        {/* A group heading on iOS is words and nothing else. */}
+        <Icon className="text-muted-foreground size-4 max-md:ios:hidden" />
         {title}
         {/* The manual is written card by card, and nothing in the app
             pointed at it. One quiet mark per card opens the manual's
@@ -142,7 +195,7 @@ export function SettingsCard({
           </a>
         </TitleTip>
       </h2>
-      <div className="flex flex-col gap-3">{children}</div>
+      <div className={cn('flex flex-col gap-3', IOS_GROUP)}>{children}</div>
     </section>
   );
 }

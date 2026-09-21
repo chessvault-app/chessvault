@@ -23,7 +23,11 @@ export function DangerCard({ gate }: { gate: boolean }) {
       <p className="text-muted-foreground text-sm leading-relaxed">
         {t('Wipe every game, study, note, puzzle and imported book from the vault, including its change history. The password, 2FA and tokens survive. There is no undo, so download a copy first.')}
       </p>
-      <div className="flex items-center gap-2">
+      {/* iOS: a destructive action is a centred red line across its own
+          group, not a filled button in a corner. The field it is armed by
+          stacks above it, since a phrase to type does not fit a
+          right-aligned slot. */}
+      <div className="flex items-center gap-2 max-md:ios:flex-col max-md:ios:items-stretch max-md:ios:gap-3">
         <ClearableInput
           inputSize="lg"
           placeholder={t('Type “{phrase}” to arm', { phrase: WIPE_PHRASE })}
@@ -32,7 +36,12 @@ export function DangerCard({ gate }: { gate: boolean }) {
           value={phrase}
           onChange={(e) => setPhrase(e.target.value)}
         />
-        <Button variant="destructive" disabled={phrase !== WIPE_PHRASE} onClick={() => setConfirming(true)}>
+        <Button
+          variant="destructive"
+          className="max-md:ios:text-destructive max-md:ios:min-h-11 max-md:ios:w-full max-md:ios:justify-center max-md:ios:bg-transparent max-md:ios:shadow-none"
+          disabled={phrase !== WIPE_PHRASE}
+          onClick={() => setConfirming(true)}
+        >
           {t('Wipe all data')}
         </Button>
       </div>
