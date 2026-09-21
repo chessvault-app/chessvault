@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useMediaQuery, useTabbedPanes } from '@/lib/media';
 import { up } from '@/lib/router';
 import { copyText } from '@/lib/clipboard';
+import { canShare, share, shareIcon, textFile, type ShareResult } from '@/lib/share';
 import { forgetCollection } from '@/games/collection';
 import { toast } from '@/components/ui/toast';
 import { holdsWork, snapshotBoard, useAnalysis, type BoardSnapshot } from '@/store/analysis';
@@ -548,6 +549,29 @@ export function MoveActions({
  * away: the menu used to repeat the review, both clears and the loader
  * on a desktop, which read as a header full of duplicates.
  */
+/**
+ * Whether this browser has a share sheet at all, asked once as the chunk
+ * loads. `navigator.share` does not appear later in a session, and the
+ * question is behaviour rather than which chrome the phone draws, so it
+ * is a feature test and not `data-platform` (lib/share.ts says why). A
+ * desktop browser and the Electron shell answer no and see Copy alone.
+ */
+const CAN_SHARE = canShare();
+
+/** What a .pgn is on the wire, and what the sheet hands the next app. */
+const PGN_TYPE = 'application/x-chess-pgn';
+
+/**
+ * Speak only where the sheet did not open. A share that went through,
+ * and a share the person waved away, are both silent: the sheet was
+ * itself the feedback, and a toast after it is a second dismissal.
+ */
+function reportShare(result: ShareResult): void {
+  if (result === 'copied')
+    toast.add({ title: t('Sharing is not available. Copied instead.'), timeout: 3000 });
+  else if (result === 'failed') toast.add({ title: t('Could not share this') });
+}
+
 export function MovesOverflow({
   allowReset = true,
   allowClear = false,
@@ -603,6 +627,11 @@ export function MovesOverflow({
   // into the collection at all (lanph3re's report). A row cannot turn
   // into a check the way the button does, so the answer is a toast.
   const collectGame = useCollectGame();
+  // The one platform branch here: iOS draws the square with the arrow
+  // out of it, Android the three connected nodes, and each reads as
+  // nothing on the other. Which glyph is chrome, whether to offer the
+  // verb at all is not.
+  const ShareGlyph = shareIcon();
 
   const actions: MenuAction[] = [
     // First, and at every width, unlike everything below them.
@@ -649,7 +678,41 @@ export function MovesOverflow({
       icon: Copy,
       onSelect: () => void copyText(getNode(tree, cursorId).fen),
     },
+    // Directly after the Copy each one shares, and only where the
+    // browser has a sheet: on a phone the clipboard is the long way to
+    // another app, and this is the platform's own short one. Both build
+    // their payload and call in the same turn as the tap, which is the
+    // user gesture navigator.share requires.
+    ...(CAN_SHARE
+      ? [
+          {
+            label: 'Share FEN',
+            icon: ShareGlyph,
+            onSelect: () => {
+              const fen = getNode(tree, cursorId).fen;
+              void share({ text: fen }, fen).then(reportShare);
+            },
+          } as MenuAction,
+        ]
+      : []),
     { label: 'Copy PGN', icon: Copy, onSelect: () => void copyText(exportPgn()) },
+    ...(CAN_SHARE
+      ? [
+          {
+            label: 'Share PGN',
+            icon: ShareGlyph,
+            onSelect: () => {
+              const pgn = exportPgn();
+              // A .pgn file opens in another chess app; the same moves as
+              // text only ever land in a message. So ask for the file
+              // first, and send text where the sheet will not take one.
+              const file = textFile(pgn, 'game.pgn', PGN_TYPE);
+              const data = file && canShare({ files: [file] }) ? { files: [file] } : { text: pgn };
+              void share(data, pgn).then(reportShare);
+            },
+          } as MenuAction,
+        ]
+      : []),
     // Takes the moves off and leaves the position they were played from
     // — the only clear a study can have, and on the Board the one that
     // spares a loaded position. Undoable, like every other clear here.
