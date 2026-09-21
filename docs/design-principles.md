@@ -1285,8 +1285,12 @@ drawn, and what one has to prove.
   that were built as `ios:` came back out from under the guard, because
   they are every platform's idiom: a QUESTION is a centred card on every
   phone and not a rising sheet (`ask` on the Dialog root takes the Dialog
-  primitive instead of the Drawer; iOS draws it 280px wide with a centred
-  title and its buttons side by side, Android as Material's basic dialog,
+  primitive instead of the Drawer; iOS draws it as iOS 26's own alert,
+  300px wide on the 4xl rung with 20px of padding all round, a started
+  17px title over a 15px message, no icon and no action band at all, and
+  its answers as 48px capsules of equal width side by side (stacked when
+  there are three, the leave question), the destructive one the same
+  quiet capsule as Cancel with the destructive ink; Android as Material's basic dialog,
   312px, started text, text buttons in an end-aligned row; the scrim
   still closes it, as every small window here does, and "Dialog policy"
   carries the exception); the segmented track's raised thumb SLIDES

@@ -143,7 +143,17 @@ function PromptBody({
           }}
         />
         {error && <p className="text-destructive text-sm">{error}</p>}
-        <div className={cn('flex justify-end gap-2', alertCard === 'ios' && 'max-sm:[&>*]:flex-1')}>
+        <div
+          className={cn(
+            'flex justify-end gap-2',
+            // The iOS card's answers: two capsules of equal width, 48px
+            // tall, the same pair the confirmation draws
+            // (AlertDialogFooter). The field above them keeps the card's
+            // own 16px rhythm.
+            alertCard === 'ios' &&
+              'max-sm:gap-2.5 max-sm:[&>*]:h-12 max-sm:[&>*]:flex-1 max-sm:[&>*]:rounded-full max-sm:[&>*]:pointer-coarse:h-12',
+          )}
+        >
           {/* On a desktop, a way out that is not the scrim: tapping outside
               works, but a dialog asking for one value should say so rather
               than expect you to know. A phone's sheet already says so, with
@@ -156,7 +166,10 @@ function PromptBody({
               card, the way iOS's own prompt draws them, and at the end of
               the row at its own width on the Material card. */}
           <Button
-            variant="ghost"
+            // The iOS capsule pair is a quiet fill beside a tinted one,
+            // the same two faces the confirmation draws; a ghost Cancel
+            // there would have been half the pair missing its capsule.
+            variant={alertCard === 'ios' ? 'secondary' : 'ghost'}
             size="sm"
             className={alertCard ? undefined : 'max-sm:hidden'}
             onClick={onClose}
