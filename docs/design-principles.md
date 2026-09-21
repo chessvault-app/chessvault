@@ -1360,9 +1360,17 @@ drawn, and what one has to prove.
   reopens the white sidebar of 2026-09-07). The frame is a rung UNDER
   the page in light (95% to 97%) and a rung OVER it in dark
   (`--surface`, the card's own rung, which is what the sidebar was
-  before this): dark elevation runs the other way, and 11% under a
-  14.5% page read as a void with the sidebar's labels floating in it
-  (lanph3re, at the real window, 2026-09-21). `--panel-ring` draws the
+  before this). The rule is not about elevation, which would have to
+  pick a direction and defend it: the PAGE takes the theme's extreme,
+  white in light and near-black in dark, and the frame steps once back
+  toward mid grey. That is what shadcn's own inset block measures at
+  (L* 100 page against 98.26 frame in light, 2.75 against 7.78 in
+  dark) and what Notion does in light (254 against 247). Linear goes
+  the other way in dark, its content a little lighter than its
+  sidebar, so the direction is a choice and not a law; what is not a
+  choice is the size of the step. 11% under a 14.5% page read as a
+  void with the sidebar's labels floating in it (lanph3re, at the real
+  window, 2026-09-21). `--panel-ring` draws the
   panel's edge only where the two fills do not: the window ring in
   light, which is transparent until the contrast knob turns frame and
   panel both white, and nothing at all in dark, where six points of
