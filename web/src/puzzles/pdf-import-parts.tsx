@@ -44,7 +44,9 @@ export function ExistingChoice({
           ] as const
         ).map(([value, label, blurb]) => (
           <label key={value} className="flex cursor-pointer items-start gap-2">
-            <RadioGroupItem value={value} className="mt-0.5" />
+            {/* mt-0.5 lines the dot up with the first line of the label;
+                on iOS the mark is a checkmark centred on the whole row. */}
+            <RadioGroupItem value={value} className="mt-0.5 ios:mt-0" />
             <span className="text-base">
               {t(label)}
               <span className="text-muted-foreground block text-sm">{t(blurb)}</span>
