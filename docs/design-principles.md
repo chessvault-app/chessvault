@@ -777,8 +777,11 @@ The rule was once "never an X in the corner". Since every window became
 shadcn's Dialog, every titled window carries the registry's X on
 **desktop only** — a mouse has no gesture, and for a window with no
 button row (a list of settings, which applies as you touch it) it is the
-only visible way out. A phone still shows none: the sheet drags away from anywhere
-on itself, which is the gesture it was given instead.
+only visible way out. An Android phone shows none: the sheet drags away from anywhere
+on itself, which is the gesture it was given instead. An iPhone sheet carries one
+in its band's trailing corner, as a glass circle, since a `fill` sheet leaves the
+scrim a strip and there is no Back inside a sheet (2026-09-21); the centred `ask`
+card takes none on either phone.
 
 **The X means out, and never back.** It shuts the window it sits on and
 every window that one was opened inside, so it says the same thing on
@@ -1305,7 +1308,9 @@ drawn, and what one has to prove.
   TypeScript, since both drawings in the DOM would double thirty call
   sites; a 6px slider track under a 38 by 24 capsule thumb; a press that
   dims, 80% filled and 60% unfilled, instantly in; an empty state as one
-  48px muted symbol; the glass Cancel beside a sheet's search field; and
+  48px muted symbol; the glass Cancel beside a sheet's search field; a
+  sheet's own close as a glass circle in the band's trailing corner, the
+  one exit an iPhone sheet was missing; and
   the system face, `-apple-system` with Apple SD Gothic Neo, set once on
   `--font-sans-stack`, Pretendard last in the stack for the figurines,
   the wordmark pinned to `--font-brand`, and no tracking added to it.
