@@ -740,7 +740,9 @@ role); `PromptDialog` is that plus a field (new study, new note, new
 book, every rename); the default size is the same card at window width
 for anything larger (import PGN, the PDF import, the explorer's filters),
 and `size="full"` a wide one on a desktop. On a phone every one of them
-is the bottom sheet. Anything that is not a single line is one of these
+is the bottom sheet, but for a question (`ask`: a confirmation, a
+one-field prompt, the leave question), which is a centred card on every
+phone; "Platform-specific design" says why. Anything that is not a single line is one of these
 rather than a panel that grows in place.
 
 None of them — nor any `PanelHeader` — draws a rule under its title: the
@@ -1226,10 +1228,11 @@ drawn, and what one has to prove.
   navigable row (the More page's groups, one card per group with a
   hairline between rows; the docked platforms keep a card per row); the platform's own switch (the registry's switch under `ios:` variants:
   a 51 by 31px track, green when on from a `--switch-on` token that is
-  the platform's colour and not the app's `good`, a 27px white thumb). Android keeps what ships
-  today: the docked opaque bar with the M3 pill, the flat full-bleed
+  the platform's colour and not the app's `good`, a 27px white thumb). Android kept what
+  shipped that day: the docked opaque bar with the M3 pill, the flat full-bleed
   rows, the registry switch, and the row-actions sheet, which Material
-  still offers beside its menu. Desktop is untouched by any of this. What
+  still offers beside its menu; what it took three days later is in the
+  second pass below. Desktop was untouched by this first pass. What
   is INSIDE a card follows the tonal rule on every platform: a card
   resting on the page is separated by its fill, so no material that
   samples the ground goes behind it, and a segmented control or a chip
@@ -1272,6 +1275,78 @@ drawn, and what one has to prove.
   ground, so `check:contrast`'s theme reading proves nothing about it,
   and the surface is sampled over a dark board square, a diagram and a
   dark note before its alpha is settled.
+- **The second pass, 2026-09-21: what each platform took, and what
+  turned out not to be a platform's at all.** A sweep of the registry
+  files against the HIG found controls iOS does not have, and a second
+  sweep found the other two platforms a release behind it. Three things
+  that were built as `ios:` came back out from under the guard, because
+  they are every platform's idiom: a QUESTION is a centred card on every
+  phone and not a rising sheet (`ask` on the Dialog root takes the Dialog
+  primitive instead of the Drawer; iOS draws it 280px wide with a centred
+  title and its buttons side by side, Android as Material's basic dialog,
+  312px, started text, text buttons in an end-aligned row; the scrim
+  still closes it, as every small window here does, and "Dialog policy"
+  carries the exception); the segmented track's raised thumb SLIDES
+  wherever a track is drawn, placed by measuring the pressed item so
+  unequal segments work (only drawing a `row` as a track, and equal
+  widths, are iOS's); and a setting is a ROW, label and blurb on the
+  left and a control at its own width on the right, on every platform
+  (`SettingRow` with `control="wide"`), which the two phones then group
+  in their own flavour from one place, `SettingsCard`: iOS one inset
+  card per group with hairlines from the label's edge and 44px rows,
+  Android a card per row with a 2px gap, large outer and small inner
+  corners, no hairline and 48px rows. iOS also took: the multi-select
+  mark as a 22px circle and one-of-many as a grouped list with a
+  trailing checkmark (`ui/checkbox.tsx`, `ui/radio-group.tsx`); the
+  compact date picker (a muted capsule, a month grid of circles from
+  44px down to no less than 36px at 320px, the dropdown caption kept
+  and restyled so a date a century back is one tap); the eight-spoke
+  activity indicator, the one place a variant picks its drawing in
+  TypeScript, since both drawings in the DOM would double thirty call
+  sites; a 6px slider track under a 38 by 24 capsule thumb; a press that
+  dims, 80% filled and 60% unfilled, instantly in; an empty state as one
+  48px muted symbol; the glass Cancel beside a sheet's search field; and
+  the system face, `-apple-system` with Apple SD Gothic Neo, set once on
+  `--font-sans-stack`, Pretendard last in the stack for the figurines,
+  the wordmark pinned to `--font-brand`, and no tracking added to it.
+  Android took Material 3 Expressive's shapes: header icon actions as
+  40px round buttons and text actions as 40px capsules in the fill their
+  variant already has, the back chevron bare; a press answered by a 10%
+  state layer and a corner morph to 12px (a radius that morphs is
+  written as a number, since `rounded-full` is `calc(infinity)` and
+  cannot interpolate) and no ripple, which would be a second clock; a
+  page's claimed controls as the floating toolbar, a 64px pill hugging
+  its content 16px over the inset, while the docked navigation bar is
+  unchanged; the FAB as a 56px rounded square; the loading indicator,
+  one path morphing through five generated shapes, at `size-5` and up
+  only, since at 16px a morph reads as a wobble; and a linear bar with
+  rounded ends, a gap and a stop dot, the wavy track rejected at 4px.
+  Android keeps Pretendard: it is the app's own face on that phone
+  already, and Roboto offers no argument the way San Francisco's optical
+  sizes do. Both phones pull to refresh (`hooks/use-pull-refresh`: only
+  at scrollTop 0, only a clearly vertical pull, never in a sheet, on a
+  board page or with a field focused; the app's `overscroll-behavior`
+  already contained Chrome's own) and both share through the system
+  sheet where one exists (`lib/share.ts`, a feature test and never the
+  platform attribute; only the glyph reads the platform; nothing carrying
+  book evidence is shareable). The theme-color metas are written from
+  the body's resolved ground on every ground change. The desktop took
+  the inset shell: `--app-ground`, one rung under `--background`, is the
+  window's ground from md, the sidebar and the title band share it
+  without a fill or a border of their own, and the page is one
+  `rounded-xl ring-window-ring` panel inset in it, so every page's
+  interior is what it was and only the frame moved (this reopens the
+  white sidebar of 2026-09-07); a field-shaped Search button under the
+  wordmark that opens the quick switcher; a games table without stripes
+  (they were recorded for two-line card rows, which keep them) whose
+  resize handles show on hover or focus; filters as chips at content
+  width shared with the phone's (`games/filter-chips.ts`); Home without
+  trailing chevrons under a fine pointer, and an Activity card counting
+  solved puzzles by day, counts and never a rating. The desktop window
+  can ask the OS for its material (Mica, sidebar vibrancy) behind
+  `--window-ground`; it ships OFF, from Settings, because no window was
+  opened to read it. The grid walks `phone-android` beside `phone-ios`.
+  Still to be read on a device: every item above.
 - **What did not reopen.** Five tabs with Notes under More: iOS also
   stops at five. The radius ladder: iOS 26's continuous corners cannot
   be drawn in CSS, and a glass surface takes the `2xl` rung or a true
