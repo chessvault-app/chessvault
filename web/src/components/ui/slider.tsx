@@ -36,9 +36,16 @@ function Slider({
       {...props}
     >
       <SliderPrimitive.Control className="relative flex w-full touch-none items-center select-none data-disabled:opacity-50 data-vertical:h-full data-vertical:min-h-40 data-vertical:w-auto data-vertical:flex-col">
+        {/*
+          iOS draws a thicker track than the registry's 4px hairline: about
+          6px, with the filled part in the tint the app already uses
+          ("Platform-specific design", docs/design-principles.md). Only the
+          thickness changes, so the indicator, the rounding and the colours
+          are the ones every other platform draws.
+        */}
         <SliderPrimitive.Track
           data-slot="slider-track"
-          className="relative grow overflow-hidden rounded-full bg-muted select-none data-horizontal:h-1 data-horizontal:w-full data-vertical:h-full data-vertical:w-1"
+          className="relative grow overflow-hidden rounded-full bg-muted select-none data-horizontal:h-1 data-horizontal:w-full data-vertical:h-full data-vertical:w-1 ios:data-horizontal:h-1.5 ios:data-vertical:w-1.5"
         >
           <SliderPrimitive.Indicator
             data-slot="slider-range"
@@ -74,6 +81,19 @@ function Slider({
           black: the same geometry the hover halo has always had, and the
           reason the number quoted is the median and not the minimum.
 
+          ON iOS THE THUMB IS A CAPSULE, 38 by 24px, white with a soft
+          shadow, over the 6px track above. Every state here survives it,
+          because the capsule changes the BOX and nothing else: the resting
+          `border-ring` edge, the hover and active halos and the
+          `has-[:focus-visible]` halo are the same three `ring-3` rings,
+          drawn round a capsule instead of a 12px dot, so the contrast
+          numbers above are unchanged and the focus halo still shows. The
+          hit box is the thumb plus `after:-inset-2`: 54 by 40px on iOS
+          against 28 square before it, both clear of the app's 36px
+          coarse-pointer floor (DESIGN.md, Buttons). `rounded-full` is
+          already a capsule on a non-square box, so the radius is the
+          registry's own.
+
           The input's own outline goes off with the same line. It never
           painted, being clipped, but it still COMPUTES the page's ring, and
           under dark High contrast, where the token is white and this thumb
@@ -86,7 +106,7 @@ function Slider({
             data-slot="slider-thumb"
             key={index}
             aria-label={ariaLabel}
-            className="relative block size-3 shrink-0 rounded-full border border-ring bg-white ring-ring transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-3 has-[:focus-visible]:ring-3 active:ring-3 disabled:pointer-events-none disabled:opacity-50 [&_input]:outline-hidden"
+            className="relative block size-3 shrink-0 rounded-full border border-ring bg-white ring-ring transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-3 has-[:focus-visible]:ring-3 active:ring-3 disabled:pointer-events-none disabled:opacity-50 [&_input]:outline-hidden ios:h-6 ios:w-[38px] ios:shadow-md"
           />
         ))}
       </SliderPrimitive.Control>
