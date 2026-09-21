@@ -157,6 +157,22 @@
      chosen for legibility, and its structure is the ring, restored
      below. lanph3re's call, 2026-09-07, from a mockup over the demo. */
   --background: oklch(calc(97% + (100% - 97%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  /* The WINDOW's ground, from md: the tint the desktop shell is, that the
+     sidebar and the title band share, with the page inset in it as one
+     rounded panel (App.tsx). It is one rung below --background so that
+     the panel reads as the thing in the frame rather than as the frame,
+     and the page inside the panel is unchanged: every card, skeleton and
+     tone a page draws still sits on --background exactly as before, so
+     only the frame moved. 95% is the step --glass-tint already uses for
+     "away from the ground", the one lanph3re measured as a faint grey
+     rather than a dirty one (2026-09-20). Under md this token is never
+     spent: a phone has no frame to be.
+
+     It follows the contrast knob to white like --background, and at the
+     top of the knob the two meet — which is the same trade the sidebar
+     made before, where the panel's --window-ring is the structure that
+     comes back at exactly that point. */
+  --app-ground: oklch(calc(95% + (100% - 95%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
   /* The card's edge. Transparent on the tonal page, where the fill is
      the edge; the full hairline at the top of the contrast knob, where
      the page is white again and the ring is the only structure. One

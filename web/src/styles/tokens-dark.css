@@ -7,6 +7,13 @@
      LADDER keeps its rungs (surface-3, surface-inset) above those. */
   --background: oklch(calc(14.5% + (0% - 14.5%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
   --background-accent: oklch(calc(12% + (0% - 12%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
+  /* The window's ground (tokens.css says what it is for): a rung BELOW
+     the page, 11% under 14.5%, so the inset panel is the lit thing and
+     the frame around it recedes — the same direction light takes, since
+     in both themes the frame is the quieter surface. Dark already draws
+     --window-ring as a real hairline at every contrast, so the panel's
+     edge never depends on this step alone. */
+  --app-ground: oklch(calc(11% + (0% - 11%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
   --surface: oklch(calc(20.5% + (13% - 20.5%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
   --surface-2: oklch(calc(26.9% + (18.5% - 26.9%) * var(--ui-contrast)) calc(0.018 * var(--ui-tint)) var(--ui-hue));
   --surface-3: oklch(calc(32% + (24% - 32%) * var(--ui-contrast)) calc(0.019 * var(--ui-tint)) var(--ui-hue));
