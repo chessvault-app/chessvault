@@ -280,7 +280,7 @@ export function ReviewStrip({
                 title={graphOpen ? t('Hide the evaluation graph') : t('Show the evaluation graph')}
                 onClick={toggleGraph}
               >
-                <ChevronDown className={cn('glyph-sm transition-transform', graphOpen && 'rotate-180')} />
+                <ChevronDown className={cn('glyph-sm transition-transform duration-(--pane-turn) ease-(--pane-turn-ease)', graphOpen && 'rotate-180')} />
               </Button>
             )}
             {!panel && (
