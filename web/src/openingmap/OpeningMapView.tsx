@@ -874,7 +874,7 @@ const ROW_SELECT = 'w-full h-auto pointer-coarse:h-auto px-3 py-(--row-py)';
 
 const ADD_ROW =
   'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground flex items-center gap-2 ' +
-  'rounded-lg border border-dashed px-2 py-1.5 text-left text-sm transition-colors duration-100 ' +
+  'rounded-lg border border-dashed px-2 py-(--row-py-dense) text-left text-sm transition-colors duration-100 ' +
   'disabled:pointer-events-none disabled:opacity-45';
 
 /**
