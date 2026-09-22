@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { Hono } from 'hono';
 import { activityApi, recordActivity, tallyActivity } from './activity.ts';
+import { mountVault } from './mountVault.ts';
 import type { ActivityReport } from '../shared/activity.ts';
 
 const dirs: string[] = [];
@@ -219,5 +220,81 @@ describe('tallyActivity', () => {
     );
     expect(report.days).toEqual([{ date: '2026-09-20', counts: { book: 1, puzzle: 1 } }]);
     expect(report.logSince).toBe('2026-09-20');
+  });
+});
+
+/**
+ * The wiring, not the arithmetic.
+ *
+ * Everything above tests this file over files it wrote itself, which
+ * proves nothing about whether the routes that do the work ever call it.
+ * That call is a callback passed in `server/mountVault.ts`, one argument
+ * among several, and dropping it would break no type and fail no test up
+ * there: saves would go on succeeding and the grid would go on drawing,
+ * just without them. So the vault is mounted for real here and asked
+ * what it saw.
+ */
+describe('the routes that do the work record it', () => {
+  const mounted = (): { app: Hono; dir: string } => {
+    const dir = vault();
+    const app = new Hono();
+    mountVault(app, {
+      vault: dir,
+      studies: resolve(dir, 'studies'),
+      notes: resolve(dir, 'notes'),
+      games: resolve(dir, 'games'),
+      repertoireState: resolve(dir, 'repertoire'),
+    });
+    return { app, dir };
+  };
+
+  const today = async (app: Hono) => {
+    const res = await app.request('/api/activity');
+    const report = (await res.json()) as ActivityReport;
+    return report.days.at(-1)?.counts ?? {};
+  };
+
+  const post = (app: Hono, path: string, body: unknown): Promise<Response> | Response =>
+    app.request(path, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+  it('counts a study, a note and a game document as their own kinds', async () => {
+    const { app } = mounted();
+    expect((await post(app, '/api/studies', { name: 'Najdorf' })).status).toBe(200);
+    expect((await post(app, '/api/notes', { name: 'Ideas' })).status).toBe(200);
+    expect((await post(app, '/api/games/docs', { name: 'A vs B' })).status).toBe(200);
+    expect(await today(app)).toEqual({ study: 1, note: 1, game: 1 });
+  });
+
+  it('counts a saved study once however many times it is saved', async () => {
+    const { app } = mounted();
+    await post(app, '/api/studies', { name: 'Najdorf' });
+    for (let n = 0; n < 5; n += 1) {
+      const res = await app.request('/api/studies/Najdorf', {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ pgn: `[Event "Najdorf: Chapter 1"]\n\n* {${n}}\n` }),
+      });
+      expect(res.status).toBe(200);
+    }
+    expect(await today(app)).toEqual({ study: 1 });
+  });
+
+  it('leaves a parked draft out: a day of work is what was saved', async () => {
+    const { app } = mounted();
+    await post(app, '/api/studies', { name: 'Najdorf' });
+    const before = await today(app);
+    const res = await app.request('/api/studies/Berlin?draft=1', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ pgn: '[Event "x"]\n\n*\n' }),
+    });
+    // 404 for a document that does not exist, which is beside the point:
+    // what matters is that no draft path can add a line.
+    expect([200, 404]).toContain(res.status);
+    expect(await today(app)).toEqual(before);
   });
 });
