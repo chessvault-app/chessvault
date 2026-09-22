@@ -70,11 +70,19 @@ export function startPlatform(): Platform {
 }
 
 /**
- * The glass kill switch for the on-device A/B (utilities.css, `glass`):
+ * Whether this device draws the glass surfaces (utilities.css, `glass`):
  * `chess-vault:glass` = "off" puts data-glass="off" on the root and every
- * glass surface falls back to its opaque fill. Set from the Settings
- * debug card, read here at launch so the choice survives a reload; no
- * user setting writes it.
+ * one of them falls back to its opaque fill.
+ *
+ * Settings > Appearance owns it, and `main.tsx` applies it at launch so
+ * the choice is on the root before the first paint. It began as the
+ * on-device A/B for the frame probe, written from a debug card that only
+ * a CHESS_LAG build carried, which meant that in a real build there was
+ * no way to turn glass off at all. There should have been one:
+ * `prefers-reduced-transparency` is the media query the glass takes
+ * itself away under, and Safari does not answer it (measured on
+ * lanph3re's phone, 2026-09-18), so on the one platform that draws glass
+ * the reader's own accessibility setting reaches nothing.
  */
 export const GLASS_OVERRIDE_KEY = 'chess-vault:glass';
 
@@ -89,6 +97,30 @@ export function applyGlassOverride(off?: boolean): void {
   }
   if (value) document.documentElement.dataset.glass = 'off';
   else delete document.documentElement.dataset.glass;
+}
+
+/** What the control shows. Absent means on, so a new device draws glass. */
+export function glassOn(): boolean {
+  try {
+    return localStorage.getItem(GLASS_OVERRIDE_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Store the choice and apply it, in that order, so a reload agrees with
+ * the screen. A container with no storage keeps the choice for this page
+ * and forgets it, which is what every other per-device preference does.
+ */
+export function chooseGlass(on: boolean): void {
+  try {
+    if (on) localStorage.removeItem(GLASS_OVERRIDE_KEY);
+    else localStorage.setItem(GLASS_OVERRIDE_KEY, 'off');
+  } catch {
+    // No storage in this container; the line below still takes effect.
+  }
+  applyGlassOverride(!on);
 }
 
 /**

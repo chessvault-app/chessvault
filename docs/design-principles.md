@@ -1352,7 +1352,7 @@ drawn, and what one has to prove.
   row inside a card is drawn the same on both phones. The board, its
   overlays and the pane strip are the same on every platform by the
   rules that already govern them.
-- **Glass is one surface, gated three ways.** A translucent surface is
+- **Glass is one surface, gated four ways.** A translucent surface is
   the glass tint at high alpha over a small backdrop blur with a saturate,
   a one-pixel hairline of the foreground at 12% inside its edge (dark
   in light, light in dark, so the edge shows over content of the
@@ -1365,8 +1365,18 @@ drawn, and what one has to prove.
   unknown feature as false, and the grant form left the phone opaque),
   and only on a phone — `max-md:ios:`, not `ios:`, which reaches an iPad
   too and drew a glass menu over a desktop page with nothing else glassy
-  on it (measured at 834px, 2026-09-22); under any of the three it falls
-  back to the opaque card. Two things beyond the fill belong to the
+  on it (measured at 834px, 2026-09-22); and, fourth, only while the
+  reader has left it on. Settings > Appearance carries a Glass switch,
+  under More options beside Corners, and it is the only one of the four
+  a reader can reach: `prefers-reduced-transparency` is what would
+  otherwise speak for them and Safari does not answer it, so on the one
+  platform that draws glass the accessibility setting they have already
+  turned on reaches nothing (`lib/platform.ts`; iOS has carried a
+  control of its own since 26.1 and a slider since 27, and no media
+  query reports either). A switch and not a slider, because the fill
+  and the blur are placed against 4.5:1 and 3:1 and a slider would hand
+  out fills nobody has read a contrast for. Under any of the four it
+  falls back to the opaque card. Two things beyond the fill belong to the
   utility rather than to its callers. The focus ring: the glass
   box-shadow outranks `focus-visible:ring-3`, so a keyboard-focused
   glass surface changed zero pixels until the utility drew the ring

@@ -10,7 +10,6 @@ import { api } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
 import { t } from '@/lib/i18n';
-import { GLASS_OVERRIDE_KEY, applyGlassOverride } from '@/lib/platform';
 import { size, type VaultShell, type UpdateResult, type UpdateStatus } from '@/settings/cards/shared';
 
 // --- Version -----------------------------------------------------------------
@@ -44,34 +43,12 @@ export function LagCard() {
     if (value === '0') localStorage.removeItem('lag');
     else localStorage.setItem('lag', value);
   };
-  // The iOS capsule's material, for the frame probe: glass against the
-  // opaque fill it falls back to (utilities.css, `glass`). Takes effect
-  // at once, on the root, and survives a reload through lib/platform.
-  const [glass, setGlass] = useState(() => (localStorage.getItem(GLASS_OVERRIDE_KEY) === 'off' ? 'off' : 'on'));
-  const chooseGlass = (value: string): void => {
-    setGlass(value);
-    if (value === 'off') localStorage.setItem(GLASS_OVERRIDE_KEY, 'off');
-    else localStorage.removeItem(GLASS_OVERRIDE_KEY);
-    applyGlassOverride(value === 'off');
-  };
+  // The glass A/B this card used to carry is Settings > Appearance now
+  // (appearance-card.tsx): it writes the same key, it is in every build
+  // rather than a CHESS_LAG one, and the frame probe reaches it the same
+  // way. A debug copy beside it would be a second control for one value.
   return (
     <Card icon={Hourglass} title={t('Artificial latency')}>
-      <SettingRow title={t('Bottom bar material')} blurb={t('For the frame probe on an iPhone. This device only.')}>
-        <Select
-          value={glass}
-          onValueChange={chooseGlass}
-          ariaLabel={t('Bottom bar material')}
-          steady
-          groups={[
-            {
-              options: [
-                { value: 'on', label: t('Glass') },
-                { value: 'off', label: t('Opaque') },
-              ],
-            },
-          ]}
-        />
-      </SettingRow>
       <SettingRow
         title={t('Delay every request')}
         blurb={t('For looking at the loading placeholders. This device only.')}
