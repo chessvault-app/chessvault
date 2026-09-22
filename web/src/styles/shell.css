@@ -95,10 +95,12 @@
    Under md only, which is where the label is off and the phone chrome
    is; an iPad from md keeps the docked platforms' shape here. */
 @media (max-width: 47.9375rem) {
-  /* Icon buttons of any face but the primary: glass circles. */
-  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
-  :root[data-platform='ios'] [data-chrome] button[data-slot='toggle'],
-  :root[data-platform='ios'] [data-chrome] button[data-chrome-circle]:not([data-variant='default']) {
+  /* Icon buttons of any face but the primary: glass circles. Not on the
+     compact bar, which is glass itself; the rule at the foot of this
+     block says why and draws them there. */
+  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
+  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='toggle'],
+  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-chrome-circle]:not([data-variant='default']) {
     @apply glass size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring active:opacity-70;
   }
   /* A pressed toggle keeps its own fill (the bookmark filter on a shelf):
@@ -120,7 +122,7 @@
      outline button beside them (a glass pill). A rounded rectangle with a
      word in it beside glass circles read as two vocabularies on one row
      (lanph3re, 2026-09-18); iOS 26 draws its bar buttons as capsules. */
-  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']) {
+  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']) {
     @apply glass h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-window-ring active:opacity-70;
   }
   :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='sm'][data-variant='default']:not([data-chrome-circle]) {
@@ -137,10 +139,10 @@
      the capsule in the title row beside a grey pill one row down read as
      two search bars (lanph3re, 2026-09-19). The chrome rule below is the
      more specific and adds the row's 40px. */
-  :root[data-platform='ios'] button[data-search-cancel]:not([aria-hidden='true']) {
+  :root[data-platform='ios'] button[data-search-cancel]:not([aria-hidden='true']):not([data-chrome='bar'] *) {
     @apply glass text-foreground rounded-full shadow-md ring-1 ring-window-ring active:opacity-70;
   }
-  :root[data-platform='ios'] [data-chrome] button[data-search-cancel]:not([aria-hidden='true']) {
+  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-search-cancel]:not([aria-hidden='true']) {
     @apply glass text-foreground h-10 rounded-full px-4 shadow-md ring-1 ring-window-ring active:opacity-70;
   }
 
@@ -153,6 +155,75 @@
      rule has nothing else to exclude. */
   :root[data-platform='ios'] [data-slot='dialog-content'] button[data-chrome-circle] {
     @apply glass size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring active:opacity-70;
+  }
+
+  /* A control standing on the compact bar is not a second glass.
+
+     That bar is itself glass on an iPhone (page-header.tsx, data-chrome=
+     "bar"), and every circle and capsule on it drew its own: two backdrop
+     filters one over the other, the upper re-blurring what the lower had
+     already blurred, on every scrolled frame. That is the cost that made
+     the docked bar opaque in 2026-09, paid again once per button. What it
+     bought is nothing the eye can find. Measured on the demo at 390px,
+     #/notes with the bar revealed: the circle's fill read rgb(238,238,238)
+     on a bar of rgb(240,240,240) in light, and rgb(53,53,53) on
+     rgb(49,49,49) in dark, so the second layer was worth 2 and 4 of 255.
+     The same circle on the page, where the glass has real content under it
+     to work with, separates from its ground by 5 in light and 26 in dark.
+     Apple's own rule says the same thing in words: do not layer Liquid
+     Glass elements on top of each other (HIG, Materials).
+
+     The fill and the filter go; the EDGE stays. `glass` draws its hairline
+     and the panel shadow in one box-shadow (utilities.css) that the ring
+     utilities on these buttons never outranked, and that hairline is what
+     the circle was already being told from the bar by. It cost the
+     circle one unit of 255 in light and three in dark, re-measured the
+     same way: rgb(239,239,239) on 240, and rgb(50,50,50) on 49. Under
+     reduced transparency both were `--card` over each other and already
+     separated by nothing, so that path is unchanged.
+
+     So the bar is cut out of the rules above rather than overridden by a
+     rule below them, which is not a style choice: `@apply glass` nests
+     the utility's own `:root:not([data-glass='off'])` guard inside those
+     selectors, and the result reads (0,8,1) and (0,10,1), which an
+     override would have to out-count attribute by attribute to reach.
+     Cutting the bar out leaves nothing to out-count. These two rules
+     then draw what is left.
+
+     First the shape, which is the circles' and pills' whatever the
+     material is doing, and the opaque treatment that a phone without
+     `backdrop-filter`, a reader who has turned Glass off, and reduced
+     transparency all keep: there the bar is an opaque card and a filled
+     control on it is the separation those readers asked for. */
+  :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
+  :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),
+  :root[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']) {
+    @apply size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring active:opacity-70;
+  }
+  :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']),
+  :root[data-platform='ios'] [data-chrome='bar'] button[data-search-cancel]:not([aria-hidden='true']) {
+    @apply h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-window-ring active:opacity-70;
+  }
+
+  /* Then, only where the bar is actually drawing glass, the control gives
+     up its fill and takes the bar's, and draws the hairline and the panel
+     shadow `glass` would have given it. The same three conditions the
+     utility draws under, in the same order and the same form: an
+     override that takes the fill away, never a grant, so a browser that
+     does not know the transparency query reads it as false and the
+     control stays flush with the bar, which is what glass being drawn
+     means. */
+  @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+    @media not (prefers-reduced-transparency: reduce) {
+      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
+      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),
+      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']),
+      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']),
+      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-search-cancel]:not([aria-hidden='true']) {
+        background-color: transparent;
+        box-shadow: inset 0 0 0 var(--glass-edge-w, 1px) var(--glass-edge), var(--shadow-panel);
+      }
+    }
   }
 }
 

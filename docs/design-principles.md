@@ -1386,6 +1386,19 @@ drawn, and what one has to prove.
   re-reading both fills (`tokens.css` and `tokens-dark.css` carry the
   readings). Apple publishes no ratio; Liquid
   Glass is a dynamic material, and these are this app's numbers.
+  And nothing glass stands on glass. The compact page header is itself
+  a glass band, and the circles and capsules standing on it drew their
+  own until 2026-09-22: a second backdrop filter re-blurring what the
+  first had already blurred, once per button, on every scrolled frame,
+  which is the cost that made the docked bar opaque in 2026-09 paid
+  again per control. It bought 2 of 255 in light and 4 in dark
+  (measured on the demo at 390px, `#/notes` with the bar revealed;
+  the same circle standing on the PAGE, where the glass has content
+  under it to work with, separates by 5 and 26). So on that bar they
+  keep the hairline, which is what told them from it all along, and
+  give up the fill and the filter (`styles/shell.css`, on the bar's
+  `data-chrome="bar"`). Apple's rule says the same in words: do not
+  layer Liquid Glass elements on top of each other.
 - **What a platform variant has to prove.** The screenshot grid
   (`npm run shots:grid`) walks a `phone-ios` state beside `phone`,
   with the override set, so a change that means to be iOS-only shows a
