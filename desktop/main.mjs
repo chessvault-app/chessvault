@@ -206,12 +206,37 @@ async function waitForServer(base) {
  * page corrects them once its stylesheet has resolved.
  */
 const TITLE_BAR_HEIGHT = 40;
+/**
+ * What the OS's caption strip is given: the band, less the one pixel row
+ * at the bottom of it that the page draws the content panel's top edge in.
+ *
+ * That edge is a ring, which is a box-shadow with no `inset`, so it paints
+ * the row immediately above the panel — the band's last row (App.tsx). The
+ * strip is opaque (the page pushes the band's own fill into it, so the
+ * buttons sit on the same colour the band is) and it is drawn by the OS on
+ * top of the page, so at the full height it covered that row wherever the
+ * buttons are: the panel's top hairline stopped 136px short of its right
+ * corner on Windows and met nothing there. Measured off lanph3re's window
+ * 2026-09-23: the hairline ran x=39..1568 of a 1705px window whose panel
+ * ends at x=1697, and x=1569..1704 read 9,9,9, the ground colour the strip
+ * had been given, with the button glyphs in it.
+ *
+ * One pixel off the strip rather than one pixel onto the panel: giving the
+ * panel that row instead moves every page's interior down by one
+ * (63,399 px on one route, and 2 once you shift it back). The buttons lose
+ * a row of hit area at the very bottom of the band, which is not a row
+ * anyone aims at, and their hover fill stops a pixel above the hairline
+ * rather than over it. macOS has no strip — `hiddenInset` puts the traffic
+ * lights over the sidebar, which the panel's edge is nowhere near — so this
+ * is the Windows/Linux branch's number only.
+ */
+const OVERLAY_HEIGHT = TITLE_BAR_HEIGHT - 1;
 const TITLE_BAR =
   process.platform === 'darwin'
     ? { titleBarStyle: 'hiddenInset', trafficLightPosition: { x: 12, y: (TITLE_BAR_HEIGHT - 12) / 2 } }
     : {
         titleBarStyle: 'hidden',
-        titleBarOverlay: { color: '#0a0a0a', symbolColor: '#fafafa', height: TITLE_BAR_HEIGHT },
+        titleBarOverlay: { color: '#0a0a0a', symbolColor: '#fafafa', height: OVERLAY_HEIGHT },
       };
 
 /**
@@ -687,7 +712,7 @@ app.whenReady().then(async () => {
     const ok = (v) => typeof v === 'string' && /^(#[0-9a-f]{3,8}|rgba?\([\d\s.,%/]+\))$/i.test(v.trim());
     if (!ok(colors?.color) || !ok(colors?.symbolColor)) return;
     try {
-      win.setTitleBarOverlay({ color: colors.color, symbolColor: colors.symbolColor, height: TITLE_BAR_HEIGHT });
+      win.setTitleBarOverlay({ color: colors.color, symbolColor: colors.symbolColor, height: OVERLAY_HEIGHT });
     } catch {
       // A platform without the overlay: the band is still drawn by the page.
     }
