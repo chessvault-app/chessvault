@@ -1159,7 +1159,16 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   tinting them (Blue is the app's previous look) and there is no second
   palette. Several roles depart from the registry's numbers, every one of
   them measured. `--accent` (the pressed, selected and highlighted fill)
-  is a rung above `--muted` (the hover fill) instead of the same rung,
+  has a sibling, `--accent-ground`, for the controls that stand on the
+  window frame rather than on a card: the sidebar's rows and footer
+  buttons. The frame moved 19% to 14% in the 2026-09-22 ladder while
+  `--accent` came down 1.4 points with its own anchor, so that hover
+  grew from 20.4 points of lightness over its ground to 24 and read too
+  light at the window; the sibling holds the LIGHTNESS at 34.4% rather
+  than the ratio, which is where "hold the ratio" stops applying (it is
+  derived on hairline steps of 1.02 to 1.4, and at a 1.95 fill the same
+  arithmetic inflates the step instead of preserving it). `--accent`
+  itself is a rung above `--muted` (the hover fill) instead of the same rung,
   because a pressed toggle on a card was 3% of lightness from its
   surroundings in the light and 6% in the dark and could not be seen —
   92.8% and 37% now. On the page ground the light tone is a hazard the

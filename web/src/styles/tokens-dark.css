@@ -424,6 +424,14 @@
      all (measured: 3% of lightness apart in light, 6% in dark). Hover
      stays --muted; selected/pressed is --accent; the two are a rung apart. */
   --accent: var(--surface-3);
+  /* The same fill for a control standing on the WINDOW FRAME rather than
+     on a card: the sidebar's rows and its footer buttons, which are the
+     only transparent controls in the app whose ground is
+     --app-ground-base. In light it is --accent and nothing more, because
+     there the frame is 95% and a hover DARKENS it, so the step does not
+     care how far the frame sits from the card. Dark sets its own (below,
+     with the reason). */
+  --accent-ground: var(--accent);
   --accent-foreground: var(--foreground);
   /* shadcn's input CHROME colour — what `border-input` draws. The sunken
      fill a field sits on is --surface-inset, which is a rung, not a role. */
@@ -445,6 +453,31 @@
      with the rest of the ladder on 2026-09-22 and keeping the 1.216:1
      over --surface-3 it was placed at; it was 37% over a 32% rung. */
   --accent: oklch(calc(38% + (28% - 38%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  /* 34.4%, and it exists because --accent serves two grounds that are no
+     longer the same distance down.
+
+     --accent is placed against --surface-3 and holds its 1.2 there, which
+     is right for every row that hovers on a card. The sidebar hovers on
+     the frame, and the frame is the rung that moved furthest in the
+     2026-09-22 ladder, 19% to 14%, while --accent came down 1.4 points
+     with its own anchor. So the sidebar's hover quietly grew: 20.4 points
+     of lightness over its ground before and 24 after, 50 steps of green
+     and then 57, and lanph3re read it as too light at the window.
+
+     The rule that did it is the ladder's own "hold the ratio, not the
+     lightness", and this is where that rule stops applying. It is there
+     because WCAG compresses near black, which is true of the hairline
+     steps it was derived on (1.02 to 1.4); at a 1.95 fill the same
+     arithmetic does not preserve the step, it inflates it. So this rung
+     holds the LIGHTNESS instead: 14% + 20.4 is 34.4%, which is the step
+     the sidebar had, and it measures 48 steps of green where the old one
+     measured 50.
+
+     --accent itself does not move, because on a card it never drifted
+     (14.9 points before, 15.75 after) and --ring's 69% is placed to hold
+     3:1 on it. Over this rung the ring reads 4.21, so nothing downstream
+     moves either. Far end unchanged, so the contrast knob is untouched. */
+  --accent-ground: oklch(calc(34.4% + (28% - 34.4%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
 }
 /* The page ground. Under an element that says `data-ground` (a page's
    header row, a gate, a toolbar standing on the page rather than in a

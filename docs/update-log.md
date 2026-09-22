@@ -33,7 +33,10 @@ pixel grid is the proof so far.
   folds. A touch screen keeps the 36px rows it had. The row you are on
   is marked by its tinted pill alone: the 3px bar that stood down its
   left edge is gone, which is one fewer thing the sidebar and the
-  phone's tab bar disagree about.
+  phone's tab bar disagree about. Its hover has come back down, too: the
+  sidebar stands on the window frame, the frame fell further than
+  anything else when the dark theme deepened, and the fill that lights a
+  row under the pointer had not followed it down.
 - **The page sits in the window the way Linear's does.** The panel is
   flush to the sidebar and to the band above it and inset 8px on the
   right and bottom, where it used to carry the same 2px on all four

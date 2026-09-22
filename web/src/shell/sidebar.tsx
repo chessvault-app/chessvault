@@ -152,7 +152,7 @@ function SearchEntry({ folded }: { folded: boolean }) {
             aria-label={t('Search')}
             className={cn(
               NAV_ROW,
-              'text-muted-foreground hover:bg-accent hover:text-foreground w-full',
+              'text-muted-foreground hover:bg-accent-ground hover:text-foreground w-full',
               'outline-none focus-visible:ring-3 focus-visible:ring-ring',
             )}
           >
@@ -222,7 +222,7 @@ function SubNavItem({
           // indent is the 17px Linear's nested rows carry, on top of the
           // row's own 9px.
           folded ? 'pl-[0.5625rem]' : 'pl-[1.625rem]',
-          active ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+          active ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent-ground hover:text-foreground',
         )}
       >
         <Icon className="glyph shrink-0" />
@@ -264,7 +264,7 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
         type="button"
         onClick={toggleFold}
         aria-label={t('Unfold the sidebar')}
-        className={cn(NAV_ROW, 'text-muted-foreground hover:bg-accent hover:text-foreground')}
+        className={cn(NAV_ROW, 'text-muted-foreground hover:bg-accent-ground hover:text-foreground')}
       >
         <PanelLeftOpen className="glyph shrink-0" strokeWidth={2} />
       </button>
@@ -279,7 +279,7 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
         // from the right edge so it sits inside the seam like the
         // desktop band's does. Both numbers are the sidebar's new ones
         // (NAV_ROW); the square keeps the 36px coarse floor.
-        className="text-muted-foreground hover:bg-accent hover:text-foreground mr-3 flex size-7 pointer-coarse:size-9 shrink-0 items-center justify-center rounded-md transition-colors duration-150"
+        className="text-muted-foreground hover:bg-accent-ground hover:text-foreground mr-3 flex size-7 pointer-coarse:size-9 shrink-0 items-center justify-center rounded-md transition-colors duration-150"
       >
         <PanelLeftClose className="glyph" strokeWidth={2} />
       </button>
@@ -319,7 +319,7 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
             // Left-aligned in both states, with the 24px mark's centre on
             // the rail's icon column (see NAV_ROW), so the mark does not
             // move when the wordmark beside it goes.
-            className="hover:bg-accent flex h-11 min-w-0 flex-1 items-center justify-start gap-2 pr-3 pl-3 text-left transition-colors duration-100"
+            className="hover:bg-accent-ground flex h-11 min-w-0 flex-1 items-center justify-start gap-2 pr-3 pl-3 text-left transition-colors duration-100"
           >
             {/* Bare, in the text's own ink — the same treatment as the home
                 header. The filled tile it used to sit on read as a button
@@ -386,7 +386,7 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
                     // read as a chip's, and the tonal fill stands off the dark
                     // sidebar on its own where --muted alone did not.
                     'bg-nav-pill text-primary font-semibold'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                  : 'text-muted-foreground hover:bg-accent-ground hover:text-foreground',
               )}
             >
               <Icon className="glyph shrink-0" strokeWidth={isActive ? 2.4 : 2} />
@@ -443,7 +443,7 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
           aria-current={inTools(active) ? 'page' : undefined}
           className={cn(
             NAV_ROW,
-            inTools(active) ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+            inTools(active) ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent-ground hover:text-foreground',
           )}
         >
           <SquareMousePointer className="glyph shrink-0" strokeWidth={inTools(active) ? 2.4 : 2} />
@@ -474,7 +474,7 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
           aria-current={active === 'databases' ? 'page' : undefined}
           className={cn(
             NAV_ROW,
-            active === 'databases' ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+            active === 'databases' ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent-ground hover:text-foreground',
           )}
         >
           <Database className="glyph shrink-0" strokeWidth={active === 'databases' ? 2.4 : 2} />
@@ -511,7 +511,7 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
                 'grid size-7 pointer-coarse:size-9 place-items-center rounded-md transition-colors duration-100',
                 active === 'settings'
                   ? 'bg-muted text-primary'
-                  : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                  : 'text-muted-foreground hover:bg-accent-ground hover:text-foreground',
               )}
             >
               <Settings className="glyph" strokeWidth={2} />
