@@ -30,15 +30,20 @@
  * with the keyboard flag set on the root (the bar must be gone).
  * Reduced motion is emulated so nothing is caught mid-transition.
  *
- * WHAT IS NOISE. The board's engine output and the puzzle dashboard's
- * pick settle rather than render, so those shots differ between two runs
- * of one build; capture-screenshots.mjs measured the same. Diff a pair of
+ * WHAT IS NOISE. The board's engine output and the puzzle pages' pick
+ * settle rather than render, so those shots differ between two runs of
+ * one build; capture-screenshots.mjs measured the same. Diff a pair of
  * runs of the SAME build first if a number there looks like a change.
- * Measured on 0.8.5: 27 of 98 pictures differed between two runs. The
- * puzzle trainer differed by 5 to 8% (a different puzzle each load) and
- * the dashboard by 0.01%; the other 22 were under 0.01% and inside a box
- * a few pixels wide (thumbnail edges). So a change that matters shows as
- * a box the size of the thing changed, anywhere but the trainer.
+ * Measured on 0.11.4: 28 of 202 pictures differed between two runs. The
+ * trainer differed by 4 to 9% and the hub by 0.6 to 1.2%, both because
+ * each load picks a different puzzle and draws its position; the hub is
+ * named here because the 0.8.5 reading this paragraph used to quote had
+ * only the trainer and the dashboard in it, and a 1.2% box nobody
+ * expects reads as a change. The other 14 pictures moved 244 pixels at
+ * most, scattered rather than filling their box (thumbnail edges). The
+ * phone's scrolled, revealed, keyboard and 320px states were identical.
+ * So a change that matters shows as a box the size of the thing
+ * changed, anywhere but the two puzzle picks.
  */
 import { chromium, type BrowserContext } from 'playwright';
 import sharp from 'sharp';
