@@ -1390,9 +1390,17 @@ drawn, and what one has to prove.
   (`npm run shots:grid`) walks a `phone-ios` state beside `phone`,
   with the override set, so a change that means to be iOS-only shows a
   diff in the `phone-ios` pictures and none in `phone` or `desktop`,
-  and a neutral change shows none anywhere. A glass surface owes two
-  more numbers. Frame time while scrolling under it, on the phone, Low
-  Power Mode off, from the on-device probe in the Settings debug card:
+  and a neutral change shows none anywhere. A state photographs only
+  what its `prepare` actually puts on the screen, which is easy to get
+  wrong and says nothing when it is wrong: the compact page header
+  comes back on a scroll UP, so the states that set scrollTop once
+  never had it in a picture at all, and the fix that gave its glass
+  circles their hairline back had to be proved by reading a computed
+  width instead (2026-09-22). `phone-ios-revealed` and its Android
+  twin scroll down and then back up, and are where a change to that
+  bar shows. A glass surface owes two more numbers. Frame time while
+  scrolling under it, on the phone, Low Power Mode off, from the
+  on-device probe in the Settings debug card:
   the bottom bar was made opaque in 2026-09 because a full-width 24px
   blur was re-blurred on every scrolled frame, and that is the reading
   a glass bar has to beat. And contrast: text over glass has no fixed
