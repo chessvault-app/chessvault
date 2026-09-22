@@ -65,8 +65,10 @@ export function SoundCard() {
           the label, which is where the Field's hint put it: in a row the
           label is on the other side of the card, and a percentage two
           hundred pixels from the control it belongs to is a figure with
-          no owner. */}
-      <SettingRow title={t('Volume')} control="wide" className={cn(!sound && 'opacity-50')}>
+          no owner. `full` since 2026-09-22, with the glass knobs: a
+          slider is the one control that wants the card's width, and two
+          of them in Settings drawn two ways was the drift. */}
+      <SettingRow title={t('Volume')} control="full" className={cn(!sound && 'opacity-50')}>
         <div className="flex w-full items-center gap-2">
           <Slider
             min={0}

@@ -275,14 +275,15 @@ export function AppearanceCard() {
               entirely rather than being drawn opaque at full cost. */}
           {ios && (
             <>
-              {/* `control="wide"` and the readout riding with the slider,
-                  both as the Volume row does it (sound-card.tsx): the
-                  compact slot is `shrink-0` with no width of its own, and
-                  a slider handed it collapses to nothing at all. */}
+              {/* `control="full"`, the slider's shape (setting-row.tsx):
+                  the words on top and the track at the row's whole width,
+                  which is how iOS draws Brightness and what gives the
+                  blurb the card back. The readout rides with the slider,
+                  as the Volume row does it. */}
               <SettingRow
                 title={t('Glass')}
-                blurb={t('How much shows through. Zero is solid.')}
-                control="wide"
+                blurb={t('How much of the page shows through. At zero, bars and menus are solid.')}
+                control="full"
               >
                 <div className="flex w-full items-center gap-2">
                   <Slider
@@ -302,8 +303,8 @@ export function AppearanceCard() {
 
               <SettingRow
                 title={t('Glass tint')}
-                blurb={t('How dark the glass is.')}
-                control="wide"
+                blurb={t('How dark the glass is. Each theme has its own range.')}
+                control="full"
               >
                 <div className="flex w-full items-center gap-2">
                   <Slider
