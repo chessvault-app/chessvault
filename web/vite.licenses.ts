@@ -532,7 +532,7 @@ function indexPage(
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Licences — Chess Vault</title>
+    <title>Licences · Chess Vault</title>
     <style>
       :root {
         color-scheme: light dark;
