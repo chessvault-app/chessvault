@@ -100,12 +100,19 @@ so far.
   the two curves opened out at each corner instead of holding at 3px.
   It now takes the track's radius less that 3px, and the Corners setting
   moves both together.
-- **Glass can be turned off.** Settings, under Appearance and More
-  options, has a Glass switch on an iPhone. Off, the bars, menus and
-  toasts that let the page show through are solid instead. iOS has
-  carried a control of its own for this since 26.1, and a browser is
-  told nothing about it, so the app needed one: a reader who had already
-  asked their phone to reduce transparency was getting glass anyway.
+- **The glass has two knobs, and the dark theme's is darker.** Settings,
+  under Appearance and More options, has Glass and Glass tint on an
+  iPhone: how much of the page shows through the bars, menus and
+  toasts, and how dark the glass itself is. Glass at zero makes them
+  solid. Every position on both is legible, because what was measured
+  is the range rather than one setting. The dark theme's glass starts
+  darker than it was, which is also what makes it easier to read over:
+  text on it went from 4.9 to 8.6 times the contrast of its own
+  surface, at the same transparency. iOS has carried a control of its
+  own for this since 26.1 and a slider since 27, and a browser is told
+  nothing about either, so the app needed its own: a reader who had
+  already asked their phone to reduce transparency was getting glass
+  anyway.
 - **Nothing glass is drawn on top of glass.** When a list scrolls up
   under a page's compact header, that header is itself glass, and every
   button standing on it was drawing glass again over the top of it. That

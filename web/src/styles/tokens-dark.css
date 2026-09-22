@@ -189,9 +189,33 @@
      the composited fill: check:contrast composites a glass surface over
      the DOM under it rather than over what is scrolled behind it, so
      this is the one number in the file that check cannot hold. */
-  --glass-tint: var(--surface-3);
-  --glass-fill: 72%;
-  --glass-fill-capsule: 70%;
+  /* The knob's own lightness in dark, and the one place this theme stops
+     following tokens.css: 15% at the lightest, 5% at the darkest, 10% in
+     the middle. The tint used to be `--surface-3`, a LIFT off the ground
+     at 33.1%, on the reasoning that a surface the colour of what is under
+     it is told from it by its hairline alone. Re-read as a grid on
+     2026-09-22 that turned out to be the expensive way round. At 33.1%
+     the ink cleared 4.5:1 by 0.41 (4.91), the tightest margin any token
+     here has, and the surface separated WORST of all the candidates over
+     a dark board square (1.08:1), which is one of the three backdrops it
+     is supposed to be sampled over. Darkening fixes both: at 10% the ink
+     reads 8.61:1 and the board square 1.41:1. What it costs is separation
+     from the app's own dark page, 1.33:1 down to 1.08, which the hairline
+     and the window ring carry.
+
+     The range deliberately skips 16%, where the composite matches
+     `--background` and the surface all but vanishes against a bare page
+     (1.03:1, measured). The contrast knob takes it to black, as every
+     other dark surface goes. */
+  --glass-l: calc(15% - 10% * var(--glass-d));
+  --glass-tint: oklch(calc(var(--glass-l) + (0% - var(--glass-l)) * var(--ui-contrast)) calc(0.019 * var(--ui-tint)) var(--ui-hue));
+  /* 82% to 62%, two points over the light theme's range at both ends, so
+     the middle lands on the 72% this theme was measured at rather than on
+     the light theme's 70%. The worst corner is 15% tint at 62% fill, which
+     is strictly better than the grid's measured 16% at 60% (4.90:1), since
+     the reading rises both as the tint darkens and as the fill climbs. */
+  --glass-fill: calc(82% - 20% * var(--glass-k));
+  --glass-fill-capsule: calc(80% - 20% * var(--glass-k));
   --switch-on: oklch(70% 0.19 145);
   /* 41.1%, not 42.5%: the stronger stroke keeps its step over --border,
      which moved with the ladder. 1.97:1 on the card, where it was

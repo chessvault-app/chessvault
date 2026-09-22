@@ -262,7 +262,26 @@
      THAT ink clears 4.5:1 over black in light and over white in dark
      (shell/mobile-nav has the numbers). 12px is half the 24px blur that
      cost the docked bar its frames in 2026-09. */
-  --glass-fill: 70%;
+  /* The two knobs Settings > Appearance turns (store/prefs.ts writes them
+     on the root), 0 to 1. `--glass-k` is how much of the page shows
+     through, 0 being the least and 1 the most; `--glass-d` is how far the
+     tint sits from white, 0 the lightest and 1 the darkest. Both default
+     to the middle, which is the value the app carried before they existed,
+     so a vault that has never touched them is drawn exactly as it was.
+
+     The two INTERACT, which is why the ranges below are not chosen
+     independently: the floor is foreground ink over the surface with the
+     worst backdrop scrolled behind it, and a lighter tint AND a lower fill
+     each lower it. Measured as a grid rather than two sweeps (2026-09-22),
+     the safe region is a staircase, and each theme's two ranges are a
+     rectangle inside its own. Every position on both knobs therefore
+     clears 4.5:1, and the worst CORNER is the number to re-read if either
+     range moves: 90% tint at 60% fill here, measured 5.36:1. */
+  --glass-k: 0.5;
+  --glass-d: 0.5;
+  /* 80% at the least glass, 60% at the most; 70% in the middle, which is
+     what this theme carried before the knob. */
+  --glass-fill: calc(80% - 20% * var(--glass-k));
   /* What the fill is a fill OF. It was the card's own colour, and a
      glass surface the colour of the ground under it is told from that
      ground by its hairline alone: a white circle over white cards in
@@ -276,14 +295,20 @@
      it: foreground ink at 70% reads 8.21:1 over black (9.39 on white
      glass), and the capsule's active icon at 55% reads 3.86:1 (4.33).
      Under the contrast knob it goes back to the card's white. */
-  --glass-tint: oklch(calc(95% + (100% - 95%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
+  /* The knob's own lightness: white at 0, 90% at 1, and 95% in the middle,
+     which is the grey that was chosen from mockups over the demo. It stops
+     at 90% rather than going further: 88% was tried and read as dirty
+     beside white cards (lanph3re, 2026-09-20), so the knob does not reach
+     what was already rejected by eye. */
+  --glass-l: calc(100% - 10% * var(--glass-d));
+  --glass-tint: oklch(calc(var(--glass-l) + (100% - var(--glass-l)) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
   /* The capsule's fill (shell/mobile-nav): icons only, held to 3:1. In
      light 55% is where the active icon on its 12% wash of ink still
      clears 3:1 over black content; dark needs 70% for the same icon
      over WHITE content, where the wash of white ink lightens its own
      ground and the lifted tint darkens it less (tokens-dark.css has
      the readings). */
-  --glass-fill-capsule: 55%;
+  --glass-fill-capsule: calc(65% - 20% * var(--glass-k));
   /* The iOS switch's on colour (components/ui/switch): the platform's
      own green, drawn only under the ios: variant. Not the app's `good`,
      which is an outcome, not a state. */

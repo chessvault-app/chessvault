@@ -1377,18 +1377,22 @@ drawn, and what one has to prove.
   unknown feature as false, and the grant form left the phone opaque),
   and only on a phone — `max-md:ios:`, not `ios:`, which reaches an iPad
   too and drew a glass menu over a desktop page with nothing else glassy
-  on it (measured at 834px, 2026-09-22); and, fourth, only while the
-  reader has left it on. Settings > Appearance carries a Glass switch,
-  under More options beside Corners, and it is the only one of the four
-  a reader can reach: `prefers-reduced-transparency` is what would
-  otherwise speak for them and Safari does not answer it, so on the one
-  platform that draws glass the accessibility setting they have already
-  turned on reaches nothing (`lib/platform.ts`; iOS has carried a
-  control of its own since 26.1 and a slider since 27, and no media
-  query reports either). A switch and not a slider, because the fill
-  and the blur are placed against 4.5:1 and 3:1 and a slider would hand
-  out fills nobody has read a contrast for. Under any of the four it
-  falls back to the opaque card. Two things beyond the fill belong to the
+  on it (measured at 834px, 2026-09-22); and, fourth, only as far as the
+  reader has left it. Settings > Appearance carries two knobs, Glass and
+  Glass tint, under More options beside Corners, and they are the only
+  one of the four a reader can reach: `prefers-reduced-transparency` is
+  what would otherwise speak for them and Safari does not answer it, so
+  on the one platform that draws glass the accessibility setting they
+  have already turned on reaches nothing (iOS has carried a control of
+  its own since 26.1 and a slider since 27, and no media query reports
+  either). Glass at its bottom stop is the off position, and it takes
+  the material AWAY rather than drawing it opaque: a surface that looks
+  solid and still runs a backdrop filter costs the phone the frame it
+  always did and shows nothing for it. The two were one switch for a
+  day, and a knob was refused on the grounds that it would hand out
+  fills nobody had read a contrast for. That is answerable, and the
+  answer is that the RANGE is what gets measured, not a value. Under any
+  of the four it falls back to the opaque card. Two things beyond the fill belong to the
   utility rather than to its callers. The focus ring: the glass
   box-shadow outranks `focus-visible:ring-3`, so a keyboard-focused
   glass surface changed zero pixels until the utility drew the ring
@@ -1397,16 +1401,34 @@ drawn, and what one has to prove.
   edge width, which a full-bleed surface sets to zero: it is registered
   with `@property ... inherits: false`, because set on the compact header
   it reached the glass circles standing on that header and they drew no
-  hairline at all. The alpha and the blur radius are the two
-  numbers a glass surface has, and both are set by measurement (below),
-  not by eye: 70% where the surface carries text (4.5:1) and 55% on the
-  capsule, which carries icons (3:1), 70% in dark. The tint is a step
-  AWAY from the ground (`--glass-tint`: 95% grey in light, the third
-  surface rung in dark), since glass the colour of the card under it
-  was told from that card by its hairline alone; a greyer tint moves
-  toward the contrast worst case in both themes, so changing it means
-  re-reading both fills (`tokens.css` and `tokens-dark.css` carry the
-  readings). Apple publishes no ratio; Liquid
+  hairline at all. The alpha, the tint and the blur radius are the
+  numbers a glass surface has, and none is set by eye. The blur is a
+  single number, 12px. The other two are RANGES, one knob each, and what
+  gets measured is the range: they INTERACT, since a lighter tint and a
+  lower fill each lower the same floor, so the safe region is read as a
+  grid rather than as two sweeps and each theme's pair of ranges is a
+  rectangle inside its own (2026-09-22). Light runs the fill 80% to 60%
+  and the tint white to 90%, worst corner 5.36:1; dark runs 82% to 62%
+  and 15% to 5%, worst corner better than the grid's 16%-at-60% reading
+  of 4.90:1. Every position on both clears 4.5:1 where the surface
+  carries text and 3:1 on the capsule, which carries icons. The middles
+  are what the app drew before the knobs existed, with one exception.
+
+  The dark TINT moved, because the lift was the expensive way round. It
+  used to be `--surface-3`, a step AWAY from the ground at 33.1%, on the
+  reasoning that a surface the colour of what is under it is told from
+  it by its hairline alone. Read back as a grid, that tint cleared
+  4.5:1 by 0.41 (4.91), the tightest margin any token in this app has,
+  and it separated WORST of every candidate over a dark board square
+  (1.08:1), which is one of the three backdrops this surface is supposed
+  to be sampled over. At 10% the ink reads 8.61:1 and the board square
+  1.41:1. What it costs is separation from the app's own dark page,
+  1.33:1 down to 1.08, which the hairline and the window ring carry, and
+  the range skips 16% entirely, where the composite matches
+  `--background` and the surface all but vanishes against a bare page
+  (1.03:1). Light keeps its step away from white, for the reason the
+  lift was invented: there the ground is white and glass can only step
+  down (`tokens.css` and `tokens-dark.css` carry every reading). Apple publishes no ratio; Liquid
   Glass is a dynamic material, and these are this app's numbers. The
   saturate does less than its name suggests and is not recolouring
   anything: read through the bar on the demo, every ink's hue moved

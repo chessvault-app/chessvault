@@ -387,6 +387,10 @@ interface PrefsState {
   scheme: Scheme;
   radius: RadiusId;
   density: Density;
+  /** How much of the page the glass surfaces let through; 0 turns them opaque. */
+  glass: number;
+  /** How far the glass tint sits from white: 0 lightest, 1 darkest. */
+  glassTint: number;
   setBoardTheme: (t: BoardTheme) => void;
   setPieces: (p: PieceSet) => void;
   setSound: (on: boolean) => void;
@@ -396,6 +400,8 @@ interface PrefsState {
   setSchemeId: (id: string) => void;
   setRadius: (id: RadiusId) => void;
   setDensity: (id: Density) => void;
+  setGlass: (v: number) => void;
+  setGlassTint: (v: number) => void;
   setCastleStyle: (style: CastleStyle) => void;
   setCoordinates: (on: boolean) => void;
   setMoveBox: (on: boolean) => void;
@@ -436,6 +442,26 @@ const applyDensity = (id: Density): void => {
   const el = document.documentElement;
   if (id === 'compact') el.dataset.density = 'compact';
   else delete el.dataset.density;
+};
+
+/**
+ * The two glass knobs, written on the root where the tokens read them
+ * (styles/tokens.css, `--glass-k` and `--glass-d`).
+ *
+ * Zero glass takes the material AWAY rather than drawing it at full
+ * opacity: a surface that looks opaque but still runs a backdrop-filter
+ * costs the phone the frame it always did and shows nothing for it, and
+ * `data-glass="off"` is the gate the utility already carries
+ * (styles/utilities.css). It is also what the on-device frame probe reads,
+ * so the A/B that card used to do is now the knob at its bottom stop.
+ */
+const applyGlass = (glass: number, glassTint: number): void => {
+  const clamp = (v: number): number => Math.min(1, Math.max(0, v));
+  const el = document.documentElement;
+  if (clamp(glass) <= 0) el.dataset.glass = 'off';
+  else delete el.dataset.glass;
+  el.style.setProperty('--glass-k', String(clamp(glass)));
+  el.style.setProperty('--glass-d', String(clamp(glassTint)));
 };
 
 /**
@@ -523,6 +549,10 @@ export const usePrefs = create<PrefsState>()(
       scheme: SCHEME_PRESETS[0]!.scheme,
       radius: 'default',
       density: 'comfortable',
+      // The middle of both knobs is what the app drew before they
+      // existed, so an untouched vault is unchanged (styles/tokens.css).
+      glass: 0.5,
+      glassTint: 0.5,
       setBoardTheme: (boardTheme) => {
         apply(boardTheme, get().pieces);
         set({ boardTheme });
@@ -560,6 +590,14 @@ export const usePrefs = create<PrefsState>()(
         applyDensity(density);
         set({ density });
       },
+      setGlass: (glass) => {
+        applyGlass(glass, get().glassTint);
+        set({ glass: Math.min(1, Math.max(0, glass)) });
+      },
+      setGlassTint: (glassTint) => {
+        applyGlass(get().glass, glassTint);
+        set({ glassTint: Math.min(1, Math.max(0, glassTint)) });
+      },
     }),
     {
       name: 'chess-vault:prefs',
@@ -579,6 +617,7 @@ export const usePrefs = create<PrefsState>()(
         applyScheme(schemeToWear(state.schemeId, scheme, state.boardTheme));
         applyRadius(state.radius ?? 'default');
         applyDensity(state.density ?? 'comfortable');
+        applyGlass(state.glass ?? 0.5, state.glassTint ?? 0.5);
       },
     },
   ),
@@ -586,7 +625,7 @@ export const usePrefs = create<PrefsState>()(
 
 /** Applied before React mounts so the board never flashes the default skin. */
 export function initPrefs(): void {
-  const { boardTheme, pieces, schemeId, scheme, radius, density } = usePrefs.getState();
+  const { boardTheme, pieces, schemeId, scheme, radius, density, glass, glassTint } = usePrefs.getState();
   apply(boardTheme, pieces);
   applyScheme(schemeToWear(schemeId, scheme, boardTheme));
   // The OS setting can change mid-session; the default scheme follows it.
@@ -596,4 +635,5 @@ export function initPrefs(): void {
   });
   applyRadius(radius);
   applyDensity(density);
+  applyGlass(glass, glassTint);
 }

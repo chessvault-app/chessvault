@@ -1256,8 +1256,11 @@ export const ko: Record<string, string> = {
   'More options': '옵션 더 보기',
   Corners: '모서리',
   Glass: '유리',
-  'Bars and menus let the page show through them. Off, they are solid.':
-    '바와 메뉴 너머로 페이지가 비칩니다. 끄면 불투명해집니다.',
+  'How much of the page shows through bars and menus. At zero they are solid.':
+    '바와 메뉴 너머로 페이지가 얼마나 비칠지 정합니다. 0에서는 불투명해집니다.',
+  'Glass tint': '유리 명도',
+  'How dark the glass itself is. It has its own range in each theme.':
+    '유리 자체가 얼마나 어두운지 정합니다. 테마마다 범위가 따로 있습니다.',
   Default: '기본',
   Square: '각진',
   'Move the king two squares (g1)': '킹을 두 칸 옮기기 (g1)',

@@ -9,7 +9,8 @@ import { Switch } from '@/components/ui/switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { ANNOTATION_SIZES, BOARD_THEMES, CASTLE_STYLES, DENSITIES, PIECE_SETS, RADIUS_PRESETS, SCHEME_PRESETS, boardScheme, usePrefs, type AnnotationSize, type BoardTheme, type CastleStyle, type Density, type PieceSet, type RadiusId } from '@/store/prefs';
 import { PIECE_THUMBS } from '@/pieces/thumbs';
-import { chooseGlass, currentPlatform, glassOn } from '@/lib/platform';
+import { currentPlatform } from '@/lib/platform';
+import { Slider } from '@/components/ui/slider';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
 
 // --- Appearance --------------------------------------------------------------
@@ -56,10 +57,9 @@ export function AppearanceCard() {
   // Only where the material is drawn: the `ios:` variants, which is an
   // iPhone and an iPad narrow enough to be under md (styles/utilities.css).
   const ios = currentPlatform() === 'ios';
-  const [glass, setGlass] = useState(glassOn);
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
-  const { boardTheme, pieces, schemeId, radius, density, castleStyle, coordinates, moveBox, reviewOffer, annotationSize, setBoardTheme, setPieces, setSchemeId, setRadius, setDensity, setCastleStyle, setCoordinates, setMoveBox, setReviewOffer, setAnnotationSize } =
+  const { boardTheme, pieces, schemeId, radius, density, castleStyle, coordinates, moveBox, reviewOffer, annotationSize, glass, glassTint, setBoardTheme, setPieces, setSchemeId, setRadius, setDensity, setCastleStyle, setCoordinates, setMoveBox, setReviewOffer, setAnnotationSize, setGlass, setGlassTint } =
     usePrefs();
 
   return (
@@ -251,35 +251,60 @@ export function AppearanceCard() {
             />
           </SettingRow>
 
-          {/* Beside Corners, the other knob that redraws the whole shell.
-              It stands in for a system setting the browser cannot see:
-              the glass takes itself away under
+          {/* Beside Corners, the other two knobs that redraw the whole
+              shell. They stand in for a system setting the browser cannot
+              see: the glass takes itself away under
               `prefers-reduced-transparency`, and Safari does not answer
               that query (lib/platform.ts), so on the one platform that
               draws glass the reader's own accessibility setting reached
-              nothing and there was no control here either. iOS has had
-              one of its own since 26.1.
+              nothing. iOS has had a control of its own since 26.1 and a
+              slider since 27.
 
-              A switch and not a slider, which is what iOS 27 moved to:
-              the fill and the blur are placed by measurement against
-              4.5:1 and 3:1 ("Platform-specific design",
-              docs/design-principles.md), and a slider would hand the
-              reader fills nobody has read a contrast for. Off is the
-              opaque card, the same place reduced transparency lands. */}
+              These were one switch for a day. A knob was refused then on
+              the grounds that it would hand out fills nobody had read a
+              contrast for, which is answerable and was answered: the
+              RANGE is what gets measured, not a value. The two interact,
+              so the safe region was read as a grid rather than two sweeps
+              and each theme's pair of ranges is a rectangle inside its
+              own, worst corner and all (styles/tokens.css carries the
+              numbers). Every position on both clears 4.5:1, and the
+              middle of both is what the app drew before they existed.
+
+              Zero glass is the bottom stop of the first knob rather than a
+              switch beside it: one control, and the material goes away
+              entirely rather than being drawn opaque at full cost. */}
           {ios && (
-            <SettingRow
-              title={t('Glass')}
-              blurb={t('Bars and menus let the page show through them. Off, they are solid.')}
-            >
-              <Switch
-                checked={glass}
-                onCheckedChange={() => {
-                  setGlass(!glass);
-                  chooseGlass(!glass);
-                }}
-                aria-label={t('Glass')}
-              />
-            </SettingRow>
+            <>
+              <SettingRow
+                title={t('Glass')}
+                blurb={t('How much of the page shows through bars and menus. At zero they are solid.')}
+              >
+                <Slider
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={Math.round(glass * 100)}
+                  onValueChange={(v) => setGlass((v as number) / 100)}
+                  aria-label={t('Glass')}
+                  className="min-w-0 flex-1"
+                />
+              </SettingRow>
+
+              <SettingRow
+                title={t('Glass tint')}
+                blurb={t('How dark the glass itself is. It has its own range in each theme.')}
+              >
+                <Slider
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={Math.round(glassTint * 100)}
+                  onValueChange={(v) => setGlassTint((v as number) / 100)}
+                  aria-label={t('Glass tint')}
+                  className="min-w-0 flex-1"
+                />
+              </SettingRow>
+            </>
           )}
 
           {/* Appearance rather than Documents: it changes how one panel is

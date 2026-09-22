@@ -44,9 +44,11 @@ export function LagCard() {
     else localStorage.setItem('lag', value);
   };
   // The glass A/B this card used to carry is Settings > Appearance now
-  // (appearance-card.tsx): it writes the same key, it is in every build
-  // rather than a CHESS_LAG one, and the frame probe reaches it the same
-  // way. A debug copy beside it would be a second control for one value.
+  // (appearance-card.tsx), as two knobs rather than a Select. The frame
+  // probe reaches it the same way, since the Glass knob at its bottom
+  // stop still writes `data-glass="off"` on the root, and it is in every
+  // build rather than a CHESS_LAG one. A debug copy beside it would be a
+  // second control for one value.
   return (
     <Card icon={Hourglass} title={t('Artificial latency')}>
       <SettingRow

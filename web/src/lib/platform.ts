@@ -70,58 +70,14 @@ export function startPlatform(): Platform {
 }
 
 /**
- * Whether this device draws the glass surfaces (utilities.css, `glass`):
- * `chess-vault:glass` = "off" puts data-glass="off" on the root and every
- * one of them falls back to its opaque fill.
- *
- * Settings > Appearance owns it, and `main.tsx` applies it at launch so
- * the choice is on the root before the first paint. It began as the
- * on-device A/B for the frame probe, written from a debug card that only
- * a CHESS_LAG build carried, which meant that in a real build there was
- * no way to turn glass off at all. There should have been one:
- * `prefers-reduced-transparency` is the media query the glass takes
- * itself away under, and Safari does not answer it (measured on
- * lanph3re's phone, 2026-09-18), so on the one platform that draws glass
- * the reader's own accessibility setting reaches nothing.
+ * The glass surfaces live on `data-glass` and two custom properties, all
+ * three written by `store/prefs.ts` from Settings > Appearance, because
+ * they are per-device display preferences like every other knob on that
+ * card. This file used to own a `chess-vault:glass` kill switch for the
+ * on-device frame probe, added because a home-screen app has no console to
+ * type a key into; the Glass knob at its bottom stop does the same thing,
+ * in every build rather than only a CHESS_LAG one.
  */
-export const GLASS_OVERRIDE_KEY = 'chess-vault:glass';
-
-export function applyGlassOverride(off?: boolean): void {
-  let value = off;
-  if (value === undefined) {
-    try {
-      value = localStorage.getItem(GLASS_OVERRIDE_KEY) === 'off';
-    } catch {
-      value = false;
-    }
-  }
-  if (value) document.documentElement.dataset.glass = 'off';
-  else delete document.documentElement.dataset.glass;
-}
-
-/** What the control shows. Absent means on, so a new device draws glass. */
-export function glassOn(): boolean {
-  try {
-    return localStorage.getItem(GLASS_OVERRIDE_KEY) !== 'off';
-  } catch {
-    return true;
-  }
-}
-
-/**
- * Store the choice and apply it, in that order, so a reload agrees with
- * the screen. A container with no storage keeps the choice for this page
- * and forgets it, which is what every other per-device preference does.
- */
-export function chooseGlass(on: boolean): void {
-  try {
-    if (on) localStorage.removeItem(GLASS_OVERRIDE_KEY);
-    else localStorage.setItem(GLASS_OVERRIDE_KEY, 'off');
-  } catch {
-    // No storage in this container; the line below still takes effect.
-  }
-  applyGlassOverride(!on);
-}
 
 /**
  * The desktop shell's window material, as one attribute on the root.
