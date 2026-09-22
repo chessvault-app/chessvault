@@ -4,27 +4,29 @@
     <meta charset="utf-8" />
     <title>Chess Vault</title>
     <style>
-      /* Mirrors the app's dark theme tokens (web/src/index.css .dark) so the
-         chooser reads as page one of the same product. Those tokens are
+      /* Mirrors the app's dark theme tokens (web/src/styles/tokens-dark.css),
+         under the names the app gives them, so the chooser reads as page
+         one of the same product. Those tokens are
          written as three numbers — a neutral hue, an accent hue and how far
          each leans — with a contrast knob on top; this window runs before
          any vault or settings exist, so it can only be the DEFAULT scheme,
          resolved by hand. That default is shadcn's neutral (prefs.ts,
          SCHEME_PRESETS[0]): both tints are 0, so every chroma multiplies
-         away and the whole window is grey — --destructive excepted, being semantic
-         and off the tint knobs. Do NOT resolve these from what index.css
-         :root declares; those fallbacks are tint 1, which is the Blue
-         preset, not what the app boots as. Re-resolve when either moves. */
+         away and the whole window is grey — --destructive excepted, being
+         semantic and off the tint knobs. Do NOT resolve these from what
+         tokens.css :root declares; those fallbacks are tint 1, which is the
+         Blue preset, not what the app boots as. Re-resolve when either
+         moves; last resolved against the dark ladder of 2026-09-22. */
       :root {
         color-scheme: dark;
-        --background: oklch(14.5% 0 0);
-        --card: oklch(20.5% 0 0);
-        --muted: oklch(26.9% 0 0);
-        --surface-inset: oklch(23% 0 0);
-        --border: oklch(29% 0 0);
-        --border-strong: oklch(40% 0 0);
+        --background: oklch(18.25% 0 0);
+        --card: oklch(22.25% 0 0);
+        --muted: oklch(28.2% 0 0);
+        --surface-inset: oklch(24.5% 0 0);
+        --border: oklch(30.4% 0 0);
+        --border-strong: oklch(41.1% 0 0);
         --foreground: oklch(98.5% 0 0);
-        --muted-foreground: oklch(68% 0 0);
+        --muted-foreground: oklch(77% 0 0);
         --primary: oklch(92.2% 0 0);
         --primary-foreground: oklch(20.5% 0 0);
         --destructive: oklch(70.4% 0.191 22.2);
