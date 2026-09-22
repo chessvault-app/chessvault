@@ -14,7 +14,7 @@ import {
   X,
   Search,
 } from 'lucide-react';
-import { useEffect, useEffectEvent, useState, useRef } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useState, useRef } from 'react';
 import { BrandMark, Wordmark } from '@/components/brand-mark';
 import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
@@ -44,6 +44,8 @@ import {
   ACTIVITY_WEEKS,
   activityGrid,
   activityStep,
+  weeksForWidth,
+  type ActivityAttempt,
   type ActivityGrid,
 } from './activity';
 import { CustomiseDialog } from './CustomiseDialog';
@@ -669,21 +671,57 @@ function RecentGamesCard({
  * could become one: the grid is given a tally per day and never asked
  * where any of it sat on a scale.
  *
- * ONE drawing, not two. The frame is fixed - twenty-six columns of seven,
- * whatever the vault holds - so the wait is this same component with
- * `grid` null, and there is no second copy of the geometry to drift from
- * this one. A null grid takes its frame from `activityGrid([])`, the
- * page's own function, and draws the empty tone with no tooltips and a
+ * ONE drawing, not two. The frame is fixed for a given width - n columns
+ * of seven, whatever the vault holds - so the wait is this same component
+ * with `attempts` null, and there is no second copy of the geometry to
+ * drift from this one. A null tail takes its frame from `activityGrid([])`,
+ * the page's own function, and draws the empty tone with no tooltips and a
  * bar where the sentence lands.
+ *
+ * The COLUMN COUNT is this card's own, not the page's, which is why the
+ * card is handed the attempt tail rather than a finished grid: the phone
+ * copy and the desktop copy are the same tail at two widths, and a grid
+ * computed once upstream would have to be computed at one of them. The
+ * width is measured rather than guessed from a breakpoint because the
+ * dashboard is one column under `lg` and two above it, so the same
+ * breakpoint gives this card 648px or 480px depending on which.
  *
  * An empty vault gets the empty grid and a plain sentence, which is the
  * one honest thing to draw: a chart of noughts would be a claim about
  * nothing.
  */
-function ActivityCard({ grid, className }: { grid: ActivityGrid | null; className?: string }) {
+function ActivityCard({
+  attempts,
+  className,
+}: {
+  attempts: readonly ActivityAttempt[] | null;
+  className?: string;
+}) {
+  const [weeks, setWeeks] = useState(ACTIVITY_WEEKS);
+  const room = useRef<HTMLDivElement>(null);
+  // The room the squares have, measured. Layout, not passive: the count
+  // decides how wide the grid is, and a width settled a task later is a
+  // width the page paints once and then changes (see the note on the
+  // reserved dashboard above - this page is centred, so anything that
+  // resizes after paint moves everything).
+  useLayoutEffect(() => {
+    const box = room.current;
+    if (!box) return;
+    const read = () => {
+      setWeeks(weeksForWidth(box.clientWidth));
+    };
+    read();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(read);
+    ro.observe(box);
+    return () => {
+      ro.disconnect();
+    };
+  }, []);
   // The frame while the answer is in the air is the frame it will land
   // in, drawn by the page's own arithmetic over no attempts at all.
-  const frame = grid ?? activityGrid([], new Date());
+  const grid = attempts === null ? null : activityGrid(attempts, new Date(), weeks);
+  const frame = grid ?? activityGrid([], new Date(), weeks);
   const day = new Intl.DateTimeFormat(locale(), { dateStyle: 'medium' });
   return (
     <div
@@ -694,11 +732,12 @@ function ActivityCard({ grid, className }: { grid: ActivityGrid | null; classNam
     >
       <PanelHead title={t('Activity')} />
       <div className="px-3 py-3">
-        {/* Twenty-six weeks is 310px, which fits the narrower of the two
-            dashboard columns; a phone is narrower than that and scrolls
-            the half year sideways rather than dropping weeks, so the two
-            widths show the same period and the same squares. */}
-        <div className="overflow-x-auto">
+        {/* The scroller is what gets measured: its width is the room the
+            squares have whatever they add up to, where the grid's own
+            width is just the columns already drawn. A panel with room
+            for fewer than the half year keeps all of it and scrolls
+            sideways rather than dropping weeks. */}
+        <div ref={room} className="overflow-x-auto">
           <div
             role={grid === null ? undefined : 'img'}
             aria-hidden={grid === null || undefined}
@@ -711,12 +750,12 @@ function ActivityCard({ grid, className }: { grid: ActivityGrid | null; classNam
                 ? undefined
                 : grid.total > 0
                   ? t('Puzzles solved each day over the last {w} weeks: {n} on {d} days.', {
-                      w: ACTIVITY_WEEKS,
+                      w: weeks,
                       n: grid.total,
                       d: grid.days,
                     })
                   : t('Puzzles solved each day over the last {w} weeks: none yet.', {
-                      w: ACTIVITY_WEEKS,
+                      w: weeks,
                     })
             }
             className={cn('flex w-max', ACTIVITY_GAP)}
@@ -1152,14 +1191,18 @@ export function HomePage() {
         ];
 
   /**
-   * The activity grid: null while the answer is in the air, and `false`
-   * when the history route answered with a failure while the rest of the
-   * page answered. The card is drawn not at all in that case, because an
-   * empty grid there would say this vault has trained nothing, which is
-   * the one thing it is not allowed to say without having been told.
+   * The tail the activity grid is drawn from: null while the answer is in
+   * the air, and `false` when the history route answered with a failure
+   * while the rest of the page answered. The card is drawn not at all in
+   * that case, because an empty grid there would say this vault has
+   * trained nothing, which is the one thing it is not allowed to say
+   * without having been told.
+   *
+   * The tail and not a grid, because the two copies of the card below sit
+   * at two different widths and each counts its own columns.
    */
-  const activity: ActivityGrid | null | false =
-    data === null ? null : data.history === null ? false : activityGrid(data.history, new Date());
+  const activity: Attempt[] | null | false =
+    data === null ? null : data.history === null ? false : data.history;
 
   /** The study the board draws, when there is a position to draw. Hoisted
       so the JSX below is not re-narrowing `data` inside a branch that
@@ -1624,7 +1667,7 @@ export function HomePage() {
             the answer, so the card itself holds its own place and there
             is nothing to reserve. */}
         {show('activity') && outage === null && activity !== false && (
-          <ActivityCard grid={activity} className="mb-4 md:hidden" />
+          <ActivityCard attempts={activity} className="mb-4 md:hidden" />
         )}
 
         {/* The checklist's place while the answer is in the air. Three
@@ -1871,7 +1914,7 @@ export function HomePage() {
                 holds, so the card knows its own size before the answer
                 and the first launch on a device holds the place as well
                 as the hundredth. */}
-            {show('activity') && activity !== false && <ActivityCard grid={activity} />}
+            {show('activity') && activity !== false && <ActivityCard attempts={activity} />}
             {show('games') && reservedDash !== null && reservedDash.games > 0 && (
               <PlaceholderPanel title={t('Recent games')} rows={reservedDash.games} icon={false} tally />
             )}
@@ -1950,7 +1993,7 @@ export function HomePage() {
             {/* Second, so it lands beside Training in the two-column
                 grid: the two answer the same question a week apart, one
                 as a schedule and one as a habit. */}
-            {show('activity') && activity !== false && <ActivityCard grid={activity} />}
+            {show('activity') && activity !== false && <ActivityCard attempts={activity} />}
 
             {show('games') && dash.recentGames.length > 0 && (
               <RecentGamesCard games={dash.recentGames} total={dash.gamesTotal} />

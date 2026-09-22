@@ -1,11 +1,12 @@
 /**
- * Home's activity grid: half a year of training, as squares.
+ * Home's activity grid: at least half a year of training, as squares.
  *
  * The arithmetic and the geometry both, and no React in either, for the
  * reason `layout.ts` gives next door: vitest runs over `.ts` in a node
  * environment, so the only way this can be tested is to keep the picture
  * out of it. `HomePage.tsx` draws it; this file decides what there is to
- * draw and how wide a square is.
+ * draw, how wide a square is, and how many weeks a panel this wide has
+ * room for.
  *
  * What it counts is what the vault already records: clean, counted solves
  * out of `puzzles/history.jsonl`, by the same rule `puzzles/today.ts`
@@ -15,11 +16,60 @@
  * the grid is a count per day and nothing else.
  */
 
-/** Week columns. Twenty-six is half a year, which is the shortest window
-    where a habit is visible rather than a fortnight's mood, and at the
-    square size below it is 310px wide - inside the narrower of home's two
-    dashboard columns, so a desktop never scrolls it. */
+/**
+ * The FEWEST week columns any panel draws. Twenty-six is half a year,
+ * which is the shortest window where a habit is visible rather than a
+ * fortnight's mood, and at the square size below it is 310px wide - the
+ * width a 390px phone has room for.
+ *
+ * It is a floor and not the number, because 310px is not the width this
+ * card gets. The desktop dashboard is one column under `lg` and two
+ * above it, and the card's own room measured 648, 480 and 482px at
+ * viewport widths of 900, 1280 and 1600 - so a fixed half year left 338,
+ * 170 and 172px of blank card beside it, and the picture stopped in the
+ * middle of its own panel. `weeksForWidth` spends that room on more
+ * weeks rather than on nothing.
+ */
 export const ACTIVITY_WEEKS = 26;
+
+/**
+ * The MOST, whatever the room.
+ *
+ * A year is where this picture stops being about a habit and starts
+ * being an archive, and `ACTIVITY_LIMIT` attempts is the tail the route
+ * hands back anyway: past a year most columns would be drawn hollow,
+ * which is a wide picture of what this page does not know.
+ */
+export const ACTIVITY_MAX_WEEKS = 52;
+
+/**
+ * One column's width: the square plus the gutter, which is what
+ * `ACTIVITY_CELL` and `ACTIVITY_GAP` below spell in Tailwind's units
+ * (10px and 2px). Stated as a number here because the arithmetic that
+ * decides how many columns fit cannot read a class name.
+ */
+export const ACTIVITY_PITCH = 12;
+
+/**
+ * How many weeks a panel this wide draws.
+ *
+ * The last column carries no gutter after it, so n columns need
+ * `n * PITCH - 2` pixels; turned around, that is `(px + 2) / PITCH`.
+ *
+ * Between the floor and the cap, and the floor is what keeps this honest
+ * about the rule it replaces. That rule was "the same period at every
+ * width", and its point was that a phone must not be handed a shorter
+ * memory than the desktop beside it - which the floor keeps, since no
+ * width shows less than the half year. What changes is only that a
+ * wider panel may show MORE, instead of leaving the difference blank.
+ * A panel narrower than the floor keeps all twenty-six and scrolls
+ * sideways, exactly as it did.
+ */
+export function weeksForWidth(px: number): number {
+  if (!Number.isFinite(px) || px <= 0) return ACTIVITY_WEEKS;
+  const fits = Math.floor((px + 2) / ACTIVITY_PITCH);
+  return Math.min(ACTIVITY_MAX_WEEKS, Math.max(ACTIVITY_WEEKS, fits));
+}
 
 /**
  * How many attempts are asked for.
@@ -169,9 +219,14 @@ export function activityGrid(
 /**
  * The square, stated once.
  *
- * Ten pixels with a two-pixel gutter, which is the size at which
- * twenty-six weeks fit the narrower dashboard column without scrolling
- * and a day is still a thing the eye can land on. It lives here because
+ * Ten pixels with a two-pixel gutter, which is the size at which the
+ * half year fits a 390px phone without scrolling and a day is still a
+ * thing the eye can land on. The size is fixed and the COLUMN COUNT
+ * flexes (`weeksForWidth`), not the other way round: a wider panel
+ * filled by growing the square would draw the same six months as a wall
+ * of 25px blocks, and a square's size is not supposed to mean anything.
+ * `ACTIVITY_PITCH` above is these two numbers added up. It lives here
+ * because
  * the grid is drawn twice - once as itself and once while the answer is
  * in the air - and a placeholder that measured its own square would be
  * the drift `check:skeletons` exists to catch. Nothing else reads it.

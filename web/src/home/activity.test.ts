@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   ACTIVITY_LIMIT,
+  ACTIVITY_MAX_WEEKS,
+  ACTIVITY_PITCH,
   ACTIVITY_WEEKS,
   activityGrid,
   activityStep,
   dayKey,
+  weeksForWidth,
   type ActivityAttempt,
 } from './activity';
 
@@ -105,5 +108,47 @@ describe('activityStep', () => {
     expect([0, 1, 2, 3, 5, 6, 10, 11, 400].map(activityStep)).toEqual([
       0, 1, 1, 2, 2, 3, 3, 4, 4,
     ]);
+  });
+});
+
+describe('weeksForWidth', () => {
+  it('fills the room it is given, a column at a time', () => {
+    // n columns need n * PITCH - 2: the last one carries no gutter.
+    const room = (n: number) => n * ACTIVITY_PITCH - 2;
+    expect(weeksForWidth(room(30))).toBe(30);
+    expect(weeksForWidth(room(40))).toBe(40);
+    // One pixel short of the next column is still the current one, and
+    // the pixel that completes it takes it.
+    expect(weeksForWidth(room(40) + ACTIVITY_PITCH - 1)).toBe(40);
+    expect(weeksForWidth(room(41))).toBe(41);
+  });
+
+  it('never draws less than the half year, whatever the room', () => {
+    // The card's own measured widths, which are what this replaces a
+    // fixed 26 for: 648px at a 900px viewport, 480 at 1280, 482 at 1600.
+    // 648 has room for 54, which the cap below takes back to a year.
+    expect(weeksForWidth(648)).toBe(ACTIVITY_MAX_WEEKS);
+    expect(weeksForWidth(480)).toBe(40);
+    expect(weeksForWidth(482)).toBe(40);
+    // A 390px phone has 334px of room, which is the half year and a
+    // couple of columns over.
+    expect(weeksForWidth(334)).toBe(28);
+    // Narrower than the floor keeps the floor and scrolls sideways.
+    expect(weeksForWidth(200)).toBe(ACTIVITY_WEEKS);
+    expect(weeksForWidth(0)).toBe(ACTIVITY_WEEKS);
+    expect(weeksForWidth(Number.NaN)).toBe(ACTIVITY_WEEKS);
+  });
+
+  it('stops at a year, however wide the panel', () => {
+    expect(weeksForWidth(5000)).toBe(ACTIVITY_MAX_WEEKS);
+  });
+
+  it('hands that count to the grid', () => {
+    const grid = activityGrid([], NOW, weeksForWidth(482));
+    expect(grid.weeks).toHaveLength(40);
+    expect(grid.weeks.every((w) => w.length === 7)).toBe(true);
+    // Still ends in the week today is in: a wider panel reaches further
+    // back, never further forward.
+    expect(grid.weeks.at(-1)![0]!.date).toBe('2026-09-13');
   });
 });
