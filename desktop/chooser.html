@@ -30,6 +30,11 @@
         --primary: oklch(92.2% 0 0);
         --primary-foreground: oklch(20.5% 0 0);
         --destructive: oklch(77% 0.191 22.2);
+        /* --ring, at full alpha, is the focus indicator; --field-halo, the
+           registry's own ring lightness, is the decoration a focused field
+           wears beside its border (ui/input.tsx). */
+        --ring: oklch(69% 0 0);
+        --field-halo: oklch(55.6% 0 0);
         /* The corners, the app's too: one --radius at the default Corners
            setting (tokens.css), every rung a multiple of it (theme.css).
            An option is a card and takes xl, as the app's destination cards
@@ -199,8 +204,23 @@
         font-size: 0.875rem;
         outline: none;
       }
-      input:focus {
-        border-color: var(--primary);
+      /* One focus style, the app's (base.css): 3px of --ring at full
+         alpha, for the keyboard only, and a bordered control's border takes
+         the ring colour too, as Button's does. */
+      :focus-visible {
+        outline: 3px solid var(--ring);
+        outline-offset: 0;
+      }
+      .option:focus-visible {
+        border-color: var(--ring);
+      }
+      /* The field is the one control whose ring is not the indicator, as
+         in the app's Input: its border turns --ring and carries the 3:1,
+         and the 3px halo beside it is decoration, at half --field-halo. */
+      input:focus-visible {
+        outline: none;
+        border-color: var(--ring);
+        box-shadow: 0 0 0 3px color-mix(in oklab, var(--field-halo) 50%, transparent);
       }
       .connect {
         padding: 0.6rem 1rem;
