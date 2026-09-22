@@ -458,12 +458,19 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
     return (
       <div className="mx-auto flex h-full w-full max-w-[96rem] flex-col">
         <ReaderHeader title={t('Books')} onBack={() => up('books')} />
-        <EmptyState
-          icon={BookX}
-          title={t('That book is not on the shelf')}
-          body={t('It may have been removed. The shelf has what is there.')}
-          action={<Button onClick={() => navigate('books')}>{t('Back to Books')}</Button>}
-        />
+        {/* The frame every state that owns its screen takes (the puzzle
+            book that is not on the shelf, the note or study that will not
+            open): optically centred in what the header leaves, and
+            standing on the page, not in a panel. */}
+        <div className="optical-center min-h-0 flex-1">
+          <EmptyState
+            ground
+            icon={BookX}
+            title={t('That book is not on the shelf')}
+            body={t('It may have been removed. The shelf has what is there.')}
+            action={<Button onClick={() => navigate('books')}>{t('Back to Books')}</Button>}
+          />
+        </div>
       </div>
     );
   }
