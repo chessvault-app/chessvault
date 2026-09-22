@@ -72,7 +72,7 @@ function MoveToBody({
               type="button"
               onClick={() => pick(target)}
               className={cn(
-                'hover:bg-accent group flex w-full items-center gap-2 rounded-md px-2 py-1.5 pointer-coarse:py-2.5',
+                'hover:bg-accent group flex w-full items-center gap-2 rounded-md px-2 py-(--row-py-dense) pointer-coarse:py-2.5',
                 'text-left type-row transition-colors duration-100',
               )}
             >
