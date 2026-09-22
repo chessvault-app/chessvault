@@ -1409,6 +1409,24 @@ drawn, and what one has to prove.
   give up the fill and the filter (`styles/shell.css`, on the bar's
   `data-chrome="bar"`). Apple's rule says the same in words: do not
   layer Liquid Glass elements on top of each other.
+- **What this glass is not, and why it is not going to become it.**
+  Apple's material refracts what is behind it and carries a specular
+  highlight that moves with the device; iOS 27 made that highlight
+  brighter and the edge darker. This app's glass is a tint over a blur
+  with a saturate and a hairline: frosted, not liquid. The gap is not
+  closable in CSS. `backdrop-filter` has ten functions and not one of
+  them displaces a pixel, and the SVG `feDisplacementMap` that stands in
+  for one composes with `backdrop-filter` in Chromium alone: Safari
+  accepts the property, drops the SVG and leaves a flat blur, so on the
+  one platform the `ios:` variant is FOR it would draw nothing at all.
+  The nearest thing CSS can draw is a static rim of light, and that is
+  the drawing that was tried and withdrawn on 2026-09-18, having read at
+  the phone's 3x as a thick doubled line. What was settled on instead, a
+  dark hairline, is where iOS 27 arrived a year later. Read the two
+  numbers honestly beside that: the tint at 70% over a 12px blur, where
+  24px cost the docked bar its frames, is nearer a translucent grey band
+  than it is to glass. That is what frame time and 4.5:1 were worth
+  here, not a target that was missed.
 - **What a platform variant has to prove.** The screenshot grid
   (`npm run shots:grid`) walks a `phone-ios` state beside `phone`,
   with the override set, so a change that means to be iOS-only shows a
