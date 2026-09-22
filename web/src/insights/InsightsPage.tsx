@@ -701,7 +701,10 @@ function ActivityCard({ report }: { report: Report }) {
                 [MONTH_INK.l, 'Lost'],
               ].map(([ink, word]) => (
                 <li key={word} className="flex items-center gap-1.5">
-                  <span className={cn('inline-block size-2.5 rounded-xs', ink)} />
+                  {/* The swatch's corner is fitted to its 10px mark, as Home's
+                      activity square is (ACTIVITY_CELL), and off the radius
+                      knob: the ladder's smallest rung is 6px, a circle here. */}
+                  <span className={cn('inline-block size-2.5 rounded-[2px]', ink)} />
                   {t(word!)}
                 </li>
               ))}
@@ -803,9 +806,10 @@ function EndingsCard({
                         <tr key={s.ending}>
                           <td className="py-(--row-py-tight) pr-2">
                             <span className="flex items-center gap-2">
+                              {/* Fitted to its 10px mark, as the months' legend swatch is. */}
                               <span
                                 aria-hidden
-                                className={cn('inline-block size-2.5 shrink-0 rounded-xs bg-current', ink)}
+                                className={cn('inline-block size-2.5 shrink-0 rounded-[2px] bg-current', ink)}
                                 style={{ opacity: SLICE_OPACITY[Math.min(at, SLICE_OPACITY.length - 1)] }}
                               />
                               <span className="min-w-0 truncate">{t(ENDING_LABEL[s.ending])}</span>
@@ -1185,7 +1189,8 @@ function MoveQualityCard({ analysis }: { analysis: Report['analysis'] }) {
               <tr key={q.key} className={cn(at % 2 === 1 && 'bg-muted/50')}>
                 <td className="py-(--row-py-tight) pr-2">
                   <span className="flex items-center gap-2">
-                    <span aria-hidden className={cn('inline-block size-2.5 shrink-0 rounded-xs', q.ink)} />
+                    {/* Fitted to its 10px mark, as the months' legend swatch is. */}
+                    <span aria-hidden className={cn('inline-block size-2.5 shrink-0 rounded-[2px]', q.ink)} />
                     {t(q.label)}
                     {q.glyph && <span className="text-muted-foreground font-mono text-xs">{q.glyph}</span>}
                   </span>
