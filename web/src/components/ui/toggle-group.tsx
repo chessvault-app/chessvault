@@ -26,6 +26,7 @@ function ToggleGroup({
   spacing = 2,
   orientation = 'horizontal',
   children,
+  style,
   ...props
 }: ToggleGroupPrimitive.Props &
   VariantProps<typeof toggleVariants> & { spacing?: number }) {
@@ -43,9 +44,34 @@ function ToggleGroup({
       data-spacing={spacing}
       data-orientation={orientation}
       orientation={orientation}
-      style={{ '--gap': spacing } as React.CSSProperties}
+      style={{
+        ...({
+          '--gap': spacing,
+          /* The track's radius, and the radius a shape nested in it has to
+             take to be CONCENTRIC with it: the outer radius less whatever
+             the track insets its contents by. `--tg-inset` is 0 unless a
+             caller pads the track (the segmented control does, by 3px), so
+             an unpadded group's inner radius is simply its own.
+
+             Stated once, here, because the two numbers have to move
+             together: the thumb carried `rounded-md` beside a track at
+             `min(--radius-md, 10px)` and came out 3.3px too round at every
+             corner (measured 2026-09-22). A second copy of the arithmetic
+             next to the thumb is how that happens. The registry drew the
+             two radii as unrelated classes; this is one expression, and it
+             is the app's, not the registry's. */
+          '--tg-r': size === 'sm' ? 'min(var(--radius-md), 10px)' : 'var(--radius-lg)',
+          '--tg-r-inner': 'max(0px, calc(var(--tg-r) - var(--tg-inset, 0px)))',
+        } as React.CSSProperties),
+        /* A caller's own properties last, so `--tg-inset` reaches the
+           expression above. Base UI spreads `props` after this, which is
+           why `style` is destructured rather than left in them: a caller
+           that passed one used to silently drop `--gap` and close the
+           strip's gaps. */
+        ...style,
+      }}
       className={cn(
-        'group/toggle-group flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-lg data-[size=sm]:rounded-[min(var(--radius-md),10px)] data-vertical:flex-col data-vertical:items-stretch',
+        'group/toggle-group flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-(--tg-r) data-vertical:flex-col data-vertical:items-stretch',
         className,
       )}
       {...props}

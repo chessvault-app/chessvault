@@ -95,6 +95,11 @@ so far.
   keyboard showed nothing at all, since the glass was painted over the
   focus ring. And an iPad, which is an iOS device, was getting glass
   menus over a page with nothing else glassy on it.
+- **The segmented control's raised pill is concentric with its track.**
+  It sat 3px inside a track of its own corner radius, so the gap between
+  the two curves opened out at each corner instead of holding at 3px.
+  It now takes the track's radius less that 3px, and the Corners setting
+  moves both together.
 - **Glass can be turned off.** Settings, under Appearance and More
   options, has a Glass switch on an iPhone. Off, the bars, menus and
   toasts that let the page show through are solid instead. iOS has

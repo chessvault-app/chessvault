@@ -1110,14 +1110,26 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   phone, dragged away from anywhere on itself; the page/layer distinction
   and the back chevron; the keyboard band; the sole-text-field focus;
   Android Back through CloseWatcher; the coarse-pointer hit areas;
-  `title` as a tooltip. The look is shadcn's; each file says at the top
-  what it adds and why. Adding a component is `npx shadcn add <name>`;
-  it needs no restyling. These files are app code otherwise: they take
+  `title` as a tooltip. The look is where you START, not where you are
+  held: "what stays is the look, with two standing exceptions" was
+  retired on 2026-09-22, because every exception it ever granted was a
+  measurement that beat the registry's drawing, and the third one it
+  would have refused (the segmented thumb's radius, 3px off concentric)
+  was refused on the size of the number rather than on anything about
+  the control. What governs instead is what governs the rest of this
+  file: a departure is earned by a reading and recorded beside the code
+  with the number in it, and the pixel grid shows the diff confined to
+  what meant to move. CLAUDE.md carries the three on the record. Each
+  file says at the top what it adds and why. Adding a component is
+  `npx shadcn add <name>`, and it starts in the registry's own face.
+  These files are app code otherwise: they take
   the same refactors as any other (the React Compiler compiles them
   too, since 2026-09-14), so re-adding one from the registry is a diff
   to read against the file in hand, not a rewrite to accept.
-- **"Owned" means behaviour on top, not geometry underneath.** Card is the
-  worked example of getting this wrong: its root had been rewritten to
+- **What a call site relies on is not yours to move quietly.** This is
+  not the retired look rule coming back in: it is about the rules other
+  files have already been written against, whatever they look like. Card
+  is the worked example of getting it wrong: its root had been rewritten to
   drop the registry's padding and gap, which reads like a small local
   decision and is in fact a rule every call site then has to re-derive —
   see the panel spacing note under Layout rules. The departures that
@@ -1580,20 +1592,24 @@ drawn, and what one has to prove.
 - **What did not reopen.** Five tabs with Notes under More: iOS also
   stops at five. The radius ladder: iOS 26's continuous corners cannot
   be drawn in CSS, and a glass surface takes the `2xl` rung or a true
-  pill from the ladder rather than a hand-written number. Concentricity,
-  which is the other half of what iOS 26 asks of a corner (an inner
-  radius of the outer radius less the inset, `ConcentricRectangle`), was
-  audited on 2026-09-22 and is not a third thing the ladder owes. Every
-  nested pair the demo draws was measured across eleven routes on a
-  phone as iOS and on a desktop, and the pairs that miss are the ones
-  whose arcs are too far apart to be read as a pair: a book cover 12px
-  inside a 14px card, a card's own ⋯ button 8px inside one. The single
-  tight nest is the segmented control's thumb, 3px inside a track of the
-  same radius where concentric would be 3px less, and that is shadcn's
-  own drawing. The registry's look stays for the two reasons in
-  CLAUDE.md, and 3px of splay on a 28px control is not a third. A pill
-  inside a pill, which is most of the app's nesting, is concentric by
-  construction. Swipe rows and
+  pill from the ladder rather than a hand-written number. Concentricity
+  is the other half of what iOS 26 asks of a corner (an inner radius of
+  the outer radius less the inset, `ConcentricRectangle`), and it is not
+  a rung the ladder owes: it is an arithmetic between two rungs. Every
+  nested pair the demo draws was measured on 2026-09-22 across eleven
+  routes, on a phone as iOS and on a desktop. A pill inside a pill,
+  which is most of the app's nesting, is concentric by construction.
+  What misses is mostly arcs too far apart to be read as a pair at all,
+  where the ideal is a rounding of zero and the "error" is arithmetic: a
+  book cover 12px inside a 14px card, a card's own ⋯ button 8px inside
+  one. The single tight nest was the segmented control's thumb, 3px
+  inside a track of its own radius where concentric asks for 3px less,
+  and it splayed at every corner. It is concentric now
+  (`ui/toggle-group.tsx` states the track's radius and the nested radius
+  as one expression, `--tg-r` and `--tg-r-inner`, which is what keeps
+  them together as the Corners knob moves). That it was the registry's
+  own drawing is no longer an argument for leaving it: the look rule was
+  retired the same day, and this was the change that retired it. Swipe rows and
   the edge-swipe back, the push and pop slides, the keyboard rules: all
   already the platform's behaviour, measured on the device. Swipe to
   page between tabs: rejected on Material's rule before, and iOS does

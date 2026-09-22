@@ -1060,8 +1060,10 @@ give a hover a 337ms fade. It says so where it is written.
   eval colours).
 - **Do** reach for a hairline ring or the next surface rung before a shadow.
 - **Do** put body copy on `text-sm` (14px) and keep `text-xs` for captions.
-- **Do** add a primitive with `npx shadcn add <name>` and keep its look,
-  adding only behaviour.
+- **Do** add a primitive with `npx shadcn add <name>` and start from its
+  look, departing from it only with a measurement recorded beside the
+  code. Both older rules here are retired: "adding only behaviour" in
+  2026-09-14, "what stays is the look" in 2026-09-22. See CLAUDE.md.
 - **Do** set anything scanned as a column — evaluations, clocks, counts,
   FEN, PGN — in the mono role, and leave SAN in the moves role.
 - **Do** measure a text tier's contrast against all four backgrounds a

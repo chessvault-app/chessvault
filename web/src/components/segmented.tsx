@@ -240,10 +240,15 @@ export function Segmented<T extends string>({
       size={size === 'sm' ? 'sm' : 'default'}
       spacing={0}
       ref={setThumbBox}
+      // How far the track holds its contents in from its own edge, which
+      // is also what makes the thumb's radius concentric with the track's
+      // (`--tg-r-inner`, ui/toggle-group.tsx). Declared rather than
+      // written into the padding class, so the two cannot drift.
+      style={track ? ({ '--tg-inset': '3px' } as React.CSSProperties) : undefined}
       // w-auto: the group is a block that fills its line (a column of these
       // lines up), not the registry's w-fit strip. The track look borrows
       // the Tabs strip's muted fill and raised pill.
-      className={cn('w-auto', box, track && 'bg-muted rounded-lg p-[3px] gap-0', slide && 'relative')}
+      className={cn('w-auto', box, track && 'bg-muted p-(--tg-inset) gap-0', slide && 'relative')}
     >
       {slide && index >= 0 && (
         /* The raised thumb, one element for the whole strip, drawn on the
@@ -263,7 +268,11 @@ export function Segmented<T extends string>({
           aria-hidden
           data-segmented-thumb
           className={cn(
-            'bg-background pointer-events-none absolute top-0 left-0 rounded-md shadow-sm',
+            // Concentric with the track it sits in, not a rung of its own:
+            // the track's radius less the 3px it holds the thumb in by
+            // (ui/toggle-group.tsx). At `rounded-md` the thumb was as round
+            // as the track around it and the gap splayed at the corners.
+            'bg-background pointer-events-none absolute top-0 left-0 rounded-(--tg-r-inner) shadow-sm',
             thumbPlaced &&
               'transition-[transform,width] duration-(--pane-turn) ease-(--pane-turn-ease)',
           )}
@@ -282,8 +291,10 @@ export function Segmented<T extends string>({
           style={id === value && accent ? { color: accent } : undefined}
           className={cn(
             item,
+            // The same concentric radius as the thumb: where the thumb is
+            // not drawn (the tabs track), this fill IS the raised pill.
             track &&
-              'h-[calc(100%-1px)] rounded-md aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm',
+              'h-[calc(100%-1px)] rounded-(--tg-r-inner) aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm',
             // The thumb paints the raised fill for whichever segment it
             // is under, so the item must not paint its own; `relative`
             // puts the label over the thumb, which is positioned.

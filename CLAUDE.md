@@ -116,12 +116,32 @@ number stays only when it changes the decision (a 300 MB download does).
 app's measured behaviour on top — the phone sheet, the page/layer chevron,
 the keyboard band, the sole-field focus, Android Back, the coarse-pointer
 hit areas, `title` as a tooltip. Add a primitive with `npx shadcn add
-<name>` and keep its look. The older rule, "add only behaviour, never
+<name>` and start from its look. The older rule, "add only behaviour, never
 restructure", is retired (lanph3re, 2026-09-14): these files are app code
 and take the same refactors every other file does, the React Compiler's
 shapes included, so `npx shadcn add` over an existing file is a diff to
-read, never a rewrite to accept. What stays is the look, with two standing
-exceptions, both edges. The first: where the tonal rule ("The component layer" in
+read, never a rewrite to accept.
+
+**And the look is the starting point, not the standing order** (lanph3re,
+2026-09-22). The rule was "what stays is the look, with two standing
+exceptions", and the exceptions were the tell: each one was a measurement
+that beat the registry's drawing, and a rule that has to be excepted every
+time somebody measures is costing more than it holds. The last straw was a
+third: the segmented control's thumb sat 3px inside a track of its own
+radius, where concentric asks for 3px less, and the rule's only answer was
+that 3px of splay is not enough to earn an exception. That is not a
+judgement about the control, it is a judgement about the paperwork. So the
+rule is retired, and what governs these files is what governs every other
+file here: MEASURE, DO NOT ASSERT. The registry's drawing is what you start
+from, and what you go back to when nothing has been measured; a departure
+from it is earned by a number and recorded beside the code with the number
+in it, and the pixel grid still has to show the diff confined to what meant
+to move. The bar is the measurement, not permission. "It looks better to
+me" is still a rewrite to reject, and so is a restyling that arrives with
+no reading attached.
+
+Three departures are on the record, and reading them is how to judge a
+fourth. The first: where the tonal rule ("The component layer" in
 `docs/design-principles.md`) and a registry stroke disagree, the rule wins.
 A surface whose fill already separates it draws the card-ring colour and
 never the bare border colour, and *how* it draws it follows the box, not
@@ -132,7 +152,7 @@ a filled well or a thumbnail, takes `border-card-ring`. A window takes
 `ring-window-ring`. Cards drawn both ways is a 2px difference nothing
 looks wrong about, and every placeholder standing in for one then has to
 rediscover it by measuring: three comments in `skeletons.tsx` recorded
-the same 2px separately before the rule said this. The second exception
+the same 2px separately before the rule said this. The second
 is the focus ring's STRENGTH, and only its strength: the registry draws
 `ring-ring/50`, a 50% wash, which measured 1.35 to 1.88:1 against what
 it lay on over 1,636 tabbed stops here, and WCAG 1.4.11 asks 3:1 of a
@@ -150,7 +170,7 @@ than the lifted `--ring`, which made the halo read as a thickened
 stroke (lanph3re's call, 2026-09-13). The checker scores that halo as
 an ordinary stroke and the border as the focus ring, which is the
 division of labour the registry's own look implies.
-Where the registry hangs another state on that same class the exception
+Where the registry hangs another state on that same class the departure
 reaches it too, and saying so is part of taking it: the slider thumb
 draws `border-ring` at rest and `ring-ring` for its hover and active
 halos, so all three are stronger now, and its FOCUS halo is new rather
@@ -160,7 +180,24 @@ UI's own `input[type=range]` inside the thumb, and it is clipped to
 nothing, so neither it nor the thumb around it could show a ring: tabbing
 to the slider changed zero pixels. It hangs on `has-[:focus-visible]`
 instead (`slider.tsx` carries every number, and no pixel grid can show
-them, because no grid route has a thumb inside its viewport). A
+them, because no grid route has a thumb inside its viewport). The third
+is CONCENTRICITY, and it is the one the retired rule would have refused.
+A shape nested in a rounded container takes the container's radius less
+the inset, so the gap between the two arcs is even round a corner
+(iOS 26 asks this of every nested box; `ConcentricRectangle` is the API).
+Every nested pair the demo draws was measured on 2026-09-22, across
+eleven routes on a phone as iOS and on a desktop, and the app was
+concentric everywhere the two arcs are close enough to be read as a
+pair, with one exception: the segmented control's thumb sat 3px inside
+a track of its own radius, where concentric asks for 3px less, and
+splayed at every corner. It was the registry's drawing and 3px is
+small, which is exactly why the old rule kept it. So `ui/toggle-group.tsx`
+now states the track's radius and the radius a shape nested in it must
+take as ONE expression (`--tg-r`, `--tg-r-inner`), which is also what
+stops them drifting: the thumb was `rounded-md` next to a track at
+`min(--radius-md, 10px)`, two unrelated classes that happened to agree
+at one setting of the Corners knob and not at the others. A departure
+that replaces two numbers with one is the shape to aim for. A
 hand-rolled popover, menu,
 dialog or tooltip beside a Base UI one is two focus stacks on one page. The
 theme at rest is shadcn's neutral; Settings → Appearance tints it. Composites go in `web/src/components`,
