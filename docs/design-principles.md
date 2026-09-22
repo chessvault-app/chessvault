@@ -73,55 +73,73 @@ the text. Outcome tints are opaque tokens now (`--good-tint`,
 `--destructive-tint`, mixed at the 10% every other tint in the app already
 used), so a chip measures the same at rest as under the pointer.
 
-The dark ladder is placed against Linear's, and it is derived by ratio.
-Read off screenshots in sRGB on blank rows, Linear's dark desktop puts
-its window ground at about 14, its sidebar at 20 and its CONTENT at 23:
-the reading surface is the lightest thing in the window. This app had
-that inverted. Its page was 14.5% and measured 10 — near black, a hole
-with the app drawn on it — while the frame and the sidebar sat ten
-points above it at 23. lanph3re chose three anchors from a mockup at
-Linear's lightness on 2026-09-22: the frame 19%, the page 20.5% and the
-card 24.5%, which measure 20, 23 and 32, so the frame lands on Linear's
-sidebar and the page on its content.
+The dark ladder is placed on Linear's own, and it is derived by ratio.
+It took two readings on 2026-09-22 to get there. The first read Linear's
+dark desktop as a window ground of about 14, a sidebar at 20 and content
+at 23, and lifted the app's ladder off the floor to meet it: the frame
+19%, the page 20.5%, the card 24.5%. Before that the page was 14.5% and
+measured 10 — near black, a hole with the app drawn on it — with the
+frame and the sidebar ten points above it.
+
+The second reading, the same day, sampled lanph3re's own screenshot of
+that window (1718x975, sRGB on blank rows) and found the first had been
+of some other one. Linear's window ground and its sidebar are a single
+`#09090a`, which is 9 — the sidebar is not a rung of its own, it is the
+ground, one fill from the window's edge to the panel's — its content
+panel is `#121213`, 18, and the band a section header fills to is
+`#1b1c1d`, 27. What the first reading got right is the DIRECTION, and
+that is the part worth keeping: the reading surface is the lightest of
+the three and the frame is a step back from it, as light's 95% under 97%
+already was. What it got wrong is every number.
+
+So the anchors are 14% for the frame, 18.25% for the page and 22.25% for
+the card, which draw 9, 18 and 27 on the green channel the comparison is
+made on. Frame and page then sit 1.06:1 apart, which is what Linear's own
+two measure and what light has been at all along, so the two themes are
+separated by the same amount at last.
 
 Everything else is derived, and the rule is the ratio and not the
-lightness. WCAG compresses near black, so six points of OKLCH lightness
-at 14.5% and four points at 20.5% are the same separation to the eye on
-an emissive screen: the card is 1.104:1 over the page where it was
-1.105:1. Every rung keeps the ratio to its anchor it was tuned at, which
-is what "the ladder keeps its spacing" means once the floor has moved.
+lightness. WCAG compresses near black, so a point of OKLCH lightness at
+14% and two points at 22% are the same separation to the eye on an
+emissive screen. Every rung keeps the ratio to its anchor it was tuned
+at, with one exception: the card, which takes Linear's own 1.09:1 over
+the page rather than the 1.10 it had, because copying Linear's lightness
+and keeping our separation cannot both be done.
 
 | rung | was | is | measured |
 | --- | --- | --- | --- |
-| `--app-ground-base`, the window frame | `--surface` | 19% | 1.031:1 under the page (was 1.105 over it) |
-| `--background-accent` | 12% | 19.25% | 1.026:1 under the page (1.026) |
-| `--background`, the page | 14.5% | 20.5% | the anchor |
-| `--surface`, the card | 20.5% | 24.5% | 1.104:1 over the page (1.105) |
-| `--surface-inset` | 23% | 26.5% | 1.060:1 over the card (1.061) |
-| `--surface-2`, muted and secondary | 26.9% | 29.9% | 1.186:1 over the card (1.185) |
-| `--surface-3` | 32% | 34.6% | 1.413:1 over the card (1.412) |
-| `--accent`, hover and selected | 37% | 39.4% | 1.216:1 over `--surface-3` (1.216) |
+| `--app-ground-base`, the window frame and the sidebar | 19% | 14% | 1.06:1 under the page (was 1.03) |
+| `--background-accent` | 19.25% | 16.7% | 1.026:1 under the page (1.026) |
+| `--background`, the page | 20.5% | 18.25% | the anchor |
+| `--surface`, the card | 24.5% | 22.25% | 1.09:1 over the page (1.10) |
+| `--surface-inset` | 26.5% | 24.5% | 1.06:1 over the card (1.06) |
+| `--surface-2`, muted and secondary | 29.9% | 28.2% | 1.19:1 over the card (1.19) |
+| `--surface-3` | 34.6% | 33.1% | 1.42:1 over the card (1.42) |
+| `--accent`, hover and selected | 39.4% | 38% | 1.20:1 over `--surface-3` (1.21) |
 
 The far end of the contrast knob is untouched: at knob 1 the dark ladder
 is the one that shipped, and only the frame moved there, from the card's
 rung to black with the page, which is the trade light already makes at
-that point. What did move beside the rungs is everything that was tuned
-against one of them and lost its floor when it rose. `--border` to 32%,
-because a hairline on a card fell to 1.149:1 and this theme calls 1.2 a
-line, and `--border-strong` to 42.5% so the two stroke rungs keep their
-step. `--muted-foreground` and `--text-subtle` to 77% and 72.5%, together
-so the step between them survives, because the third tier fell to 4.22:1
-on `--surface-3`. `--destructive` to 77% and `--info` to 76.5%, the two of
-the semantic four with no margin left; `--good` and `--warn` kept their
-values and their numbers are in the token file. `--ring` to 69%, holding
-3:1 on `--accent` across every scheme. `--eco-name-l` to 78%.
-`--primary-soft` to 33%, `--eval-black` to 30%, `--result-draw` to 59% and
-`--map-thread` to 54.5%, each a fill or a mark whose whole job is to be
-seen against a surface that rose. And `--glass-fill` takes a dark value
-of its own, 72% against the shared 70%, because glass is tinted with
-`--surface-3` and a lighter glass hides white content less: the ink on a
-glass band scrolled over white fell from 4.75:1 to 4.44, and 72% reads
-4.70. That one is analytic and `check:contrast` cannot hold it, because
+that point.
+
+Beside the rungs, only the neutral strokes and fills that are scored
+against one of them moved with the second reading: `--border` to 30.4%
+and `--border-strong` to 41.1%, which keeps a hairline on a card at the
+1.285:1 and 1.97:1 it was already drawing; `--primary-soft` to 31.4%,
+the `::selection` fill, at its 1.32; `--board-frame` to 25%. Every ink
+stayed exactly where the first reading had put it and gained, because
+the surfaces under them all came down. Measured on the demo at the
+default knobs: `--muted-foreground` 5.83:1 on `--surface-3` where it read
+5.54, `--text-subtle` 4.96 (4.72), `--good` 5.20 (4.94), `--destructive`
+4.80 (4.54), `--info` 4.88 on the `--accent` fill (4.58), `--ring` 3.67
+on the same fill (3.44). `check:contrast` passes with nothing below the
+floor. `--glass-fill` keeps the dark value of its own it was given, 72%
+against the shared 70%, because glass is tinted with `--surface-3` and a
+lighter glass hides white content less: the ink on a glass band scrolled
+over white fell from 4.75:1 to 4.44 when that rung rose, 72% took it back
+to 4.69, and the rung's fall to 33.1% now reads 4.90. 70% would read
+4.61 and would also clear the floor; the override stays because a number
+placed by measurement is not worth unplacing to save a line. That one is analytic and `check:contrast` cannot hold it, because
 the check composites a glass surface over the DOM under it and not over
 what is scrolled behind it. A ladder is not the rungs alone.
 
@@ -1109,7 +1127,9 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   `bg-card`, `text-muted-foreground`, `border-input`, `bg-destructive` — so
   a component added tomorrow is themed the moment it lands. The default
   scheme, Neutral, IS shadcn's neutral theme (white page, grey surfaces,
-  a near-black primary; 14.5 / 20.5 / 26.9 % on the dark side); the
+  a near-black primary) in light, and its vocabulary with the app's own
+  ladder behind it in dark, where the registry's 14.5 / 20.5 / 26.9 % is
+  replaced wholesale by the anchors above; the
   values are written as the app's OKLCH ladder in `styles/tokens.css` with the
   hue, tint and contrast knobs as lerps, so Settings → Appearance keeps
   tinting them (Blue is the app's previous look) and there is no second
@@ -1445,7 +1465,7 @@ drawn, and what one has to prove.
   step. `--panel-ring` draws the panel's edge where the two fills do
   not, which is now both themes: the window ring in light, transparent
   until the contrast knob turns frame and panel both white, and the
-  border in dark, where the two fills are 1.031:1 apart and that theme
+  border in dark, where the two fills are 1.06:1 apart and that theme
   calls 1.2 a line; a field-shaped Search button under the
   wordmark that opens the quick switcher; a games table without stripes
   (they were recorded for two-line card rows, which keep them) whose
