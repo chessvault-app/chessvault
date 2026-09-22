@@ -2,8 +2,10 @@ import { ChevronRight, Cpu, Crown, Info, ListOrdered, X } from 'lucide-react';
 import { ListRow } from '@/components/list-row';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
-import { Skeleton, SkeletonBoard } from '@/components/skeletons';
+import { Panel, PanelHeader } from '@/components/panel';
+import { Inert, Skeleton, SkeletonBoard } from '@/components/skeletons';
 import { Button } from '@/components/ui/button';
+import { CardFooter } from '@/components/ui/card';
 import type { Goal } from '@/endgames/drill';
 import { readEndgameShape } from '@/endgames/reservation';
 import { cn } from '@/lib/utils';
@@ -64,6 +66,14 @@ function DrillOutline() {
       // attempt is over (hooks/use-analyse-in-place).
       panes={[Info, ListOrdered]}
       stackedPanel={t('Endgame drill')}
+      // A phone shows that one panel and nothing else; a wide screen
+      // stands it at the column's foot under the moves, where the page
+      // waits with the whole of it.
+      foot={
+        <div className="contents max-lg:hidden">
+          <DrillPanelOutline />
+        </div>
+      }
     />
   );
 }
@@ -207,6 +217,30 @@ export function DrillRunActions({
         {t('Analyse')}
       </Button>
     </>
+  );
+}
+
+/**
+ * The panel as it stands while the ending is being found, which is the
+ * state the page's own wait is in: the real header, the headline's bar
+ * over the note it will settle on, the row that says what is being
+ * drilled, and both actions, disabled exactly as the page disables them
+ * then. `wide:shrink-0`, because the moves above it are what gives.
+ */
+function DrillPanelOutline() {
+  return (
+    <Inert>
+      <Panel className="wide:shrink-0">
+        <PanelHeader title={t('Endgame drill')} />
+        <div className={DRILL_BODY}>
+          <DrillHeadline loading note={t(PLAYING_NOTE.win)} status={t(FINDING_NOTE)} />
+          <AllEndingsRow />
+          <CardFooter className={DRILL_FOOT}>
+            <DrillRunActions />
+          </CardFooter>
+        </div>
+      </Panel>
+    </Inert>
   );
 }
 
