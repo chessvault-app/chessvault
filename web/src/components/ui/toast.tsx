@@ -105,8 +105,22 @@ function Toast({ className, ...props }: ToastPrimitive.Root.Props) {
         // and 94% of the ring clears 3:1 where 64% did. Dark was never
         // short (6.40 to 6.36) and does not move.
         "group/toast pointer-events-auto absolute right-0 bottom-0 z-[calc(1000-var(--toast-index))] w-full origin-bottom rounded-2xl border border-window-ring bg-popover text-popover-foreground shadow-lg will-change-transform outline-none select-none focus-visible:border-ring focus-visible:shadow-none focus-visible:ring-[3px] focus-visible:ring-ring",
-        // iOS: glass over the page it floats on (utilities.css).
-        "ios:glass",
+        // iOS: glass over the page it floats on (utilities.css). max-md,
+        // because glass is the phone's material and `ios:` alone reached
+        // an iPad too (popover.tsx has the measurement).
+        //
+        // And its border goes transparent under that same glass. Every
+        // other glass surface draws its edge with `ring-1`, which the
+        // glass box-shadow replaces; this one carries a real `border`,
+        // which a box-shadow cannot replace, so on iOS it drew the
+        // window ring AND the glass hairline — the thick doubled line
+        // utilities.css records as rejected at the phone's 3x. Light hid
+        // it (--window-ring resolves transparent there); dark showed
+        // both, 1px of oklch(0.29 0 264) outside the 12% rim (measured
+        // 2026-09-22). Transparent and not `border-0`: the border still
+        // takes the focus colour, and keeping its 1px keeps the toast
+        // the size it is measured at on every platform.
+        "max-md:ios:glass max-md:ios:border-transparent",
         "[--gap:0.75rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-offset-y)*-1+calc(var(--toast-index)*var(--gap)*-1)+var(--toast-swipe-movement-y))] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))]",
         "h-(--height) [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--peek))-(var(--shrink)*var(--height))))_scale(var(--scale))] [transition:transform_500ms_cubic-bezier(0.22,1,0.36,1),opacity_500ms,height_150ms]",
         "after:absolute after:top-full after:left-0 after:h-[calc(var(--gap)+1px)] after:w-full after:content-['']",
