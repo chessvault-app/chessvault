@@ -5,6 +5,7 @@ import { useAnalysis } from '@/store/analysis';
 import { useEngine } from '@/store/engine';
 import { FULL_NET } from './StockfishEngine.ts';
 import { Button } from '@/components/ui/button';
+import { Figures } from '@/components/figures';
 import { PanelHeader } from '@/components/panel';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Field } from '@/components/ui/field';
@@ -136,10 +137,15 @@ export function EngineBlock({
                 <span className="text-foreground font-mono text-sm font-semibold normal-case tabular-nums tracking-normal">
                   {formatScore(score)}
                 </span>
-                <span className="text-muted-foreground font-mono normal-case tracking-normal">
-                  {t('depth')} {top.depth}
-                  {top.selDepth ? `/${top.selDepth}` : ''}
-                  {finished ? '' : '…'}
+                {/* A sentence with a figure in it, so the figure alone takes
+                    the mono role (components/figures.tsx). As one mono span
+                    the word went too, and in Korean it is 깊이, which JetBrains
+                    Mono cannot draw: it fell through to Pretendard inside
+                    the span, beside mono digits. */}
+                <span className="text-muted-foreground normal-case tracking-normal">
+                  <Figures
+                    text={`${t('depth')} ${top.depth}${top.selDepth ? `/${top.selDepth}` : ''}${finished ? '' : '…'}`}
+                  />
                 </span>
               </>
             )}
