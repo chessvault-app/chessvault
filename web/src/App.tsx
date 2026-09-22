@@ -270,8 +270,34 @@ function Shell() {
       {/* `relative`: the phone's bottom bar is positioned on this row
           (shell/mobile-nav), and `main` pads by its measured height
           (styles/shell.css, --bottom-bar-h) so a page still ends where
-          the bar begins. */}
-      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row">
+          the bar begins.
+
+          `md:overflow-visible`: the panel's ring is a box-shadow with no
+          `inset`, so it paints the band immediately OUTSIDE main's border
+          box. main is flush to this row's top (`md:mt-0`, the zero gutter
+          Linear's own panel has), which put that band one pixel ABOVE the
+          row, where this clip threw it away: three sides of the panel drew
+          and the top did not, on every desktop route, in both themes.
+          Nothing here needs to clip, because both children already clip
+          themselves — main for the panel's radius, the nav for the fold's
+          label wipe — and this was the outer belt over both.
+
+          Measured 2026-09-23 at a simulated 40px title band: the row above
+          the panel read 9,9,9 (the window ground) clipped and 32,32,32
+          (the ring) unclipped, main's rect was identical either way, and
+          the whole frame moved 941 px of which 928 are that one row and
+          the rest the corner arcs. The document gained no scroll in either
+          axis. The alternative, giving main `mt-px` so the band falls
+          inside the row, was built and measured first and rejected: it
+          translates every desktop page's interior down one pixel (63,399
+          px differ on home--desktop--dark, and 2 once you shift it back),
+          which is the one thing the panel was built not to do.
+
+          Only where there is chrome above the panel is there a band to
+          draw in: the shell's title bar, or the demo's notice. In a plain
+          browser at md the panel's top IS the window's top, the band is
+          off-viewport, and no clip setting can put a line there. */}
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden md:flex-row md:overflow-visible">
       <Sidebar active={section} params={params} />
 
       <main
