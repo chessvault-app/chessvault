@@ -1598,7 +1598,15 @@ drawn, and what one has to prove.
   a rung the ladder owes: it is an arithmetic between two rungs. Every
   nested pair the demo draws was measured on 2026-09-22 across eleven
   routes, on a phone as iOS and on a desktop. A pill inside a pill,
-  which is most of the app's nesting, is concentric by construction.
+  which is most of the app's nesting, is concentric by construction,
+  and the bottom bar is the one worth naming because it is the one
+  anybody asks about: the live tab's pill measures 26px inside a
+  capsule of 30, held 4px off its top and bottom, so 30 less 4 is 26
+  and the error is zero. The docked bar has no radius at all, so
+  nothing standing in it is nested in an arc. An audit only gets to say
+  that if it looks INSIDE pill containers, which the first pass did not
+  (it took a pill ancestor as no ancestor, and the capsule is a pill);
+  re-run with them included, the list is the same.
   What misses is mostly arcs too far apart to be read as a pair at all,
   where the ideal is a rounding of zero and the "error" is arithmetic: a
   book cover 12px inside a 14px card, a card's own ⋯ button 8px inside
