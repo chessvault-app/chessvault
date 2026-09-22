@@ -50,11 +50,6 @@
      notes are left as they stand, since each records the surface it was
      measured against and those are named by token, not by number. */
   --background: oklch(calc(18.25% + (0% - 18.25%) * var(--ui-contrast)) calc(0.014 * var(--ui-tint)) var(--ui-hue));
-  /* A step under the page, at the 1.026:1 it always had. With the frame
-     down at 14% it is no longer a quarter point off it: it sits 2.7
-     points above, a real rung between the two, which is what it always
-     described itself as and only briefly stopped being. */
-  --background-accent: oklch(calc(16.7% + (0% - 16.7%) * var(--ui-contrast)) calc(0.015 * var(--ui-tint)) var(--ui-hue));
   --surface: oklch(calc(22.25% + (13% - 22.25%) * var(--ui-contrast)) calc(0.017 * var(--ui-tint)) var(--ui-hue));
   /* The window's ground (tokens.css says what it is for), and its own
      value again rather than an alias.
@@ -393,12 +388,6 @@
      two and a half points buy back. */
   --map-thread: oklch(calc(54.5% + (72% - 54.5%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
 
-  /* Light chip on the dark app. Held at 90% rather than pure white: it
-     has to be plainly foreign to the page, not a headlight in the corner
-     of a room this dim. */
-  --toast: oklch(calc(90% + (100% - 90%) * var(--ui-contrast)) calc(0.012 * var(--ui-tint)) var(--ui-hue));
-  --toast-foreground: oklch(calc(20% + (0% - 20%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
-
   /* Cooler, desaturated board so it recedes against the dark chrome. */
   --board-light-base: oklch(60% 0.024 250);
   --board-dark-base: oklch(39% 0.031 256);
@@ -410,7 +399,6 @@
   --coord-on-dark: color-mix(in oklch, var(--board-light), white 60%);
   /* Both squares are dark here, so the arrow goes light (see :root). */
   --arrow-best: oklch(96% 0.02 250);
-  --board-frame: oklch(25% calc(0.018 * var(--ui-tint)) var(--ui-hue));
   --sq-last-move: oklch(72% 0.15 110 / 42%);
   --sq-selected: oklch(65% 0.15 152 / 45%);
   --sq-dest: oklch(72% 0.11 152 / 38%);

@@ -318,7 +318,6 @@
      the foreground at 12%, dark here and light in dark, where the
      foreground is white; no separate token for dark. */
   --glass-edge: color-mix(in oklch, var(--foreground) 12%, transparent);
-  --background-accent: oklch(calc(97% + (95% - 97%) * var(--ui-contrast)) calc(0.008 * var(--ui-tint)) var(--ui-hue));
   /* Already pure white; the contrast knob has nothing to add here. */
   --surface: oklch(100% 0 0);
   --surface-2: oklch(calc(97% + (96% - 97%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
@@ -583,14 +582,6 @@
      page; the contrast knob takes it to 45% (6.8:1). */
   --map-thread: oklch(calc(60% + (45% - 60%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
 
-  /* The transient chip — the undo offer, and anything else that floats
-     over the page for a few seconds and must not read as part of it.
-     It is the surface INVERTED: dark on a light app, light on a dark one.
-     Distinct by construction rather than by a colour chosen to contrast
-     with today's palette, and the one convention this widget has. */
-  --toast: oklch(calc(24% + (0% - 24%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
-  --toast-foreground: oklch(calc(98% + (100% - 98%) * var(--ui-contrast)) calc(0.004 * var(--ui-tint)) var(--ui-hue));
-
   /* Board — warm cream/walnut, tuned so pieces stay legible on both squares.
      Held in a `-base` pair as well, because "the adaptive walnut" is one of
      the presets a swatch has to be able to ASK for: every other preset
@@ -620,7 +611,6 @@
      for every preset in both modes. */
   --arrow-best: oklch(30% 0.08 250);
   --arrow-best-alpha: 0.9;
-  --board-frame: oklch(88% calc(0.01 * var(--ui-tint)) var(--ui-hue));
   --sq-last-move: oklch(83% 0.16 108 / 55%);
   --sq-selected: oklch(62% 0.15 150 / 50%);
   --sq-dest: oklch(45% 0.09 150 / 42%);
@@ -667,8 +657,6 @@
   --nag-book: #a88865;
   --nag-foreground: oklch(100% 0 0);
 
-  /* Toggle-switch knob: white on the filled track in both themes. */
-  --knob: oklch(100% 0 0);
   /* Modal scrim (promotion picker). */
   --scrim: oklch(0% 0 0 / 45%);
 
