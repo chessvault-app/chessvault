@@ -46,17 +46,20 @@ export function readDetailsPin(): boolean | null {
  * `--gt-min` measures 1026px at the default column widths (GameTable's
  * COLUMNS sum to 930, plus nine 8px gaps and the row's px-3). Beside it
  * the panel's track takes its 23rem max — measured at exactly 368 — the
- * grid's gap is 16, and the page loses the sidebar's 13rem and the
- * shell's md gutters: 1026 + 368 + 16 + 208 + 48 = 1666.
+ * grid's gap is 16, and the page loses the sidebar's 15rem and the
+ * shell's md gutters: 1026 + 368 + 16 + 240 + 48 = 1698.
  *
- * Then measured, because 1666 is 10px short: the list scrolls itself,
- * and index.css's thin scrollbar takes its 10px out of the scroller's
- * content box, so at 1666 the table still scrolled sideways by exactly
- * that (clientWidth 1016 against scrollWidth 1026). 1680 is the round
- * number above it, and measures clean — 1030 against 1030.
+ * Then measured, because the bare sum came out 10px short: the list
+ * scrolls itself, and index.css's thin scrollbar takes its 10px out of
+ * the scroller's content box, so at the arithmetic's own number the
+ * table still scrolled sideways by exactly that (clientWidth 1016
+ * against scrollWidth 1026). 1712 is the round number above it. It was
+ * 1680 against a 208px sidebar, and the line moved by the 32px the
+ * sidebar gained when it took Linear's width (shell/sidebar.tsx): the
+ * margin over the arithmetic is the measured one, carried across.
  *
- * The 208 is the sidebar unfolded. Folded to its rail it gives 140 of
- * that back, so the panel is free from about 1540 — but a media query
+ * The 240 is the sidebar unfolded. Folded to its rail it gives 192 of
+ * that back, so the panel is free from about 1520 — but a media query
  * cannot see the fold, and erring towards "not free" only means a wide
  * window with a folded rail starts unpinned when it could have started
  * pinned, which the switch in the panel's header corrects once.
@@ -66,7 +69,7 @@ export function readDetailsPin(): boolean | null {
  * window that narrow starts with the column given back and spends it on
  * the panel only while a game is actually selected.
  */
-export const PIN_FREE_MQ = '(min-width: 1680px)';
+export const PIN_FREE_MQ = '(min-width: 1712px)';
 
 /**
  * Where the details column stops being 23rem and takes 27rem.
@@ -82,14 +85,14 @@ export const PIN_FREE_MQ = '(min-width: 1680px)';
  * The threshold is the same arithmetic PIN_FREE_MQ states, with the
  * panel's new maximum in it: the table's own minimum (`--gt-min`, 1026
  * at the default column widths), the grid's 16px gap, 432 for a 27rem
- * panel, the sidebar's 208 unfolded and the shell's 48 of md gutters,
- * which is 1730 — plus the 10px the thin scrollbar takes out of the
- * scroller's content box, the same 10 that put PIN_FREE_MQ at 1680
- * rather than its arithmetic's 1666. So 1740, and below it the panel
+ * panel, the sidebar's 240 unfolded and the shell's 48 of md gutters,
+ * which is 1762 — plus the 10px the thin scrollbar takes out of the
+ * scroller's content box, the same 10 that puts PIN_FREE_MQ above its
+ * own arithmetic. So 1772, and below it the panel
  * stays 23rem, because a wider panel there is paid for in the table's
- * columns and that is exactly what the 1680 line exists to stop.
+ * columns and that is exactly what the 1712 line exists to stop.
  */
-export const PANEL_WIDE_MQ = '(min-width: 1740px)';
+export const PANEL_WIDE_MQ = '(min-width: 1772px)';
 
 /**
  * What the unpinned details column takes from the pane when it arrives:

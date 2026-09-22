@@ -251,7 +251,7 @@ export function TitleBar() {
     >
       {/* The segment over the sidebar keeps the sidebar's width (shell/sidebar.tsx,
           Sidebar) so the controls stand over the column they belong to.
-          Unfolded it holds every control; folded, the rail is 68px and
+          Unfolded it holds every control; folded, the rail is 48px and
           holds the fold switch alone, left-aligned the way the rail
           aligns its icons, and the rest sit past the seam. Below md there
           is no sidebar, and no segment. */}
@@ -259,15 +259,15 @@ export function TitleBar() {
         <div
           className={cn(
             'flex h-full shrink-0 items-center gap-1 self-stretch',
-            // 16px, not the band's 14: the switch is a 36px button, so its
-            // glyph then centres 34px in, the line the sidebar's row icons
-            // sit on below it (NAV_ROW in shell/sidebar.tsx; 11px matched the 29px
-            // column those rows had before they were left-aligned).
+            // 6px, not the band's 14: the switch is a 36px button, so its
+            // glyph then centres 24px in, the line the sidebar's row icons
+            // sit on below it (NAV_ROW in shell/sidebar.tsx, which moved that
+            // line from 34 to 24 when the rail went to Linear's metrics).
             // Left-aligned in both states, since the width slides in step
             // with the sidebar and a centred switch would drift with it;
             // the band clips the controls it drops when folded.
-            'overflow-hidden pl-4 transition-[width] duration-150 ease-out',
-            folded ? 'w-[4.25rem]' : 'w-52',
+            'overflow-hidden pl-1.5 transition-[width] duration-150 ease-out',
+            folded ? 'w-12' : 'w-60',
             // macOS: the traffic lights sit at the left, in the band.
             shell.platform === 'darwin' && 'pl-20',
           )}

@@ -8,9 +8,42 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 ## Unreleased
 
 Each platform takes its own controls, and the ones that were never a
-platform's come out from behind the guard. Nothing here has been read on
-a phone or in the desktop window yet; the pixel grid is the proof so far.
+platform's come out from behind the guard. The desktop window, meanwhile,
+is measured against Linear's twice over: its dark greys and its sidebar.
+Home's activity card has grown into the whole vault. Nothing here has been
+read on a phone or in the desktop window yet; the pixel grid is the proof
+so far.
 
+- **The dark theme is a shade deeper, and the sidebar is the window.**
+  Its greys had been placed against a reading of Linear's dark desktop
+  that turned out to be of some other window. Measured off a screenshot
+  of the real one, the frame and the sidebar are a single colour and the
+  page sits above them, so the window is darker than it was and the page
+  and the cards come down with it. The step from the frame to the page is
+  twice what it was, which is the step the light theme has always had.
+  Nothing reads fainter for it: every colour drawn on those surfaces
+  gained contrast, and the check that measures it passes with nothing
+  below the floor. The hairline round the page was drawing a line three
+  times stronger than Linear's, so it comes down to a shade over the
+  grey a card is, which is as close to theirs as the app's own contrast
+  floor allows. The high-contrast setting still gets the strong line.
+- **The desktop sidebar is Linear's size.** 240px across where it was
+  208, with 28px rows and 14px icons where they were 40 and 18; the labels
+  stay at the app's regular 14 rather than taking Linear's 13. Folded, the rail is 48px instead of 68, which is what lets a
+  row's icon sit where Linear puts it without moving when the sidebar
+  folds. A touch screen keeps the 36px rows it had. The row you are on
+  is marked by its tinted pill alone: the 3px bar that stood down its
+  left edge is gone, which is one fewer thing the sidebar and the
+  phone's tab bar disagree about. Its hover has come back down, too: the
+  sidebar stands on the window frame, the frame fell further than
+  anything else when the dark theme deepened, and the fill that lights a
+  row under the pointer had not followed it down.
+- **The page sits in the window the way Linear's does.** The panel is
+  flush to the sidebar and to the band above it and inset 8px on the
+  right and bottom, where it used to carry the same 2px on all four
+  sides; its corners are 14px again. In light it now casts a shadow, so
+  it reads as resting on the frame instead of being a slightly whiter
+  rectangle on it.
 - **Home's Activity card is the whole vault now, not the puzzle
   trainer.** A square counts everything that day held: puzzles solved
   (from a book as well as from the trainer), repertoire positions
@@ -26,7 +59,6 @@ a phone or in the desktop window yet; the pixel grid is the proof so far.
   blank and the picture stopped mid-card. The squares stay the size they
   were and the card draws as many weeks as it has room for, between half
   a year and a year.
-
 - **On every phone, a question is a centred card.** Confirmations, the
   name prompt and the unsaved-changes question no longer rise as sheets:
   iOS's alert on an iPhone, Material's dialog on Android.
