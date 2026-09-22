@@ -1395,7 +1395,15 @@ drawn, and what one has to prove.
   toward the contrast worst case in both themes, so changing it means
   re-reading both fills (`tokens.css` and `tokens-dark.css` carry the
   readings). Apple publishes no ratio; Liquid
-  Glass is a dynamic material, and these are this app's numbers.
+  Glass is a dynamic material, and these are this app's numbers. The
+  saturate does less than its name suggests and is not recolouring
+  anything: read through the bar on the demo, every ink's hue moved
+  between 0 and 2 degrees, and its saturation FELL rather than rose
+  (`good` from 100 to 33 in light), because 70% of tint over the
+  backdrop leaves the filter only the 30% that still shows through.
+  The one larger reading, 9 degrees, is `--board-light`, which is pale
+  enough that its hue is numerically loose and not a colour anyone sees
+  move.
   And nothing glass stands on glass. The compact page header is itself
   a glass band, and the circles and capsules standing on it drew their
   own until 2026-09-22: a second backdrop filter re-blurring what the
