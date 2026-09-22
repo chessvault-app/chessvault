@@ -739,7 +739,7 @@ function CyclesPanel({
               className="text-muted-foreground hover:text-foreground flex items-center gap-1 self-start text-sm"
             >
               <ChevronRight
-                className={cn('glyph transition-transform', showPast && 'rotate-90')}
+                className={cn('glyph transition-transform duration-(--pane-turn) ease-(--pane-turn-ease)', showPast && 'rotate-90')}
               />
               {t('{n} past cycles', { n: finished.length })}
             </button>
