@@ -1580,7 +1580,20 @@ drawn, and what one has to prove.
 - **What did not reopen.** Five tabs with Notes under More: iOS also
   stops at five. The radius ladder: iOS 26's continuous corners cannot
   be drawn in CSS, and a glass surface takes the `2xl` rung or a true
-  pill from the ladder rather than a hand-written number. Swipe rows and
+  pill from the ladder rather than a hand-written number. Concentricity,
+  which is the other half of what iOS 26 asks of a corner (an inner
+  radius of the outer radius less the inset, `ConcentricRectangle`), was
+  audited on 2026-09-22 and is not a third thing the ladder owes. Every
+  nested pair the demo draws was measured across eleven routes on a
+  phone as iOS and on a desktop, and the pairs that miss are the ones
+  whose arcs are too far apart to be read as a pair: a book cover 12px
+  inside a 14px card, a card's own ⋯ button 8px inside one. The single
+  tight nest is the segmented control's thumb, 3px inside a track of the
+  same radius where concentric would be 3px less, and that is shadcn's
+  own drawing. The registry's look stays for the two reasons in
+  CLAUDE.md, and 3px of splay on a 28px control is not a third. A pill
+  inside a pill, which is most of the app's nesting, is concentric by
+  construction. Swipe rows and
   the edge-swipe back, the push and pop slides, the keyboard rules: all
   already the platform's behaviour, measured on the device. Swipe to
   page between tabs: rejected on Material's rule before, and iOS does
