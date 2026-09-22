@@ -7,7 +7,6 @@ import {
   RotateCw,
   Settings,
   SlidersHorizontal,
-  X,
 } from 'lucide-react';
 import { useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { INITIAL_FEN } from 'chessops/fen';
@@ -37,6 +36,15 @@ import { ListRow } from '@/components/list-row';
 import { PageHeader } from '@/components/page-header';
 import { TrainerBoard, TrainerNavBar, TrainerPanes } from '@/components/trainer-shell';
 import { PageShell } from '@/components/page-shell';
+import {
+  AllEndingsRow,
+  DRILL_BODY,
+  DRILL_FOOT,
+  DrillHeadline,
+  DrillRunActions,
+  FINDING_NOTE,
+  PLAYING_NOTE,
+} from '@/endgames/EndgamesView.skeleton';
 import { writeEndgameShape } from '@/endgames/reservation';
 import { Panel, PanelHeader } from '@/components/panel';
 import { Skeleton } from '@/components/skeletons';
@@ -79,12 +87,6 @@ import {
 /** Where the picker lives, and where the drill goes back to: a section
     of its own, listed under Tools. */
 const PICKER = ['endgames'] as const;
-/** The line the drill settles on; the wait reserves its height. */
-const PLAYING_NOTE: Record<Goal, string> = {
-  win: 'Keep the win. A move the tablebase calls a draw or a loss ends the attempt.',
-  draw: 'Hold the draw. A move the tablebase calls a loss ends the attempt, and ten held moves end it as a draw.',
-};
-
 /** How many of the defender's own moves hold a draw. A draw has no
     checkmate to end on, and the table's draws are all alike, so the
     drill sets its own finishing line where the technique has been
@@ -504,7 +506,7 @@ function Drill({ classId }: { classId: string }) {
   const status = (): { text: string; tone?: string } => {
     switch (phase) {
       case 'loading':
-        return { text: t('Finding an ending…') };
+        return { text: t(FINDING_NOTE) };
       case 'playing':
         return { text: t(PLAYING_NOTE[goal]) };
       case 'replying':
@@ -604,90 +606,56 @@ function Drill({ classId }: { classId: string }) {
           </>
         }
       />
-      <div className="flex min-h-0 grow flex-col gap-3 overflow-y-auto px-(--card-spacing)">
-        <div className="flex flex-col gap-0.5">
-          {/* The headline: the trainer's own "White to move", the side
-              the reader plays, held through the defender's reply as the
-              puzzle trainer holds it through the opponent's (lanph3re's
-              call, 2026-09-13: the two panels say the same thing the same
-              way; it was "You play White" for one release). Once the
-              attempt is over the verdict takes its place, in the
-              trainers' own verdict line and colour. */}
-          {start && ended ? (
-            <p
-              className={cn(
-                'text-base font-medium',
-                phase === 'won' || phase === 'drawn'
-                  ? outcomeTone('solved')
-                  : phase === 'threw'
-                    ? outcomeTone('missed')
-                    : 'text-foreground',
-              )}
-            >
-              {phase === 'won'
-                ? t('Checkmate')
-                : phase === 'drawn'
-                  ? t('Draw held')
-                  : phase === 'threw'
-                    ? goal === 'win'
-                      ? t('The win slipped')
-                      : t('The draw slipped')
-                    : t('Stopped')}
-            </p>
-          ) : start && phase !== 'loading' ? (
-            <p className="text-foreground text-2xl font-semibold tracking-tight ios:tracking-normal">
-              {solverSide === 'white' ? t('White to move') : t('Black to move')}
-            </p>
-          ) : phase === 'loading' ? (
-            <div className="flex h-8 items-center">
-              <Skeleton className="h-4 w-28" />
-            </div>
-          ) : null}
-          {/* The status line, in a box the size of the longest line it
-              settles on. "Keep the win…" wraps to two lines where
-              "Finding a won ending…" and "Defending…" take one, and the
-              line changes EVERY MOVE (playing, replying, playing), so a
-              box the size of whatever it says had the footer stepping up
-              and down under the reader's hand for the whole attempt
-              (lanph3re's report: the card drifts). The reservation used
-              to cover the wait alone. One grid cell, both in it: the
-              invisible note sets the floor and a longer verdict ("{san}
-              lets the win slip…") still grows the box rather than
-              clipping. */}
-          <div className="grid">
-            <p aria-hidden className="invisible col-start-1 row-start-1 text-sm leading-relaxed">
-              {t(PLAYING_NOTE[goal])}
-            </p>
-            <p
-              className={cn(
-                'col-start-1 row-start-1 text-sm leading-relaxed',
-                statusLine.tone ?? 'text-muted-foreground',
-              )}
-            >
-              {statusLine.text}
-            </p>
-          </div>
-        </div>
+      <div className={DRILL_BODY}>
+        {/* The headline, the status under it and the box that holds both
+            still are DrillHeadline's, in the module the outline reads
+            them from too (EndgamesView.skeleton). The headline is the
+            trainer's own "White to move", the side the reader plays,
+            held through the defender's reply as the puzzle trainer holds
+            it through the opponent's (lanph3re's call, 2026-09-13: the
+            two panels say the same thing the same way; it was "You play
+            White" for one release). Once the attempt is over the verdict
+            takes its place, in the trainers' own verdict line and
+            colour. Nothing yet, with an ending on the way, is the state
+            the outline stands in, and the bar is drawn for it there. */}
+        <DrillHeadline
+          loading={phase === 'loading'}
+          note={t(PLAYING_NOTE[goal])}
+          status={statusLine.text}
+          tone={statusLine.tone}
+          headline={
+            start && ended ? (
+              <p
+                className={cn(
+                  'text-base font-medium',
+                  phase === 'won' || phase === 'drawn'
+                    ? outcomeTone('solved')
+                    : phase === 'threw'
+                      ? outcomeTone('missed')
+                      : 'text-foreground',
+                )}
+              >
+                {phase === 'won'
+                  ? t('Checkmate')
+                  : phase === 'drawn'
+                    ? t('Draw held')
+                    : phase === 'threw'
+                      ? goal === 'win'
+                        ? t('The win slipped')
+                        : t('The draw slipped')
+                      : t('Stopped')}
+              </p>
+            ) : start && phase !== 'loading' ? (
+              <p className="text-foreground text-2xl font-semibold tracking-tight ios:tracking-normal">
+                {solverSide === 'white' ? t('White to move') : t('Black to move')}
+              </p>
+            ) : undefined
+          }
+        />
 
-        {/* What is being drilled, as the panel's own row and the way to
-            the list that changes it: the puzzle trainer's settings row,
-            in the same place. It was a label and a crown among the
-            header's icon buttons, where a labelled control read as
-            chrome (lanph3re's call, the same one that moved the puzzle
-            row into the body). */}
-        <Button
-          variant="secondary"
-          size="sm"
-          className="w-full min-w-0 justify-start"
-          title={t('All endings')}
-          onClick={() => navigate(...PICKER)}
-        >
-          <Crown className="glyph shrink-0" />
-          <span className="truncate">{label}</span>
-          <ChevronRight className="text-muted-foreground ml-auto glyph shrink-0" />
-        </Button>
+        <AllEndingsRow label={label} onOpen={() => navigate(...PICKER)} />
 
-        <CardFooter className="-mx-(--card-spacing) mt-auto flex-wrap justify-end gap-2">
+        <CardFooter className={DRILL_FOOT}>
           {ended ? (
             <>
               <Button variant="secondary" size="sm" onClick={retry}>
@@ -700,38 +668,17 @@ function Drill({ classId }: { classId: string }) {
               </Button>
             </>
           ) : (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="me-auto pointer-coarse:h-11"
-                disabled={phase === 'loading'}
-                onClick={() => void draw()}
-              >
-                <X className="glyph" data-icon="inline-start" />
-                {t('Skip')}
-              </Button>
-              {/* Where the trainer offers the solution, this ends the
-                  attempt by hand: the line so far goes to the analysis
-                  board and the engine comes on, the same swap a finished
-                  attempt makes. Nothing is graded; a stop is a stop. */}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="pointer-coarse:h-11"
-                disabled={phase !== 'playing'}
-                onClick={() => {
-                  ++seq.current;
-                  promotion.cancel();
-                  setReview(null);
-                  setPhase('stopped');
-                }}
-                title={t('Ends the attempt and opens the engine')}
-              >
-                <Cpu className="glyph" data-icon="inline-start" />
-                {t('Analyse')}
-              </Button>
-            </>
+            <DrillRunActions
+              onSkip={() => void draw()}
+              skipDisabled={phase === 'loading'}
+              onAnalyse={() => {
+                ++seq.current;
+                promotion.cancel();
+                setReview(null);
+                setPhase('stopped');
+              }}
+              analyseDisabled={phase !== 'playing'}
+            />
           )}
         </CardFooter>
       </div>
