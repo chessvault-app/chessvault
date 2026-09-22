@@ -1433,7 +1433,9 @@ drawn, and what one has to prove.
   TypeScript, since both drawings in the DOM would double thirty call
   sites; a 6px slider track under a 38 by 24 capsule thumb; a press that
   dims, 80% filled and 60% unfilled, instantly in; an empty state as one
-  48px muted symbol; the glass Cancel beside a sheet's search field; a
+  40px muted symbol, drawn at a lighter stroke than the icon set's own,
+  since that set does not scale optically and the box alone would decide
+  the ink; the glass Cancel beside a sheet's search field; a
   sheet's own close as a glass circle in the band's trailing corner, the
   one exit an iPhone sheet was missing; and
   the system face, `-apple-system` with Apple SD Gothic Neo, set once on
