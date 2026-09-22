@@ -42,7 +42,7 @@
          first write landed. store/theme.ts overwrites both with the ground
          the page actually resolved to, tint and contrast included. -->
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f5f5" />
-    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a0a0a" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#121212" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="Chess Vault" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -139,7 +139,13 @@
          unstyled document's own white. These two are --background
          resolved by hand for the default scheme (shadcn's neutral, both
          tints 0, contrast 0): oklch 97% is #f5f5f5, not white, and
-         oklch 14.5% is #0a0a0a. They move when the tokens do. The media
+         oklch 18.25% is #121212. They move when the tokens do, and this
+         one did not: the dark page was 14.5% and #0a0a0a until the
+         2026-09-22 ladder, which moved it twice and left these three
+         literals behind. The gap was visible, because the dark
+         theme-color meta IS the phone's status bar and the browser's
+         own chrome: for one build the bar sat a shade under the page
+         it framed. The media
          query follows the OS for the no-JS case; the theme script below
          then pins the STORED preference inline, which wins, so an app set
          to light on a dark phone gets light, not the OS's guess — and
@@ -161,7 +167,7 @@
          a quiet app-coloured ground have no seam to show. */
       html { background-color: #f5f5f5; }
       @media (prefers-color-scheme: dark) {
-        html { background-color: #0a0a0a; }
+        html { background-color: #121212; }
       }
       /* No mark drawn by the PAGE, ever. The startup images carry one
          (scripts/render-icons.mjs) and it fades out as iOS dissolves the
@@ -190,7 +196,7 @@
           var grounds = localStorage.getItem('chess-vault:ground');
           var ground = grounds ? JSON.parse(grounds)[dark ? 'dark' : 'light'] : null;
           document.documentElement.style.backgroundColor =
-            typeof ground === 'string' && ground ? ground : dark ? '#0a0a0a' : '#f5f5f5';
+            typeof ground === 'string' && ground ? ground : dark ? '#121212' : '#f5f5f5';
         } catch (e) {
           /* first run, or storage blocked — fall through to light */
         }

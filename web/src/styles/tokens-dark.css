@@ -111,11 +111,55 @@
      what light does. It had none while the frame sat on --surface six
      points over the page and the fill was the edge (lanph3re,
      2026-09-21); with the frame a step UNDER the page the two fills are
-     1.031:1 apart, below the 1.2 this theme calls a line, so the fill
-     has stopped being the edge and the hairline is what is left. It is
-     the only structure at the top of the knob, where frame and page are
-     both black. Inherited from :root rather than restated: --panel-ring
-     is --window-ring there, and --window-ring is --border here. */
+     1.06:1 apart, below the 1.2 this theme calls a line, so the fill has
+     stopped being the edge and the hairline is what is left. It is the
+     only structure at the top of the knob, where frame and page are both
+     black.
+
+     What it is NOT is --border, which is what it inherited from :root
+     and what it drew until now. --border is the stroke for a hairline
+     ON a card, scored against that card; this one is the window's one
+     structural edge, and at 42,47,57 it measured 1.40:1 over the page
+     and 1.48 over the ground, which is three times the separation
+     Linear draws there and reads as a drawn line round the content
+     rather than the seam between two surfaces (lanph3re, at the
+     deployed build, 2026-09-22).
+
+     Linear's is 26,27,29, which is its CARD rung and not a stroke rung
+     at all: the ring round its content panel is the same value its
+     section bands fill to. Ours is the same, so --panel-ring is
+     --surface here, and the two ratios fall out at 1.087 over the page
+     and 1.154 over the ground against Linear's own 1.086 and 1.155.
+
+     That is under the 1.2 this theme's own floor sets for a stroke, and
+     it is allowed for the reason check-contrast.ts states: a stroke on
+     an element whose fill already separates it is decoration. This is
+     the other half of that rule rather than an exemption from it. The
+     ring is not the panel's separator here, the RADIUS is: an 8px
+     corner cut into the ground is the whole of what says where the
+     panel ends, on all four sides, and the ring only warms the cut.
+
+     It is not quite --surface, and check:contrast is why. At the card's
+     own 22.25% the ring measured 1.16:1 over the window ground in 22
+     places, and this theme's stroke floor is 1.2 (check-contrast.ts
+     says where the two floors come from). The exemption that rule
+     carries does not reach here either: it frees a stroke whose
+     element's FILL already separates it, and the panel's fill is 1.06
+     from the ground, which is the whole reason the ring exists. So the
+     value is the lowest rung that clears the floor instead: 24.5%,
+     measured 1.222:1 over the ground and 1.151 over the page, at both
+     ends of the tint knob. That draws 28,32,42 against Linear's
+     26,27,29, five points up the green channel and still a third of
+     the separation --border was drawing.
+
+     At the top of the contrast knob the ring IS the separator, and
+     there it has to be a stroke again: the knob is the reader asking
+     for every cue. So it ends on --border's own far end, 52%, exactly
+     where it ended before this change, and only the resting end moved:
+     1.15:1 over the page at knob 0 and 3.81:1 at knob 1, where --border
+     alone read 1.40 and 3.81. Written as the ladder's own lerp rather
+     than a color-mix so it reads like every other rung in this file. */
+  --panel-ring: oklch(calc(24.5% + (52% - 24.5%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
   /* The glass surface's fill and blur are tokens.css's numbers, and its
      edge follows the foreground, which is white here. Its tint is the
      third surface rung, 33.1% on a 22.25% card: glass in dark is LIFTED

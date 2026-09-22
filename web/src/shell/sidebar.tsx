@@ -90,8 +90,13 @@ function NavLink({
  * The rail was 68px around 40px rows and 18.4px icons, and every number
  * here is Linear's instead, sampled off lanph3re's screenshot of their
  * dark desktop (2026-09-22): a 240px sidebar, 28px rows on a 29px pitch,
- * an 8px corner, a 13px label and a 14px glyph whose centre sits 24px in
- * from the window's edge. Narrowing the rail from 68 to 48 is what lets
+ * an 8px corner and a 14px glyph whose centre sits 24px in from the
+ * window's edge. Their label is 13px and ours is not: 14 is this app's
+ * regular text (measured on Settings at desktop width, 91 of the 122
+ * visible text nodes under #main), and a nav one step quieter than the
+ * list it navigates to buys a pixel of Linear at the price of the only
+ * 13 in the window. text-sm is 14/20 where the 13 was 13/20, so the
+ * row's line box and the whole rhythm below are unchanged. Narrowing the rail from 68 to 48 is what lets
  * the unfolded inset be Linear's 9px rather than the 19px a 68px rail
  * would force: the icon's centre has to be the same number in both
  * states or it slides on every fold, and 48 is the rail width whose
@@ -103,7 +108,7 @@ function NavLink({
  * finger's.
  */
 const NAV_ROW =
-  'group relative flex h-7 pointer-coarse:h-9 items-center justify-start gap-1.5 rounded-md pr-2 pl-[0.5625rem] type-nav font-medium transition-colors duration-150';
+  'flex h-7 pointer-coarse:h-9 items-center justify-start gap-1.5 rounded-md pr-2 pl-[0.5625rem] text-sm font-medium transition-colors duration-150';
 
 /**
  * A row's label. It stays in the tree folded, so the fold's width change
@@ -167,7 +172,7 @@ function SearchEntry({ folded }: { folded: boolean }) {
           // input's border, which is what every other field in this app
           // is made of. The ink is the placeholder tier a field's own
           // prompt would be written in.
-          'bg-card border-card-ring text-muted-foreground hover:text-foreground flex h-7 pointer-coarse:h-9 w-full items-center gap-1.5 rounded-md border px-2 type-nav',
+          'bg-card border-card-ring text-muted-foreground hover:text-foreground flex h-7 pointer-coarse:h-9 w-full items-center gap-1.5 rounded-md border px-2 text-sm',
           'transition-colors duration-150',
           // A button's focus ring, at the app's full alpha: this control
           // is not a text field, so the halo IS the indicator here.
@@ -211,7 +216,7 @@ function SubNavItem({
         aria-label={t(label)}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'flex h-7 pointer-coarse:h-9 items-center justify-start gap-1.5 rounded-md pr-2 type-nav font-medium transition-[color,background-color,padding-left] duration-150 ease-out',
+          'flex h-7 pointer-coarse:h-9 items-center justify-start gap-1.5 rounded-md pr-2 text-sm font-medium transition-[color,background-color,padding-left] duration-150 ease-out',
           // Folded, the 14px icon sits on the rail's icon column (see
           // NAV_ROW); unfolded it indents under its parent's label. The
           // indent is the 17px Linear's nested rows carry, on top of the
@@ -384,9 +389,6 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground',
               )}
             >
-              {isActive && (
-                <span className="bg-primary absolute left-0 h-4 w-[3px] rounded-r-full" />
-              )}
               <Icon className="glyph shrink-0" strokeWidth={isActive ? 2.4 : 2} />
               <span className={navLabel(folded)}>{t(label)}</span>
             </NavLink>
@@ -444,7 +446,6 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
             inTools(active) ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
-          {inTools(active) && <span className="bg-primary absolute left-0 h-4 w-[3px] rounded-r-full" />}
           <SquareMousePointer className="glyph shrink-0" strokeWidth={inTools(active) ? 2.4 : 2} />
           <span className={navLabel(folded)}>{t('Tools')}</span>
         </NavLink>
@@ -476,7 +477,6 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
             active === 'databases' ? 'bg-muted text-primary' : 'text-muted-foreground hover:bg-accent hover:text-foreground',
           )}
         >
-          {active === 'databases' && <span className="bg-primary absolute left-0 h-4 w-[3px] rounded-r-full" />}
           <Database className="glyph shrink-0" strokeWidth={active === 'databases' ? 2.4 : 2} />
           <span className={navLabel(folded)}>{t('Databases')}</span>
         </NavLink>

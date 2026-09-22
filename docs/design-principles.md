@@ -561,20 +561,27 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   back chevron, Chess.com/Lichess-style. Desktop navigates by sidebar, no
   back arrows on top-level pages.
 - **The desktop sidebar is measured off Linear's, not composed.** 240px
-  across, 28px rows on a 30px pitch, an 8px corner, a 13px label
-  (`type-nav`, the app's only 13) and a 14px glyph whose centre sits 24px
-  in from the window's edge, each of them sampled off a screenshot of
-  Linear's dark desktop (2026-09-22) rather than chosen. The one number
+  across, 28px rows on a 30px pitch, an 8px corner and a 14px glyph whose
+  centre sits 24px in from the window's edge, each of them sampled off a
+  screenshot of Linear's dark desktop (2026-09-22) rather than chosen.
+  The label is the exception and is `text-sm`: theirs measures 13, and 14
+  is this app's regular text, so a 13 here would have been the only one
+  in the window and would have set the nav one step under the list it
+  navigates to. The one number
   that is ours is the folded rail's 48px: the icon's centre has to be the
   same distance in whether the sidebar is folded or not, or it slides on
   every fold, and 48 is the rail width whose centreline is Linear's 24. A
   coarse pointer takes the 36px floor back on every row. The sidebar has
   no fill of its own in any of this; it is the window's ground, which is
   the ladder's point above and Linear's arrangement too. What is NOT
-  Linear's is the current row: their selected row is a flat grey lift,
-  ours keeps the tonal pill and the 3px rail (`bg-nav-pill`, below),
-  because that pill is the same "you are here" the phone's tab bar draws
-  and the two navigations have to say it the same way.
+  Linear's is the current row's RAIL, which is gone: the 3px bar of
+  primary down the left edge of the selected row was a second marker
+  beside the pill it sits in, and Linear marks its own with the fill
+  alone (lanph3re, at the deployed build, 2026-09-22). The tonal pill
+  stays (`bg-nav-pill`, below), because it is the same "you are here"
+  the phone's tab bar draws and the two navigations have to say it the
+  same way; the phone never had the rail, so this is one fewer thing
+  the two disagree about.
 - **The desktop shell's band is one strip, and the search sits on it.**
   The title bar the shell draws (`components/title-bar`) is filled edge
   to edge in the sidebar's colour, with the way into the quick switcher
@@ -1482,8 +1489,13 @@ drawn, and what one has to prove.
   step. `--panel-ring` draws the panel's edge where the two fills do
   not, which is now both themes: the window ring in light, transparent
   until the contrast knob turns frame and panel both white, and the
-  border in dark, where the two fills are 1.06:1 apart and that theme
-  calls 1.2 a line; a field-shaped Search button under the
+  a rung of its own in dark, a shade over the card and well under the
+  hairline a card's edge takes: Linear draws this ring at its card rung
+  exactly, and 24.5% is the lowest this app reaches before its own 1.2
+  stroke floor stops it (1.222:1 over the window ground, where 22.25%
+  read 1.16). The two fills are 1.06:1 apart there, so the ring is real
+  structure and not decoration, which is also why the floor's
+  fill-already-separates exemption does not reach it; a field-shaped Search button under the
   wordmark that opens the quick switcher; a games table without stripes
   (they were recorded for two-line card rows, which keep them) whose
   resize handles show on hover or focus; filters as chips at content

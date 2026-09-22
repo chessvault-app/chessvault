@@ -92,25 +92,6 @@
   }
 }
 
-/* The sidebar's label rung, and the only 13px in the app.
-
-   Linear writes its sidebar rows at 13px, between this app's --text-sm
-   (14) and --text-xs (12), and the sidebar is the one surface here put on
-   Linear's metrics end to end (NAV_ROW in shell/sidebar.tsx says why and
-   carries the rest of the numbers). In a 28px row beside a 14px glyph,
-   text-sm reads a size too large, and text-xs is the meta tier, which the
-   name of a destination is not.
-
-   Named rather than written as a literal at the three call sites, which
-   is the Named Tier rule and what check:repo asks for: one place to move
-   it from when the sidebar is next measured. No phone branch, unlike the
-   type-row rungs above: this sidebar is md and up, and under md the tab
-   bar carries the navigation and its own sizes with it. */
-@utility type-nav {
-  font-size: 0.8125rem;
-  line-height: calc(var(--spacing) * 5);
-}
-
 /* The icon rungs, on the type rungs' bargain: the app's row glyph is 14px
    (a chevron, a row's leading icon, the icon in a small button) and its
    mark is 12 (a bookmark on a card, a badge's tick), and both platforms

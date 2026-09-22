@@ -22,12 +22,21 @@ pixel grid is the proof so far.
   twice what it was, which is the step the light theme has always had.
   Nothing reads fainter for it: every colour drawn on those surfaces
   gained contrast, and the check that measures it passes with nothing
-  below the floor.
+  below the floor. The hairline round the page was drawing a line three
+  times stronger than Linear's, so it comes down to a shade over the
+  grey a card is, which is as close to theirs as the app's own contrast
+  floor allows. The high-contrast setting still gets the strong line.
 - **The desktop sidebar is Linear's size.** 240px across where it was
-  208, with 28px rows, 13px labels and 14px icons where they were 40, 16
-  and 18. Folded, the rail is 48px instead of 68, which is what lets a
+  208, with 28px rows and 14px icons where they were 40 and 18; the labels
+  stay at the app's regular 14 rather than taking Linear's 13. Folded, the rail is 48px instead of 68, which is what lets a
   row's icon sit where Linear puts it without moving when the sidebar
-  folds. A touch screen keeps the 36px rows it had.
+  folds. A touch screen keeps the 36px rows it had. The row you are on
+  is marked by its tinted pill alone: the 3px bar that stood down its
+  left edge is gone, which is one fewer thing the sidebar and the
+  phone's tab bar disagree about.
+- **The page sits further inside the window.** 8px of window ground
+  round the panel where there were 2, at every desktop width and in
+  both themes.
 - **On every phone, a question is a centred card.** Confirmations, the
   name prompt and the unsaved-changes question no longer rise as sheets:
   iOS's alert on an iPhone, Material's dialog on Android.
