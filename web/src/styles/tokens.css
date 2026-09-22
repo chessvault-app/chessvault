@@ -581,6 +581,14 @@
      asks 3:1 of a stroke that carries meaning. 60% is 3.6:1 on the 97%
      page; the contrast knob takes it to 45% (6.8:1). */
   --map-thread: oklch(calc(60% + (45% - 60%) * var(--ui-contrast)) calc(0.006 * var(--ui-tint)) var(--ui-hue));
+  /* The letter tile's seed (components/letter-tile), coloured by data
+     like the map's lines above: the name's hash is the hue, and only
+     the lightness and chroma are the theme's. One pair for both themes
+     where the map keeps one per theme, because the map paints its
+     colour and the tile never does: the seed is mixed 22% into --card
+     and 65% into --foreground, and those carry the theme. */
+  --tile-l: 65%;
+  --tile-c: 0.14;
 
   /* Board — warm cream/walnut, tuned so pieces stay legible on both squares.
      Held in a `-base` pair as well, because "the adaptive walnut" is one of

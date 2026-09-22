@@ -20,7 +20,7 @@ export function LetterTile({ name, size = 64, className }: { name: string; size?
   return (
     <div
       aria-hidden
-      style={{ width: size, height: size, '--tile': `oklch(0.65 0.14 ${hueOf(name)})` } as React.CSSProperties}
+      style={{ width: size, height: size, '--tile': `oklch(var(--tile-l) var(--tile-c) ${hueOf(name)})` } as React.CSSProperties}
       className={cn(
         'grid shrink-0 select-none place-items-center overflow-hidden rounded-md font-semibold',
         'bg-[color-mix(in_oklch,var(--tile)_22%,var(--card))] text-[color-mix(in_oklch,var(--tile)_65%,var(--foreground))]',
