@@ -959,7 +959,7 @@ function PickRow({
       )}
     >
       <span className="min-w-0 flex-1 truncate">{label}</span>
-      {picked && <Check className="size-4 shrink-0" />}
+      {picked && <Check className="glyph shrink-0" />}
     </button>
   );
 }
@@ -1238,7 +1238,7 @@ function NodePanel({
                 key={`${tag.kind}\n${tag.id}\n${tag.chapter ?? ''}`}
                 className="border-border flex items-center gap-2 rounded-lg border px-2 py-(--row-py-dense)"
               >
-                <Icon className={broken ? 'text-destructive size-4 shrink-0' : 'text-muted-foreground size-4 shrink-0'} />
+                <Icon className={broken ? 'text-destructive glyph shrink-0' : 'text-muted-foreground glyph shrink-0'} />
                 <TitleTip title={tag.id}>
                 <button
                   type="button"
@@ -1291,7 +1291,7 @@ function NodePanel({
             onClick={() => setPicking(true)}
             className={ADD_ROW}
           >
-            <Plus className="size-4 shrink-0" />
+            <Plus className="glyph shrink-0" />
             <span className="min-w-0 flex-1 truncate">{t('Link a game, study or note')}</span>
           </button>
           {/* And the study that does not exist yet.
@@ -1306,7 +1306,7 @@ function NodePanel({
             onClick={() => void newStudy()}
             className={ADD_ROW}
           >
-            <NotebookPen className="size-4 shrink-0" />
+            <NotebookPen className="glyph shrink-0" />
             <span className="min-w-0 flex-1 truncate">
               {making ? t('Making the study…') : t('New study from this line')}
             </span>
