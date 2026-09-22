@@ -163,8 +163,27 @@
   /* No shadow on this panel in dark. Light casts one (tokens.css,
      --panel-shadow) because that is what separates Linear's light panel
      and what ours was missing; on a dark ground a shadow is nothing at
-     all, and the ring above is the whole edge. */
-  --panel-shadow: none;
+     all, and the ring above is the whole edge.
+
+     A TRANSPARENT shadow, and never `none`, which is what this said
+     until 2026-09-23 and which silently erased the very ring the
+     sentence above calls the whole edge. Tailwind composes one
+     declaration out of four variables — box-shadow:
+     var(--tw-inset-shadow), var(--tw-ring-offset-shadow),
+     var(--tw-ring-shadow), var(--tw-shadow) — and a bare `none` is not
+     a valid item of a comma list, so the WHOLE declaration is invalid
+     and the ring drops with the shadow. Every other signal reads
+     correct while it happens: App.tsx still carries ring-1
+     ring-panel-ring, --tw-ring-shadow still computes to this file's 1px
+     of oklch(24.5%), and only getComputedStyle(panel).boxShadow says
+     `none`. check:contrast cannot catch it either, because it scores
+     the colour a token names and not whether a pixel was ever painted,
+     so the dark desktop panel shipped with no edge at all through
+     0.11.4 and the ratios measured above were of a line nobody could
+     see. The value below is Tailwind's own shadow-none, which composes.
+     Read boxShadow and --tw-ring-shadow together to find the next one:
+     the two disagreeing IS the bug. */
+  --panel-shadow: 0 0 #0000;
   /* The glass surface's fill and blur are tokens.css's numbers, and its
      edge follows the foreground, which is white here. Its tint is the
      third surface rung, 33.1% on a 22.25% card: glass in dark is LIFTED
