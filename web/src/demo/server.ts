@@ -10,6 +10,7 @@ import { normaliseTraining, type Training } from '@shared/training';
 import { mountVault } from '../../../server/mountVault.ts';
 import { AnalysisStore, parseRecord } from '../../../server/myGamesAnalysis.ts';
 import { puzzleBooksApi } from '../../../server/puzzlebooks.ts';
+import { recordActivity } from '../../../server/activity.ts';
 import { storageApi } from '../../../server/storage.ts';
 import { DATA_OPENINGS, REPO_ROOT } from '../../../server/paths.ts';
 import { SEED } from './seed.ts';
@@ -96,6 +97,7 @@ function buildApp(): Hono {
   // filesystem and the curated databases. One list, in server/mountVault.ts,
   // so a route added to the app cannot quietly miss the demo.
   mountVault(app, {
+    vault: VAULT,
     studies: `${VAULT}/studies`,
     notes: `${VAULT}/notes`,
     games: `${VAULT}/games`,
@@ -226,7 +228,19 @@ function buildApp(): Hono {
    * for node:crypto and node:stream to move an uploaded PDF around, and
    * this config shims neither.
    */
-  app.route('/api', puzzleBooksApi(`${VAULT}/puzzlebooks`, `${VAULT}/books`));
+  // The demo's book puzzles count towards its activity grid too: the log
+  // is a file like any other, and the shimmed filesystem holds it.
+  app.route(
+    '/api',
+    puzzleBooksApi(`${VAULT}/puzzlebooks`, `${VAULT}/books`, {
+      onImported: (slug) => {
+        recordActivity('book', { id: slug }, VAULT);
+      },
+      onSolved: () => {
+        recordActivity('puzzle', {}, VAULT);
+      },
+    }),
+  );
 
   /**
    * What each part of the vault takes on disk.

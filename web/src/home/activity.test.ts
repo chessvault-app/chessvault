@@ -1,32 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ACTIVITY_LIMIT,
   ACTIVITY_MAX_WEEKS,
   ACTIVITY_PITCH,
   ACTIVITY_WEEKS,
   activityGrid,
   activityStep,
   dayKey,
+  readActivityReport,
   weeksForWidth,
-  type ActivityAttempt,
 } from './activity';
+import type { ActivityDayTally, ActivityReport } from '@shared/activity';
 
 /** A Wednesday, so the grid's last column is a part-week and the three
     days after it are in the future. Local noon, so the local day is the
     same one whatever the runner's offset. */
 const NOW = new Date(2026, 8, 16, 12, 0, 0);
 
-const at = (y: number, m: number, d: number, hour = 12): string =>
-  new Date(y, m, d, hour).toISOString();
-
-const win = (iso: string): ActivityAttempt => ({ win: true, counted: true, at: iso });
+/** A report as the server sends it. `logSince` defaults far enough back
+    that the whole window is inside the log, which is the ordinary case;
+    the tests about the trainer-only days name their own. */
+const report = (days: ActivityDayTally[], over: Partial<ActivityReport> = {}): ActivityReport => ({
+  days,
+  logSince: '2020-01-01',
+  ...over,
+});
 
 const cell = (grid: ReturnType<typeof activityGrid>, date: string) =>
   grid.weeks.flat().find((c) => c.date === date);
 
 describe('activityGrid', () => {
   it('is 26 columns of 7, Sunday first, ending in the week today is in', () => {
-    const grid = activityGrid([], NOW);
+    const grid = activityGrid(report([]), NOW);
     expect(grid.weeks).toHaveLength(ACTIVITY_WEEKS);
     expect(grid.weeks.every((w) => w.length === 7)).toBe(true);
     // 2026-09-16 is a Wednesday: its column opens on Sunday the 13th.
@@ -35,71 +39,90 @@ describe('activityGrid', () => {
   });
 
   it('draws the days after today as future, not as idle days', () => {
-    const grid = activityGrid([], NOW);
+    const grid = activityGrid(report([]), NOW);
     expect(cell(grid, '2026-09-16')!.kind).toBe('day');
     expect(cell(grid, '2026-09-17')!.kind).toBe('future');
     expect(cell(grid, '2026-09-19')!.kind).toBe('future');
   });
 
-  it('counts clean counted wins per local day and ignores the rest', () => {
+  it('adds every kind of a day up into the one number the tone reads', () => {
     const grid = activityGrid(
-      [
-        win(at(2026, 8, 16, 9)),
-        win(at(2026, 8, 16, 21)),
-        { win: false, counted: true, at: at(2026, 8, 16) },
-        { win: true, counted: false, at: at(2026, 8, 16) },
-        win(at(2026, 8, 10)),
-      ],
+      report([
+        { date: '2026-09-16', counts: { puzzle: 8, study: 2, game: 1 } },
+        { date: '2026-09-10', counts: { drill: 3 } },
+      ]),
       NOW,
     );
-    expect(cell(grid, '2026-09-16')!.count).toBe(2);
+    expect(cell(grid, '2026-09-16')!.count).toBe(11);
+    expect(cell(grid, '2026-09-10')!.count).toBe(3);
     expect(cell(grid, '2026-09-11')!.count).toBe(0);
-    expect(grid.total).toBe(3);
+    expect(grid.total).toBe(14);
     expect(grid.days).toBe(2);
+  });
+
+  it('keeps the breakdown on the day, for its tip', () => {
+    const grid = activityGrid(
+      report([{ date: '2026-09-16', counts: { game: 2 }, moved: { game: 413 } }]),
+      NOW,
+    );
+    const day = cell(grid, '2026-09-16')!;
+    // The tone reads two things done; the words read what they moved.
+    expect(day.count).toBe(2);
+    expect(day.counts).toEqual({ game: 2 });
+    expect(day.moved).toEqual({ game: 413 });
   });
 
   it('counts the last seven days inclusive of today', () => {
     const grid = activityGrid(
-      [win(at(2026, 8, 16)), win(at(2026, 8, 10)), win(at(2026, 8, 9))],
+      report([
+        { date: '2026-09-16', counts: { puzzle: 1 } },
+        { date: '2026-09-10', counts: { puzzle: 1 } },
+        { date: '2026-09-09', counts: { puzzle: 1 } },
+      ]),
       NOW,
     );
     // 10 Sep is six days back and inside; 9 Sep is seven and outside.
     expect(grid.last7).toBe(2);
   });
 
-  it('drops an attempt outside the window from the totals', () => {
-    const grid = activityGrid([win(at(2026, 0, 5))], NOW);
+  it('drops a day outside the window from the totals', () => {
+    const grid = activityGrid(report([{ date: '2026-01-05', counts: { puzzle: 4 } }]), NOW);
     expect(grid.total).toBe(0);
     expect(grid.weeks.flat().some((c) => c.date === '2026-01-05')).toBe(false);
   });
 
-  it('marks days older than a full tail unknown rather than empty', () => {
-    const attempts = Array.from({ length: ACTIVITY_LIMIT }, () => win(at(2026, 8, 14)));
-    const grid = activityGrid(attempts, NOW);
-    expect(grid.capped).toBe(true);
-    expect(cell(grid, '2026-09-13')!.kind).toBe('unknown');
-    expect(cell(grid, '2026-09-14')!.kind).toBe('day');
+  it('draws a day it was told nothing about as a quiet day, not a hollow one', () => {
+    // The server reads whole files, so a day missing from the report is a
+    // day that held nothing rather than one nobody could see.
+    const grid = activityGrid(report([{ date: '2026-09-14', counts: { puzzle: 1 } }]), NOW);
+    expect(grid.weeks.flat().every((c) => c.kind === 'day' || c.kind === 'future')).toBe(true);
+    expect(cell(grid, '2026-09-13')!.count).toBe(0);
   });
 
-  it('knows the whole window when the tail is short', () => {
-    const grid = activityGrid([win(at(2026, 8, 14))], NOW);
-    expect(grid.capped).toBe(false);
-    expect(grid.weeks.flat().some((c) => c.kind === 'unknown')).toBe(false);
-  });
-
-  it('dates a failed attempt too, so a bad day is not hidden by the cap', () => {
-    const attempts: ActivityAttempt[] = [
-      { win: false, counted: true, at: at(2026, 8, 1) },
-      ...Array.from({ length: ACTIVITY_LIMIT - 1 }, () => win(at(2026, 8, 14))),
-    ];
-    const grid = activityGrid(attempts, NOW);
-    expect(cell(grid, '2026-09-01')!.kind).toBe('day');
-    expect(cell(grid, '2026-09-01')!.count).toBe(0);
-  });
-
-  it('ignores an unparseable timestamp', () => {
-    const grid = activityGrid([{ win: true, counted: true, at: 'not a date' }], NOW);
+  it('draws an empty frame while the answer is still in the air', () => {
+    const grid = activityGrid(null, NOW);
     expect(grid.total).toBe(0);
+    expect(grid.logFrom).toBeNull();
+  });
+
+  it('names the day the log began, when the window reaches back past it', () => {
+    const grid = activityGrid(
+      report([{ date: '2026-09-14', counts: { puzzle: 1 } }], { logSince: '2026-09-15' }),
+      NOW,
+    );
+    // Those days are ordinary days holding real trainer counts; what
+    // each one carries is a flag for its own tip.
+    expect(cell(grid, '2026-09-14')!.kind).toBe('day');
+    expect(cell(grid, '2026-09-14')!.partial).toBe(true);
+    expect(cell(grid, '2026-09-15')!.partial).toBeUndefined();
+    expect(cell(grid, '2026-09-16')!.partial).toBeUndefined();
+    // The day the log started, NOT the window's own left edge, which is
+    // a fact about how wide the panel is and means nothing to a reader.
+    expect(grid.logFrom).toBe('2026-09-15');
+  });
+
+  it('says nothing about the log once the window is all inside it', () => {
+    expect(activityGrid(report([]), NOW).logFrom).toBeNull();
   });
 });
 
@@ -108,6 +131,50 @@ describe('activityStep', () => {
     expect([0, 1, 2, 3, 5, 6, 10, 11, 400].map(activityStep)).toEqual([
       0, 1, 1, 2, 2, 3, 3, 4, 4,
     ]);
+  });
+});
+
+describe('readActivityReport', () => {
+  it('takes the server at its word when the shape is right', () => {
+    expect(
+      readActivityReport({
+        days: [{ date: '2026-09-16', counts: { puzzle: 3 } }],
+        logSince: '2026-09-01',
+      }),
+    ).toEqual({
+      days: [{ date: '2026-09-16', counts: { puzzle: 3 } }],
+      logSince: '2026-09-01',
+    });
+  });
+
+  it('is null for anything that is not a report, which is how the card hides', () => {
+    expect(readActivityReport(null)).toBeNull();
+    expect(readActivityReport('nope')).toBeNull();
+    expect(readActivityReport({})).toBeNull();
+  });
+
+  it('drops a kind this build has never heard of rather than counting it', () => {
+    const out = readActivityReport({
+      days: [{ date: '2026-09-16', counts: { puzzle: 2, seance: 9 } }],
+      logSince: '2026-01-01',
+    });
+    expect(out!.days[0]!.counts).toEqual({ puzzle: 2 });
+  });
+
+  it('drops a day that nothing is left in, and a count that is not one', () => {
+    const out = readActivityReport({
+      days: [
+        { date: '2026-09-16', counts: { puzzle: 'lots' } },
+        { date: '2026-09-15', counts: { puzzle: 0 } },
+        { date: 7, counts: { puzzle: 1 } },
+        { date: '2026-09-14', counts: { note: 1 } },
+      ],
+    });
+    expect(out!.days).toEqual([{ date: '2026-09-14', counts: { note: 1 } }]);
+    // An answer with no logSince is one from a server too old to have a
+    // log: every day in view is then trainer-only, which is what a floor
+    // no day can be before says.
+    expect(out!.logSince).toBe('9999-12-31');
   });
 });
 
@@ -144,7 +211,7 @@ describe('weeksForWidth', () => {
   });
 
   it('hands that count to the grid', () => {
-    const grid = activityGrid([], NOW, weeksForWidth(482));
+    const grid = activityGrid(report([]), NOW, weeksForWidth(482));
     expect(grid.weeks).toHaveLength(40);
     expect(grid.weeks.every((w) => w.length === 7)).toBe(true);
     // Still ends in the week today is in: a wider panel reaches further

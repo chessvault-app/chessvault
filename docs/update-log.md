@@ -11,6 +11,22 @@ Each platform takes its own controls, and the ones that were never a
 platform's come out from behind the guard. Nothing here has been read on
 a phone or in the desktop window yet; the pixel grid is the proof so far.
 
+- **Home's Activity card is the whole vault now, not the puzzle
+  trainer.** A square counts everything that day held: puzzles solved
+  (from a book as well as from the trainer), repertoire positions
+  recalled, studies and notes saved, games brought into the collection,
+  books started. Hovering a day says what made it up. A document counts
+  once a day however often it is saved, and bringing in an archive counts
+  as the one thing it was, with the number of games in the words rather
+  than in the colour. Days before this version know the two trainers
+  only, since nothing was writing the rest down; those days say so on
+  their own tips.
+- **The card fills its panel.** It drew a fixed half year, 310px wide,
+  in a panel measured at 648, 480 and 482px, so up to 338px of it was
+  blank and the picture stopped mid-card. The squares stay the size they
+  were and the card draws as many weeks as it has room for, between half
+  a year and a year.
+
 - **On every phone, a question is a centred card.** Confirmations, the
   name prompt and the unsaved-changes question no longer rise as sheets:
   iOS's alert on an iPhone, Material's dialog on Android.
@@ -36,7 +52,7 @@ a phone or in the desktop window yet; the pixel grid is the proof so far.
   sidebar has a Search button (Ctrl/Cmd K), the games table has lost its
   stripes and shows its column handles on hover, the quick filters are
   chips with Clear all, Home's rows lose their chevrons under a mouse,
-  and Home has an Activity card: puzzles solved per day over six months.
+  and Home has an Activity card, on which more below.
   Settings → Desktop app can ask Windows 11 or macOS to draw its material
   behind the window; it is off until it has been seen in a window.
 - **Glass is one material again.** Four surfaces had drifted from the one

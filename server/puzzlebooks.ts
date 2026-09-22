@@ -238,7 +238,19 @@ export function bookDirFor(title: string, dir: string = BOOKS_DIR): string {
   return made;
 }
 
-export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Hono {
+/**
+ * `onImported` fires when a puzzle book is started, `onSolved` when one
+ * of its puzzles is answered cleanly. The second is the one that
+ * mattered: a book's attempts live in its own progress.json and never
+ * reached puzzles/history.jsonl, so an evening spent on a book was
+ * invisible to the home page's activity grid, which read that file
+ * alone.
+ */
+export function puzzleBooksApi(
+  dir: string = BOOKS_DIR,
+  libraryDir?: string,
+  hooks: { onImported?: (slug: string) => void; onSolved?: () => void } = {},
+): Hono {
   const bookDir = (slug: string): string => resolve(dir, slug);
   /**
    * The library book holding this puzzle book's PDF, if it still does.
@@ -508,6 +520,7 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
     mkdirSync(bookDir(slug), { recursive: true });
     writeJson(resolve(bookDir(slug), 'book.json'), { title, createdAt: new Date().toISOString() });
     writeJson(puzzlesPath(slug), []);
+    hooks.onImported?.(slug);
     return c.json({ slug });
   });
 
@@ -1201,6 +1214,20 @@ export function puzzleBooksApi(dir: string = BOOKS_DIR, libraryDir?: string): Ho
     // updated windows ride back with the attempt so its cache agrees.
     const cycles = readCycles(slug);
     const open = cycles.find((cy) => cy.finishedAt === undefined);
+    /**
+     * Whether this attempt was the puzzle's first of THIS pass, read off
+     * `prev` because `progress` above already holds the attempt itself.
+     *
+     * That is the book's own way of saying what the puzzle trainer's
+     * `counted` flag says: progress through puzzles not yet reached,
+     * rather than a second go at one already answered. A book is meant to
+     * be walked more than once, so it cannot be "the first attempt ever"
+     * - a reader on their second pass would light no squares at all.
+     */
+    const firstOfPass = open
+      ? cycleAttempt(attemptsOf(prev), open) === null
+      : attemptsOf(prev).length === 0;
+    if (body.win && firstOfPass) hooks.onSolved?.();
     if (open) {
       let complete = true;
       for (const id of puzzleIds(slug)) {

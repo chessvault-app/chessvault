@@ -150,7 +150,7 @@ export const HOME_CARDS: readonly HomeCard[] = [
   {
     id: 'activity',
     label: 'Activity',
-    blurb: 'Puzzles solved each day over the last six months.',
+    blurb: 'Everything you did each day over the last six months.',
     phone: true,
     desktop: true,
   },

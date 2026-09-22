@@ -38,16 +38,15 @@ import { t } from '@/lib/i18n';
 import {
   ACTIVITY_CELL,
   ACTIVITY_GAP,
-  ACTIVITY_LIMIT,
   ACTIVITY_TONES,
-  ACTIVITY_UNKNOWN,
   ACTIVITY_WEEKS,
   activityGrid,
   activityStep,
+  readActivityReport,
   weeksForWidth,
-  type ActivityAttempt,
   type ActivityGrid,
 } from './activity';
+import { ACTIVITY_KINDS, type ActivityKind, type ActivityReport } from '@shared/activity';
 import { CustomiseDialog } from './CustomiseDialog';
 import { HOME_DESTINATIONS, type Destination, type HomeCount } from './destinations';
 import {
@@ -171,10 +170,13 @@ interface HomeData {
       answer, which is not a zero. Asked at every width now that the
       Puzzles tile reads it. */
   solvedToday: number | null;
-  /** The tail of the attempt history the Activity grid is drawn from,
-      and the same tail today's count above was taken out of. Null when
-      the route did not answer; empty when it answered with nothing. */
+  /** The tail today's count was taken out of. Null when the route did
+      not answer; empty when it answered with nothing. */
   history: Attempt[] | null;
+  /** Every kind of work, by day, as the server tallied it. Null when the
+      route did not answer, which is the one case the card is not drawn
+      at all: an empty grid there would say this vault has done nothing. */
+  activity: ActivityReport | null;
   lastStudy: DocMeta | null;
   lastGame: DocMeta | null;
   /** Counted training attempts — 0 means the trainer is untouched. */
@@ -659,28 +661,36 @@ function RecentGamesCard({
 }
 
 /**
- * Half a year of training, as squares: a column a week, a square a day,
- * five steps of `good`.
+ * Half a year of the vault's work, as squares: a column a week, a square
+ * a day, five steps of `good`.
  *
  * Why a picture at all. Home was five cards of text rows, and the only
  * thing on it that was not a sentence was the Continue thumbnail, which
  * is one position. A count per day is the one thing this vault records
  * that a sentence cannot say: "42 in the last 7 days" is a number, and
- * what a solver wants to know is whether the last month looks like the
+ * what somebody wants to know is whether the last month looks like the
  * one before it. Counts only. Nothing here is a rating, and nothing here
  * could become one: the grid is given a tally per day and never asked
  * where any of it sat on a scale.
  *
- * ONE drawing, not two. The frame is fixed for a given width - n columns
+ * ONE QUANTITY. A square's tone is the day added up over every kind, and
+ * the day's tip is what made it up. It used to be puzzles alone, which
+ * is what the card was actually drawing while the head said "Activity":
+ * an evening of writing up games left no mark at all. Six kinds now
+ * (shared/activity.ts), and they share one scale rather than each
+ * getting a colour, because a legend to decode is what a picture on a
+ * home page must not need.
+ *
+ * ONE DRAWING, not two. The frame is fixed for a given width - n columns
  * of seven, whatever the vault holds - so the wait is this same component
- * with `attempts` null, and there is no second copy of the geometry to
- * drift from this one. A null tail takes its frame from `activityGrid([])`,
- * the page's own function, and draws the empty tone with no tooltips and a
- * bar where the sentence lands.
+ * with `report` null, and there is no second copy of the geometry to
+ * drift from this one. A null report takes its frame from the page's own
+ * function and draws the empty tone with no tooltips and a bar where the
+ * sentence lands.
  *
  * The COLUMN COUNT is this card's own, not the page's, which is why the
- * card is handed the attempt tail rather than a finished grid: the phone
- * copy and the desktop copy are the same tail at two widths, and a grid
+ * card is handed the report rather than a finished grid: the phone copy
+ * and the desktop copy are the same report at two widths, and a grid
  * computed once upstream would have to be computed at one of them. The
  * width is measured rather than guessed from a breakpoint because the
  * dashboard is one column under `lg` and two above it, so the same
@@ -691,10 +701,10 @@ function RecentGamesCard({
  * nothing.
  */
 function ActivityCard({
-  attempts,
+  report,
   className,
 }: {
-  attempts: readonly ActivityAttempt[] | null;
+  report: ActivityReport | null;
   className?: string;
 }) {
   const [weeks, setWeeks] = useState(ACTIVITY_WEEKS);
@@ -719,9 +729,11 @@ function ActivityCard({
     };
   }, []);
   // The frame while the answer is in the air is the frame it will land
-  // in, drawn by the page's own arithmetic over no attempts at all.
-  const grid = attempts === null ? null : activityGrid(attempts, new Date(), weeks);
-  const frame = grid ?? activityGrid([], new Date(), weeks);
+  // in, drawn by the page's own arithmetic over nothing at all. A null
+  // report is the wait; it draws every day as an ordinary quiet one,
+  // since hollow would be a claim about a vault nobody has asked yet.
+  const grid = report === null ? null : activityGrid(report, new Date(), weeks);
+  const frame = grid ?? activityGrid(null, new Date(), weeks);
   const day = new Intl.DateTimeFormat(locale(), { dateStyle: 'medium' });
   return (
     <div
@@ -749,14 +761,14 @@ function ActivityCard({
               grid === null
                 ? undefined
                 : grid.total > 0
-                  ? t('Puzzles solved each day over the last {w} weeks: {n} on {d} days.', {
+                  ? t('What you did each day over the last {w} weeks: {n} things on {d} days.', {
                       w: weeks,
                       n: grid.total,
                       d: grid.days,
-                    })
-                  : t('Puzzles solved each day over the last {w} weeks: none yet.', {
+                    }) + partialNote(grid, day)
+                  : t('What you did each day over the last {w} weeks: nothing yet.', {
                       w: weeks,
-                    })
+                    }) + partialNote(grid, day)
             }
             className={cn('flex w-max', ACTIVITY_GAP)}
           >
@@ -785,10 +797,10 @@ function ActivityCard({
         ) : (
           <p className="text-muted-foreground mt-2 type-row-sub">
             {grid.total === 0
-              ? t('Nothing solved yet. A square fills in for each day you train.')
+              ? t('Nothing recorded yet. A square fills in for each day you do something.')
               : grid.last7 > 0
-                ? t('{n} solved in the last 7 days', { n: grid.last7 })
-                : t('Nothing solved in the last 7 days')}
+                ? t('{n} things in the last 7 days', { n: grid.last7 })
+                : t('Nothing in the last 7 days')}
           </p>
         )}
       </div>
@@ -819,10 +831,7 @@ function ActivitySquare({
   if (day.kind === 'future') return <span aria-hidden className={cn(ACTIVITY_CELL, 'invisible')} />;
   const box = (
     <span
-      className={cn(
-        ACTIVITY_CELL,
-        day.kind === 'unknown' ? ACTIVITY_UNKNOWN : ACTIVITY_TONES[activityStep(day.count)],
-      )}
+      className={cn(ACTIVITY_CELL, ACTIVITY_TONES[activityStep(day.count)])}
     />
   );
   if (!live) return box;
@@ -830,17 +839,72 @@ function ActivitySquare({
   return (
     <TitleTip
       title={
-        day.kind === 'unknown'
-          ? t('Older than the attempts kept here')
+        day.partial
+          ? // A day older than the log. Its counts are real and its
+            // quiet is not: what a blank square means here is that
+            // nothing was writing the other four kinds down yet, which
+            // is the one thing a tip on this grid must never leave to
+            // be guessed at.
+            day.count === 0
+            ? t('No puzzles or drills on {date}', { date })
+            : `${date}: ${breakdown(day)}. ${t('Only puzzles and drills were recorded then.')}`
           : day.count === 0
-            ? t('Nothing solved on {date}', { date })
-            : t('{n} solved on {date}', { n: day.count, date })
+            ? t('Nothing on {date}', { date })
+            : `${date}: ${breakdown(day)}`
       }
     >
       {box}
     </TitleTip>
   );
 }
+
+/**
+ * The picture's alternative text gains the caveat the days carry on
+ * their tips, since a reader who cannot hover one has nowhere else to
+ * meet it. Empty, and so free, once the window is all inside the log.
+ */
+function partialNote(grid: ActivityGrid, when: Intl.DateTimeFormat): string {
+  if (grid.logFrom === null) return '';
+  return ` ${t('Before {date} only puzzles and drills were recorded.', {
+    date: when.format(new Date(`${grid.logFrom}T00:00:00`)),
+  })}`;
+}
+
+/**
+ * What a day held, in words: "8 puzzles, 2 studies".
+ *
+ * The kinds in `ACTIVITY_KINDS` order rather than by size, so two days'
+ * tips can be read against each other and the same kind is in the same
+ * place. A kind that moved more than it had events says what it moved -
+ * an archive import is one event and four hundred games, and the number
+ * somebody wants is the four hundred.
+ */
+function breakdown(day: ActivityGrid['weeks'][number][number]): string {
+  const parts: string[] = [];
+  for (const kind of ACTIVITY_KINDS) {
+    const events = day.counts[kind];
+    if (!events) continue;
+    parts.push(KIND_WORDS[kind](day.moved?.[kind] ?? events));
+  }
+  return parts.join(', ');
+}
+
+/**
+ * One kind, counted, in the words the rest of the app uses for it.
+ *
+ * A function per kind rather than one sentence with a noun slotted in:
+ * Korean and English do not agree on where a number sits or whether a
+ * plural exists, and a noun handed to `t()` as a parameter cannot be
+ * translated at all.
+ */
+const KIND_WORDS: Record<ActivityKind, (n: number) => string> = {
+  puzzle: (n) => t('{n} puzzles', { n }),
+  drill: (n) => t('{n} drills', { n }),
+  study: (n) => t('{n} studies', { n }),
+  note: (n) => t('{n} notes', { n }),
+  game: (n) => t('{n} games', { n }),
+  book: (n) => t('{n} books', { n }),
+};
 
 /** How many recent games the phone draws under Continue: enough to hold
     a weekend's rounds, few enough to keep the grid on the first screen. */
@@ -911,12 +975,14 @@ export function HomePage() {
     })();
   }, [attempt]);
 
-  // How much of the attempt history to ask for, which is the one thing
-  // on this page a switched-off card makes cheaper: today's count needs
-  // 200 rows and the activity grid wants the route's whole cap. Switching
-  // the card on therefore re-asks, which is also how it fills in without
-  // a reload.
-  const historyLimit = cardOn(layout, 'activity') ? ACTIVITY_LIMIT : 200;
+  /**
+   * The zone the activity route buckets days in.
+   *
+   * Sent rather than assumed: the server tallies, and a server in another
+   * country would otherwise slide a whole evening's work onto the wrong
+   * squares. Read once per render and cheap; `Intl` has it in hand.
+   */
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   useEffect(() => {
     // Navigating away mid-flight cancels its requests, and the
@@ -948,8 +1014,19 @@ export function HomePage() {
     void (async () => {
       // The notes/games endpoints speak the studies document API, so they
       // answer with a `studies` list.
-      const [studies, notes, games, puzzles, settings, books, library, map, repertoire, history] =
-        await Promise.all([
+      const [
+        studies,
+        notes,
+        games,
+        puzzles,
+        settings,
+        books,
+        library,
+        map,
+        repertoire,
+        history,
+        activity,
+      ] = await Promise.all([
         grab('/api/studies'),
         grab('/api/notes'),
         grab('/api/games/docs'),
@@ -963,10 +1040,14 @@ export function HomePage() {
         grab('/api/openingmap'),
         // Counts only — home links to the trainer, it does not drill.
         grab('/api/repertoire/meta'),
-        // Null, not 0, when the history did not answer. Long enough for
-        // the activity grid when that card is on, and the 200 today's
-        // count alone ever needed when it is off.
-        fetchAttempts(historyLimit),
+        // Null, not 0, when the history did not answer. 200 rows is
+        // everything today's count can need; the activity grid stopped
+        // reading this tail when the server started tallying for it.
+        fetchAttempts(200),
+        // Every kind of work, already tallied per day, in this browser's
+        // own zone. One small answer whatever the vault holds, which is
+        // why the grid no longer has an attempt cap to be honest about.
+        grab(`/api/activity?tz=${encodeURIComponent(tz)}`),
       ]);
       if (ctl.signal.aborted) return;
       if (asked > 0 && failures.length === asked) {
@@ -1046,6 +1127,7 @@ export function HomePage() {
         counts,
         solvedToday: today,
         history,
+        activity: readActivityReport(activity),
         lastStudy: latest(studies),
         lastGame: latest(games),
         attempts: meta?.user?.attempts ?? 0,
@@ -1066,7 +1148,7 @@ export function HomePage() {
     return () => {
       ctl.abort();
     };
-  }, [attempt, historyLimit]);
+  }, [attempt, tz]);
 
   /** Apply and store, in one press. Reset removes the stored value rather
       than writing today's defaults, so a device put back to default is a
@@ -1191,18 +1273,18 @@ export function HomePage() {
         ];
 
   /**
-   * The tail the activity grid is drawn from: null while the answer is in
-   * the air, and `false` when the history route answered with a failure
+   * What the activity grid is drawn from: null while the answer is in the
+   * air, and `false` when the activity route answered with a failure
    * while the rest of the page answered. The card is drawn not at all in
-   * that case, because an empty grid there would say this vault has
-   * trained nothing, which is the one thing it is not allowed to say
-   * without having been told.
+   * that case, because an empty grid there would say this vault has done
+   * nothing, which is the one thing it is not allowed to say without
+   * having been told.
    *
-   * The tail and not a grid, because the two copies of the card below sit
-   * at two different widths and each counts its own columns.
+   * The report and not a grid, because the two copies of the card below
+   * sit at two different widths and each counts its own columns.
    */
-  const activity: Attempt[] | null | false =
-    data === null ? null : data.history === null ? false : data.history;
+  const activity: ActivityReport | null | false =
+    data === null ? null : (data.activity ?? false);
 
   /** The study the board draws, when there is a position to draw. Hoisted
       so the JSX below is not re-narrowing `data` inside a branch that
@@ -1667,7 +1749,7 @@ export function HomePage() {
             the answer, so the card itself holds its own place and there
             is nothing to reserve. */}
         {show('activity') && outage === null && activity !== false && (
-          <ActivityCard attempts={activity} className="mb-4 md:hidden" />
+          <ActivityCard report={activity} className="mb-4 md:hidden" />
         )}
 
         {/* The checklist's place while the answer is in the air. Three
@@ -1914,7 +1996,7 @@ export function HomePage() {
                 holds, so the card knows its own size before the answer
                 and the first launch on a device holds the place as well
                 as the hundredth. */}
-            {show('activity') && activity !== false && <ActivityCard attempts={activity} />}
+            {show('activity') && activity !== false && <ActivityCard report={activity} />}
             {show('games') && reservedDash !== null && reservedDash.games > 0 && (
               <PlaceholderPanel title={t('Recent games')} rows={reservedDash.games} icon={false} tally />
             )}
@@ -1993,7 +2075,7 @@ export function HomePage() {
             {/* Second, so it lands beside Training in the two-column
                 grid: the two answer the same question a week apart, one
                 as a schedule and one as a habit. */}
-            {show('activity') && activity !== false && <ActivityCard attempts={activity} />}
+            {show('activity') && activity !== false && <ActivityCard report={activity} />}
 
             {show('games') && dash.recentGames.length > 0 && (
               <RecentGamesCard games={dash.recentGames} total={dash.gamesTotal} />

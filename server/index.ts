@@ -11,6 +11,7 @@ import { Readable } from 'node:stream';
 import { resolve } from 'node:path';
 import { authApi, isGated, migratePlaintextPassword, requireAuth } from './auth.ts';
 import { booksApi } from './books.ts';
+import { recordActivity } from './activity.ts';
 import { crossSiteGuard, isRawBodyPath } from './crossSite.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
 import { mountVault } from './mountVault.ts';
@@ -252,8 +253,27 @@ app.route(
 
 app.route('/api', lichessExplorerApi());
 app.route('/api', tablebaseApi());
-app.route('/api', puzzleBooksApi());
-app.route('/api', booksApi());
+// Book work lands in the same activity log mountVault's routes write to
+// (server/activity.ts); the books APIs are mounted out here because the
+// demo and the server genuinely disagree about them, not because their
+// days are counted differently.
+app.route(
+  '/api',
+  puzzleBooksApi(undefined, undefined, {
+    onImported: (slug) => {
+      recordActivity('book', { id: slug });
+    },
+    onSolved: () => {
+      recordActivity('puzzle');
+    },
+  }),
+);
+app.route(
+  '/api',
+  booksApi(undefined, undefined, (id) => {
+    recordActivity('book', { id });
+  }),
+);
 app.route('/api', storageApi());
 // The engine's full network, fetched once on request and served to the
 // worker from the server, since the browser cannot fetch it itself.

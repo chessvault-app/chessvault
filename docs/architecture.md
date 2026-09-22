@@ -13,6 +13,8 @@ person's tool, built to outlive any one device.
 vault/
   config.json         app password + TOTP secret + Lichess token, mode 0600
   sessions.json       hashes of the live sign-in sessions (server/auth.ts)
+  activity.jsonl      what was done and when: studies, notes, games, books
+                      (the two trainers keep their own, below; server/activity.ts)
   studies/            *.pgn        (chapters = games in one file)
   notes/              *.md         (markdown + ```chess fenced boards)
   games/

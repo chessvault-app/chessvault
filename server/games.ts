@@ -391,7 +391,18 @@ function writeBookmarks(dir: string, keys: Set<string>): void {
 
 // ---------------------------------------------------------------------------
 
-export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_CONFIG): Hono {
+/**
+ * `onCollected` is told how many games a request added to the
+ * collection, so the home page's activity grid can say a day brought
+ * games in. One call per request, not per game: an archive import is one
+ * thing somebody did, and the count rides along for the words (see
+ * `shared/activity.ts`).
+ */
+export function gamesApi(
+  dir: string = VAULT_GAMES,
+  configPath: string = VAULT_CONFIG,
+  onCollected?: (n: number) => void,
+): Hono {
   const collectionDir = resolve(dir, 'collection');
   mkdirSync(collectionDir, { recursive: true });
   const api = new Hono();
@@ -692,6 +703,7 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
       ids.push(addToCollection(game));
     }
 
+    if (ids.length > 0) onCollected?.(ids.length);
     return c.json({ id: ids[0], ids, added: ids.length });
   });
 
@@ -774,6 +786,7 @@ export function gamesApi(dir: string = VAULT_GAMES, configPath: string = VAULT_C
     }
     const counts = { imported: ids.length, duplicates, unreadable };
     if (ids.length === 0) return c.json({ error: 'already in the collection', ...counts }, 409);
+    onCollected?.(ids.length);
     return c.json({ id: ids[0], ids, ...counts });
   });
 

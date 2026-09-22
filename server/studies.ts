@@ -266,6 +266,16 @@ function readPreview(head: string): DocPreview {
 export interface StudiesHooks {
   onMoved?: (from: string, to: string) => void;
   onFolderMoved?: (from: string, to: string) => void;
+  /**
+   * A document was created or written. What the caller does with it is
+   * the caller's business - this file has never known which of the three
+   * kinds it is mounted as, and still does not.
+   *
+   * Not called for a draft park: `?draft=1` is the unsaved buffer that
+   * survives a crashed tab, written from a timer while somebody types,
+   * and a day's work is what was saved rather than what was typed.
+   */
+  onSaved?: (id: string) => void;
 }
 
 /**
@@ -624,6 +634,7 @@ export function studiesApi(
           ? `# ${title}\n\n`
           : `[Event "${title}: Chapter 1"]\n[ChapterName "Chapter 1"]\n[Result "*"]\n\n*\n`,
     );
+    hooks.onSaved?.(name);
     return c.json({ id: name });
   });
 
@@ -654,6 +665,7 @@ export function studiesApi(
     // The save IS the answer to whatever was parked; a swap that outlived
     // it would offer to restore an older version of what was just written.
     dropSwap(id);
+    hooks.onSaved?.(id);
     return c.json({ saved: id, bytes: body.pgn.length });
   });
 

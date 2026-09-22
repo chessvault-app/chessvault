@@ -13,6 +13,7 @@ import { openingMapApi, remapMapTags } from './openingMap.ts';
 import { repertoireApi } from './repertoire.ts';
 import { searchApi } from './search.ts';
 import { studiesApi } from './studies.ts';
+import { activityApi, recordActivity } from './activity.ts';
 import { DATA_PUZZLES, DATA_SEARCH_INDEX, VAULT, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES } from './paths.ts';
 
 /**
@@ -32,6 +33,9 @@ import { DATA_PUZZLES, DATA_SEARCH_INDEX, VAULT, VAULT_GAMES, VAULT_NOTES, VAULT
  * would make the real server harder to read for the demo's benefit.
  */
 export interface VaultRoutes {
+  /** The vault root, which is where the activity log lives and the only
+      thing that is not one feature's own directory. */
+  vault?: string;
   /** Directory of .pgn studies. */
   studies?: string;
   /** Directory of .md notes. */
@@ -68,6 +72,22 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   const notes = paths.notes ?? VAULT_NOTES;
   const games = paths.games ?? VAULT_GAMES;
   const repertoire = paths.repertoireState ?? resolve(VAULT, 'repertoire');
+  const vault = paths.vault ?? VAULT;
+
+  /**
+   * What this vault did, day by day, for the home page's grid.
+   *
+   * Every route that records something is handed a one-line callback
+   * rather than importing the log itself, for the reason `follow` below
+   * has: those modules are mounted three times over three directories and
+   * have no idea which vault they are in. Naming the kind is this file's
+   * job, since this file is the one that knows.
+   */
+  const noteWork =
+    (kind: 'study' | 'note' | 'game') =>
+    (id: string): void => {
+      recordActivity(kind, { id }, vault);
+    };
 
   // The opening map stores document ids in its tags, so each document API
   // reports its renames and the map's tags follow — the same reason the
@@ -88,6 +108,7 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
       remapMapTags(repertoire, kind, { from, to, folder: true });
       renamer.folderMoved(SECTION[kind], from, to);
     },
+    onSaved: noteWork(kind),
   });
 
   // Given the caller's paths, not the module defaults: the demo mounts a
@@ -97,6 +118,10 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   // out from under it is refused for as long as it runs.
   app.route('/api', sourcesApi(paths.sources ?? VAULT_SOURCES, { busy: refgamesBuildRunning }));
   app.route('/api', openingsApi());
+  // Reads the log this file's callbacks write, and the two trainers' own
+  // histories beside it. Here rather than at the call sites because the
+  // grid it feeds is on the home page, which both deployments have.
+  app.route('/api', activityApi(vault));
   app.route('/api', studiesApi(studies, 'studies', '.pgn', follow('study')));
   // The games collection speaks the same document API as studies: an
   // annotated game is a one-chapter study living in games/collection/.
@@ -124,7 +149,12 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   );
   // The vault's own config.json sits beside its games dir — collecting
   // reads the profile from THIS vault, not the module-default one.
-  app.route('/api', gamesApi(games, resolve(games, '..', 'config.json')));
+  app.route(
+    '/api',
+    gamesApi(games, resolve(games, '..', 'config.json'), (n) => {
+      recordActivity('game', { n }, vault);
+    }),
+  );
   // The vault's own games, explorable under filters. Not a book: see
   // server/myGames.ts for why they are indexed rather than compiled.
   app.route(

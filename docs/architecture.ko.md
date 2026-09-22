@@ -13,6 +13,8 @@ Chess Vault는 오프라인을 우선하는 개인용 체스 작업 공간입니
 vault/
   config.json         앱 비밀번호 + TOTP 비밀키 + Lichess 토큰, 모드 0600
   sessions.json       살아 있는 로그인 세션의 해시 (server/auth.ts)
+  activity.jsonl      무엇을 언제 했는지: 스터디, 노트, 게임, 책
+                      (두 트레이너는 아래 각자의 기록을 씀, server/activity.ts)
   studies/            *.pgn        (챕터 = 파일 하나 안의 여러 게임)
   notes/              *.md         (마크다운 + ```chess 펜스 보드)
   games/

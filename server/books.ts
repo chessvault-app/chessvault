@@ -140,9 +140,16 @@ const pagesParam = (raw: string | undefined): number | null => {
   return Number.isInteger(n) && n > 0 ? n : null;
 };
 
+/**
+ * `onAdded` fires when a PDF lands on the shelf, so a day that brought a
+ * book in is a day the home page's activity grid has something to draw.
+ * Replacing the file behind an existing book does not fire it: that is
+ * the same book, scanned better.
+ */
 export function booksApi(
   dir: string = BOOKS_DIR,
   puzzleBooksDir: string = resolve(VAULT, 'puzzlebooks'),
+  onAdded?: (id: string) => void,
 ): Hono {
   const bookDir = (id: string): string => resolve(dir, id);
   const pdfPath = (id: string): string => resolve(bookDir(id), 'book.pdf');
@@ -410,6 +417,7 @@ export function booksApi(
       writeFolders([...readFolders(), collection]);
     }
     writeJson(metaPath(id), meta);
+    onAdded?.(id);
     return c.json({ id, bytes: statSync(pdfPath(id)).size, pages: meta.pages });
   });
 

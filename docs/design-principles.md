@@ -1452,7 +1452,8 @@ drawn, and what one has to prove.
   resize handles show on hover or focus; filters as chips at content
   width shared with the phone's (`games/filter-chips.ts`); Home without
   trailing chevrons under a fine pointer, and an Activity card counting
-  solved puzzles by day, counts and never a rating. The desktop window
+  by day everything the vault records as work, counts and never a
+  rating. The desktop window
   can ask the OS for its material (Mica, sidebar vibrancy), and from md
   it is the FRAME that steps aside for it: `--app-ground` goes
   transparent under mica and to a 70% mix under vibrancy, while the

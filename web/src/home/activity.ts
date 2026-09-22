@@ -8,13 +8,26 @@
  * draw, how wide a square is, and how many weeks a panel this wide has
  * room for.
  *
- * What it counts is what the vault already records: clean, counted solves
- * out of `puzzles/history.jsonl`, by the same rule `puzzles/today.ts`
- * counts one day of them by. A review or a replay is training but it is
- * not progress through unseen puzzles, and counting it would let one
- * puzzle darken two squares. No rating is read here and none could be:
- * the grid is a count per day and nothing else.
+ * What it counts is everything the vault records as a day's work, in one
+ * answer off `/api/activity`: puzzles solved, repertoire positions
+ * recalled, studies and notes written, games brought in, books started.
+ * The rules for which of those count are the SERVER's (server/
+ * activity.ts) and are not repeated here - this file is handed days and
+ * tallies and draws them.
+ *
+ * A square's tone is the day's tally added up, over every kind, and its
+ * tip is the breakdown. One quantity, because that is the grammar the
+ * five tones already had: a legend to decode is what a picture on a home
+ * page must not need. No rating is read here and none could be.
  */
+
+import {
+  ACTIVITY_KINDS,
+  dayTotal,
+  type ActivityDayTally,
+  type ActivityKind,
+  type ActivityReport,
+} from '@shared/activity';
 
 /**
  * The FEWEST week columns any panel draws. Twenty-six is half a year,
@@ -71,53 +84,66 @@ export function weeksForWidth(px: number): number {
   return Math.min(ACTIVITY_MAX_WEEKS, Math.max(ACTIVITY_WEEKS, fits));
 }
 
-/**
- * How many attempts are asked for.
- *
- * The history route caps at 500 (server/puzzles.ts) and says so, so this
- * is the cap itself rather than a number that quietly means it. A tail
- * that comes back full is a tail with a floor: everything before its
- * oldest attempt is unknown to this page, NOT nothing, and the grid draws
- * those days hollow instead of as blank days somebody did not train. A
- * blank square is a claim, and the one claim this page must not make is
- * that an active week was an idle one.
- */
-export const ACTIVITY_LIMIT = 500;
-
-/** One attempt as the history route writes it - the fields this grid
-    reads, and not one more. */
-export interface ActivityAttempt {
-  win: boolean;
-  counted?: boolean;
-  at: string;
-}
-
 export interface ActivityDay {
   /** The local calendar day, `YYYY-MM-DD`. */
   date: string;
+  /** Everything done that day, added up. */
   count: number;
+  /** What made it up, for the day's tip. Empty on a day with nothing. */
+  counts: Partial<Record<ActivityKind, number>>;
+  /** What those events moved, where it is more than the events
+      themselves - a 412-game import. Words only; see shared/activity.ts. */
+  moved?: Partial<Record<ActivityKind, number>>;
   /**
-   * `day` is a day this page knows about, count and all. `future` is the
-   * rest of the week containing today, which is drawn as nothing at all
-   * rather than as an idle day that has not happened. `unknown` is a day
-   * older than the tail the route handed back.
+   * A day older than the log, so the two trainers are all it can hold.
+   *
+   * It is the day's own tip that says so, and NOT a line under the card,
+   * which is where this went first: that line exists only once the
+   * answer lands, so the card was one line taller loaded than waiting and
+   * moved everything under it 20px on a desktop and 44 on a phone
+   * (`check:skeletons` caught it). Hanging it on the day is also simply
+   * more accurate - it is true of those days and of no others - and it
+   * is the one place where the claim actually needed retracting: a quiet
+   * square here does not mean a quiet day, it means a day whose studies
+   * and games nothing was writing down.
    */
-  kind: 'day' | 'future' | 'unknown';
+  partial?: true;
+  /**
+   * `day` is a day this page knows about, tally and all. `future` is the
+   * rest of the week containing today, drawn as nothing at all rather
+   * than as an idle day that has not happened.
+   *
+   * There used to be a third, `unknown`, drawn hollow for a day older
+   * than the 500-attempt tail this grid was handed - because a blank
+   * square is a claim, and the claim it must not make is that an active
+   * week was an idle one. The server reads whole files now and the tail
+   * is gone, so a day it did not report is a day that held nothing, and
+   * there is no longer anything this page cannot see.
+   */
+  kind: 'day' | 'future';
 }
 
 export interface ActivityGrid {
   /** Week columns, oldest first; seven days each, Sunday at the top. */
   weeks: ActivityDay[][];
-  /** Solves inside the window, over the days this page knows about. */
+  /** Everything inside the window, over the days this page knows about. */
   total: number;
-  /** Solves over the seven days ending today - what the line under the
+  /** The same over the seven days ending today - what the line under the
       grid says, because a week is the span a habit is felt over. */
   last7: number;
   /** How many days in the window carry at least one. */
   days: number;
-  /** Whether the tail came back full, which is what makes the oldest days
-      unknown rather than empty. */
-  capped: boolean;
+  /**
+   * The day the log began, when the window reaches back past it - and
+   * null when it does not.
+   *
+   * It is `report.logSince` itself and not the first day in view: what
+   * is worth naming is the day the four document kinds STARTED being
+   * written down, where the window's own left edge is a fact about how
+   * wide the panel happens to be. The picture's alternative text says it
+   * once; the days it applies to carry `partial`.
+   */
+  logFrom: string | null;
 }
 
 /** Local midnight, since a day on this grid is the day the solver had,
@@ -154,32 +180,22 @@ export function activityStep(count: number): 0 | 1 | 2 | 3 | 4 {
 }
 
 /**
- * The attempts a vault recorded, as the grid home draws.
+ * A vault's report, as the grid home draws.
  *
  * `now` is passed in rather than read, so the tests are not a bet on what
  * day they run.
+ *
+ * The server's days are keyed in the browser's own zone (it is told
+ * which), so a date out of the report and a date off `dayKey` here are
+ * the same day and can simply be compared as strings.
  */
 export function activityGrid(
-  attempts: readonly ActivityAttempt[],
+  report: ActivityReport | null,
   now: Date,
   weeks: number = ACTIVITY_WEEKS,
 ): ActivityGrid {
-  const counts = new Map<string, number>();
-  let oldest: number | null = null;
-  for (const a of attempts) {
-    const when = new Date(a.at);
-    if (Number.isNaN(when.getTime())) continue;
-    // Every attempt dates the tail, win or not: what the cap hides is
-    // attempts, and a day of nothing but failures is still a day this
-    // page has heard about.
-    const ms = when.getTime();
-    if (oldest === null || ms < oldest) oldest = ms;
-    if (!a.win || a.counted === false) continue;
-    const key = dayKey(when);
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  }
-  const capped = attempts.length >= ACTIVITY_LIMIT;
-  const floor = capped && oldest !== null ? dayKey(new Date(oldest)) : null;
+  const byDate = new Map<string, ActivityDayTally>();
+  for (const day of report?.days ?? []) byDate.set(day.date, day);
 
   const today = startOfDay(now);
   const todayKey = dayKey(today);
@@ -192,28 +208,38 @@ export function activityGrid(
   let total = 0;
   let days = 0;
   let last7 = 0;
+  let logFrom: string | null = null;
   const last7From = dayKey(addDays(today, -6));
   for (let w = 0; w < weeks; w += 1) {
     const column: ActivityDay[] = [];
     for (let d = 0; d < 7; d += 1) {
       const date = dayKey(addDays(firstSunday, w * 7 + d));
       if (date > todayKey) {
-        column.push({ date, count: 0, kind: 'future' });
+        column.push({ date, count: 0, counts: {}, kind: 'future' });
         continue;
       }
-      if (floor !== null && date < floor) {
-        column.push({ date, count: 0, kind: 'unknown' });
-        continue;
-      }
-      const count = counts.get(date) ?? 0;
+      // Before the log existed, so the trainers are all this day can
+      // hold. Drawn as an ordinary day, because it is one and its counts
+      // are real; what it carries is a flag for its own tip.
+      const partial = report !== null && date < report.logSince;
+      if (partial) logFrom = report.logSince;
+      const tally = byDate.get(date);
+      const count = tally ? dayTotal(tally) : 0;
       total += count;
       if (count > 0) days += 1;
       if (date >= last7From) last7 += count;
-      column.push({ date, count, kind: 'day' });
+      column.push({
+        date,
+        count,
+        counts: tally?.counts ?? {},
+        ...(tally?.moved && { moved: tally.moved }),
+        ...(partial && { partial: true }),
+        kind: 'day',
+      });
     }
     out.push(column);
   }
-  return { weeks: out, total, last7, days, capped };
+  return { weeks: out, total, last7, days, logFrom };
 }
 
 /**
@@ -250,7 +276,42 @@ export const ACTIVITY_TONES = [
   'bg-good',
 ] as const;
 
-/** A day older than the tail: hollow, so it is plainly not an idle day.
-    Drawn on the card's own fill, which is why it is a ring and not a
-    fill of its own. */
-export const ACTIVITY_UNKNOWN = 'ring-1 ring-border ring-inset';
+
+/**
+ * Whatever `/api/activity` answered, as a report, or null.
+ *
+ * Null means the route did not answer, and the page draws no card at all
+ * rather than an empty one. A SHAPE check and nothing more: the kinds are
+ * filtered to the ones this build knows, since a client and a server of
+ * different ages take turns on one device and a kind added later must
+ * neither crash the grid nor be silently counted as something else.
+ */
+export function readActivityReport(raw: unknown): ActivityReport | null {
+  if (raw === null || typeof raw !== 'object') return null;
+  const body = raw as Partial<ActivityReport>;
+  if (!Array.isArray(body.days)) return null;
+  const days: ActivityDayTally[] = [];
+  for (const entry of body.days) {
+    const row = entry as Partial<ActivityDayTally>;
+    if (typeof row.date !== 'string' || row.counts === null || typeof row.counts !== 'object') {
+      continue;
+    }
+    const counts: Partial<Record<ActivityKind, number>> = {};
+    const moved: Partial<Record<ActivityKind, number>> = {};
+    for (const kind of ACTIVITY_KINDS) {
+      const n = row.counts[kind];
+      if (typeof n === 'number' && Number.isFinite(n) && n > 0) counts[kind] = n;
+      const m = row.moved?.[kind];
+      if (typeof m === 'number' && Number.isFinite(m) && m > 0) moved[kind] = m;
+    }
+    if (Object.keys(counts).length === 0) continue;
+    days.push({ date: row.date, counts, ...(Object.keys(moved).length > 0 && { moved }) });
+  }
+  return {
+    days,
+    // An older server has no such field, and everything it can tell this
+    // page about is then trainer-only: the sentence belongs on the whole
+    // window, so the floor is a date no day in view can be before.
+    logSince: typeof body.logSince === 'string' ? body.logSince : '9999-12-31',
+  };
+}
