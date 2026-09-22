@@ -167,6 +167,17 @@
           transform: none;
         }
       }
+      /* The entrance is the only thing in this window that moves; the
+         hover tints are colour, which is feedback rather than motion, and
+         stay. Under reduced motion a step simply appears, as the app's
+         own entrances do (motion.css), and as the landing pages hold
+         their press and their drawer. After the .card rule on purpose:
+         the two are the same specificity, so source order decides. */
+      @media (prefers-reduced-motion: reduce) {
+        .card {
+          animation: none;
+        }
+      }
       input {
         flex: 1;
         min-width: 0;
