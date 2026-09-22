@@ -275,34 +275,50 @@ export function AppearanceCard() {
               entirely rather than being drawn opaque at full cost. */}
           {ios && (
             <>
+              {/* `control="wide"` and the readout riding with the slider,
+                  both as the Volume row does it (sound-card.tsx): the
+                  compact slot is `shrink-0` with no width of its own, and
+                  a slider handed it collapses to nothing at all. */}
               <SettingRow
                 title={t('Glass')}
-                blurb={t('How much of the page shows through bars and menus. At zero they are solid.')}
+                blurb={t('How much shows through. Zero is solid.')}
+                control="wide"
               >
-                <Slider
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={Math.round(glass * 100)}
-                  onValueChange={(v) => setGlass((v as number) / 100)}
-                  aria-label={t('Glass')}
-                  className="min-w-0 flex-1"
-                />
+                <div className="flex w-full items-center gap-2">
+                  <Slider
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={Math.round(glass * 100)}
+                    onValueChange={(v) => setGlass((v as number) / 100)}
+                    aria-label={t('Glass')}
+                    className="min-w-0 flex-1"
+                  />
+                  <span className="text-foreground w-10 shrink-0 text-right font-mono text-sm tabular-nums">
+                    {Math.round(glass * 100)}%
+                  </span>
+                </div>
               </SettingRow>
 
               <SettingRow
                 title={t('Glass tint')}
-                blurb={t('How dark the glass itself is. It has its own range in each theme.')}
+                blurb={t('How dark the glass is.')}
+                control="wide"
               >
-                <Slider
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={Math.round(glassTint * 100)}
-                  onValueChange={(v) => setGlassTint((v as number) / 100)}
-                  aria-label={t('Glass tint')}
-                  className="min-w-0 flex-1"
-                />
+                <div className="flex w-full items-center gap-2">
+                  <Slider
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={Math.round(glassTint * 100)}
+                    onValueChange={(v) => setGlassTint((v as number) / 100)}
+                    aria-label={t('Glass tint')}
+                    className="min-w-0 flex-1"
+                  />
+                  <span className="text-foreground w-10 shrink-0 text-right font-mono text-sm tabular-nums">
+                    {Math.round(glassTint * 100)}%
+                  </span>
+                </div>
               </SettingRow>
             </>
           )}
