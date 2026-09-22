@@ -145,7 +145,7 @@ console.log('web/public/favicon.ico  16+32+48');
  */
 const SCHEMES = {
   light: { bg: '#f5f5f5', fg: '#0a0a0a' },
-  dark: { bg: '#0a0a0a', fg: '#ffffff' },
+  dark: { bg: '#121212', fg: '#ffffff' },
 };
 
 /**
