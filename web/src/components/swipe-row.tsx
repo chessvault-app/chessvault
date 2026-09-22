@@ -102,7 +102,7 @@ export function useSwipeRow({
     dx,
     style: {
       transform: dx ? `translateX(${dx}px)` : undefined,
-      transition: dx ? undefined : 'transform 150ms',
+      transition: dx ? undefined : 'transform var(--pane-turn) var(--pane-turn-ease)',
     },
     handlers: {
       onTouchStart: (e) => {
