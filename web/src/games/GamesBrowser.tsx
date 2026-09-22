@@ -1156,7 +1156,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
             {t('Cancel')}
           </Button>
           <Button variant="default" size="sm" disabled={busy || !pgn.trim()} onClick={() => void submit()}>
-            <Plus className="glyph pointer-coarse:size-4.5" strokeWidth={2.5} data-icon="inline-start" />
+            <Plus className="glyph pointer-coarse:size-4.5" data-icon="inline-start" />
             {t('Add to collection')}
           </Button>
         </div>
