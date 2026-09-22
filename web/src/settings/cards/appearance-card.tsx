@@ -21,7 +21,7 @@ import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
  * for Follow the board's dot, which is drawn from the chosen board.
  */
 function schemeDot({ accent, accentTint = 1, contrast = 0 }: { accent: number; accentTint?: number; contrast?: number }): string {
-  return `oklch(${(20.5 + 37.5 * accentTint) * (1 - contrast)}% ${0.135 * accentTint} ${accent})`;
+  return `oklch(${(20.5 + 29.5 * accentTint) * (1 - contrast)}% ${0.115 * accentTint} ${accent})`;
 }
 
 /**
@@ -51,8 +51,10 @@ const SCHEME_GROUPS = [
       // dropdown). It has to be able to be grey, or Greyscale advertises
       // itself with a blue spot, and BLACK ringed in white, or Neutral and
       // High contrast — same hue, same tint, same accent — draw the same
-      // dot. The lightness follows the primary's, the rule --primary-l
-      // applies in index.css: grey near-black, colour mid-scale.
+      // dot. So it is the scheme's button as the LIGHT theme draws it,
+      // --primary in styles/tokens.css at the same tint and contrast:
+      // grey near-black, colour mid-scale. Dark's rule would make High
+      // contrast's dot white, not black.
       dot: {
         color: schemeDot({ accent, accentTint, contrast }),
         ring: `oklch(${90 + 10 * contrast}% ${0.006 * tint} ${hue})`,
