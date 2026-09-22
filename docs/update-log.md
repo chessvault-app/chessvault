@@ -34,9 +34,12 @@ pixel grid is the proof so far.
   is marked by its tinted pill alone: the 3px bar that stood down its
   left edge is gone, which is one fewer thing the sidebar and the
   phone's tab bar disagree about.
-- **The page sits further inside the window.** 8px of window ground
-  round the panel where there were 2, at every desktop width and in
-  both themes.
+- **The page sits in the window the way Linear's does.** The panel is
+  flush to the sidebar and to the band above it and inset 8px on the
+  right and bottom, where it used to carry the same 2px on all four
+  sides; its corners are 14px again. In light it now casts a shadow, so
+  it reads as resting on the frame instead of being a slightly whiter
+  rectangle on it.
 - **On every phone, a question is a centred card.** Confirmations, the
   name prompt and the unsaved-changes question no longer rise as sheets:
   iOS's alert on an iPhone, Material's dialog on Android.

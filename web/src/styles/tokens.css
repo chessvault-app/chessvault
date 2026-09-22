@@ -205,11 +205,50 @@
      own ring-border on those files (lanph3re's call, 2026-09-08). */
   --window-ring: var(--card-ring);
   /* The edge of the desktop's inset page panel (App.tsx). In light it is
-     the window ring: transparent on the tonal page, where the panel's fill
-     is its edge, and the hairline at the top of the contrast knob, where
-     frame and panel are both white and the ring is all that is left. Dark
-     sets it to nothing (tokens-dark.css). */
+     still the window ring, which is transparent at rest: the panel's
+     fill is its whole edge here, at 1.064:1 over the frame, and the
+     hairline only arrives at the top of the contrast knob where frame
+     and panel are both white.
+
+     Linear does draw a line there and this tried to match it, measured
+     off lanph3re's light desktop screenshot (2026-09-22): a 1px #f1f1f1
+     on a #f9f9fa panel. It went back out because the line is not what
+     separates their panel. Against the #efeff0 ground that line is
+     1.017:1; their panel's own fill is 1.092 and the drop shadow down
+     the right and bottom reaches 1.106 (#e4e4e5 under the bottom edge).
+     The line contributes nothing an eye can use, which is exactly what
+     this theme's 1.3 stroke floor exists to say: drawn at their value it
+     measured 1.05:1 in 44 places and check:contrast refused it, and the
+     lowest value that clears the floor is 86%, which draws 207,209,213
+     where Linear draws 241 and would be four times the edge they have.
+     So the light panel's edge is --panel-shadow below, and this ring
+     stays what it was.
+
+     Dark is a different case and sets its own value (tokens-dark.css),
+     because there a shadow is invisible and the line is all there is. */
   --panel-ring: var(--window-ring);
+  /* And the edge itself, in light: the shadow Linear's panel casts and
+     ours did not. --shadow-control is the ladder's lightest rung, 1px
+     down with 3px of blur at 10% of --shadow-color, and it is the right
+     FAMILY rather than a copy. Measured on the demo at 1281x808 against
+     the same probe on their screenshot, as steps away from the ground:
+     under the bottom edge ours runs 16, 8, 3, 1, 0 where theirs runs
+     11, 3, 1, 1, 1, 0; past the right edge ours runs 8, 3, 1, 0 where
+     theirs runs 2, 1, 0. So ours is about half again as deep below and
+     several times as wide to the side, theirs being almost purely
+     downward.
+
+     That gap is deliberate and is the price of the ladder. theme.css
+     carries three lifts and one shadow colour, and its note says why a
+     call site may not cast its own: matching Linear here to the step
+     would mean a fourth lift existing for one element, which is the
+     shape the 13px sidebar rung was withdrawn for. The rung is close
+     enough that the panel reads as resting on the frame, which is what
+     the light theme was missing.
+
+     None in dark, where a shadow on a dark ground is nothing and the
+     ring is the edge. */
+  --panel-shadow: var(--shadow-control);
   /* The glass surface (utilities.css, `glass`): how much of the card's
      fill it keeps, how far it blurs what is under it, and the hairline
      at its edge. The fill and the blur are the two numbers a

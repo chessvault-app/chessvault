@@ -1486,10 +1486,17 @@ drawn, and what one has to prove.
   inset block goes the other way in dark (L* 2.75 page against 7.78
   frame) and with it in light (100 against 98.26), so the direction is
   a choice and not a law. What is not a choice is the size of the
-  step. `--panel-ring` draws the panel's edge where the two fills do
-  not, which is now both themes: the window ring in light, transparent
-  until the contrast knob turns frame and panel both white, and the
-  a rung of its own in dark, a shade over the card and well under the
+  step. The panel's edge is drawn where the two fills do not, and each
+  theme draws it with the instrument that works there. Light casts a
+  SHADOW, `--panel-shadow`, the lift ladder's lightest rung: Linear's
+  light panel is separated by its fill (1.092:1) and a drop shadow
+  (1.106 at its darkest), while the 1px line it also carries is 1.017
+  and does nothing, so a hairline was tried here and withdrawn, having
+  measured 1.05:1 against this theme's 1.3 stroke floor in 44 places.
+  `--panel-ring` stays the window ring in light, transparent
+  until the contrast knob turns frame and panel both white, and is
+  a rung of its own in dark, where a shadow is nothing and the line is
+  all there is: a shade over the card and well under the
   hairline a card's edge takes: Linear draws this ring at its card rung
   exactly, and 24.5% is the lowest this app reaches before its own 1.2
   stroke floor stops it (1.222:1 over the window ground, where 22.25%

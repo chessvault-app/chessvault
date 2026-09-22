@@ -293,22 +293,35 @@ function Shell() {
           // frame's opening, and in light it is transparent until the
           // contrast knob brings it back, which is the moment the ground
           // and the panel have met at white.
-          // The radius is Linear's, measured off their own window at 9x: a
-          // corner near 7px, where this shipped with shadcn's 14px and read
-          // looser (lanph3re, 2026-09-22). rounded-md is 8px, the ladder's
-          // nearest rung to it.
+          // The gutter is ONE EDGE, and that is Linear's arrangement
+          // rather than a compromise between readings of it. Measured off
+          // lanph3re's screenshot of their light desktop app (1281x808,
+          // 2026-09-22): the panel's hairline sits at x=249 with the
+          // sidebar running to x=248, so the left gutter is zero; its top
+          // hairline at y=79 sits directly under the tab strip, so the
+          // top is zero; the right edge ends at 1259 with ground from
+          // 1261 to the client edge at 1268, which is 8px; and the 36px
+          // below it is the bottom bar's strip, not a margin. The dark
+          // screenshot says the same shape (0, 2, 7, 34). This shipped as
+          // a uniform 2px and then a uniform 8px, and a uniform anything
+          // is wrong on three sides of four: the panel is flush to the
+          // sidebar and to the chrome above it, and inset only where the
+          // window's own edge is.
           //
-          // The gutter was measured off the same window at the same time
-          // and came out 2px, which is what the top edge of a 1x
-          // screenshot of it does measure. The right edge of that
-          // screenshot measures 7, and 2px read too tight in the window
-          // here (lanph3re, 2026-09-22, at the deployed build). So 8px,
-          // the ladder's rung at the wider of the two readings, on all
-          // four sides: the left one cannot be seen anyway while the
-          // window ground and the sidebar are one colour, and a panel
-          // inset by a different amount on each edge is a thing to
-          // maintain rather than a thing anyone sees.
-          'md:bg-background md:m-2 md:rounded-md md:ring-1 md:ring-panel-ring',
+          // The radius is 14px. Fitting the top-left arc of that same
+          // screenshot (the fill starts 10.5px in one row down, 2.5px at
+          // five rows, 0.5px at ten) gives R = 14.2. It shipped at 8
+          // from a fit of the dark screenshot, whose smaller window fits
+          // nearer 8; the light one is the larger sample and the cleaner
+          // arc, and 14 is also what the app drew before that fit
+          // (lanph3re's call, 2026-09-22). rounded-xl is --radius * 1.4,
+          // which is 14 at the default --radius.
+          // And the edge it casts. In light this is the panel's actual
+          // separator and the ring above is transparent; in dark
+          // --panel-shadow is none and the ring is the edge. Both
+          // decisions live in the token files, so this class says "the
+          // panel's shadow" and never which theme is which.
+          'md:bg-background md:mt-0 md:ml-0 md:mr-2 md:mb-2 md:rounded-xl md:ring-1 md:ring-panel-ring md:shadow-(--panel-shadow)',
         )}
       >
         {/*

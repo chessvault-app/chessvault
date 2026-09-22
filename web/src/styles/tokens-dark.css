@@ -160,6 +160,11 @@
      alone read 1.40 and 3.81. Written as the ladder's own lerp rather
      than a color-mix so it reads like every other rung in this file. */
   --panel-ring: oklch(calc(24.5% + (52% - 24.5%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
+  /* No shadow on this panel in dark. Light casts one (tokens.css,
+     --panel-shadow) because that is what separates Linear's light panel
+     and what ours was missing; on a dark ground a shadow is nothing at
+     all, and the ring above is the whole edge. */
+  --panel-shadow: none;
   /* The glass surface's fill and blur are tokens.css's numbers, and its
      edge follows the foreground, which is white here. Its tint is the
      third surface rung, 33.1% on a 22.25% card: glass in dark is LIFTED
