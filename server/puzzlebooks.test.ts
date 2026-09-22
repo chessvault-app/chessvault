@@ -921,3 +921,86 @@ describe('puzzle book cycles', () => {
     expect(await next()).toBe('n1');
   });
 });
+
+/**
+ * What the home page's activity grid is told, which is not what the
+ * book's own progress records.
+ *
+ * A book's attempts live in its progress.json and have never reached
+ * `puzzles/history.jsonl`, so the grid - which read that file alone -
+ * was blind to an evening spent on a book. The hook fills that in, and
+ * the rule it fires under is the book's own way of saying what the
+ * puzzle trainer's `counted` flag says: progress through puzzles this
+ * pass has not reached, rather than a second go at one already answered.
+ * "Ever" would be wrong here, because a book is meant to be walked more
+ * than once and a reader on their second pass would light no squares.
+ */
+describe('what a book puzzle tells the activity log', () => {
+  let dir: string;
+  let app: Hono;
+  let slug = '';
+  let solved = 0;
+
+  beforeAll(async () => {
+    dir = mkdtempSync(join(tmpdir(), 'puzzlebooks-activity-'));
+    app = new Hono().route(
+      '/api',
+      puzzleBooksApi(dir, undefined, {
+        onSolved: () => {
+          solved += 1;
+        },
+      }),
+    );
+    const made = await app.request('/api/puzzlebooks', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: 'Brick' }),
+    });
+    slug = (await made.json()).slug;
+    for (const n of [1, 2]) {
+      await app.request(`/api/puzzlebooks/${slug}/puzzles`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          fen: '8/8/8/8/8/8/8/K6k w - - 0 1',
+          uci: ['a1a2'],
+          san: ['Ka2'],
+          number: n,
+        }),
+      });
+    }
+  });
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+
+  const attempt = (id: string, win: boolean): Promise<Response> | Response =>
+    app.request(`/api/puzzlebooks/${slug}/attempt`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id, win }),
+    });
+
+  it('counts a clean first answer and nothing else', async () => {
+    solved = 0;
+    await attempt('n1', false);
+    expect(solved, 'a miss is not progress').toBe(0);
+    await attempt('n1', true);
+    expect(solved, 'the win after it is').toBe(1);
+    await attempt('n1', true);
+    expect(solved, 'a second go at the same puzzle is a review').toBe(1);
+    await attempt('n2', true);
+    expect(solved).toBe(2);
+  });
+
+  it('counts the next pass too, because a book is walked more than once', async () => {
+    await app.request(`/api/puzzlebooks/${slug}/cycles`, { method: 'POST' });
+    solved = 0;
+    await attempt('n1', true);
+    await attempt('n2', true);
+    // Every one of these was answered in the pass before, and a rule of
+    // "the first attempt ever" would have counted none of them.
+    expect(solved).toBe(2);
+    // Still once each inside the pass.
+    await attempt('n1', true);
+    expect(solved).toBe(2);
+  });
+});

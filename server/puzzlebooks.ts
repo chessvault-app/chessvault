@@ -1215,19 +1215,27 @@ export function puzzleBooksApi(
     const cycles = readCycles(slug);
     const open = cycles.find((cy) => cy.finishedAt === undefined);
     /**
-     * Whether this attempt was the puzzle's first of THIS pass, read off
+     * Whether this is the puzzle's first WIN of this pass, read off
      * `prev` because `progress` above already holds the attempt itself.
      *
-     * That is the book's own way of saying what the puzzle trainer's
-     * `counted` flag says: progress through puzzles not yet reached,
-     * rather than a second go at one already answered. A book is meant to
-     * be walked more than once, so it cannot be "the first attempt ever"
-     * - a reader on their second pass would light no squares at all.
+     * The book's own way of saying what the puzzle trainer's `counted`
+     * flag says: a puzzle counts once as it is got, not again when it
+     * comes round. Two boundaries had to be argued rather than guessed.
+     *
+     * Not "the first ATTEMPT of the pass": a puzzle missed and then
+     * worked out is a puzzle solved, and that rule counted it never,
+     * since the miss had used the first attempt up.
+     *
+     * Not "ever", either: a book is meant to be walked more than once,
+     * and a reader on their second pass would light no squares at all.
+     * So it is per pass, and `cycleAttempt` decides what is in this one,
+     * which keeps the window's definition in the one place that owns it
+     * (shared/review.ts) rather than spelling it out again here.
      */
-    const firstOfPass = open
-      ? cycleAttempt(attemptsOf(prev), open) === null
-      : attemptsOf(prev).length === 0;
-    if (body.win && firstOfPass) hooks.onSolved?.();
+    const firstWinOfPass = open
+      ? cycleAttempt(attemptsOf(prev).filter((a) => a.win), open) === null
+      : attemptsOf(prev).every((a) => !a.win);
+    if (body.win && firstWinOfPass) hooks.onSolved?.();
     if (open) {
       let complete = true;
       for (const id of puzzleIds(slug)) {
