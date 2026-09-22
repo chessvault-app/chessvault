@@ -130,7 +130,7 @@ export function PasswordGate({ children }: { children: ReactNode }) {
         <p className="text-muted-foreground mb-6 mt-1 text-sm">{t('Your chess, in plain files.')}</p>
 
         <form
-          className="bg-card ring-card-ring w-full rounded-xl ring-1 p-6 shadow-sm"
+          className="bg-card ring-card-ring w-full rounded-xl ring-1 p-6"
           onSubmit={(e) => {
             e.preventDefault();
             void submit();
