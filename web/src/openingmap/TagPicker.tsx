@@ -187,7 +187,7 @@ export function TagPicker({
                       const Icon = KINDS[kind].icon;
                       return (
                         <div key={i} className="flex min-h-9 items-center gap-1">
-                          <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5">
+                          <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-(--row-py-dense)">
                             <Icon aria-hidden className="text-muted-foreground glyph shrink-0" />
                             <Skeleton className={`h-3 ${w}`} />
                           </div>
