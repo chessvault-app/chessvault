@@ -16,7 +16,7 @@ import { PdfImportOpening } from '../pdf-import-parts';
 import { EmptyState } from '@/components/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { PageShell } from '@/components/page-shell';
-import { PageHeader } from '@/components/page-header';
+import { PageHeader, pageTitleClass } from '@/components/page-header';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
 
 import { ClearableInput } from '@/components/text-fields';
@@ -389,7 +389,11 @@ export function BookPage({ slug }: { slug: string }) {
                 if (e.key === 'Escape') setRenaming(false);
               }}
               className="min-w-0 flex-1"
-              inputClassName="text-xl font-semibold tracking-tight ios:tracking-normal"
+              // The title's own two rungs, since the field stands in for
+              // it. A bare `text-xl` here missed the phone's 24px, and from
+              // md lost to the Input's `md:text-sm`, which only an `md:`
+              // size displaces: the name shrank to 14px on opening.
+              inputClassName={pageTitleClass}
             />
           </div>
         ) : (
