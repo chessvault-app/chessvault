@@ -1603,7 +1603,7 @@ function NodePanel({
             // not `danger`, whose tinted card was right for a row of
             // bordered buttons and would be a red block in a toolbar of
             // bare ones. See PanelAction for the shared geometry.
-            triggerClassName={cn(PANEL_ACTION, 'text-destructive hover:bg-destructive/12 hover:text-destructive')}
+            triggerClassName={cn(PANEL_ACTION, 'text-destructive hover:bg-destructive/10 hover:text-destructive')}
             question={t('Delete this move and everything after it? Linked studies are untouched.')}
             confirmLabel={t('Delete')}
             onConfirm={() => {
