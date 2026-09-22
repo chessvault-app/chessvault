@@ -168,7 +168,9 @@ last is repetition. It is `Layers` now, a stack of prepared lines.
 
 A glyph is also chosen at the size it is used, not in the source. Both of
 the last two changes were picked on a rendered sheet of candidates drawn
-at 18.4px in the sidebar's own colours, and both times the reading
+at 18.4px in the sidebar's own colours, which was the sidebar's icon
+size then and is 14px now (the bullet on its metrics below), and both
+times the reading
 changed: `Shapes` was withdrawn on sight for clustering under Network's
 three dots, and half the repertoire candidates — a handshake, two theatre
 masks, a metronome — turned to porridge at the size they would be used.
@@ -558,6 +560,21 @@ Where a density lands is measured, never guessed: 44 dashboard rows go
   navigation, puzzle actions) via `MobileActionBar`, and you leave by the
   back chevron, Chess.com/Lichess-style. Desktop navigates by sidebar, no
   back arrows on top-level pages.
+- **The desktop sidebar is measured off Linear's, not composed.** 240px
+  across, 28px rows on a 30px pitch, an 8px corner, a 13px label
+  (`type-nav`, the app's only 13) and a 14px glyph whose centre sits 24px
+  in from the window's edge, each of them sampled off a screenshot of
+  Linear's dark desktop (2026-09-22) rather than chosen. The one number
+  that is ours is the folded rail's 48px: the icon's centre has to be the
+  same distance in whether the sidebar is folded or not, or it slides on
+  every fold, and 48 is the rail width whose centreline is Linear's 24. A
+  coarse pointer takes the 36px floor back on every row. The sidebar has
+  no fill of its own in any of this; it is the window's ground, which is
+  the ladder's point above and Linear's arrangement too. What is NOT
+  Linear's is the current row: their selected row is a flat grey lift,
+  ours keeps the tonal pill and the 3px rail (`bg-nav-pill`, below),
+  because that pill is the same "you are here" the phone's tab bar draws
+  and the two navigations have to say it the same way.
 - **The desktop shell's band is one strip, and the search sits on it.**
   The title bar the shell draws (`components/title-bar`) is filled edge
   to edge in the sidebar's colour, with the way into the quick switcher

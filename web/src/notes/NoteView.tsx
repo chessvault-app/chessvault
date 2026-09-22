@@ -476,15 +476,16 @@ function NoteEditor({
     // stand in the margin beside it: inside the scroller it would be cut
     // at the column's edge.
     <div ref={frameRef} className="relative mx-auto h-full max-w-3xl">
-      {/* From the width where the pane has a margin to stand in (86rem, which is 84 measured plus a gutter off the sidebar:
+      {/* From the width where the pane has a margin to stand in (88rem, which is 86 measured plus a gutter off the sidebar:
           the 48rem column, 11.5rem of list and gap either side of it to
-          stay centred, and the 13rem sidebar; later than Settings' xl
-          because the column is wider than its form).
+          stay centred, and the 15rem sidebar; later than Settings' xl
+          because the column is wider than its form). It was 86rem against
+          a 13rem sidebar and moved with it (shell/sidebar.tsx).
           Level with the note's opening heading (the column's 12px gap and
           the heading's own 24px, measured), and scrolling on its own when a note
           has more headings than the window has rows. */}
       {headings.length >= 2 && (
-        <div className="pointer-events-none absolute top-[calc(var(--note-head)+2.25rem)] right-full bottom-6 mr-6 hidden w-40 overflow-y-auto min-[86rem]:block">
+        <div className="pointer-events-none absolute top-[calc(var(--note-head)+2.25rem)] right-full bottom-6 mr-6 hidden w-40 overflow-y-auto min-[88rem]:block">
           <JumpColumn label={t('Note headings')} targets={headings} current={current} onJump={jump} />
         </div>
       )}

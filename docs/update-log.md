@@ -8,9 +8,26 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 ## Unreleased
 
 Each platform takes its own controls, and the ones that were never a
-platform's come out from behind the guard. Nothing here has been read on
-a phone or in the desktop window yet; the pixel grid is the proof so far.
+platform's come out from behind the guard. The desktop window, meanwhile,
+is measured against Linear's twice over: its dark greys and its sidebar.
+Nothing here has been read on a phone or in the desktop window yet; the
+pixel grid is the proof so far.
 
+- **The dark theme is a shade deeper, and the sidebar is the window.**
+  Its greys had been placed against a reading of Linear's dark desktop
+  that turned out to be of some other window. Measured off a screenshot
+  of the real one, the frame and the sidebar are a single colour and the
+  page sits above them, so the window is darker than it was and the page
+  and the cards come down with it. The step from the frame to the page is
+  twice what it was, which is the step the light theme has always had.
+  Nothing reads fainter for it: every colour drawn on those surfaces
+  gained contrast, and the check that measures it passes with nothing
+  below the floor.
+- **The desktop sidebar is Linear's size.** 240px across where it was
+  208, with 28px rows, 13px labels and 14px icons where they were 40, 16
+  and 18. Folded, the rail is 48px instead of 68, which is what lets a
+  row's icon sit where Linear puts it without moving when the sidebar
+  folds. A touch screen keeps the 36px rows it had.
 - **On every phone, a question is a centred card.** Confirmations, the
   name prompt and the unsaved-changes question no longer rise as sheets:
   iOS's alert on an iPhone, Material's dialog on Android.

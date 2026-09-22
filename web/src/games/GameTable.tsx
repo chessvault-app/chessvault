@@ -72,7 +72,7 @@ const STANDING: GameColumn = { id: 'standing', label: '', width: 40, min: 36 };
  * The one column the table gives up, and only while a details panel
  * stands beside it.
  *
- * The panel takes a flat 368px (432 above 1740) out of the pane, and the
+ * The panel takes a flat 368px (432 above 1772) out of the pane, and the
  * table does not shed — it scrolls sideways to reach its columns — so
  * opening the panel used to push 226px off the right edge at 1440 and
  * 642px at 1024, with nothing drawn at the clip to say so: the Result
