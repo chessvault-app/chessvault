@@ -243,8 +243,10 @@ function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Prop
       data-slot="select-item"
       className={cn(
         // pointer-coarse:py-2.5 — a 28px row is a menu item for a mouse
-        // and a misfire for a thumb.
-        "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm max-md:type-row outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:py-2.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        // and a misfire for a thumb. max-md:ios:rounded-xl is the row half
+        // of the glass rung the list takes above, as MENU_ITEM has it: the
+        // list's 2xl less SelectGroup's p-1, concentric with the edge.
+        "relative flex w-full cursor-default items-center gap-1.5 rounded-md max-md:ios:rounded-xl py-1 pr-8 pl-1.5 text-sm max-md:type-row outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 pointer-coarse:py-2.5 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-']):not([class*='glyph'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className,
       )}
       {...props}
