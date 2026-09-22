@@ -39,6 +39,14 @@ a phone or in the desktop window yet; the pixel grid is the proof so far.
   and Home has an Activity card: puzzles solved per day over six months.
   Settings → Desktop app can ask Windows 11 or macOS to draw its material
   behind the window; it is off until it has been seen in a window.
+- **Glass is one material again.** Four surfaces had drifted from the one
+  recipe. The round chrome buttons standing on a scrolled page's compact
+  header drew no edge, because the header is full width and asks for
+  none, and that reached the buttons on it. A toast on an iPhone in the
+  dark theme drew two edges at once. Tabbing to any glass surface with a
+  keyboard showed nothing at all, since the glass was painted over the
+  focus ring. And an iPad, which is an iOS device, was getting glass
+  menus over a page with nothing else glassy on it.
 
 ## 0.11.4
 
