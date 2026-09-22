@@ -193,12 +193,37 @@
          only its shadow. */
       box-shadow: inset 0 0 0 var(--glass-edge-w, 1px) var(--glass-edge), var(--shadow-panel);
     }
+    /* And the focus ring, drawn here for the same reason the edge is.
+       This box-shadow outranks the ring utilities, so `focus-visible:
+       ring-3` painted nothing on a glass surface: a keyboard-focused
+       chrome circle computed the edge and the panel shadow and nothing
+       else, where the same button on Android computed a 3px --ring
+       (measured on the demo, #/games header, 2026-09-22). Tabbing to it
+       changed zero pixels, which is the slider thumb's fault over again
+       (components/ui/slider.tsx) and the 3:1 PRODUCT.md asks of a focus
+       indicator, unmet. The registry's own shape, which the ring is held
+       to everywhere else in the app: 3px of --ring at full alpha, with
+       the border taking it too — that part still works, since the glass
+       never touched border-color. Ring before shadow and after the inset
+       edge, the order the ring utilities compose in. */
+    :root:not([data-glass='off']) &:focus-visible {
+      box-shadow:
+        inset 0 0 0 var(--glass-edge-w, 1px) var(--glass-edge),
+        0 0 0 3px var(--ring),
+        var(--shadow-panel);
+    }
     @media (prefers-reduced-transparency: reduce) {
       :root:not([data-glass='off']) & {
         background-color: var(--card);
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
         box-shadow: inset 0 0 0 var(--glass-edge-w, 1px) var(--glass-edge), var(--shadow-panel);
+      }
+      :root:not([data-glass='off']) &:focus-visible {
+        box-shadow:
+          inset 0 0 0 var(--glass-edge-w, 1px) var(--glass-edge),
+          0 0 0 3px var(--ring),
+          var(--shadow-panel);
       }
     }
   }
