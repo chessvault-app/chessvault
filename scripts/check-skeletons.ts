@@ -105,16 +105,6 @@ const KNOWN: { shot: string; pair: 'O~D' | 'D~L'; key: string; why: string }[] =
     why:
       "the demo reaches no tablebase, so the drill never gets an ending: where the page draws a board it draws its error box and a Try again, which is a different height, and the panel's footer loses the buttons a running attempt has. On a server that answers, D and L are the same page. The half of this route worth reading here is O against D, which is held.",
   },
-  // Owed.
-  {
-    shot: 'workspace',
-    pair: 'O~D',
-    // Every landmark below the board, 27 of them, by the same 4px: one
-    // phenomenon, so one entry rather than 27.
-    key: '',
-    why:
-      "OWED. The outline and the page's wait disagree by 4px on the board's size, so the whole column under it sits 4px low. Both run board-budget's arithmetic, and the disagreement is upstream of it, in the shell height each one measures; what changed on 2026-09-22 is only that it became visible. The panel's gutter went from 8px to Linear's 2px (App.tsx), the row grew 4px, and `capW - MOVES_MIN - EXPLORER_MIN - GAPS` stopped being the binding term in that Math.min: it had been clamping BOTH states to the same width and hiding the difference. Proved by rebuilding with the old gutter, where the run is clean, and with the gutter tight on three sides only, where the drift is identical, so it is the width and not the left edge. Not the eval lane either: the page passes EVAL_LANE_PX only while the engine is on, the outline passes 0, and 36 is not 4.",
-  },
 ];
 
 const SRC = resolve(REPO_ROOT, 'web/src');

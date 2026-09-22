@@ -65,6 +65,28 @@ const REGION_GAPS_PX = 24;
  * The two measurements and what follows from them. `laneW` is the eval
  * bar's lane, added to the board's column while a bar is drawn
  * (WorkspaceView says why the row pays for it and not the board).
+ *
+ * OWED, and currently invisible. The outline and the page's own wait
+ * measure different shell heights, so `budget` differs between them and
+ * the whole column under the board sits 4px low in one of them. The
+ * disagreement is upstream of everything in this file: both states run
+ * this same arithmetic, and they run it on different `shellH`.
+ *
+ * It surfaced on 2026-09-22, when the panel's gutter went from 8px to
+ * 2px and `capW - MOVES_MIN_PX - EXPLORER_MIN_PX - REGION_GAPS_PX`
+ * stopped being the binding term in the Math.min below: that term had
+ * been clamping BOTH states to one width and hiding the difference.
+ * Proved then by rebuilding with the old gutter, where the run was
+ * clean, and with the gutter tight on three sides only, where the drift
+ * was identical - so it is the width and not the left edge. Not the eval
+ * lane either: the page passes EVAL_LANE_PX only while the engine is on,
+ * the outline passes 0, and 36 is not 4.
+ *
+ * The panel then took an 8px inset on the right again, the clamp became
+ * binding again, and `check:skeletons` stopped seeing it - which is why
+ * this is written HERE rather than in that check's KNOWN list, whose
+ * entries are removed the moment they match nothing. The bug is not
+ * fixed; it is one gutter away from being visible.
  */
 export function useWorkspaceBudget(laneW: number) {
   const [shellRef, shellH] = useElementHeight();
