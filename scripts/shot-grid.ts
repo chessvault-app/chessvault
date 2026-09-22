@@ -18,25 +18,32 @@
  *
  * WHAT IT WALKS. Every route `check:contrast` walks plus the pages the
  * phone reaches through More and two leaf pages that claim the bottom
- * bar. Desktop and phone widths, light and dark, and five phone-only
+ * bar. Desktop and phone widths, light and dark, and six phone-only
  * states: the phone as iOS (`chess-vault:platform` overriding the guess
  * lib/platform.ts makes, so the `ios:` variants apply in Chromium; a
  * change meant for iOS shows here and nowhere else), the phone as
  * Android the same way, 320px (where six
  * tab labels used to overprint), scrolled 240px inside the page's
- * scroller (the header's compact state), and with the keyboard flag set
- * on the root (the bar must be gone). Reduced motion is emulated so
- * nothing is caught mid-transition.
+ * scroller (the page read down, with the bottom bar's capsule small),
+ * scrolled down and then back up (the compact page header, which comes
+ * out on the way back and on nothing else; REVEAL_BAR says why), and
+ * with the keyboard flag set on the root (the bar must be gone).
+ * Reduced motion is emulated so nothing is caught mid-transition.
  *
- * WHAT IS NOISE. The board's engine output and the puzzle dashboard's
- * pick settle rather than render, so those shots differ between two runs
- * of one build; capture-screenshots.mjs measured the same. Diff a pair of
+ * WHAT IS NOISE. The board's engine output and the puzzle pages' pick
+ * settle rather than render, so those shots differ between two runs of
+ * one build; capture-screenshots.mjs measured the same. Diff a pair of
  * runs of the SAME build first if a number there looks like a change.
- * Measured on 0.8.5: 27 of 98 pictures differed between two runs. The
- * puzzle trainer differed by 5 to 8% (a different puzzle each load) and
- * the dashboard by 0.01%; the other 22 were under 0.01% and inside a box
- * a few pixels wide (thumbnail edges). So a change that matters shows as
- * a box the size of the thing changed, anywhere but the trainer.
+ * Measured on 0.11.4: 28 of 202 pictures differed between two runs. The
+ * trainer differed by 4 to 9% and the hub by 0.6 to 1.2%, both because
+ * each load picks a different puzzle and draws its position; the hub is
+ * named here because the 0.8.5 reading this paragraph used to quote had
+ * only the trainer and the dashboard in it, and a 1.2% box nobody
+ * expects reads as a change. The other 14 pictures moved 244 pixels at
+ * most, scattered rather than filling their box (thumbnail edges). The
+ * phone's scrolled, revealed, keyboard and 320px states were identical.
+ * So a change that matters shows as a box the size of the thing
+ * changed, anywhere but the two puzzle picks.
  */
 import { chromium, type BrowserContext } from 'playwright';
 import sharp from 'sharp';
@@ -90,6 +97,40 @@ const THEMES = [
 ];
 
 /**
+ * The compact page header out, for a state that wants a picture of it.
+ *
+ * It is a REVEAL bar (components/page-header.tsx, `pinned`): a scroll
+ * DOWN hides it and the first move UP brings it back, so a state that
+ * only sets scrollTop leaves it off the screen however far down the
+ * page goes. Hence down, a pause, then up. Each position needs its own
+ * frame, because hooks/use-scroll-reveal coalesces to one read a frame
+ * and wants four pixels of travel before it calls a direction; two
+ * assignments in one task are one read and no direction at all.
+ *
+ * Measured on the demo at 375x812: the bar stands at y=33 and 57px tall
+ * (101px on the Games page, whose bar carries the source chips under
+ * the title), out and at rest in 48 of 48 runs across both platforms,
+ * both themes and the four routes below.
+ */
+const REVEAL_BAR = `(async () => {
+  const el = [...document.querySelectorAll('[data-page-scroll]')].find((n) => n.checkVisibility());
+  if (!el) return;
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  el.scrollTop = 700;
+  await wait(400);
+  el.scrollTop = 400;
+  await wait(400);
+})()`;
+
+/**
+ * The pages that hand PageHeader a `pinned` bar AND have enough in the
+ * demo to scroll. The two book shelves take the bar too and are left
+ * out: the demo holds one book on each, so neither page scrolls a pixel
+ * and there is nothing to bring back.
+ */
+const REVEAL_ROUTES = ['#/games', '#/studies', '#/notes', '#/puzzles/themes'];
+
+/**
  * One row per picture kind. `routes` narrows a state to the pages where
  * it means something: the keyboard flag on a page with no field proves
  * nothing, and the 320px case exists for the bar's labels.
@@ -112,7 +153,9 @@ const STATES: {
   { name: 'phone-android', width: 375, height: 812, platform: 'android' },
   {
     // The same scroll as phone-scrolled below, as iOS: the capsule down
-    // to its current tab (hooks/use-bar-minimize).
+    // to its current tab (hooks/use-bar-minimize). NOT the compact page
+    // header, which a scroll down is exactly what hides; that is the
+    // revealed state under this one.
     name: 'phone-ios-scrolled',
     width: 375,
     height: 812,
@@ -122,6 +165,24 @@ const STATES: {
       const el = [...document.querySelectorAll('[data-page-scroll]')].find((n) => n.checkVisibility());
       if (el) el.scrollTop = 240;
     })()`,
+  },
+  {
+    name: 'phone-ios-revealed',
+    width: 375,
+    height: 812,
+    platform: 'ios',
+    routes: REVEAL_ROUTES,
+    prepare: REVEAL_BAR,
+  },
+  // The same bar as Android draws it: no glass, and Material's shapes
+  // on the chrome buttons standing in it (styles/shell.css).
+  {
+    name: 'phone-android-revealed',
+    width: 375,
+    height: 812,
+    platform: 'android',
+    routes: REVEAL_ROUTES,
+    prepare: REVEAL_BAR,
   },
   { name: 'phone-320', width: 320, height: 568, routes: ['#/games', '#/studies', '#/more'] },
   {
