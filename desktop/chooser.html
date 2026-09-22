@@ -30,6 +30,15 @@
         --primary: oklch(92.2% 0 0);
         --primary-foreground: oklch(20.5% 0 0);
         --destructive: oklch(77% 0.191 22.2);
+        /* The corners, the app's too: one --radius at the default Corners
+           setting (tokens.css), every rung a multiple of it (theme.css).
+           An option is a card and takes xl, as the app's destination cards
+           do; the field and Connect take lg, as Input and Button do; Back
+           is a small ghost button, which the app draws at md. */
+        --radius: 0.625rem;
+        --radius-md: calc(var(--radius) * 0.8);
+        --radius-lg: var(--radius);
+        --radius-xl: calc(var(--radius) * 1.4);
       }
       * {
         box-sizing: border-box;
@@ -97,7 +106,7 @@
         align-items: center;
         gap: 0.75rem;
         padding: 0.8rem 1rem;
-        border-radius: 0.75rem;
+        border-radius: var(--radius-xl);
         border: 1px solid var(--border);
         background: var(--card);
         color: inherit;
@@ -144,7 +153,7 @@
         font: inherit;
         font-size: 0.875rem;
         cursor: pointer;
-        border-radius: 0.5rem;
+        border-radius: var(--radius-md);
       }
       .back svg {
         width: 0.9rem;
@@ -182,7 +191,7 @@
         flex: 1;
         min-width: 0;
         padding: 0.6rem 0.8rem;
-        border-radius: 0.6rem;
+        border-radius: var(--radius-lg);
         border: 1px solid var(--border);
         background: var(--surface-inset);
         color: inherit;
@@ -195,7 +204,7 @@
       }
       .connect {
         padding: 0.6rem 1rem;
-        border-radius: 0.6rem;
+        border-radius: var(--radius-lg);
         border: none;
         background: var(--primary);
         color: var(--primary-foreground);
