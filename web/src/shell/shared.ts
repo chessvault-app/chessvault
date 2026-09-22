@@ -125,8 +125,10 @@ export const MORE_GROUPS: {
   {
     heading: 'Tools',
     items: [
-      { section: 'board', label: 'Board', icon: Grid3x3, blurb: 'Analyse any position with the engine' },
-      { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position from scratch' },
+      // Board's and Editor's blurbs are Home's, as Notes' and Insights'
+      // are below, so two places never describe them two ways.
+      { section: 'board', label: 'Board', icon: Grid3x3, blurb: 'Free board with engine and explorer' },
+      { section: 'editor', label: 'Editor', icon: SquarePen, blurb: 'Set up any position' },
       { section: 'board', param: 'explorer', label: 'Explorer', icon: Table2, blurb: 'Browse opening statistics move by move' },
       { section: 'repertoire', label: 'Repertoire', icon: Layers, blurb: 'Practise an opening against real games' },
       { section: 'endgames', label: 'Endgame drills', icon: Crown, blurb: 'Play won and drawn endings against the tablebase' },
