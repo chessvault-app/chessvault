@@ -369,10 +369,6 @@ export const ko: Record<string, string> = {
 
   // --- settings, artificial latency ----------------------------------------
   'Artificial latency': '인위적 지연',
-  'Bottom bar material': '아래 바 재질',
-  'For the frame probe on an iPhone. This device only.': 'iPhone에서 프레임을 재기 위한 것입니다. 이 기기에서만 적용됩니다.',
-  Glass: '유리',
-  Opaque: '불투명',
   'Delay every request': '모든 요청 지연',
   'For looking at the loading placeholders. This device only.':
     '로딩 자리표시자를 확인하기 위한 설정입니다. 이 기기에만 적용됩니다.',
@@ -1259,6 +1255,9 @@ export const ko: Record<string, string> = {
   Compact: '촘촘하게',
   'More options': '옵션 더 보기',
   Corners: '모서리',
+  Glass: '유리',
+  'Bars and menus let the page show through them. Off, they are solid.':
+    '바와 메뉴 너머로 페이지가 비칩니다. 끄면 불투명해집니다.',
   Default: '기본',
   Square: '각진',
   'Move the king two squares (g1)': '킹을 두 칸 옮기기 (g1)',

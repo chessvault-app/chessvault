@@ -1352,7 +1352,7 @@ drawn, and what one has to prove.
   row inside a card is drawn the same on both phones. The board, its
   overlays and the pane strip are the same on every platform by the
   rules that already govern them.
-- **Glass is one surface, gated three ways.** A translucent surface is
+- **Glass is one surface, gated four ways.** A translucent surface is
   the glass tint at high alpha over a small backdrop blur with a saturate,
   a one-pixel hairline of the foreground at 12% inside its edge (dark
   in light, light in dark, so the edge shows over content of the
@@ -1365,8 +1365,18 @@ drawn, and what one has to prove.
   unknown feature as false, and the grant form left the phone opaque),
   and only on a phone — `max-md:ios:`, not `ios:`, which reaches an iPad
   too and drew a glass menu over a desktop page with nothing else glassy
-  on it (measured at 834px, 2026-09-22); under any of the three it falls
-  back to the opaque card. Two things beyond the fill belong to the
+  on it (measured at 834px, 2026-09-22); and, fourth, only while the
+  reader has left it on. Settings > Appearance carries a Glass switch,
+  under More options beside Corners, and it is the only one of the four
+  a reader can reach: `prefers-reduced-transparency` is what would
+  otherwise speak for them and Safari does not answer it, so on the one
+  platform that draws glass the accessibility setting they have already
+  turned on reaches nothing (`lib/platform.ts`; iOS has carried a
+  control of its own since 26.1 and a slider since 27, and no media
+  query reports either). A switch and not a slider, because the fill
+  and the blur are placed against 4.5:1 and 3:1 and a slider would hand
+  out fills nobody has read a contrast for. Under any of the four it
+  falls back to the opaque card. Two things beyond the fill belong to the
   utility rather than to its callers. The focus ring: the glass
   box-shadow outranks `focus-visible:ring-3`, so a keyboard-focused
   glass surface changed zero pixels until the utility drew the ring
@@ -1385,7 +1395,46 @@ drawn, and what one has to prove.
   toward the contrast worst case in both themes, so changing it means
   re-reading both fills (`tokens.css` and `tokens-dark.css` carry the
   readings). Apple publishes no ratio; Liquid
-  Glass is a dynamic material, and these are this app's numbers.
+  Glass is a dynamic material, and these are this app's numbers. The
+  saturate does less than its name suggests and is not recolouring
+  anything: read through the bar on the demo, every ink's hue moved
+  between 0 and 2 degrees, and its saturation FELL rather than rose
+  (`good` from 100 to 33 in light), because 70% of tint over the
+  backdrop leaves the filter only the 30% that still shows through.
+  The one larger reading, 9 degrees, is `--board-light`, which is pale
+  enough that its hue is numerically loose and not a colour anyone sees
+  move.
+  And nothing glass stands on glass. The compact page header is itself
+  a glass band, and the circles and capsules standing on it drew their
+  own until 2026-09-22: a second backdrop filter re-blurring what the
+  first had already blurred, once per button, on every scrolled frame,
+  which is the cost that made the docked bar opaque in 2026-09 paid
+  again per control. It bought 2 of 255 in light and 4 in dark
+  (measured on the demo at 390px, `#/notes` with the bar revealed;
+  the same circle standing on the PAGE, where the glass has content
+  under it to work with, separates by 5 and 26). So on that bar they
+  keep the hairline, which is what told them from it all along, and
+  give up the fill and the filter (`styles/shell.css`, on the bar's
+  `data-chrome="bar"`). Apple's rule says the same in words: do not
+  layer Liquid Glass elements on top of each other.
+- **What this glass is not, and why it is not going to become it.**
+  Apple's material refracts what is behind it and carries a specular
+  highlight that moves with the device; iOS 27 made that highlight
+  brighter and the edge darker. This app's glass is a tint over a blur
+  with a saturate and a hairline: frosted, not liquid. The gap is not
+  closable in CSS. `backdrop-filter` has ten functions and not one of
+  them displaces a pixel, and the SVG `feDisplacementMap` that stands in
+  for one composes with `backdrop-filter` in Chromium alone: Safari
+  accepts the property, drops the SVG and leaves a flat blur, so on the
+  one platform the `ios:` variant is FOR it would draw nothing at all.
+  The nearest thing CSS can draw is a static rim of light, and that is
+  the drawing that was tried and withdrawn on 2026-09-18, having read at
+  the phone's 3x as a thick doubled line. What was settled on instead, a
+  dark hairline, is where iOS 27 arrived a year later. Read the two
+  numbers honestly beside that: the tint at 70% over a 12px blur, where
+  24px cost the docked bar its frames, is nearer a translucent grey band
+  than it is to glass. That is what frame time and 4.5:1 were worth
+  here, not a target that was missed.
 - **What a platform variant has to prove.** The screenshot grid
   (`npm run shots:grid`) walks a `phone-ios` state beside `phone`,
   with the override set, so a change that means to be iOS-only shows a
@@ -1539,7 +1588,20 @@ drawn, and what one has to prove.
 - **What did not reopen.** Five tabs with Notes under More: iOS also
   stops at five. The radius ladder: iOS 26's continuous corners cannot
   be drawn in CSS, and a glass surface takes the `2xl` rung or a true
-  pill from the ladder rather than a hand-written number. Swipe rows and
+  pill from the ladder rather than a hand-written number. Concentricity,
+  which is the other half of what iOS 26 asks of a corner (an inner
+  radius of the outer radius less the inset, `ConcentricRectangle`), was
+  audited on 2026-09-22 and is not a third thing the ladder owes. Every
+  nested pair the demo draws was measured across eleven routes on a
+  phone as iOS and on a desktop, and the pairs that miss are the ones
+  whose arcs are too far apart to be read as a pair: a book cover 12px
+  inside a 14px card, a card's own ⋯ button 8px inside one. The single
+  tight nest is the segmented control's thumb, 3px inside a track of the
+  same radius where concentric would be 3px less, and that is shadcn's
+  own drawing. The registry's look stays for the two reasons in
+  CLAUDE.md, and 3px of splay on a 28px control is not a third. A pill
+  inside a pill, which is most of the app's nesting, is concentric by
+  construction. Swipe rows and
   the edge-swipe back, the push and pop slides, the keyboard rules: all
   already the platform's behaviour, measured on the device. Swipe to
   page between tabs: rejected on Material's rule before, and iOS does

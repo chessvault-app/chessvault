@@ -95,6 +95,18 @@ so far.
   keyboard showed nothing at all, since the glass was painted over the
   focus ring. And an iPad, which is an iOS device, was getting glass
   menus over a page with nothing else glassy on it.
+- **Glass can be turned off.** Settings, under Appearance and More
+  options, has a Glass switch on an iPhone. Off, the bars, menus and
+  toasts that let the page show through are solid instead. iOS has
+  carried a control of its own for this since 26.1, and a browser is
+  told nothing about it, so the app needed one: a reader who had already
+  asked their phone to reduce transparency was getting glass anyway.
+- **Nothing glass is drawn on top of glass.** When a list scrolls up
+  under a page's compact header, that header is itself glass, and every
+  button standing on it was drawing glass again over the top of it. That
+  cost the phone a second blur per button on every scrolled frame and
+  was worth two parts in 255 to look at. The buttons take the bar's own
+  material now. Nothing else on the page moved.
 
 ## 0.11.4
 

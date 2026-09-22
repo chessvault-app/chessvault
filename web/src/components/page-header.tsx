@@ -219,7 +219,12 @@ export function PageHeader({
           inert={!barShown}
         >
           <div
-            data-chrome=""
+            // "bar", where the title row below is a bare `data-chrome`: on
+            // iOS this row is itself glass, and the chrome circles standing
+            // on it must not be a second one (styles/shell.css). Every
+            // existing selector matches on the attribute's presence, so the
+            // value is free.
+            data-chrome="bar"
             // On the page tone the bar's secondary fills step up a rung,
             // as the header's own do (index.css, `[data-ground]`).
             data-ground={phone ? undefined : ''}

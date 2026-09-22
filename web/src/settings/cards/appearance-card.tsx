@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { useTheme, type ThemePreference } from '@/store/theme';
 import { ANNOTATION_SIZES, BOARD_THEMES, CASTLE_STYLES, DENSITIES, PIECE_SETS, RADIUS_PRESETS, SCHEME_PRESETS, boardScheme, usePrefs, type AnnotationSize, type BoardTheme, type CastleStyle, type Density, type PieceSet, type RadiusId } from '@/store/prefs';
 import { PIECE_THUMBS } from '@/pieces/thumbs';
+import { chooseGlass, currentPlatform, glassOn } from '@/lib/platform';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
 
 // --- Appearance --------------------------------------------------------------
@@ -52,6 +53,10 @@ const SCHEME_GROUPS = [
 
 export function AppearanceCard() {
   const [moreOpen, setMoreOpen] = useState(false);
+  // Only where the material is drawn: the `ios:` variants, which is an
+  // iPhone and an iPad narrow enough to be under md (styles/utilities.css).
+  const ios = currentPlatform() === 'ios';
+  const [glass, setGlass] = useState(glassOn);
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
   const { boardTheme, pieces, schemeId, radius, density, castleStyle, coordinates, moveBox, reviewOffer, annotationSize, setBoardTheme, setPieces, setSchemeId, setRadius, setDensity, setCastleStyle, setCoordinates, setMoveBox, setReviewOffer, setAnnotationSize } =
@@ -245,6 +250,37 @@ export function AppearanceCard() {
               groups={[{ options: RADIUS_PRESETS.map(({ id, label }) => ({ value: id, label })) }]}
             />
           </SettingRow>
+
+          {/* Beside Corners, the other knob that redraws the whole shell.
+              It stands in for a system setting the browser cannot see:
+              the glass takes itself away under
+              `prefers-reduced-transparency`, and Safari does not answer
+              that query (lib/platform.ts), so on the one platform that
+              draws glass the reader's own accessibility setting reached
+              nothing and there was no control here either. iOS has had
+              one of its own since 26.1.
+
+              A switch and not a slider, which is what iOS 27 moved to:
+              the fill and the blur are placed by measurement against
+              4.5:1 and 3:1 ("Platform-specific design",
+              docs/design-principles.md), and a slider would hand the
+              reader fills nobody has read a contrast for. Off is the
+              opaque card, the same place reduced transparency lands. */}
+          {ios && (
+            <SettingRow
+              title={t('Glass')}
+              blurb={t('Bars and menus let the page show through them. Off, they are solid.')}
+            >
+              <Switch
+                checked={glass}
+                onCheckedChange={() => {
+                  setGlass(!glass);
+                  chooseGlass(!glass);
+                }}
+                aria-label={t('Glass')}
+              />
+            </SettingRow>
+          )}
 
           {/* Appearance rather than Documents: it changes how one panel is
               drawn on THIS device, and nothing about the document — the same
