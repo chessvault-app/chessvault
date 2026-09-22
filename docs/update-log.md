@@ -100,6 +100,10 @@ so far.
   the two curves opened out at each corner instead of holding at 3px.
   It now takes the track's radius less that 3px, and the Corners setting
   moves both together.
+- **A slider in Settings takes the whole row on a phone.** The words sit
+  above the track instead of beside it, which is how the phone's own
+  Brightness row is drawn. A desktop keeps it in the row, where there is
+  already room. Sound's Volume moved with the new glass knobs.
 - **The glass has two knobs, and the dark theme's is darker.** Settings,
   under Appearance and More options, has Glass and Glass tint on an
   iPhone: how much of the page shows through the bars, menus and

@@ -1502,7 +1502,21 @@ drawn, and what one has to prove.
   unequal segments work (only drawing a `row` as a track, and equal
   widths, are iOS's); and a setting is a ROW, label and blurb on the
   left and a control at its own width on the right, on every platform
-  (`SettingRow` with `control="wide"`), which the two phones then group
+  (`SettingRow` with `control="wide"`) — except a SLIDER on a PHONE,
+  which stacks: the words on top and the track at the row's whole width
+  under md, a row again from md (`control="full"`, 2026-09-22, lanph3re,
+  from iOS's own Brightness row). It is a width rule and not a platform
+  one, because what it fixes is a width. A 160px track with a 48px
+  readout beside it leaves the blurb about 166px at 390px, which wrapped
+  to five lines with the track floating against a taller block of text
+  than itself; a 624px desktop card leaves the same slot about 350 and
+  squeezes nothing, and stacking THERE buys a 518px throw for a nought
+  to a hundred and a line of empty card beside a one-word label
+  (measured), which is why macOS and Windows both keep a slider in the
+  control column. A switch or a menu gains nothing at either width and
+  stays in the row. It is the two glass knobs, which are only ever drawn
+  on a phone, and Sound's Volume, which moved with them rather than be
+  the odd slider out. The two phones then group
   in their own flavour from one place, `SettingsCard`: iOS one inset
   card per group with hairlines from the label's edge and 44px rows,
   Android a card per row with a 2px gap, large outer and small inner

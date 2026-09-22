@@ -61,8 +61,27 @@ export function SettingRow({
    * room to finish. A wide control is passed `className="w-full"` by its
    * caller, which is how it fills the slot; the slot does not reach into
    * it, because the sound row puts a readout beside its slider.
+   *
+   * `full` stacks UNDER md and is the wide slot from md: the words on
+   * top and the control under them at the row's whole width on a phone,
+   * a row again on a desktop. It is the slider's shape, and the phone
+   * half is the platform's (iOS draws Brightness as a full-width track
+   * in its own grouped row, the label carried by the group above it).
+   *
+   * It is a width rule and not a platform one, because the thing it
+   * fixes is a width. A slider in the `wide` slot is a 160px track with
+   * a 48px readout beside it, and on a 390px phone that leaves the blurb
+   * about 166px: it wrapped to five lines with the track floating
+   * against a taller block of text than itself. A desktop card is 624px,
+   * where the same slot leaves the blurb around 350 and nothing is
+   * squeezed. Stacking there instead buys a 518px throw for a nought to
+   * a hundred and a line of empty card beside a one-word label
+   * (measured, 2026-09-22), which is why macOS and Windows both keep a
+   * slider in the row's control column. The other controls stay in a row
+   * at every width: a switch or a menu says what it is at its own width
+   * and gains nothing from the card's.
    */
-  control?: 'compact' | 'wide';
+  control?: 'compact' | 'wide' | 'full';
   /** For a row that dims with a setting it depends on (Sound's volume). */
   className?: string;
   children: ReactNode;
@@ -75,7 +94,9 @@ export function SettingRow({
     <div
       data-slot="setting-row"
       className={cn(
-        'border-card-ring bg-muted flex items-center justify-between gap-3 rounded-md border px-3 py-2.5',
+        'border-card-ring bg-muted flex gap-3 rounded-md border px-3 py-2.5',
+        'items-center justify-between',
+        control === 'full' && 'max-md:flex-col max-md:items-stretch max-md:gap-2',
         className,
       )}
     >
@@ -91,7 +112,15 @@ export function SettingRow({
           is worse than a blurb that wraps one line further. Every control
           used in a row is compact (a switch, a small button, a menu), so
           none of them can take the row past the card by refusing. */}
-      <div className={cn('shrink-0', control === 'wide' && 'w-40 sm:w-56')}>{children}</div>
+      <div
+        className={cn(
+          'shrink-0',
+          control === 'wide' && 'w-40 sm:w-56',
+          control === 'full' && 'max-md:w-full md:w-56',
+        )}
+      >
+        {children}
+      </div>
     </div>
   );
 }
