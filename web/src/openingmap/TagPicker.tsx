@@ -214,7 +214,7 @@ export function TagPicker({
                         type="button"
                         disabled={tagged(wholeTag)}
                         onClick={() => onPick(wholeTag)}
-                        className="hover:bg-accent flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-(--row-py-dense) text-left disabled:opacity-45"
+                        className="hover:bg-accent flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-(--row-py-dense) text-left disabled:opacity-50"
                       >
                         <Icon className="text-muted-foreground glyph shrink-0" />
                         <span className="text-foreground min-w-0 flex-1 truncate type-row">{row.id}</span>
@@ -255,7 +255,7 @@ export function TagPicker({
                     type="button"
                     disabled={tagged(tag)}
                     onClick={() => onPick(tag)}
-                    className="hover:bg-accent flex items-center gap-2 rounded-lg px-2 py-(--row-py-dense) text-left disabled:opacity-45"
+                    className="hover:bg-accent flex items-center gap-2 rounded-lg px-2 py-(--row-py-dense) text-left disabled:opacity-50"
                   >
                     <BookOpen className="text-muted-foreground glyph shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate type-row">{name}</span>
