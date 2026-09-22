@@ -1,4 +1,4 @@
-import { BookText, BookX, ChevronLeft, ChevronRight, CircleStop, FileUp, History, MoreHorizontal, Pencil, Repeat, RotateCw, ScanSearch, Plus, RotateCcw } from 'lucide-react';
+import { BookMarked, BookText, BookX, ChevronLeft, ChevronRight, CircleStop, FileUp, History, MoreHorizontal, Pencil, Repeat, RotateCw, ScanSearch, Plus, RotateCcw } from 'lucide-react';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 
 import { api } from '@/lib/api';
@@ -563,7 +563,7 @@ export function BookPage({ slug }: { slug: string }) {
             )}
           </>
         ) : book.puzzles.length === 0 && (book.drafts?.length ?? 0) === 0 ? (
-          <div className="bg-card rounded-xl ring-1 ring-card-ring p-6 text-center">
+          <div className="bg-card overflow-hidden rounded-xl ring-1 ring-card-ring">
             {/*
               The import goes FIRST. An empty book used to name only "Add
               puzzle" — the by-hand route — which reads as though a book
@@ -571,22 +571,27 @@ export function BookPage({ slug }: { slug: string }) {
               feature books exist for: handing over the PDF and letting
               the reader take the diagrams and the printed answers off its
               pages. Both are offered here rather than described, because
-              this is the page where you would do either.
+              this is the page where you would do either. The shared
+              EmptyState, in the page's own card as home draws its carded
+              states: in a panel, so not `ground`.
             */}
-            <p className="text-foreground text-base font-medium">{t('Nothing in this book yet.')}</p>
-            <p className="text-muted-foreground mx-auto mt-1 max-w-md text-sm leading-relaxed">
-              {t('Import the book’s PDF and the reader takes the diagrams and printed solutions off its pages, pausing and resuming as you like. Or set a position up by hand and record the full solution.')}
-            </p>
-            <div className="mt-3 flex flex-wrap justify-center gap-2">
-              <Button variant="default" size="sm" onClick={() => setImporting(true)}>
-                <FileUp className="glyph" data-icon="inline-start" />
-                {t('Import a book PDF')}
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
-                <Plus className="glyph" data-icon="inline-start" />
-                {t('Add puzzle')}
-              </Button>
-            </div>
+            <EmptyState
+              icon={BookMarked}
+              title="Nothing in this book yet."
+              body="Import the book’s PDF and the reader takes the diagrams and printed solutions off its pages, pausing and resuming as you like. Or set a position up by hand and record the full solution."
+              action={
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button variant="default" size="sm" onClick={() => setImporting(true)}>
+                    <FileUp className="glyph" data-icon="inline-start" />
+                    {t('Import a book PDF')}
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => setAdding(true)}>
+                    <Plus className="glyph" data-icon="inline-start" />
+                    {t('Add puzzle')}
+                  </Button>
+                </div>
+              }
+            />
           </div>
         ) : (
           <PuzzleList
