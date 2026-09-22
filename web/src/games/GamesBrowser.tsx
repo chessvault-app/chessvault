@@ -50,6 +50,7 @@ import {
 } from './GameFilters';
 import { InGamesHeader, openTitleSearch, useGamesHeader } from './header-slots';
 import { scrollParent } from '@/lib/scroll';
+import { prefersReducedMotion } from '@/lib/motion';
 import { type DetailsSelection } from './GameDetails';
 import { ArchiveBrowser } from './ArchiveBrowser';
 import { DatabaseGames, positionHuntPending } from './DatabaseGames';
@@ -894,7 +895,8 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
    */
   const scrollFocusIntoView = (e: React.FocusEvent<HTMLElement>): void => {
     const field = e.currentTarget;
-    setTimeout(() => field.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120);
+    const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
+    setTimeout(() => field.scrollIntoView({ block: 'center', behavior }), 120);
   };
 
   // No Escape listener of its own: the Dialog below answers the platform's
