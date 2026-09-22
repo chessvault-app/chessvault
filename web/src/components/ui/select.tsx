@@ -195,7 +195,10 @@ function SelectContent({
             'bg-popover text-popover-foreground ring-window-ring relative z-50 max-h-(--available-height) w-full min-w-36 origin-(--transform-origin) overflow-x-hidden overflow-y-auto overscroll-contain rounded-lg shadow-md ring-1 duration-100',
             // iOS: glass (utilities.css). The scroll arrows below keep
             // the opaque fill: they cover the rows passing under them.
-            'ios:glass',
+            // max-md, as the radius and the spring below already are:
+            // glass is the phone's material (popover.tsx says what `ios:`
+            // alone reached).
+            'max-md:ios:glass',
             // On an iOS phone: the glass rung of the radius ladder and the
             // app's spring, as the row menu takes them (dropdown-menu.tsx
             // says why, and with which numbers).

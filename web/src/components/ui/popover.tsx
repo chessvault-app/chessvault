@@ -61,7 +61,12 @@ function PopoverContent({
           className={cn(
             'bg-popover text-popover-foreground ring-window-ring z-50 flex w-72 origin-(--transform-origin) flex-col gap-2.5 rounded-lg p-2.5 text-sm shadow-md ring-1 outline-hidden duration-100',
             // iOS: glass (utilities.css). Popover and card are one token.
-            'ios:glass',
+            // max-md, as the radius and the spring below already are:
+            // glass is the phone's material, and `ios:` alone reaches an
+            // iPad too (lib/platform.ts tells one by its touch points),
+            // where it drew a glass menu over a desktop page with nothing
+            // else glassy on it (measured at 834px, 2026-09-22).
+            'max-md:ios:glass',
             // On an iOS phone: the glass rung of the radius ladder and the
             // app's spring, as the row menu takes them (dropdown-menu.tsx
             // says why, and with which numbers).

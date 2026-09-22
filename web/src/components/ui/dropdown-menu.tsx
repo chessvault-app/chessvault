@@ -69,7 +69,10 @@ function DropdownMenuContent({
             // so the lit row runs concentric with the menu's edge. At lg the
             // menu read as squared beside the capsule and the glass circles
             // (lanph3re, on the phone, 2026-09-20).
-            'ios:glass max-md:ios:rounded-2xl',
+            // The glass is max-md for the same reason the radius beside
+            // it is: it is the phone's material, and `ios:` alone reached
+            // an iPad (popover.tsx has the measurement).
+            'max-md:ios:glass max-md:ios:rounded-2xl',
             // On an iOS phone the menu grows out of its button and goes back
             // into it, on the app's one spring: the entrance on
             // --pane-turn, the exit on the same trace run backwards in

@@ -236,8 +236,12 @@ export function PageHeader({
               // back to). The title is foreground ink, which clears the
               // 4.5:1 the capsule's muted label was measured to clear. No
               // rim: the bar runs to the screen's edges, and a rim drew a
-              // line down the left edge and along its foot.
-              'ios:glass ios:[--glass-edge-w:0px]',
+              // line down the left edge and along its foot. The zero stops
+              // at this element rather than reaching the glass circles
+              // standing on it, which is what registering the property
+              // bought (utilities.css). max-md, as the glass it belongs
+              // to now is (popover.tsx says why).
+              'max-md:ios:glass max-md:ios:[--glass-edge-w:0px]',
               // The phone's status-bar inset is the bar's own, as the
               // note header's is: its fill runs up behind the status bar.
               'pt-[calc(0.5rem+var(--page-t))]',
