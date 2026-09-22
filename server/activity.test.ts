@@ -83,7 +83,12 @@ describe('recordActivity', () => {
 
 describe('the activity route', () => {
   it('answers an empty vault with nothing, and says so', async () => {
-    const report = await ask(vault());
+    // Asked in UTC so the expectation below is not this machine's. The
+    // route dates today in the CALLER's zone, so asking in the machine's
+    // zone and comparing against a UTC date fails for the hours the two
+    // disagree: nine of them on a KST box, and none in CI, which runs in
+    // UTC and so never saw it.
+    const report = await ask(vault(), '?tz=UTC');
     expect(report.days).toEqual([]);
     // A log that has recorded nothing begins today, so a vault upgraded
     // from a version without one says every day in view is trainer-only.
