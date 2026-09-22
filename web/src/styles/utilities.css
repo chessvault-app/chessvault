@@ -150,6 +150,25 @@
    false, and the first form left the capsule opaque there with the Glass
    switch on. An unknown feature in the override is simply ignored, and
    the glass stays. */
+
+/* The edge width, registered so it does NOT inherit. It is set on one
+   surface, the full-bleed compact header, and a custom property set
+   there reaches every glass surface inside it: the three chrome circles
+   standing on that bar computed 0 and drew no hairline, while the same
+   three buttons in the title row one scroll away drew theirs (measured
+   on the demo, #/games, both themes, 2026-09-22). A registered property
+   with `inherits: false` stops at the element that sets it, which is
+   what "a surface that runs to the screen's edges" always meant. The
+   initial value is the hairline every other surface draws, so the
+   `var(--glass-edge-w, 1px)` fallbacks below are belt and braces: a
+   browser without @property support falls back to the old inheriting
+   behaviour rather than to no edge at all. */
+@property --glass-edge-w {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 1px;
+}
+
 @utility glass {
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
     :root:not([data-glass='off']) & {
