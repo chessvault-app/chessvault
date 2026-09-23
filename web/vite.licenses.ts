@@ -532,9 +532,17 @@ function indexPage(
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Licences — Chess Vault</title>
+    <title>Licences · Chess Vault</title>
     <style>
-      :root { color-scheme: light dark; }
+      :root {
+        color-scheme: light dark;
+        /* One mono stack for the page's two mono jobs, the version and the
+           licence text, which had spelled it two ways. No app CSS is in
+           reach here, so it is the stack the licence text already drew in,
+           which is the app's (tokens.css) without the two web faces this
+           page does not load, SF Mono named as the landing pages name it. */
+        --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
       body {
         margin: 0 auto; padding: 2.5rem 1.25rem 5rem; max-width: 48rem;
         font: 16px/1.65 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif;
@@ -606,7 +614,7 @@ function indexPage(
         font-weight: 600; min-width: 0; overflow: hidden;
         text-overflow: ellipsis; white-space: nowrap;
       }
-      .dep .ver { font-size: .75rem; opacity: .6; font-family: ui-monospace, monospace; flex: none; }
+      .dep .ver { font-size: .75rem; opacity: .6; font-family: var(--mono); flex: none; }
       .dep .lic { font-size: .75rem; opacity: .8; margin-left: auto; flex: none;
                   white-space: nowrap;
                   border: 1px solid rgba(128,128,128,.35); border-radius: 999px; padding: .05rem .5rem; }
@@ -614,7 +622,7 @@ function indexPage(
       .dep pre {
         margin: 0 0 1rem; padding: .9rem 1rem; border-radius: .5rem;
         background: rgba(128,128,128,.12); overflow-x: auto;
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-family: var(--mono);
         font-size: .75rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word;
       }
     </style>

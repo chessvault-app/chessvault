@@ -51,10 +51,13 @@
          names, and the values THE APP ships, so clicking "Try the demo"
          lands in an app that looks like the page that offered it. Those are
          the registry's values everywhere the app kept them, and the app's
-         where it did not: --muted-foreground is the one that differs, and
-         copying the registry there rather than the app is what put four of
-         this page's text tiers under 4.5:1. Take a token from
-         web/src/styles/tokens.css, not from the registry, when the two disagree. The
+         where it did not: in light --muted-foreground is the one that
+         differs, and copying the registry there rather than the app is what
+         put four of this page's text tiers under 4.5:1; in dark the page,
+         card, muted and ring rungs differ as well, since the app's dark
+         ladder left the registry's on 2026-09-22. Take a token from
+         web/src/styles/tokens.css (tokens-dark.css for dark), not from the
+         registry, when the two disagree. The
          page follows the system's light/dark setting because the app does
          too: the OLD page was dark and only dark, which was continuous with
          an app whose default theme was dark, and is not any more.
@@ -140,29 +143,32 @@
       @media (prefers-color-scheme: dark) {
         :root {
           color-scheme: dark;
-          /* shadcn's neutral theme, dark: 14.5 / 20.5 / 26.9 %, as the app. */
-          --background: oklch(14.5% 0 0);
+          /* The app's dark ladder, 18.25 / 22.25 / 28.2 %: tokens-dark.css
+             at the default scheme, where it left shadcn's 14.5 / 20.5 / 26.9
+             on 2026-09-22. */
+          --background: oklch(18.25% 0 0);
           --foreground: oklch(98.5% 0 0);
-          --card: oklch(20.5% 0 0);
-          --muted: oklch(26.9% 0 0);
-          /* 74%, the app's, for the reason the light value gives. Dark was
-             already clear at the registry's 70.8% (5.86:1 at worst, so it
-             passed); this keeps the two schemes on the same token rather
-             than fixing one and leaving the other to drift, and takes that
-             worst case to 6.59:1. */
-          --muted-foreground: oklch(74% 0 0);
+          --card: oklch(22.25% 0 0);
+          --muted: oklch(28.2% 0 0);
+          /* 77%, the app's, for the reason the light value gives. Dark was
+             already clear at the registry's 70.8% (5.86:1 at worst, on the
+             old 26.9% --muted, so it passed); this keeps the two schemes on
+             the same token rather than fixing one and leaving the other to
+             drift. On the 28.2% --muted the worst case computes to 6.99:1
+             (OKLab L cubed, which reads the 5.86 above as 5.83). */
+          --muted-foreground: oklch(77% 0 0);
           /* THE DARK HALF STAYS TRANSLUCENT, and does not follow the app
-             the way the light half does. The app's opaque 29% border is
+             the way the light half does. The app's opaque 30.4% border is
              right there because its hairlines sit on --card over the
-             page; here the figure plinths ARE --muted (26.9%), and 29%
-             on 26.9% measures 1.07:1 — no line at all. White at 10%
+             page; here the figure plinths ARE --muted (28.2%), and 30.4%
+             on 28.2% computes to 1.08:1 — no line at all. White at 10%
              composites against whatever it is over, which is what a page
              with three surface rungs needs. check:contrast covers both
              pages in dark and fails at the floor if this is "fixed". */
           --border: oklch(100% 0 0 / 10%);
           --primary: oklch(92.2% 0 0);
           --primary-foreground: oklch(20.5% 0 0);
-          --ring: oklch(66% 0 0);
+          --ring: oklch(69% 0 0);
           --hairline: oklch(98.5% 0 0 / 10%);
         }
       }
