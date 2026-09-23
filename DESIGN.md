@@ -388,8 +388,10 @@ setting them in mono made every one of them look like a terminal.
   with the page's actions, and a phone's is a large title in a 44px row
   of its own. Exported as `pageTitleClass`, since Settings' loading
   skeleton draws the same title and had the pair written out a second
-  time; a page gate (`PageGate`) and a puzzle book's rename field, which
-  stands in for the title, draw it too.
+  time; a puzzle book's rename field, which stands in for the title,
+  draws it too. A page gate's title (`PageGate`) is not this rung: a
+  splash centred on an otherwise empty page, competing with nothing, it
+  keeps `text-xl` at every width, as 967a1bd7 decided.
 - **Headline, board family** (600, 16px / `text-base`): the page title on a
   page whose subject is a board — Board, Editor, Puzzles, Repertoire, the
   book reader. Still the `h1`; a rung quieter because the title shares a
