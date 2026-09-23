@@ -15,8 +15,8 @@ import { t } from '@/lib/i18n';
  * it imported this: the skeleton that stands in for a header while
  * Settings loads, PageGate's headline, and a puzzle book's rename field,
  * which stands in for that page's title. A rung copied is a rung that
- * moves once: the gate's and the field's copies had both lost the
- * phone's 24px.
+ * moves once: the gate's and the field's copies were both older than
+ * the phone's 24px and never took it.
  * 20px on a desktop, the phone's 24px large title under `md`; see the
  * component's own note below and DESIGN.md, Typography.
  */
