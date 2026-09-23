@@ -1709,8 +1709,10 @@ use.
   is the only colour the app insists on. Bare in the surrounding ink
   everywhere the app draws it; white on a black rounded square only on
   the icons an OS composites onto a ground of its own, apple-touch and
-  the desktop installers, and the same two inks as the splash, so launch
-  and icon agree.
+  the desktop installers. The splash draws the same mark on the page's
+  own ground (#f5f5f5 light, #121212 dark, index.html's launch
+  background), so launch hands over to the page without a change of
+  colour.
 
 ## Process conventions
 
