@@ -41,9 +41,14 @@ const badgeVariants = cva(
        * second one by hand seven times over: a badge is a true pill
        * (`rounded-4xl`), a CHIP is the small-cornered tag that carries a
        * code, a theme or a verdict. The chip keeps the corner knob
-       * (`rounded-sm`) rather than DESIGN.md's fixed 4px, which nothing in
-       * the app has ever actually used, and takes the tighter side padding
-       * all four hand-rolled chips had agreed on.
+       * (`rounded-sm`), so it answers the Corners setting, rather than
+       * DESIGN.md's fixed 4px chip corner, and takes the tighter side
+       * padding all four hand-rolled chips had agreed on. That 4px is in
+       * use, only not on a Badge: the result bar and Insights' move-quality
+       * bar draw it (`rounded-[4px]`), as do the three placeholders that
+       * stand in for them, Insights' monthly bars round their tops with it
+       * (`rounded-t-[4px]`), and the note editor's inline code is 4px in
+       * editor.css.
        */
       shape: {
         pill: "rounded-4xl",

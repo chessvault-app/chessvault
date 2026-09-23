@@ -90,11 +90,16 @@
       }
       /* The logotype as the app sets it beside the mark
          (web/src/components/brand-mark.tsx): joined, lowercase, medium. */
-      /* 16px, the size brand-mark draws the logotype at in the sidebar,
-         which is what the note below always meant. The window's rungs are
-         the app's: 16 for the title, 14 for everything else off a 14px
-         body. It had been 18.4 / 13.6 / 12.8, three sizes the app has no
-         rung for. */
+      /* 16px medium: the app names a window that way (DialogTitle,
+         ui/dialog.tsx, text-base font-medium over a text-sm muted
+         description, which .sub is), and this h1 names each step, the
+         logotype on the first and "Connect to your server" and "Open your
+         vault" after it. The note above is how the logotype is spelled
+         and weighted, not its size: the sidebar sets it at 14 (text-sm,
+         since 2026-09-22), where this title would be the size of
+         everything under it. The window's rungs are the app's: 16 for the
+         title, 14 for everything else off a 14px body. It had been 18.4 /
+         13.6 / 12.8, three sizes the app has no rung for. */
       h1 {
         font-size: 1rem;
         font-weight: 500;
