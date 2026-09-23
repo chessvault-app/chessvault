@@ -75,7 +75,7 @@ export function MountNote({
   return (
     <div
       className={cn(
-        'bg-card flex shrink-0 flex-col gap-1 rounded-xl ring-1 ring-card-ring p-4 text-sm',
+        'bg-card flex shrink-0 flex-col gap-1 rounded-xl ring-1 ring-card-ring p-(--card-pad) text-sm',
         placeholder && '[&>p]:invisible',
       )}
       {...(placeholder ? { role: 'status', 'aria-label': t('Loading'), 'aria-live': 'polite' as const } : {})}
