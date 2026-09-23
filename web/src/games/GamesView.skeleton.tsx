@@ -131,7 +131,7 @@ function CollectionOutline() {
                 </>
               )}
               <Button variant="default" size="sm" data-chrome-circle="" className="max-md:aspect-square max-md:px-0!">
-                <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
+                <Plus className="glyph" data-icon="inline-start" />
                 {/* Read out, not drawn, under md: the plus alone (see CreateControl). */}
               <span className="max-md:sr-only">{t('Import a game')}</span>
               </Button>

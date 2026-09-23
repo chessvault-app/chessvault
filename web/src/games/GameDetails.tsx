@@ -1,8 +1,8 @@
 import {
+  ChevronFirst,
+  ChevronLast,
   ChevronLeft,
   ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   ExternalLink,
   MousePointerClick,
   Pin,
@@ -273,7 +273,7 @@ function GameDetailsContent({
             disabled={idx === 0}
             onClick={() => setIdx(0)}
           >
-            <ChevronsLeft className="glyph" />
+            <ChevronFirst className="glyph" />
           </Button>
           <Button
             variant="ghost"
@@ -303,7 +303,7 @@ function GameDetailsContent({
             disabled={idx === replay.plies.length}
             onClick={() => setIdx(replay.plies.length)}
           >
-            <ChevronsRight className="glyph" />
+            <ChevronLast className="glyph" />
           </Button>
         </div>
       )}

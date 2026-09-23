@@ -13,6 +13,7 @@ import { create } from 'zustand';
 
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { prefersReducedMotion } from '@/lib/motion';
 import { navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 
@@ -410,7 +411,8 @@ export function ArchiveBrowser({
     }
     if (hadMonths.current) return;
     hadMonths.current = true;
-    archiveTop.current?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    const behavior: ScrollBehavior = prefersReducedMotion() ? 'auto' : 'smooth';
+    archiveTop.current?.scrollIntoView({ block: 'start', behavior });
   }, [months.length]);
   const [added, setAdded] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);

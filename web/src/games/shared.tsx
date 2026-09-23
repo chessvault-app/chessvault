@@ -834,7 +834,7 @@ export function GameRowActions({
           t('Added')
         ) : (
           <>
-            <Plus className="glyph" data-icon="inline-start" strokeWidth={2.5} />
+            <Plus className="glyph" data-icon="inline-start" />
             {t('Add to collection')}
           </>
         )}
