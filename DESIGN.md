@@ -3,27 +3,27 @@ name: Chess Vault
 description: A private, self-hosted chess workbench — the board carries the colour, the chrome stays out of the way.
 colors:
   background: "oklch(97% 0 0)"
-  background-dark: "oklch(14.5% 0 0)"
+  background-dark: "oklch(18.25% 0 0)"
   background-accent: "oklch(97% 0 0)"
   background-accent-dark: "oklch(12% 0 0)"
   surface: "oklch(100% 0 0)"
-  surface-dark: "oklch(20.5% 0 0)"
+  surface-dark: "oklch(22.25% 0 0)"
   surface-2: "oklch(97% 0 0)"
-  surface-2-dark: "oklch(26.9% 0 0)"
+  surface-2-dark: "oklch(28.2% 0 0)"
   surface-3: "oklch(92.8% 0 0)"
-  surface-3-dark: "oklch(32% 0 0)"
+  surface-3-dark: "oklch(33.1% 0 0)"
   surface-inset: "oklch(98.5% 0 0)"
-  surface-inset-dark: "oklch(23% 0 0)"
+  surface-inset-dark: "oklch(24.5% 0 0)"
   border: "oklch(88% 0 0)"
-  border-dark: "oklch(29% 0 0)"
+  border-dark: "oklch(30.4% 0 0)"
   border-strong: "oklch(82% 0 0)"
-  border-strong-dark: "oklch(40% 0 0)"
+  border-strong-dark: "oklch(41.1% 0 0)"
   foreground: "oklch(14.5% 0 0)"
   foreground-dark: "oklch(98.5% 0 0)"
   muted-foreground: "oklch(48% 0 0)"
-  muted-foreground-dark: "oklch(74% 0 0)"
+  muted-foreground-dark: "oklch(77% 0 0)"
   text-subtle: "oklch(51.5% 0 0)"
-  text-subtle-dark: "oklch(69.5% 0 0)"
+  text-subtle-dark: "oklch(72.5% 0 0)"
   primary: "oklch(20.5% 0 0)"
   primary-dark: "oklch(92.2% 0 0)"
   primary-foreground: "oklch(98.5% 0 0)"
@@ -31,20 +31,20 @@ colors:
   primary-hover: "oklch(34% 0 0)"
   primary-hover-dark: "oklch(85% 0 0)"
   primary-soft: "oklch(94% 0 0)"
-  primary-soft-dark: "oklch(30% 0 0)"
+  primary-soft-dark: "oklch(31.4% 0 0)"
   ring: "oklch(59% 0 0)"
-  ring-dark: "oklch(66% 0 0)"
+  ring-dark: "oklch(69% 0 0)"
   good: "oklch(50% 0.141 150)"
   good-dark: "oklch(72% 0.16 152)"
   warn: "oklch(52% 0.112 75)"
   warn-dark: "oklch(80% 0.15 80)"
   info: "oklch(51% 0.102 230)"
-  info-dark: "oklch(74% 0.13 232)"
+  info-dark: "oklch(76.5% 0.13 232)"
   destructive: "oklch(52% 0.245 27.3)"
-  destructive-dark: "oklch(72% 0.191 22.2)"
+  destructive-dark: "oklch(77% 0.191 22.2)"
   board-light: "oklch(91% 0.035 84)"
   board-dark: "oklch(62% 0.072 52)"
-  eval-white: "oklch(97% 0 0)"
+  eval-white: "oklch(94% 0 0)"
   eval-black: "oklch(30% 0 0)"
 typography:
   display:
@@ -214,46 +214,46 @@ grep for.
   a test): a Blue board makes a blue accent, and a grey board keeps the
   accent grey, since the tint follows the square's own chroma. The one
   colour the app allows then does the branding.
-- **primary-soft** (`oklch(94% 0 0)` light, `oklch(30% 0 0)` dark): the
+- **primary-soft** (`oklch(94% 0 0)` light, `oklch(31.4% 0 0)` dark): the
   quiet fill under something selected that must not shout — a highlighted
   row, a soft badge.
 
 ### Neutral
 
-- **background** (`oklch(97% 0 0)` light, `oklch(14.5% 0 0)` dark): the
+- **background** (`oklch(97% 0 0)` light, `oklch(18.25% 0 0)` dark): the
   page. A tone in light, not white: cards and panels are white on it and
   separate by fill, the way Apple's grouped screens, Material 3's surface
   containers and both big chess sites draw a light theme. High contrast
   takes it back to white (the knob lerps it) and puts the card ring on.
-- **surface** (`oklch(100% 0 0)` light, `oklch(20.5% 0 0)` dark): a card
+- **surface** (`oklch(100% 0 0)` light, `oklch(22.25% 0 0)` dark): a card
   or panel resting on the page, a rung above it in both modes.
 - **card-ring**: the card's edge. Transparent in both modes, where a
   card is a rung of tone above the page, and the full `border` hairline
   at the top of the contrast knob, where the reader has asked for every
   cue. Floating surfaces (popovers, menus, dialogs, peeks) keep
   `border` at every setting.
-- **surface-2** (`oklch(97% 0 0)` / `oklch(26.9% 0 0)`): the hover fill
+- **surface-2** (`oklch(97% 0 0)` / `oklch(28.2% 0 0)`): the hover fill
   and the muted rung — a track, a secondary button, a row under the cursor.
-- **surface-3** (`oklch(92.8% 0 0)` / `oklch(32% 0 0)`): the pressed,
+- **surface-3** (`oklch(92.8% 0 0)` / `oklch(33.1% 0 0)`): the pressed,
   selected and highlighted fill. Deliberately a rung *above* surface-2
   rather than the same rung, which is a measured departure from shadcn's
   numbers: at parity a pressed toggle on a card sat 3% of lightness from
   its surroundings in light and 6% in dark, and could not be seen.
-- **surface-inset** (`oklch(98.5% 0 0)` / `oklch(23% 0 0)`): a well —
+- **surface-inset** (`oklch(98.5% 0 0)` / `oklch(24.5% 0 0)`): a well —
   something recessed into a panel rather than sitting on it.
-- **border** (`oklch(88% 0 0)` / `oklch(29% 0 0)`): the default hairline,
+- **border** (`oklch(88% 0 0)` / `oklch(30.4% 0 0)`): the default hairline,
   and the input stroke. 88% is a measured move off the registry's 92.2%,
   which was 1.26:1 on the white page — in light the page and every panel
   are the same white, so this line is the only structure there is, and
   on a phone it was not visible at all.
-- **border-strong** (`oklch(82% 0 0)` / `oklch(40% 0 0)`): a divider that
+- **border-strong** (`oklch(82% 0 0)` / `oklch(41.1% 0 0)`): a divider that
   has to survive a busy surface.
 - **foreground** (`oklch(14.5% 0 0)` / `oklch(98.5% 0 0)`): body text.
-- **muted-foreground** (`oklch(48% 0 0)` / `oklch(74% 0 0)`): the second
+- **muted-foreground** (`oklch(48% 0 0)` / `oklch(77% 0 0)`): the second
   text tier — labels, secondary values.
-- **text-subtle** (`oklch(51.5% 0 0)` / `oklch(69.5% 0 0)`): the third tier,
+- **text-subtle** (`oklch(51.5% 0 0)` / `oklch(72.5% 0 0)`): the third tier,
   for text that is present but not being read.
-- **ring** (`oklch(59% 0 0)` / `oklch(66% 0 0)`): the focus ring, at full
+- **ring** (`oklch(59% 0 0)` / `oklch(69% 0 0)`): the focus ring, at full
   alpha. Placed by measurement, not by eye: 3:1 against every surface it
   can land on, in both themes and at every point of the contrast knob,
   which is what WCAG 1.4.11 asks of a focus indicator. The registry's
@@ -280,22 +280,26 @@ the meaning. Hue and chroma stay put; only the lightness lerps, and only
 in light mode, where the gap closes. In dark it already opens.
 
 - **good** (`oklch(50% 0.141 150)` / `oklch(72% 0.16 152)`): outcome — solved, won.
-- **destructive** (`oklch(52% 0.245 27.3)` / `oklch(72% 0.191 22.2)`):
+- **destructive** (`oklch(52% 0.245 27.3)` / `oklch(77% 0.191 22.2)`):
   outcome — failed, lost; and destructive actions.
 - **warn** (`oklch(52% 0.112 75)` / `oklch(80% 0.15 80)`): caution — the
   engine-guess fidelity tier, offline notices.
-- **info** (`oklch(51% 0.102 230)` / `oklch(74% 0.13 232)`): trusted or
+- **info** (`oklch(51% 0.102 230)` / `oklch(76.5% 0.13 232)`): trusted or
   informational — the book-solution tier, the annotated-game pen. Dark's
-  74 is the one semantic colour raised for the hover fill: it is the only
-  one the app writes as a sentence on a row that fills, and at 72 the
-  puzzle dashboard's due count read 4.29:1 there.
+  76.5 is the one semantic colour raised for the hover fill: it is the
+  only one the app writes as a sentence on a row that fills. It was 74
+  until the 2026-09-22 ladder lifted that fill, where the puzzle
+  dashboard's due count then read 4.20:1; 76.5 reads 4.59:1 there, and
+  `tokens-dark.css` carries the arithmetic beside the token.
 
 ### Board and reading colours
 
 Outside the UI ladder entirely, because they are the thing being read
 rather than the frame around it: **board-light** / **board-dark** (ten
-selectable sets, the default a warm oklch(91% 0.035 84) over
-oklch(62% 0.072 52)), the last-move / selected / destination / check
+selectable sets on a warm base of oklch(91% 0.035 84) over
+oklch(62% 0.072 52), which the default set, Blue, replaces with
+oklch(92% 0.018 240) over oklch(62% 0.065 245)), the last-move /
+selected / destination / check
 square washes, **eval-white** and **eval-black** for the evaluation bar,
 **side-white** and **side-black** for whose move it is, and the seven
 NAG colours (`nag-good`, `nag-mistake`, `nag-brilliant`, `nag-blunder`,
@@ -693,7 +697,7 @@ orientation plus a floor, never from width alone. Portrait always stacks.
 
 **The system is flat.** Depth is a rung on the surface ladder, and
 almost never a shadow. Cards carry no shadow at all: in light they are
-white on a 97% page, in dark 20.5% on 14.5%, and in both they separate
+white on a 97% page, in dark 22.25% on 18.25%, and in both they separate
 by fill alone; in High contrast, where the light page is white again,
 they carry `ring-1 ring-card-ring`, a hairline that follows the
 contrast knob (it used to be
