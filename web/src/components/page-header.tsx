@@ -10,9 +10,13 @@ import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 
 /**
- * The page title's two rungs, exported because the skeleton that stands
- * in for a header while Settings loads draws the same title and had them
- * written out a second time. A rung copied is a rung that moves once.
+ * The page title's two rungs, exported because three things outside
+ * PageHeader draw the same title and each wrote out its own copy until
+ * it imported this: the skeleton that stands in for a header while
+ * Settings loads, PageGate's headline, and a puzzle book's rename field,
+ * which stands in for that page's title. A rung copied is a rung that
+ * moves once: the gate's and the field's copies had both lost the
+ * phone's 24px.
  * 20px on a desktop, the phone's 24px large title under `md`; see the
  * component's own note below and DESIGN.md, Typography.
  */
