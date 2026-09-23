@@ -46,7 +46,8 @@ const badgeVariants = cva(
        * padding all four hand-rolled chips had agreed on. That 4px is in
        * use, only not on a Badge: the result bar and Insights' move-quality
        * bar draw it (`rounded-[4px]`), as do the three placeholders that
-       * stand in for them, and the note editor's inline code is 4px in
+       * stand in for them, Insights' monthly bars round their tops with it
+       * (`rounded-t-[4px]`), and the note editor's inline code is 4px in
        * editor.css.
        */
       shape: {
