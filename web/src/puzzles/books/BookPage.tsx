@@ -581,7 +581,7 @@ export function BookPage({ slug }: { slug: string }) {
             */}
             <EmptyState
               icon={BookMarked}
-              title="Nothing in this book yet."
+              title="Nothing in this book yet"
               body="Import the book’s PDF and the reader takes the diagrams and printed solutions off its pages, pausing and resuming as you like. Or set a position up by hand and record the full solution."
               action={
                 <div className="flex flex-wrap justify-center gap-2">

@@ -1338,7 +1338,7 @@ export const ko: Record<string, string> = {
   'The diagram from the book. Make the board match it, then record the solution.':
     '책의 다이어그램입니다. 보드를 여기에 맞춘 다음, 정답을 기록하세요.',
   'The book’s own scan. Make the board match it.': '책의 스캔 원본입니다. 보드를 여기에 맞추세요.',
-  'Nothing in this book yet.': '아직 이 책에는 아무것도 없습니다.',
+  'Nothing in this book yet': '아직 이 책에는 아무것도 없습니다',
   'Reading the book': '책을 읽는 중',
   'Working out the printed solutions': '인쇄된 정답을 맞춰 보는 중',
   'Import unfinished': '가져오기 미완료',
