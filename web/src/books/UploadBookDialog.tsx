@@ -1,4 +1,4 @@
-import { BookText, Upload } from 'lucide-react';
+import { BookText, FileUp } from 'lucide-react';
 import { useEffect, useEffectEvent, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -119,7 +119,7 @@ export function UploadBookDialog({
         if (!open && progress === null) onClose();
       }}
     >
-      <DialogContent title={replace ? t('Replace PDF') : t('Import a book')} icon={Upload}>
+      <DialogContent title={replace ? t('Replace PDF') : t('Import a book')} icon={FileUp}>
         {!file ? (
           <FilePicker
             accept="application/pdf"
