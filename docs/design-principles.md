@@ -1235,11 +1235,13 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   is.** A window takes `xl`: the cards, the desktop dialog, and the
   phone sheet that same dialog becomes. A menu takes `lg`: Popover,
   DropdownMenu, ContextMenu, Select's list, and the text fields beside
-  them. What sits INSIDE one of those takes `md`: a menu row, a select
-  row, the icon chip in an alert, the tooltip (a label, not a surface),
-  and the buttons, which cap the rung at 10 or 12px where a full one
-  measured too round for its row. Toast is the one deliberate exception
-  at `2xl`: it floats over everything and belongs to no page. This is
+  them; on an iOS phone, where the menu is glass, it takes `2xl`. What
+  sits INSIDE one of those takes `md`: a menu row, a select row, the
+  icon chip in an alert, the tooltip (a label, not a surface), and the
+  buttons, which cap the rung at 10 or 12px where a full one measured
+  too round for its row. On an iOS phone a menu row and a select row
+  take `xl`, the menu's `2xl` less its 4px padding. Toast is the one
+  deliberate exception at `2xl` on every platform: it floats over everything and belongs to no page. This is
   written down because the sheet spent 0.4.7 to 0.9.3 on the menus'
   rung. It had been `rounded-t-2xl`, and the sweep that replaced
   app-chosen values with the registry's stock ones could not tell a
