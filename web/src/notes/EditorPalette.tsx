@@ -189,7 +189,7 @@ export function EditorPalette({
             onPointerDown={(e) => e.preventDefault()}
             onClick={() => action.run(editor)}
           >
-            <action.icon className="size-4" />
+            <action.icon className="glyph" />
           </Button>
         );
       })}

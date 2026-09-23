@@ -250,13 +250,23 @@
     gap: 0.15rem;
     margin: 0.5rem 0;
     padding: 0.5rem 0.75rem;
-    border: 1px solid var(--border);
+    /* A card on the page, edged as every other card is, the note's own
+       chess block among them (`ring-1 ring-card-ring`): a ring, which
+       costs no layout, in the card ring's colour, which is transparent
+       until the contrast knob asks for it because the fill already
+       separates the card. */
+    box-shadow: 0 0 0 1px var(--card-ring);
     border-radius: var(--radius-md);
     background: var(--card);
     cursor: pointer;
   }
-  .note-editor[contenteditable='false'] .wiki-embed:hover {
-    border-color: var(--border-strong);
+  /* The tint the app's other clickable cards answer a pointer with
+     (`hover:bg-accent`), behind the same hover-capable gate the utility
+     carries. */
+  @media (hover: hover) {
+    .note-editor[contenteditable='false'] .wiki-embed:hover {
+      background: var(--accent);
+    }
   }
   /* While editing, the source text carries the link's own styling; while
      reading it is hidden and the card speaks instead. */

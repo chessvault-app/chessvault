@@ -165,7 +165,7 @@ cg-board square.check {
    page, which is the better answer anyway — the editor's drag-off-to-
    delete used to make the piece vanish at the rail. */
 .cg-wrap cg-container {
-  border-radius: calc(var(--radius) * 0.6);
+  border-radius: var(--radius-sm);
   box-shadow: var(--shadow-panel);
   /* Centre the shortfall instead of dropping it all at the bottom.
      Chessground floors the container to a multiple of 8 DEVICE pixels

@@ -102,11 +102,11 @@ export function PalettePlaceholder({ className }: { className?: string }) {
   return (
     <div className={cn('flex w-full items-end justify-center gap-1 wide:h-10', className)}>
       {Array.from({ length: 6 }, (_, i) => (
-        <Skeleton key={i} className="aspect-square w-11 shrink-0 rounded-lg sm:w-14 wide:size-9 wide:rounded-md" />
+        <Skeleton key={i} className="aspect-square w-11 shrink-0 rounded-lg sm:w-14 wide:size-9" />
       ))}
       <span aria-hidden className="bg-border mx-1 hidden h-6 w-px wide:block" />
       {Array.from({ length: 6 }, (_, i) => (
-        <Skeleton key={`w${i}`} className="hidden size-9 shrink-0 rounded-md wide:block" />
+        <Skeleton key={`w${i}`} className="hidden size-9 shrink-0 rounded-lg wide:block" />
       ))}
     </div>
   );
