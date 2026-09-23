@@ -160,7 +160,10 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
                 // crushing it to a flicker with everything decorative.
                 data-motion={fraction === null ? 'status' : undefined}
                 className={cn(
-                  'bg-primary h-full',
+                  // The Progress primitive's own fill clock (ui/progress,
+                  // `transition-all`): a tracked value glides between
+                  // reports rather than stepping.
+                  'bg-primary h-full transition-all',
                   // Nothing to measure against: a segment that sweeps the
                   // track says "working" without claiming a percentage. A
                   // part-filled static bar would be read as one.

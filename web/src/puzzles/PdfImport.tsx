@@ -633,7 +633,7 @@ export function PdfImport({
               */}
               <ul
                 ref={listRef}
-                className="border-border divide-border max-h-72 divide-y overflow-y-auto rounded-lg border"
+                className="border-border divide-border max-h-72 divide-y overflow-y-auto rounded-md border"
                 /*
                   A peek pinned to where a row USED to be is worse than
                   none, and this list moves on its own: each page that
