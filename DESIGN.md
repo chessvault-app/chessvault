@@ -619,8 +619,9 @@ heading and 13.6px code, off a 16px document body), the licences page
 `web/vite.licenses.ts` generates (1.6 / .9 / .85 / .8 / .78rem, five
 sizes the app does not draw, on the page that lists what the app is made
 of), and the desktop vault chooser (an 18.4px logotype where its own
-comment says the sidebar's 16px, and a 12.8px blurb where a settings row
-draws 14). All three are on the ladder now, each in the em- or
+comment then said the sidebar's 16px, and a 12.8px blurb where a settings
+row draws 14; the logotype is 16px now as the window's title rung, the
+size the app names a window in). All three are on the ladder now, each in the em- or
 rem-relative form its own base makes exact. The landing pages keep a
 scale of their own on purpose — a marketing page reads at 15px and this
 ladder is the app's — but not a size below 12: their nav row clamped
