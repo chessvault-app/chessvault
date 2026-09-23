@@ -255,6 +255,10 @@ function Shell() {
         className={cn(
           'sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:z-50',
           'focus-visible:top-[calc(var(--safe-t)+0.5rem)] focus-visible:left-[calc(env(safe-area-inset-left)+0.5rem)]',
+          // The edge is a border, not the ring CLAUDE.md gives a window:
+          // this link is on screen only while it has keyboard focus, and
+          // its focus ring takes the one box-shadow a ring is drawn with,
+          // so a `ring-1` edge here would never show.
           'bg-card text-foreground border-window-ring rounded-lg border px-3 py-1.5 text-sm font-medium',
           'outline-none focus-visible:ring-3 focus-visible:ring-ring',
         )}
