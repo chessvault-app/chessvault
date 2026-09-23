@@ -757,8 +757,13 @@ export function ColumnControls({ className }: { className?: string }) {
  * and keeps the stroke at lucide's own weight; 24px was tried beside it
  * on the phone and read a rung louder than the rest of the page
  * (lanph3re, 2026-09-07). The divider grows with them.
+ *
+ * Exported, with the divider, for the strips that step through a line
+ * of their own and so cannot draw BoardControls (puzzles/AnswerPanel).
  */
-const NAV_ICON = 'size-[1.1rem] pointer-coarse:size-[1.375rem]';
+export const NAV_ICON = 'size-[1.1rem] pointer-coarse:size-[1.375rem]';
+/** The rule between the steps and the flip, at the glyphs' own height. */
+export const NAV_DIVIDER = 'bg-border mx-1 h-5 w-px pointer-coarse:h-[1.375rem]';
 
 export function BoardControls({
   className,
@@ -813,7 +818,7 @@ export function BoardControls({
       </Button>
       {/* No divider inside the iOS capsule: its controls are spread like
           the tab bar's tabs, and a rule between them is not a tab. */}
-      <div className="bg-border mx-1 h-5 w-px pointer-coarse:h-[1.375rem] ios:hidden" />
+      <div className={`${NAV_DIVIDER} ios:hidden`} />
       <Button variant="ghost" size="icon" onClick={flip} title={t('Flip board (f)')}>
         <FlipHorizontal2 className={NAV_ICON} />
       </Button>
