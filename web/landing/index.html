@@ -51,11 +51,16 @@
          names, and the values THE APP ships, so clicking "Try the demo"
          lands in an app that looks like the page that offered it. Those are
          the registry's values everywhere the app kept them, and the app's
-         where it did not: in light --muted-foreground is the one that
-         differs, and copying the registry there rather than the app is what
-         put four of this page's text tiers under 4.5:1; in dark the page,
-         card, muted and ring rungs differ as well, since the app's dark
-         ladder left the registry's on 2026-09-22. Take a token from
+         where it did not, with two exceptions. In light the app's are
+         three: --muted-foreground (48%, not 55.6%), where copying the
+         registry rather than the app is what put four of this page's text
+         tiers under 4.5:1, --border (88%, not 92.2%) and --ring (59%, not
+         70.8%). In dark they are five: the page, card, muted,
+         muted-foreground and ring rungs, since the app's dark ladder left
+         the registry's on 2026-09-22. The two exceptions keep the
+         registry's value where the app moved, and each says so where it is
+         set: the light page ground is still the registry's white, and the
+         dark --border is still its translucent white. Take a token from
          web/src/styles/tokens.css (tokens-dark.css for dark), not from the
          registry, when the two disagree. The
          page follows the system's light/dark setting because the app does
@@ -73,8 +78,14 @@
          figure plinths — because both hold something that needs a frame. */
       :root {
         color-scheme: light;
-        /* shadcn's neutral theme, light — with the app's one deviation from
-           it, below. */
+        /* shadcn's neutral theme, light, with the app's value in three
+           places: --muted-foreground (the note below says why), --border
+           and --ring. The ground is still the registry's white, not the
+           app's: the app's light page has been a 97% tone under white cards
+           since 2026-09-07 (tokens.css, --background), and this page has
+           not followed it. Following is more than this one token, since
+           the page's two boxes, the vault listing and the figure plinths,
+           are --muted, which is 97% too. */
         --background: oklch(100% 0 0);
         --foreground: oklch(14.5% 0 0);
         --card: oklch(100% 0 0);
