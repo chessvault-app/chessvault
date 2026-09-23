@@ -109,7 +109,6 @@ and keeping our separation cannot both be done.
 | rung | was | is | measured |
 | --- | --- | --- | --- |
 | `--app-ground-base`, the window frame and the sidebar | 19% | 14% | 1.06:1 under the page (was 1.03) |
-| `--background-accent` | 19.25% | 16.7% | 1.026:1 under the page (1.026) |
 | `--background`, the page | 20.5% | 18.25% | the anchor |
 | `--surface`, the card | 24.5% | 22.25% | 1.09:1 over the page (1.10) |
 | `--surface-inset` | 26.5% | 24.5% | 1.06:1 over the card (1.06) |
@@ -126,7 +125,7 @@ Beside the rungs, only the neutral strokes and fills that are scored
 against one of them moved with the second reading: `--border` to 30.4%
 and `--border-strong` to 41.1%, which keeps a hairline on a card at the
 1.285:1 and 1.97:1 it was already drawing; `--primary-soft` to 31.4%,
-the `::selection` fill, at its 1.32; `--board-frame` to 25%. Every ink
+the `::selection` fill, at its 1.32. Every ink
 stayed exactly where the first reading had put it and gained, because
 the surfaces under them all came down. Measured on the demo at the
 default knobs: `--muted-foreground` 5.83:1 on `--surface-3` where it read

@@ -4,8 +4,6 @@ description: A private, self-hosted chess workbench — the board carries the co
 colors:
   background: "oklch(97% 0 0)"
   background-dark: "oklch(18.25% 0 0)"
-  background-accent: "oklch(97% 0 0)"
-  background-accent-dark: "oklch(12% 0 0)"
   surface: "oklch(100% 0 0)"
   surface-dark: "oklch(22.25% 0 0)"
   surface-2: "oklch(97% 0 0)"
@@ -933,8 +931,8 @@ hit areas, `title` as a tooltip. Composites live in
 
 ### Signature: the board and its overlays
 
-The board is chessground, framed by `--board-frame`, with ten selectable
-square palettes and ten piece sets. Everything drawn on top of it —
+The board is chessground, with ten selectable square palettes and ten
+piece sets. Everything drawn on top of it —
 last-move, selection, destination and check washes, arrows, square badges,
 the heat map — derives its square geometry from one place
 (`board/square-overlay.tsx`). Duplicated geometry here is a bug waiting
