@@ -388,7 +388,8 @@ setting them in mono made every one of them look like a terminal.
   with the page's actions, and a phone's is a large title in a 44px row
   of its own. Exported as `pageTitleClass`, since Settings' loading
   skeleton draws the same title and had the pair written out a second
-  time.
+  time; a page gate (`PageGate`) and a puzzle book's rename field, which
+  stands in for the title, draw it too.
 - **Headline, board family** (600, 16px / `text-base`): the page title on a
   page whose subject is a board — Board, Editor, Puzzles, Repertoire, the
   book reader. Still the `h1`; a rung quieter because the title shares a
@@ -399,8 +400,9 @@ setting them in mono made every one of them look like a terminal.
   `text-sm` until 2026-09-15, which made it the only title in the app at
   Body size — a shelf naming its own emptiness a rung under the cards
   beside it, which three separate comments in `skeletons.tsx` had each
-  measured around. The five screens that say the same thing without the
-  component say it in this voice too.
+  measured around. The five screens that once said the same thing
+  without the component go through it now (68c7101f), and the empty
+  puzzle book has followed them.
 - **Panel title** (500, 14px / `text-sm`; `type-row`'s 16px under `md`): the header
   of a panel, via `PanelHeader`, in the registry's own card-title voice.
   Deliberately on the row rung, not Title: a panel's header shares a row
@@ -661,7 +663,9 @@ Licences page's 203 rows were the largest list in the app ignoring the
 knob, and were ignoring it twice over: a literal padding, and an
 unconditional `min-h-9` above it that the padding could never have
 beaten. Thirty-odd rows read a rung now, and the floor is
-`pointer-coarse` like every Button's.
+`pointer-coarse` like every Button's. The Settings cards' own frame
+followed on 2026-09-23: it had pinned the comfortable 16px as `p-4`, and
+pads from `--card-pad` now.
 
 What the knob does NOT reach is the card grids, and that is a decision
 rather than a gap (lanph3re, 2026-09-16): the Studies, Notes and Books
@@ -768,8 +772,9 @@ that a variant can fill it in without the control changing size, and
 hand-written radius is a corner that stops responding to the setting, and
 the only sanctioned exceptions are the 4px chip corner, the pixel caps
 that stop small controls turning into pills, and a mark fitted to its
-own few pixels (the 10px side dot at 3px, the review strip's 8px
-diamond at 1px), where the ladder's smallest rung would round the shape
+own few pixels (the 10px side dot at 3px, the 10px activity square and
+Insights legend swatch at 2px, the review strip's 8px diamond at 1px),
+where the ladder's smallest rung would round the shape
 away. Each says so on the line above it, and `check:repo` asks for that
 sentence.
 
