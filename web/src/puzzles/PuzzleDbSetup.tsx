@@ -4,6 +4,7 @@ import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
+import { Figures } from '@/components/figures';
 import { Spinner } from '@/components/ui/spinner';
 import { Skeleton } from '@/components/skeletons';
 
@@ -173,12 +174,21 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
               />
             </span>
 
-            <p className="text-muted-foreground font-mono text-xs">
-              {phase === 'downloading'
-                ? `${mb(status?.bytes ?? 0)} / ${status?.total ? mb(status.total) : '?'} MB`
-                : phase === 'indexing'
-                  ? t('Almost done')
-                  : t('{rows} puzzles read', { rows: (status?.rows ?? 0).toLocaleString() })}
+            {/* Figures and words on one line, so the figures alone take
+                the mono role (components/figures.tsx), as the vault
+                tree's sizes do. As one mono paragraph the words went too,
+                and in Korean they are hangul, which JetBrains Mono cannot
+                draw. */}
+            <p className="text-muted-foreground text-xs">
+              <Figures
+                text={
+                  phase === 'downloading'
+                    ? `${mb(status?.bytes ?? 0)} / ${status?.total ? mb(status.total) : '?'} MB`
+                    : phase === 'indexing'
+                      ? t('Almost done')
+                      : t('{rows} puzzles read', { rows: (status?.rows ?? 0).toLocaleString() })
+                }
+              />
             </p>
 
             <p className="text-muted-foreground text-sm leading-relaxed">

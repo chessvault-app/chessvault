@@ -13,6 +13,7 @@ import { INSIGHTS_COPY } from './copy';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/empty-state';
+import { Figures } from '@/components/figures';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { ResultBar } from '@/components/result-bar';
@@ -789,9 +790,13 @@ function EndingsCard({
             <figure key={key} className="flex min-w-0 flex-col gap-3">
               <figcaption className="text-muted-foreground flex items-baseline justify-between gap-2 type-row-sub font-medium">
                 <span>{t(title)}</span>
+                {/* A word with a figure in it, so the figure alone takes the
+                    mono role (components/figures.tsx). As one mono span the
+                    word went too, and in Korean it is 정확도, which JetBrains
+                    Mono cannot draw. The span keeps the pair one flex item. */}
                 {accuracy !== null && (
-                  <span className="font-mono tabular-nums">
-                    {t('{n}% accuracy', { n: accuracy.toFixed(1) })}
+                  <span>
+                    <Figures text={t('{n}% accuracy', { n: accuracy.toFixed(1) })} />
                   </span>
                 )}
               </figcaption>

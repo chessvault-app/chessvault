@@ -12,7 +12,7 @@ import { t } from '@/lib/i18n';
 
 /**
  * A panel with nothing in it yet, saying so properly — shadcn's Empty,
- * with the one shape all thirteen call sites share so no shelf words its
+ * with the one shape every call site shares so no shelf words its
  * emptiness differently: say what is missing, say how it gets filled, and
  * offer the press that fills it.
  *
@@ -36,21 +36,25 @@ export function EmptyState({
    * The press that resolves it. Always give one if one exists.
    *
    * Its variant says what kind of press it is, and the split is the
-   * app's, counted across all 28 of these on 2026-09-15: the DEFAULT
-   * variant for the press that resolves the state (make one, import one,
-   * go where the content is, leave a page that failed to load, try the
-   * load again), and `secondary` only for the press that undoes what the
-   * reader themselves asked for (Clear search, Clear filters, and the
-   * re-run of a search that sits under its own filter bar). Four sites
-   * disagreed with that and were brought into line; three of them had
-   * never been counted, and the fourth was a conversion of this very
-   * component that kept two call sites' old variants instead of matching
-   * the two screens already doing the same job.
+   * app's, counted on 2026-09-23 across the 34 presses in the 32 states
+   * that carry one: the DEFAULT variant for the press that resolves the
+   * state (make one, import one, go where the content is, leave a page
+   * that failed to load, try the load again), and `secondary` only for
+   * the press that undoes what the reader themselves asked for (Clear
+   * search, Clear filters, and the re-run of a search that sits under
+   * its own filter bar), or for the second of two presses that both
+   * resolve it, beside a default one that leads (the opening map's Grow
+   * from my games, an empty puzzle book's Add puzzle). When the rule
+   * was first counted, on 2026-09-15, four sites disagreed with it and
+   * were brought into line; three of them had never been counted, and
+   * the fourth was a conversion of this very component that kept two
+   * call sites' old variants instead of matching the two screens already
+   * doing the same job.
    *
    * Size follows the surround, not the variant: `sm` where the state
-   * sits in a panel or under a toolbar (21 of them), the default 32px on
-   * a bare screen whose only content is this (the seven that say a
-   * document could not be opened).
+   * sits in a panel or under a toolbar (25 of the 32 on 2026-09-23), the
+   * default 32px on a bare screen whose only content is this (the seven
+   * that say a document could not be opened).
    */
   action?: ReactNode;
   /**
