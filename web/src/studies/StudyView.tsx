@@ -570,7 +570,10 @@ function TitleEditor({
           if (e.key === 'Escape') setEditing(false);
         }}
         className="flex-1"
-        inputClassName="text-base font-semibold"
+        // The h1's own size at every width. A bare `text-base` lost to
+        // the Input's `md:text-sm`, which only an `md:` size displaces,
+        // so from md the name shrank to 14px on opening.
+        inputClassName="text-base font-semibold md:text-base"
       />
     );
   }
