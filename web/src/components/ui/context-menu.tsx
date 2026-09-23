@@ -13,8 +13,11 @@ import { MENU_ITEM } from '@/components/ui/dropdown-menu';
 const CONTENT =
   // iOS: glass (utilities.css). Popover and card are one token, and the
   // glass is max-md: it is the phone's material, and `ios:` alone
-  // reached an iPad (popover.tsx has the measurement).
-  'max-md:ios:glass bg-popover text-popover-foreground ring-window-ring z-50 min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg p-1 shadow-md ring-1 duration-100 outline-none ' +
+  // reached an iPad (popover.tsx has the measurement). With it the glass
+  // rung of the radius ladder, 2xl, as DropdownMenu's: its rows are
+  // MENU_ITEM, which take xl there, and inside an lg box they were
+  // rounder than the menu holding them (dropdown-menu.tsx has the numbers).
+  'max-md:ios:glass max-md:ios:rounded-2xl bg-popover text-popover-foreground ring-window-ring z-50 min-w-32 origin-(--transform-origin) overflow-x-hidden overflow-y-auto rounded-lg p-1 shadow-md ring-1 duration-100 outline-none ' +
   'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95';
 
 function ContextMenu({ ...props }: ContextMenuPrimitive.Root.Props) {
