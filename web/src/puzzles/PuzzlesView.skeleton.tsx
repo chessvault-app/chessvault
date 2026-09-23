@@ -286,7 +286,7 @@ export function ThemeCard({
     >
       <Icon
         className={cn(
-          'size-4 shrink-0 transition-colors',
+          'glyph shrink-0 transition-colors',
           highlight ? 'text-primary' : 'text-muted-foreground group-hover:text-primary',
         )}
       />

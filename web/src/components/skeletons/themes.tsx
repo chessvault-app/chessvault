@@ -30,7 +30,7 @@ export function SkeletonThemeCard({
         className,
       )}
     >
-      <Skeleton className="size-4 shrink-0 rounded-sm" />
+      <Skeleton className="glyph shrink-0 rounded-sm" />
       <div className="min-w-0 flex-1">
         {/* ThemeCard's own two lines: the name on `type-row`, the count
             under it on `type-row-sub`. Both were pinned at the desktop
