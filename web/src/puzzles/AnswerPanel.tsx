@@ -3,6 +3,7 @@ import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight, FlipHorizontal2 }
 import { getNode, mainlineFrom } from '@shared/tree';
 import type { MoveTree, NodeId } from '@shared/types';
 import { MainlineTable, PromoteStrip } from '@/analysis/MoveTreePane';
+import { NAV_DIVIDER, NAV_ICON } from '@/board/AnalysisBoard';
 import { scrollRowIntoPanel } from '@/lib/scroll';
 import { Button } from '@/components/ui/button';
 import { Panel, PanelHeader } from '@/components/panel';
@@ -103,7 +104,7 @@ export function AnswerPanel({
           disabled={cursorId === tree.rootId}
           onClick={() => onSelect(tree.rootId)}
         >
-          <ChevronFirst className="size-[1.1rem]" />
+          <ChevronFirst className={NAV_ICON} />
         </Button>
         <Button
           variant="ghost"
@@ -112,7 +113,7 @@ export function AnswerPanel({
           disabled={!node.parentId}
           onClick={() => node.parentId && onSelect(node.parentId)}
         >
-          <ChevronLeft className="size-[1.1rem]" />
+          <ChevronLeft className={NAV_ICON} />
         </Button>
         <Button
           variant="ghost"
@@ -121,7 +122,7 @@ export function AnswerPanel({
           disabled={!next}
           onClick={() => next && onSelect(next)}
         >
-          <ChevronRight className="size-[1.1rem]" />
+          <ChevronRight className={NAV_ICON} />
         </Button>
         <Button
           variant="ghost"
@@ -130,15 +131,15 @@ export function AnswerPanel({
           disabled={!lineEnd}
           onClick={() => lineEnd && onSelect(lineEnd)}
         >
-          <ChevronLast className="size-[1.1rem]" />
+          <ChevronLast className={NAV_ICON} />
         </Button>
         {onFlip && (
           <>
             {/* The divider BoardControls draws in the same place, for the
                 same reason: flipping is not a step through the line. */}
-            <div className="bg-border mx-1 h-5 w-px" />
+            <div className={NAV_DIVIDER} />
             <Button variant="ghost" size="icon" title={t('Flip board')} onClick={onFlip}>
-              <FlipHorizontal2 className="size-[1.1rem]" />
+              <FlipHorizontal2 className={NAV_ICON} />
             </Button>
           </>
         )}
