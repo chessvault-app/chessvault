@@ -28,8 +28,9 @@ import { cn } from '@/lib/utils';
  * lowercase words with a space read as a phrase rather than a name. One
  * token at medium keeps it a name and lets the mark carry the weight.
  * Not translated: Korean keeps the Latin, as the dictionary did.
- * `className` sets the size: text-base on the sidebar, text-2xl on the
- * phone's home title and the lock screen.
+ * `className` sets the size: text-sm on the sidebar, text-2xl on the
+ * phone's home title. The lock screen passes none and takes text-2xl
+ * from the h1 it sits in.
  *
  * `font-brand` and not the inherited face. The chrome around it may be the
  * platform's since 2026-09-18 (iOS draws its UI in San Francisco), and a

@@ -28,7 +28,7 @@ export function ThemeToggle() {
       title={t('{theme}. Click to change.', { theme: t(labels[preference]) })}
       aria-label={t(labels[preference])}
     >
-      <Icon className="size-[1.05rem]" strokeWidth={2} />
+      <Icon className="glyph" strokeWidth={2} />
     </Button>
   );
 }

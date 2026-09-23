@@ -245,7 +245,7 @@ function HistorySheet({
               <li key={version.sha}>
                 <button
                   type="button"
-                  className="hover:bg-accent/60 flex w-full items-baseline gap-2 rounded-sm px-2 py-(--row-py) text-left"
+                  className="hover:bg-accent flex w-full items-baseline gap-2 rounded-sm px-2 py-(--row-py) text-left"
                   onClick={() => void choose(version)}
                 >
                   {/* The relative time answers "is this the one?"; the exact
