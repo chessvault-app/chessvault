@@ -1281,8 +1281,6 @@ export const ko: Record<string, string> = {
   'Markdown with live boards': '움직이는 보드가 들어간 마크다운',
   'Your collection, annotated': '주석이 달린 나의 모음',
   'Train tactics offline': '오프라인으로 전술 훈련',
-  'Analyse any position with the engine': '엔진으로 어떤 포지션이든 분석',
-  'Set up any position from scratch': '처음부터 포지션 만들기',
   'Browse opening statistics move by move': '한 수씩 오프닝 통계 보기',
   'Practise an opening against real games': '실제 기보를 상대로 오프닝 연습',
   'Password, 2FA, themes, tokens': '비밀번호, 2단계 인증, 테마, 토큰',
