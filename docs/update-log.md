@@ -123,6 +123,26 @@ so far.
   cost the phone a second blur per button on every scrolled frame and
   was worth two parts in 255 to look at. The buttons take the bar's own
   material now. Nothing else on the page moved.
+- **Parts that had drifted from the rest of the app now match it.** An
+  audit of how consistently the app uses its own design found places
+  where one job was done two ways, and most of them now take the one way
+  the rest of the app uses. Most are small, but a few are easy to see.
+  The theme button at the foot of the sidebar is the size most icon
+  buttons are, and the plus on Games' "Import a game" is drawn at the
+  usual weight. The rename field of a note, a study or a puzzle book
+  keeps the size of the title it replaces on a desktop. A word beside a
+  number ("accuracy", "puzzles read") is set in the sentence's type while
+  the number keeps the figures' face. Several rows and the Settings cards
+  had ignored the Density setting and follow it now. Two lists that
+  glided into place even when the device asks for reduced motion now
+  jump there. On an iPhone, the long-press menu and a select list's rows
+  take the same rounded glass as every other menu.
+- **The pages around the app wear its current dark colours.** The
+  desktop vault chooser, the website and the manual in dark, and the
+  iPhone launch screens had kept the dark greys from before the theme was
+  deepened, so an installed iPhone app launched on a darker grey than the
+  page it opened into. They use today's greys now, and the chooser names
+  them the way the app does.
 
 ## 0.11.4
 
