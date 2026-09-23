@@ -256,6 +256,9 @@ export function activityGrid(
  * the grid is drawn twice - once as itself and once while the answer is
  * in the air - and a placeholder that measured its own square would be
  * the drift `check:skeletons` exists to catch. Nothing else reads it.
+ *
+ * The 2px corner is fitted to the 10px square, off the radius knob on
+ * purpose: the ladder's smallest rung is 6px, which makes a day a dot.
  */
 export const ACTIVITY_CELL = 'size-2.5 rounded-[2px]';
 export const ACTIVITY_GAP = 'gap-[2px]';

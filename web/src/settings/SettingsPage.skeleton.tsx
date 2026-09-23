@@ -221,7 +221,9 @@ export function SettingsCard({
     <section
       id={anchor}
       className={cn(
-        'bg-card rounded-xl ring-1 ring-card-ring scroll-mt-14 p-4',
+        // p-(--card-pad): the density rung every Card pads from, so the
+        // Density knob reaches these cards as it reaches the app's others.
+        'bg-card rounded-xl ring-1 ring-card-ring scroll-mt-14 p-(--card-pad)',
         // iOS: the box moves off the section and onto the body below, and
         // what is left is a group heading over a card.
         'max-md:ios:flex max-md:ios:flex-col max-md:ios:gap-2 max-md:ios:rounded-none max-md:ios:bg-transparent max-md:ios:p-0 max-md:ios:ring-0',

@@ -1558,7 +1558,7 @@ export function HomePage() {
                     were a flat block for the whole wait. At 20% the bars
                     sit 42 levels off the well in light and 37 in dark,
                     in the well's own ink. */}
-                <Skeleton className="bg-primary/20 size-24 shrink-0 rounded-sm xl:size-32" />
+                <Skeleton className="bg-primary/20 size-24 shrink-0 xl:size-32" />
                 <span className="min-w-0 flex-1 max-[319px]:basis-full">
                   <Skeleton className="bg-primary/20 h-5 w-44 max-w-full" />
                   <Skeleton className="bg-primary/20 mt-1.5 h-4 w-24 max-w-full" />
@@ -1666,7 +1666,7 @@ export function HomePage() {
               >
                 {/* 96px, and 128 from xl where the column has the room:
                     the position is the one picture on the page. */}
-                <MiniBoard ref={continueBoard} fen={boardStudy.fen} size={wide ? 128 : 96} className="shrink-0 rounded-sm" />
+                <MiniBoard ref={continueBoard} fen={boardStudy.fen} size={wide ? 128 : 96} className="shrink-0" />
                 {/* basis-full under 320px, or flex-1 shrinks the title
                     to a few letters beside the board instead of taking
                     the wrap the button offers. */}
