@@ -52,9 +52,9 @@ const html = `<!doctype html>
 <style>
   @font-face { font-family: Pretendard; src: url("file:///${font.replace(/\\/g, '/')}") format("woff2"); font-weight: 45 920; }
   :root {
-    --background: oklch(14.5% 0 0);
+    --background: oklch(18.25% 0 0);
     --foreground: oklch(98.5% 0 0);
-    --muted-foreground: oklch(74% 0 0);
+    --muted-foreground: oklch(77% 0 0);
     --hairline: oklch(98.5% 0 0 / 10%);
     --chip: oklch(98.5% 0 0 / 7%);
   }
