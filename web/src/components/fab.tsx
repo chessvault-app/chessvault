@@ -144,7 +144,7 @@ export function Fab({
         // both the one page with this disc and a page that claims the
         // edge, so the constant would have put the disc on the pill.
         'android:bottom-[calc(var(--bottom-bar-h)+1rem)]',
-        'bg-primary text-primary-foreground hover:bg-primary-hover grid size-14 place-items-center rounded-full',
+        'bg-primary text-primary-foreground hover:bg-(--primary-hover) grid size-14 place-items-center rounded-full',
         // Android: Material 3 Expressive's FAB is a rounded SQUARE, 56px
         // with a 16px corner, not a disc. The size is already the M3
         // one; only the corner changes.

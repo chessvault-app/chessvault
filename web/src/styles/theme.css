@@ -38,7 +38,6 @@
      border-strong, primary-hover, primary-soft) still exist as variables
      but are no utilities: everything on the page speaks the registry's
      vocabulary above. */
-  --color-background-accent: var(--background-accent);
   /* The desktop window's ground, spent by the shell alone (App.tsx). */
   --color-app-ground: var(--app-ground);
 
@@ -50,8 +49,6 @@
   --color-warn: var(--warn);
   --color-warn-foreground: var(--warn-foreground);
   --color-info: var(--info);
-  --color-toast: var(--toast);
-  --color-toast-foreground: var(--toast-foreground);
 
   --color-eval-white: var(--eval-white);
   --color-eval-black: var(--eval-black);
@@ -74,7 +71,6 @@
   --color-nag-book: var(--nag-book);
   --color-nag-foreground: var(--nag-foreground);
 
-  --color-knob: var(--knob);
   --color-scrim: var(--scrim);
 
   /* The corner ladder is the registry's: every rung a multiple of the one
