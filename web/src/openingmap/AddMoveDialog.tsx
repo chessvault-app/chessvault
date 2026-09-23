@@ -191,7 +191,7 @@ export function AddMoveDialog({
                 // the row.
                 className={cn(
                   ROW,
-                  'hover:bg-accent group rounded-lg px-2 py-1.5 text-left',
+                  'hover:bg-accent group rounded-lg px-2 py-(--row-py-dense) text-left',
                   at % 2 === 1 && 'bg-muted/50',
                 )}
               >
