@@ -1161,8 +1161,9 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
 - **The theme is the registry's vocabulary and, at rest, its values** —
   `bg-card`, `text-muted-foreground`, `border-input`, `bg-destructive` — so
   a component added tomorrow is themed the moment it lands. The default
-  scheme, Neutral, IS shadcn's neutral theme (white page, grey surfaces,
-  a near-black primary) in light, and its vocabulary with the app's own
+  scheme, Neutral, IS shadcn's neutral theme in light (grey surfaces and
+  a near-black primary, with the page a 97% tone under white cards where
+  the registry's page is white), and its vocabulary with the app's own
   ladder behind it in dark, where the registry's 14.5 / 20.5 / 26.9 % is
   replaced wholesale by the anchors above; the
   values are written as the app's OKLCH ladder in `styles/tokens.css` with the
