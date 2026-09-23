@@ -118,7 +118,7 @@ export function FieldStats({
               key={at}
               className={cn(
                 ROW,
-                'rounded-lg border border-transparent px-2 py-1.5',
+                'rounded-lg border border-transparent px-2 py-(--row-py-dense)',
                 at % 2 === 1 && 'bg-muted/50',
               )}
             >
@@ -208,7 +208,7 @@ export function FieldStats({
               // the move to the share it belongs to.
               className={cn(
                 ROW,
-                'rounded-lg border px-2 py-1.5',
+                'rounded-lg border px-2 py-(--row-py-dense)',
                 isGap ? 'border-warn/40' : 'border-transparent',
                 at % 2 === 1 && 'bg-muted/50',
               )}

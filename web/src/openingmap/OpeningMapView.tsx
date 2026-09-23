@@ -874,8 +874,8 @@ const ROW_SELECT = 'w-full h-auto pointer-coarse:h-auto px-3 py-(--row-py)';
 
 const ADD_ROW =
   'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground flex items-center gap-2 ' +
-  'rounded-lg border border-dashed px-2 py-1.5 text-left text-sm transition-colors duration-100 ' +
-  'disabled:pointer-events-none disabled:opacity-45';
+  'rounded-lg border border-dashed px-2 py-(--row-py-dense) text-left text-sm transition-colors duration-100 ' +
+  'disabled:pointer-events-none disabled:opacity-50';
 
 /**
  * One column of the node panel's footer toolbar.
@@ -959,7 +959,7 @@ function PickRow({
       )}
     >
       <span className="min-w-0 flex-1 truncate">{label}</span>
-      {picked && <Check className="size-4 shrink-0" />}
+      {picked && <Check className="glyph shrink-0" />}
     </button>
   );
 }
@@ -1238,7 +1238,7 @@ function NodePanel({
                 key={`${tag.kind}\n${tag.id}\n${tag.chapter ?? ''}`}
                 className="border-border flex items-center gap-2 rounded-lg border px-2 py-(--row-py-dense)"
               >
-                <Icon className={broken ? 'text-destructive size-4 shrink-0' : 'text-muted-foreground size-4 shrink-0'} />
+                <Icon className={broken ? 'text-destructive glyph shrink-0' : 'text-muted-foreground glyph shrink-0'} />
                 <TitleTip title={tag.id}>
                 <button
                   type="button"
@@ -1291,7 +1291,7 @@ function NodePanel({
             onClick={() => setPicking(true)}
             className={ADD_ROW}
           >
-            <Plus className="size-4 shrink-0" />
+            <Plus className="glyph shrink-0" />
             <span className="min-w-0 flex-1 truncate">{t('Link a game, study or note')}</span>
           </button>
           {/* And the study that does not exist yet.
@@ -1306,7 +1306,7 @@ function NodePanel({
             onClick={() => void newStudy()}
             className={ADD_ROW}
           >
-            <NotebookPen className="size-4 shrink-0" />
+            <NotebookPen className="glyph shrink-0" />
             <span className="min-w-0 flex-1 truncate">
               {making ? t('Making the study…') : t('New study from this line')}
             </span>
@@ -1603,7 +1603,7 @@ function NodePanel({
             // not `danger`, whose tinted card was right for a row of
             // bordered buttons and would be a red block in a toolbar of
             // bare ones. See PanelAction for the shared geometry.
-            triggerClassName={cn(PANEL_ACTION, 'text-destructive hover:bg-destructive/12 hover:text-destructive')}
+            triggerClassName={cn(PANEL_ACTION, 'text-destructive hover:bg-destructive/10 hover:text-destructive')}
             question={t('Delete this move and everything after it? Linked studies are untouched.')}
             confirmLabel={t('Delete')}
             onConfirm={() => {

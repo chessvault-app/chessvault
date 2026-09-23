@@ -187,8 +187,8 @@ export function TagPicker({
                       const Icon = KINDS[kind].icon;
                       return (
                         <div key={i} className="flex min-h-9 items-center gap-1">
-                          <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5">
-                            <Icon aria-hidden className="text-muted-foreground size-4 shrink-0" />
+                          <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-(--row-py-dense)">
+                            <Icon aria-hidden className="text-muted-foreground glyph shrink-0" />
                             <Skeleton className={`h-3 ${w}`} />
                           </div>
                         </div>
@@ -214,9 +214,9 @@ export function TagPicker({
                         type="button"
                         disabled={tagged(wholeTag)}
                         onClick={() => onPick(wholeTag)}
-                        className="hover:bg-accent flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-(--row-py-dense) text-left disabled:opacity-45"
+                        className="hover:bg-accent flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-(--row-py-dense) text-left disabled:opacity-50"
                       >
-                        <Icon className="text-muted-foreground size-4 shrink-0" />
+                        <Icon className="text-muted-foreground glyph shrink-0" />
                         <span className="text-foreground min-w-0 flex-1 truncate type-row">{row.id}</span>
                         {tagged(wholeTag) && (
                           <span className="text-muted-foreground shrink-0 type-row-sub">{t('Linked')}</span>
@@ -255,9 +255,9 @@ export function TagPicker({
                     type="button"
                     disabled={tagged(tag)}
                     onClick={() => onPick(tag)}
-                    className="hover:bg-accent flex items-center gap-2 rounded-lg px-2 py-(--row-py-dense) text-left disabled:opacity-45"
+                    className="hover:bg-accent flex items-center gap-2 rounded-lg px-2 py-(--row-py-dense) text-left disabled:opacity-50"
                   >
-                    <BookOpen className="text-muted-foreground size-4 shrink-0" />
+                    <BookOpen className="text-muted-foreground glyph shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate type-row">{name}</span>
                     {tagged(tag) && <span className="text-muted-foreground shrink-0 type-row-sub">{t('Linked')}</span>}
                   </button>
