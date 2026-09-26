@@ -284,7 +284,7 @@ span 하나였고, 그래서 숫자 옆의 단어까지 고정폭 서체를 입�
 
 | 토큰 | 칸 | 넉넉하게 → 촘촘하게 | 읽는 곳 |
 | --- | --- | --- | --- |
-| `--row-py` | 카드, 목록 줄 | 8px → 5px | `games/shared.tsx`, `components/list-row.tsx` |
+| `--row-py` | 카드, 목록 줄 | 8px → 5px | `games/shared.tsx`, `components/list-row.tsx`, `components/setting-row.tsx`(`--row-py-well`로, 여기에 2px를 더한 값) |
 | `--row-py-dense` | 한 줄짜리 행 | 6px → 3px | `list-row`(`dense`), 수순 주석 |
 | `--row-py-tight` | 표 형태의 행 | 4px → 2px | `MoveTreePane`, `ExplorerPane` |
 | `--row-h` | 여백이 아니라 높이로 정해진 행 | 32px → 28px | 스터디 챕터 목록 |
@@ -313,10 +313,15 @@ span 하나였고, 그래서 숫자 옆의 단어까지 고정폭 서체를 입�
 넉넉하게 칸에서 정확히 그 합이었습니다. 여백만 옮기고 팔꿈치를 두고 간 밀도는
 앱의 모든 가지 안내선을 자기 수에서 살짝 어긋나게, 아무 말 없이 만들었을
 것입니다. 지금은 `--move-elbow-h: calc(var(--row-py-tight) + 0.625rem)`이므로
-칸마다 숫자는 여전히 하나입니다.
+칸마다 숫자는 여전히 하나입니다. 설정 행도 같은 방식으로 파생됩니다. 두
+밀도 모두에서 `py-2.5`로 고정되어 있었고, 지금은
+`--row-py-well: calc(var(--row-py) + 0.125rem)`이라 넉넉하게 칸에서는 늘
+그리던 10px, 촘촘하게 칸에서는 7px입니다.
 
 밀도가 어디에 닿는지는 짐작이 아니라 측정입니다. 대시보드의 44줄이
-1575px → 1307px, 탐색기의 한 줄이 28px → 24px, 챕터 한 줄이 32px → 28px입니다.
+1575px → 1307px, 탐색기의 한 줄이 28px → 24px, 챕터 한 줄이 32px → 28px,
+설명이 붙은 설정 한 줄이 58px → 52px, 오프닝 맵 연결 목록의 한 줄이
+32px → 28px입니다.
 
 ## 레이아웃 규칙
 

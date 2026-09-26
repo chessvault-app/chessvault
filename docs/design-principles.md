@@ -324,7 +324,7 @@ wants compact on a monitor and comfortable under a thumb.
 
 | Token | Rung | Comfortable → compact | Read by |
 | --- | --- | --- | --- |
-| `--row-py` | cards, list rows | 8px → 5px | `games/shared.tsx`, `components/list-row.tsx` |
+| `--row-py` | cards, list rows | 8px → 5px | `games/shared.tsx`, `components/list-row.tsx`, `components/setting-row.tsx` (as `--row-py-well`, 2px over) |
 | `--row-py-dense` | one-line rows | 6px → 3px | `list-row` (`dense`), move-list comments |
 | `--row-py-tight` | tabular rows | 4px → 2px | `MoveTreePane`, `ExplorerPane` |
 | `--row-h` | rows sized, not padded | 32px → 28px | the studies chapter list |
@@ -357,10 +357,15 @@ it was written `h-3.5`, exactly that sum at the comfortable rung. A
 density that moved the padding and left the elbow behind would have put
 every branch guide in the app slightly off its own move, silently. It is
 `--move-elbow-h: calc(var(--row-py-tight) + 0.625rem)` now, so there is
-still one number per rung.
+still one number per rung. The settings row is derived the same way: it
+was a literal `py-2.5` at both densities, and is
+`--row-py-well: calc(var(--row-py) + 0.125rem)` now, the 10px it always
+drew at comfortable and 7px at compact.
 
 Where a density lands is measured, never guessed: 44 dashboard rows go
-1575px → 1307px, an explorer row 28px → 24px, a chapter row 32px → 28px.
+1575px → 1307px, an explorer row 28px → 24px, a chapter row 32px → 28px,
+a settings row with a blurb 58px → 52px, a row of the opening map's link
+picker 32px → 28px.
 
 ## Layout rules
 

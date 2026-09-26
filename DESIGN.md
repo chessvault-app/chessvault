@@ -674,7 +674,21 @@ unconditional `min-h-9` above it that the padding could never have
 beaten. Thirty-odd rows read a rung now, and the floor is
 `pointer-coarse` like every Button's. The Settings cards' own frame
 followed on 2026-09-23: it had pinned the comfortable 16px as `p-4`, and
-pads from `--card-pad` now.
+pads from `--card-pad` now. Its rows followed on 2026-09-27: `SettingRow`
+had pinned 10px as `py-2.5` at both densities, and pads from
+`--row-py-well` now, which is `--row-py` plus 2px, so 10px at comfortable
+and 7 at compact (a row with a title over a blurb goes 58px to 52,
+measured on the demo). A settings group on an iOS or Android phone still
+sets its own padding for the rows directly in it. So did the opening
+map's link picker, which was the Licences shape again: the dense rung
+under an unconditional `min-h-9`. Its floor is the Chapter button's own
+height now (`min-h-7 pointer-coarse:min-h-9`, size=sm's
+`h-7 pointer-coarse:h-9`), so a desktop row is 32px at comfortable and
+28 at compact where it was 36 at both, and a touch screen keeps 36
+(measured on the demo). Lowering it found a trap the higher floor had
+hidden: an explicit floor replaces a flex item's content minimum, so the
+rows of a capped, scrolling column need `shrink-0`, or a long list
+squeezes every row down to the floor.
 
 What the knob does NOT reach is the card grids, and that is a decision
 rather than a gap (lanph3re, 2026-09-16): the Studies, Notes and Books
