@@ -1393,9 +1393,11 @@ drawn, and what one has to prove.
   always did and shows nothing for it. The two were one switch for a
   day, and a knob was refused on the grounds that it would hand out
   fills nobody had read a contrast for. That is answerable, and the
-  answer is that the RANGE is what gets measured, not a value. Under any
-  of the four it falls back to the opaque card. Two things beyond the fill belong to the
-  utility rather than to its callers. The focus ring: the glass
+  answer is that the RANGE is what gets measured, not a value. Under
+  reduced transparency, with the other three open, it draws the opaque
+  card; closed by any of the other three, it draws nothing at all, and
+  the surface keeps its caller's own look. Two things beyond the fill
+  belong to the utility rather than to its callers. The focus ring: the glass
   box-shadow outranks `focus-visible:ring-3`, so a keyboard-focused
   glass surface changed zero pixels until the utility drew the ring
   itself, in the registry's shape (3px of `--ring`, the border taking it
