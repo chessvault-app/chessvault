@@ -222,7 +222,12 @@ export function TagPicker({
                     // which held a desktop's rows at 36 at both densities;
                     // they are 32 comfortable and 28 compact now (the
                     // floor, a notch over the rung's 26), 36 on touch.
-                    <div key={row.id} className="flex min-h-7 items-center gap-1 pointer-coarse:min-h-9">
+                    // shrink-0 because the list is a capped flex column
+                    // and an explicit floor replaces a flex item's content
+                    // minimum: a list long enough to scroll squeezed every
+                    // row down to the 28px floor, under its own 32px
+                    // button, until each row was told not to shrink.
+                    <div key={row.id} className="flex min-h-7 shrink-0 items-center gap-1 pointer-coarse:min-h-9">
                       <button
                         type="button"
                         disabled={tagged(wholeTag)}
