@@ -175,7 +175,7 @@ export function HubPlaceRow() {
           <Skeleton className="h-2 w-2/3" />
         </div>
       </div>
-      <ChevronRight aria-hidden className="text-muted-foreground size-4 shrink-0" />
+      <ChevronRight aria-hidden className="text-muted-foreground glyph shrink-0" />
     </div>
   );
 }
@@ -189,7 +189,7 @@ export function HubPuzzleRow() {
         <Skeleton className="h-3 w-1/3" />
         <Skeleton className="h-2.5 w-1/2" />
       </div>
-      <ChevronRight aria-hidden className="text-muted-foreground size-4 shrink-0 self-center" />
+      <ChevronRight aria-hidden className="text-muted-foreground glyph shrink-0 self-center" />
     </div>
   );
 }

@@ -120,7 +120,7 @@ export function SkeletonVaultTree({
 /** The glyph VaultTree draws for each kind of row, out of its own map, at its size. */
 function VaultRowIcon({ kind }: { kind: VaultKind }) {
   const Icon = VAULT_ICONS[kind];
-  return <Icon className="size-4" aria-hidden="true" />;
+  return <Icon className="glyph" aria-hidden="true" />;
 }
 
 /**

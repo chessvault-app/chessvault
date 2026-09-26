@@ -161,7 +161,12 @@
   font-size: 0.875em;
   background: var(--surface-inset);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  /* A pixel cap on the chip's rung. The tag is one line of 14px mono
+     text, 23px tall with its padding and border (measured in Chromium),
+     and at Large the sm rung alone is 9.6px, nearly half that, which
+     would round it into a pill; so it stops at 4, and below Default it
+     follows the knob down to square. */
+  border-radius: min(var(--radius-sm), 4px);
   padding: 0.1em 0.3em;
 }
 .note-editor pre {

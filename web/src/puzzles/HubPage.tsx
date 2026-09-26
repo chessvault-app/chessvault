@@ -182,7 +182,7 @@ function PuzzleCard({
           {side === 'white' ? t('White to move') : t('Black to move')}
         </span>
       </span>
-      <ChevronRight className="text-muted-foreground size-4 shrink-0 self-center" />
+      <ChevronRight className="text-muted-foreground glyph shrink-0 self-center" />
     </button>
   );
 }
@@ -211,7 +211,7 @@ function EmptySlot({ title, detail, go }: { title: string; detail?: string; go?:
         <span className="text-muted-foreground text-base font-medium">{title}</span>
         {detail && <span className="text-muted-foreground text-sm leading-snug">{detail}</span>}
       </span>
-      {go && <ChevronRight className="text-muted-foreground size-4 shrink-0 self-center" />}
+      {go && <ChevronRight className="text-muted-foreground glyph shrink-0 self-center" />}
     </>
   );
   // PuzzleCard's geometry exactly; only the hover and the press differ.
@@ -265,7 +265,7 @@ function PlaceCard({
         <span className="text-foreground text-base font-medium">{title}</span>
         {children}
       </span>
-      <ChevronRight className="text-muted-foreground size-4 shrink-0" />
+      <ChevronRight className="text-muted-foreground glyph shrink-0" />
     </button>
   );
 }

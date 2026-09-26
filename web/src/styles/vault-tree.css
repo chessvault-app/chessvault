@@ -2,13 +2,23 @@
    left of the list, an icon per row, and no drawn branches: the ruler is
    the ul's own left border, so it runs the whole list unbroken instead of
    being redrawn per row, and it hangs from the middle of the root's own
-   icon (0.5rem, half of a 16px icon). What the elbows and the trailing
-   slashes used to say is now the icon's job.
+   icon. What the elbows and the trailing slashes used to say is now the
+   icon's job.
+
+   The icons are the row glyph (`glyph`, utilities.css): 14px on a
+   desktop and 16 under 48rem. --tree-icon says the same size on the same
+   query, and the geometry is stated from it: the ruler hangs at half the
+   icon (7px on a desktop, 8 on a phone) and a row's name starts the icon
+   plus 8px in (22px, then 24). The icons' class is what sizes them, so
+   this has to agree with it: a change to one query is a change to both.
 
    An icon takes more room than the elbow it replaces, and this listing
    had little to give: the longest gloss cleared its row by 2px before
    this. So the ruler sits 6px off the icons rather than the 8 they take
    from the name, which buys back the room that keeps that row one line.
+   That was measured with the 16px icon, on the demo at 1280 and 375; the
+   desktop's 14 hands the row 3px more (1 from the ruler, 2 from the
+   name's inset), so there it only has more room than it had.
 
    The icon is positioned rather than given a column so the grid stays the
    two areas it was, and it is offset by the row's top padding and held to
@@ -22,11 +32,17 @@
    outer edge with no padding left). Real vaults run longer than the
    demo's, so the size goes under the path there instead of past it. */
 .vault-tree {
+  --tree-icon: 0.875rem;
   container-type: inline-size;
+}
+@media (width < 48rem) {
+  .vault-tree {
+    --tree-icon: 1rem;
+  }
 }
 .vault-tree ul {
   list-style: none;
-  margin: 0 0 0 0.5rem;
+  margin: 0 0 0 calc(var(--tree-icon) / 2);
   padding: 0 0 0 0.375rem;
   border-left: 1px solid var(--border-strong);
 }
@@ -41,7 +57,7 @@
     'gloss';
   column-gap: 1rem;
   align-items: baseline;
-  padding: var(--row-pad) 0 var(--row-pad) 1.5rem;
+  padding: var(--row-pad) 0 var(--row-pad) calc(var(--tree-icon) + 0.5rem);
 }
 @container (width >= 22rem) {
   .vault-tree li {
