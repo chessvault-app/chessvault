@@ -41,7 +41,7 @@ export function MorePage() {
                   <div className="text-base font-medium">{t(label)}</div>
                   <div className="text-muted-foreground text-sm">{t(blurb)}</div>
                 </div>
-                <ChevronRight className="text-muted-foreground hidden size-5 shrink-0 ios:block" strokeWidth={2} />
+                <ChevronRight className="text-muted-foreground hidden glyph shrink-0 ios:block" />
               </button>
             ))}
           </div>
