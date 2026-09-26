@@ -2,8 +2,8 @@
    left of the list, an icon per row, and no drawn branches: the ruler is
    the ul's own left border, so it runs the whole list unbroken instead of
    being redrawn per row, and it hangs from the middle of the root's own
-   icon (0.5rem, half of a 16px icon). What the elbows and the trailing
-   slashes used to say is now the icon's job.
+   icon (half of --tree-icon, the icons' 16px). What the elbows and the
+   trailing slashes used to say is now the icon's job.
 
    An icon takes more room than the elbow it replaces, and this listing
    had little to give: the longest gloss cleared its row by 2px before
@@ -22,11 +22,12 @@
    outer edge with no padding left). Real vaults run longer than the
    demo's, so the size goes under the path there instead of past it. */
 .vault-tree {
+  --tree-icon: 1rem;
   container-type: inline-size;
 }
 .vault-tree ul {
   list-style: none;
-  margin: 0 0 0 0.5rem;
+  margin: 0 0 0 calc(var(--tree-icon) / 2);
   padding: 0 0 0 0.375rem;
   border-left: 1px solid var(--border-strong);
 }
@@ -41,7 +42,7 @@
     'gloss';
   column-gap: 1rem;
   align-items: baseline;
-  padding: var(--row-pad) 0 var(--row-pad) 1.5rem;
+  padding: var(--row-pad) 0 var(--row-pad) calc(var(--tree-icon) + 0.5rem);
 }
 @container (width >= 22rem) {
   .vault-tree li {
