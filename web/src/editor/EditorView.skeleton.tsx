@@ -117,21 +117,38 @@ export const PALETTE_SQUARE =
  * below). Squares rather than the real pieces, because a piece is drawn
  * from the theme's own sprite sheet and that is the page's chunk.
  *
- * Stacked, a square is the palette button's own: `w-11`, `sm:w-14`,
- * rounded-lg. It was size-9 at every width, and the games hunt's setup
- * window, which is always stacked, measured the difference: rows of 36
- * where 56 landed on a desktop and 44 on a phone, and a board that
- * started 19px high.
+ * Every frame is the page's own (the PALETTE_ constants above), in the
+ * page's nesting: the strip, the row, two groups and the rule between
+ * them, so a square here is a piece's box there at every width. The
+ * copy this replaced had drifted twice. Stacked, its squares were size-9
+ * until the games hunt's setup window, which is always stacked, measured
+ * rows of 36 where 56 landed on a desktop and 44 on a phone. Wide, it
+ * stayed one cluster of 36px squares where the page splits the row into
+ * two flex-1 groups whose pieces fit the lane, up to 40: from the classes
+ * (not measured), a 489px cluster against pieces spanning 572 in a 604px
+ * lane at 1280x800, and a cluster overflowing the lane by 55px each side
+ * at 1100x575 and by 118 at 844x390, where the pieces are 26 and 16.
  */
 export function PalettePlaceholder({ className }: { className?: string }) {
   return (
-    <div className={cn('flex w-full items-end justify-center gap-1 wide:h-10', className)}>
+    <div className={cn(PALETTE_STRIP, className)}>
+      <div className={PALETTE_ROW}>
+        <PaletteGroup />
+        <span aria-hidden className={PALETTE_DIVIDER} />
+        {/* The second colour is the wide row's alone: stacked, a palette
+            is one colour, and the other stands on the board's far side. */}
+        <PaletteGroup className="hidden wide:flex" />
+      </div>
+    </div>
+  );
+}
+
+/** One colour's six squares. */
+function PaletteGroup({ className }: { className?: string }) {
+  return (
+    <div className={cn(PALETTE_GROUP, className)}>
       {Array.from({ length: 6 }, (_, i) => (
-        <Skeleton key={i} className="aspect-square w-11 shrink-0 rounded-lg sm:w-14 wide:size-9" />
-      ))}
-      <span aria-hidden className="bg-border mx-1 hidden h-6 w-px wide:block" />
-      {Array.from({ length: 6 }, (_, i) => (
-        <Skeleton key={`w${i}`} className="hidden size-9 shrink-0 rounded-lg wide:block" />
+        <Skeleton key={i} className={PALETTE_SQUARE} />
       ))}
     </div>
   );
