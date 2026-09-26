@@ -365,21 +365,13 @@ export function SearchInput({
           !titleSearch && 'pointer-fine:hidden',
           'text-muted-foreground hover:text-foreground grid shrink-0 place-items-center overflow-hidden',
           'whitespace-nowrap rounded-full text-sm font-medium',
-          // The same glass the sheets close with: a translucent disc that
-          // takes its colour from whatever it sits on, with a hairline of
-          // light along the edge. backdrop-blur is what makes it read as
-          // glass rather than as a grey pill.
-          //
-          // Everywhere except where the real glass draws it (shell.css,
-          // an iOS phone), which is `not-ios` plus `md` and up. This was
-          // an unconditional blur under the glass, and the glass's own
-          // gates could not take it away: with the Settings A/B switch
-          // off, every other surface fell back flat and this one kept
-          // blurring (measured, data-glass="off", 2026-09-22). A surface
-          // that composes its own translucency has to stand down where
-          // the utility takes over, or the kill switch lies about it.
+          // A quiet tonal pill with the controls' outline (`--border`, as
+          // an outline button draws it), so the word reads as a button
+          // beside the field. Flat, with no blur of its own: the
+          // one translucent material is the glass utility, and an
+          // iPhone's glass capsule comes from shell.css
+          // (`data-search-cancel`), which outranks these classes there.
           'bg-foreground/8 hover:bg-foreground/14 ring-border ring-1 ring-inset',
-          'not-ios:backdrop-blur-md md:backdrop-blur-md',
           'transition-[max-width,margin,padding,opacity] duration-(--pane-turn) ease-(--pane-turn-ease)',
           cancelSizes[inputSize ?? 'md'],
           cancelShown ? 'ml-1.5 max-w-24 px-2.5 opacity-100' : 'ml-0 max-w-0 px-0 opacity-0',
