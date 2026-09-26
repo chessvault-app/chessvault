@@ -528,7 +528,8 @@ export function StudyView({
 }
 
 /**
- * The document title, renameable in place (pencil, or double-click). Renames
+ * The document title, renameable in place by double-click. There is no
+ * pencil for it: the note on the header's one edit button says why. Renames
  * keep the collection: only the last path segment is edited.
  */
 function TitleEditor({
@@ -578,13 +579,8 @@ function TitleEditor({
     );
   }
 
-  // The naming moment: creation never asks (rightly — a New button should
-  // cost nothing), but nothing ever asked again, and the shelf filled with
-  // "Untitled study 3". A quiet offer, worn only while the placeholder is.
-
   return (
-    <>
-      <TitleTip title={failure ?? id}>
+    <TitleTip title={failure ?? id}>
       <h1
         onDoubleClick={() => {
           setDraft(name);
@@ -598,8 +594,7 @@ function TitleEditor({
         {name}
         {failure ? `: ${failure}` : ''}
       </h1>
-      </TitleTip>
-    </>
+    </TitleTip>
   );
 }
 
