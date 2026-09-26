@@ -40,7 +40,9 @@ It ships off because no window has been opened to read it. Two things
 want a real desktop behind them before it could be the default: whether
 the sidebar's text still holds 4.5:1 over vibrancy at 70%, and whether
 the caption buttons, which are the OS's own and sit on a transparent
-strip under a material, still read against a busy wallpaper.
+strip under a material in the app (the vault chooser, whose page is
+opaque, paints the strip its own grey), still read against a busy
+wallpaper.
 
 ## Installing on macOS
 
