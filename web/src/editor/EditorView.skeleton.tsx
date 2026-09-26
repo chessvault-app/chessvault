@@ -87,26 +87,68 @@ export default function EditorOutline() {
 }
 
 /**
+ * The piece palette's frames, stated once for the page (EditorView's
+ * PiecePalette) and this outline.
+ *
+ * The strip over the board: 40px on a wide screen whatever it holds, so
+ * the board's top is the same on every page, with the pieces at its foot.
+ */
+export const PALETTE_STRIP = 'flex w-full items-end justify-center wide:h-10';
+/** The palette's row: one colour's group a line on a phone, both colours
+    in one line on a wide screen. */
+export const PALETTE_ROW = 'flex w-full flex-wrap items-center justify-center gap-1 wide:flex-nowrap';
+/** One colour's six pieces. `flex-1` on a wide screen, so the two colours
+    split the row between them. */
+export const PALETTE_GROUP = 'flex w-full justify-center gap-1 wide:w-auto wide:min-w-0 wide:flex-1';
+/** The rule between the colours on a wide screen. A sibling of the two
+    groups, never a child of one: inside a `flex-1` group it comes out of
+    that group's share, and its six pieces draw smaller than the other
+    colour's. */
+export const PALETTE_DIVIDER = 'bg-border mx-1.5 hidden h-6 w-px shrink-0 wide:block';
+/** A piece's square. Stacked, a comfortable touch size (44, 56 from sm);
+    wide, it shrinks to fit the row, never past 40, so the strip above the
+    board never clips. */
+export const PALETTE_SQUARE =
+  'aspect-square w-11 rounded-lg sm:w-14 wide:w-full wide:min-w-0 wide:max-w-10 wide:flex-1';
+
+/**
  * The piece palette: twelve squares on a desktop (both colours in one
  * row), six on a phone (the opponent's above the board, the player's
  * below). Squares rather than the real pieces, because a piece is drawn
  * from the theme's own sprite sheet and that is the page's chunk.
  *
- * Stacked, a square is the palette button's own: `w-11`, `sm:w-14`,
- * rounded-lg. It was size-9 at every width, and the games hunt's setup
- * window, which is always stacked, measured the difference: rows of 36
- * where 56 landed on a desktop and 44 on a phone, and a board that
- * started 19px high.
+ * Every frame is the page's own (the PALETTE_ constants above), in the
+ * page's nesting: the strip, the row, two groups and the rule between
+ * them, so a square here is a piece's box there at every width. The
+ * copy this replaced had drifted twice. Stacked, its squares were size-9
+ * until the games hunt's setup window, which is always stacked, measured
+ * rows of 36 where 56 landed on a desktop and 44 on a phone. Wide, it
+ * stayed one cluster of 36px squares where the page splits the row into
+ * two flex-1 groups whose pieces fit the lane, up to 40: from the classes
+ * (not measured), a 489px cluster against pieces spanning 572 in a 604px
+ * lane at 1280x800, and a cluster overflowing the lane by 55px each side
+ * at 1100x575 and by 118 at 844x390, where the pieces are 26 and 16.
  */
 export function PalettePlaceholder({ className }: { className?: string }) {
   return (
-    <div className={cn('flex w-full items-end justify-center gap-1 wide:h-10', className)}>
+    <div className={cn(PALETTE_STRIP, className)}>
+      <div className={PALETTE_ROW}>
+        <PaletteGroup />
+        <span aria-hidden className={PALETTE_DIVIDER} />
+        {/* The second colour is the wide row's alone: stacked, a palette
+            is one colour, and the other stands on the board's far side. */}
+        <PaletteGroup className="hidden wide:flex" />
+      </div>
+    </div>
+  );
+}
+
+/** One colour's six squares. */
+function PaletteGroup({ className }: { className?: string }) {
+  return (
+    <div className={cn(PALETTE_GROUP, className)}>
       {Array.from({ length: 6 }, (_, i) => (
-        <Skeleton key={i} className="aspect-square w-11 shrink-0 rounded-lg sm:w-14 wide:size-9" />
-      ))}
-      <span aria-hidden className="bg-border mx-1 hidden h-6 w-px wide:block" />
-      {Array.from({ length: 6 }, (_, i) => (
-        <Skeleton key={`w${i}`} className="hidden size-9 shrink-0 rounded-lg wide:block" />
+        <Skeleton key={i} className={PALETTE_SQUARE} />
       ))}
     </div>
   );
