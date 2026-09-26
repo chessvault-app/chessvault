@@ -50,7 +50,16 @@ import { EvalBarSlot } from '@/engine/EvalBar';
 import { EDITOR_BOARD_MAX_W } from '@/board/boardSize';
 import { cn } from '@/lib/utils';
 import { LoadPositionButton, LoadPositionForm } from '@/analysis/PositionLoader';
-import { CLOCK_GRID, FEN_ROW, POSITION_BODY } from './EditorView.skeleton';
+import {
+  CLOCK_GRID,
+  FEN_ROW,
+  PALETTE_DIVIDER,
+  PALETTE_GROUP,
+  PALETTE_ROW,
+  PALETTE_SQUARE,
+  PALETTE_STRIP,
+  POSITION_BODY,
+} from './EditorView.skeleton';
 import { useMediaQuery } from '@/lib/media';
 import { useUndoable } from '@/hooks/use-undoable';
 import { announce } from '@/lib/announce';
@@ -803,7 +812,7 @@ export function EditorView({
             {/* Desktop: one fixed-height combined row above the board (board
                 alignment across views). Phones: the opponent's pieces above the
                 board and the player's below, lichess-editor style. */}
-            <div className="flex w-full items-end justify-center wide:h-10">
+            <div className={PALETTE_STRIP}>
               <div className="hidden w-full wide:block">
                 <PiecePalette
                   colors={orientation === 'white' ? ['black', 'white'] : ['white', 'black']}
@@ -1292,16 +1301,17 @@ function PiecePalette({
   return (
     // Phones: one comfortable touch-sized row per colour. Desktop: a single
     // combined row whose buttons shrink to fit, so the fixed-height strip
-    // above the board never clips.
-    <div className="cg-wrap promo-host flex w-full flex-wrap items-center justify-center gap-1 wide:flex-nowrap">
+    // above the board never clips. The row, the groups, the divider and a
+    // piece's box are the outline's (EditorView.skeleton), which draws the
+    // same frames while this chunk is on the wire; `cg-wrap promo-host` is
+    // this row's alone, for the piece sprites.
+    <div className={cn('cg-wrap promo-host', PALETTE_ROW)}>
       {colors.map((color, groupIndex) => (
         // The divider is a sibling of the two groups, not a child of the
-        // second one: both groups are `flex-1`, so a divider inside one of
-        // them comes out of that group's share and its six pieces render
-        // smaller than the other colour's.
+        // second one (PALETTE_DIVIDER says why).
         <Fragment key={color}>
-          {groupIndex > 0 && <span className="bg-border mx-1.5 hidden h-6 w-px shrink-0 wide:block" />}
-          <div className="flex w-full justify-center gap-1 wide:w-auto wide:min-w-0 wide:flex-1">
+          {groupIndex > 0 && <span className={PALETTE_DIVIDER} />}
+          <div className={PALETTE_GROUP}>
             {ROLES.map((role) => {
               const active = tool.kind === 'piece' && tool.role === role && tool.color === color;
               return (
@@ -1318,13 +1328,13 @@ function PiecePalette({
                     onMouseDown={(e) => onDragStart?.(color, role, e.nativeEvent)}
                     onTouchStart={(e) => onDragStart?.(color, role, e.nativeEvent)}
                     className={cn(
+                      PALETTE_SQUARE,
                       // A board-square backdrop: --board-light is tuned per theme
                       // to keep BOTH piece colours legible, which the page
                       // background is not (black pieces vanish on dark).
                       // touch-none: a touch on a palette piece starts a drag,
                       // never a page scroll.
-                      'touch-none aspect-square w-11 rounded-lg bg-(--board-light) p-0.5 transition-all duration-100 sm:w-14 sm:p-1',
-                      'wide:w-full wide:min-w-0 wide:max-w-10 wide:flex-1',
+                      'touch-none bg-(--board-light) p-0.5 transition-all duration-100 sm:p-1',
                       // focus-visible:opacity-100 because an element's
                       // opacity dims its own focus ring with it: at 75% the
                       // ring measured 2.55:1 on this strip, under the 3:1 it

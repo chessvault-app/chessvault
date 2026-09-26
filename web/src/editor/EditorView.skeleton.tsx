@@ -87,6 +87,31 @@ export default function EditorOutline() {
 }
 
 /**
+ * The piece palette's frames, stated once for the page (EditorView's
+ * PiecePalette) and this outline.
+ *
+ * The strip over the board: 40px on a wide screen whatever it holds, so
+ * the board's top is the same on every page, with the pieces at its foot.
+ */
+export const PALETTE_STRIP = 'flex w-full items-end justify-center wide:h-10';
+/** The palette's row: one colour's group a line on a phone, both colours
+    in one line on a wide screen. */
+export const PALETTE_ROW = 'flex w-full flex-wrap items-center justify-center gap-1 wide:flex-nowrap';
+/** One colour's six pieces. `flex-1` on a wide screen, so the two colours
+    split the row between them. */
+export const PALETTE_GROUP = 'flex w-full justify-center gap-1 wide:w-auto wide:min-w-0 wide:flex-1';
+/** The rule between the colours on a wide screen. A sibling of the two
+    groups, never a child of one: inside a `flex-1` group it comes out of
+    that group's share, and its six pieces draw smaller than the other
+    colour's. */
+export const PALETTE_DIVIDER = 'bg-border mx-1.5 hidden h-6 w-px shrink-0 wide:block';
+/** A piece's square. Stacked, a comfortable touch size (44, 56 from sm);
+    wide, it shrinks to fit the row, never past 40, so the strip above the
+    board never clips. */
+export const PALETTE_SQUARE =
+  'aspect-square w-11 rounded-lg sm:w-14 wide:w-full wide:min-w-0 wide:max-w-10 wide:flex-1';
+
+/**
  * The piece palette: twelve squares on a desktop (both colours in one
  * row), six on a phone (the opponent's above the board, the player's
  * below). Squares rather than the real pieces, because a piece is drawn
