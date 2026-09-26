@@ -14,6 +14,9 @@
          system stack left it to Noto Sans KR. Absent (opening this file
          straight off disk), the stack below simply falls through. -->
     <link rel="stylesheet" href="fonts/pretendard.css" />
+    <!-- The same font files again, as a family that answers only for
+         hangul: --mono's Korean (the build script says how it is cut). -->
+    <link rel="stylesheet" href="fonts/mono-hangul.css" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Chess Vault" />
     <meta property="og:url" content="https://chessvault-app.github.io/docs.html" />
@@ -93,7 +96,10 @@
         --t-lg: 1rem;        /* 16px — h3 */
         --t-xl: 1.25rem;     /* 20px — h2 */
         --t-h1: clamp(1.6rem, 4vw, 2.1rem);
-        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        /* "Mono Hangul" is Pretendard's hangul alone, so a Korean code
+           span such as [[대상|보일 글]] is not in the OS's Korean
+           fixed-width face; index.html's --mono says why it sits there. */
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", "Mono Hangul", monospace;
       }
       @media (prefers-color-scheme: dark) {
         :root {

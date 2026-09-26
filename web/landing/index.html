@@ -18,6 +18,9 @@
          system stack left it to Noto Sans KR. Absent (opening this file
          straight off disk), the stack below simply falls through. -->
     <link rel="stylesheet" href="fonts/pretendard.css" />
+    <!-- The same font files again, as a family that answers only for
+         hangul: --mono's Korean (the build script says how it is cut). -->
+    <link rel="stylesheet" href="fonts/mono-hangul.css" />
     <!-- ABSOLUTE, and that is not a style choice: a scraper fetches these
          without a document to resolve a relative path against, so the old
          `shots/board.png` rendered every link to this page — Reddit, Hacker
@@ -148,8 +151,15 @@
         --t-h1: clamp(2.1rem, 5.5vw, 3.4rem);
 
         /* The page has a second voice: anything that is literally a name on
-           disk, or a label on a figure, is set in mono. Nothing else is. */
-        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+           disk, or a label on a figure, is set in mono. Nothing else is.
+           "Mono Hangul" is Pretendard's hangul and nothing else, for
+           DESIGN.md's Hangul Fallback Rule: none of these monos draws
+           hangul, and `monospace` resolves per script to the OS's Korean
+           fixed-width face, so 목차 and 그림 1 were a third typeface
+           beside the body's Pretendard. Its unicode-range stops Latin
+           ever reaching it, so where none of the named monos is installed
+           the Latin still falls to `monospace` and stays fixed-width. */
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", "Mono Hangul", monospace;
       }
       @media (prefers-color-scheme: dark) {
         :root {

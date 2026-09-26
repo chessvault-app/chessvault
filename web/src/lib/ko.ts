@@ -167,6 +167,9 @@ export const ko: Record<string, string> = {
   'Show one line': '라인 하나만 보기',
   'Engine on/off': '엔진 켜기/끄기',
   Threads: '스레드',
+  // After the slider's number, which the slider prints first: "4 of 8
+  // cores" reads "4 / 8코어", as the manual counts them (코어 수).
+  'of {n} cores': '/ {n}코어',
   'unavailable in this context': '이 환경에서는 쓸 수 없음',
   'Stockfish 19 runs on its full network, a 99 MB download the server keeps. Stockfish 18 is the single-threaded build.':
     'Stockfish 19는 전체 신경망으로 돌아갑니다. 서버가 99 MB를 내려받아 보관합니다. Stockfish 18은 단일 스레드 빌드입니다.',
@@ -182,6 +185,11 @@ export const ko: Record<string, string> = {
   Depth: '깊이',
   'Time limit': '시간 제한',
   off: '없음',
+  // The seconds unit Time limit prints after its number ("10 s", "10 초"),
+  // in its own face a gap away, as Hash's MB is. The key is a bare
+  // letter, so t('s') means seconds and must not be reused for anything
+  // else.
+  s: '초',
   Hash: '해시',
   'Thinking…': '생각하는 중…',
   'Engine review: judge every move (?!/?/??) and measure accuracy':
