@@ -631,7 +631,13 @@ down to 11.52px and now stops at `--t-xs`.
 Korean must resolve hangul. This is why Pretendard sits inside the *mono*
 stack, ahead of the generic fallbacks: JetBrains Mono has no hangul, so a
 Korean word in a mono element fell through and rendered in a different
-typeface two centimetres from its neighbour.
+typeface two centimetres from its neighbour. The website and the manual
+keep the rule by another route. Their mono stack is system monos, none of
+which draws hangul, and the generic `monospace` hands hangul to the OS's
+Korean fixed-width face, so the site build writes Pretendard's hangul
+faces again under a family of their own, `Mono Hangul`, whose
+unicode-range no Latin character can reach (`scripts/build-landing.ts`),
+and both pages put it just ahead of `monospace`.
 
 ## Layout
 
