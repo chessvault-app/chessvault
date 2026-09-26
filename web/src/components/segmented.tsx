@@ -291,10 +291,17 @@ export function Segmented<T extends string>({
           style={id === value && accent ? { color: accent } : undefined}
           className={cn(
             item,
-            // The same concentric radius as the thumb. No fill of its own:
-            // every track this branch draws has the thumb (`slide`, below).
+            // The same concentric radius as the thumb, on EVERY item, so a
+            // focus ring (3px outside the item, so its outer arc is the
+            // track's own radius) is the thumb's shape. Stated in the
+            // group's own variant: ToggleGroupItem's joined-strip
+            // `rounded-none` sits under it and outranks a bare class, and
+            // only this form lets cn() drop it. Its `first:` end corner
+            // never reaches the first option here, since the thumb is the
+            // group's first child. No fill of its own: every track this
+            // branch draws has the thumb (`slide`, below).
             track &&
-              'h-[calc(100%-1px)] rounded-(--tg-r-inner) aria-pressed:text-foreground',
+              'h-[calc(100%-1px)] group-data-[spacing=0]/toggle-group:rounded-(--tg-r-inner) aria-pressed:text-foreground',
             // The thumb paints the raised fill for whichever segment it
             // is under, so the item must not paint its own; `relative`
             // puts the label over the thumb, which is positioned.
