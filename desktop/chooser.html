@@ -16,7 +16,10 @@
          semantic and off the tint knobs. Do NOT resolve these from what
          tokens.css :root declares; those fallbacks are tint 1, which is the
          Blue preset, not what the app boots as. Re-resolve when either
-         moves; last resolved against the dark ladder of 2026-09-22. */
+         moves; last resolved against the dark ladder of 2026-09-22. Two
+         of them are stated a second time, as hex: the script at the foot
+         of this page sends --background and --foreground to the window's
+         caption strip, so re-resolve that pair with these. */
       :root {
         color-scheme: dark;
         --background: oklch(18.25% 0 0);
