@@ -107,7 +107,7 @@ export function VaultTree({
           return (
             <li key={r.path}>
               <span className="icon text-muted-foreground">
-                <Icon className="size-4" aria-hidden="true" />
+                <Icon className="glyph" aria-hidden="true" />
               </span>
               <span className="path text-foreground font-mono text-sm whitespace-nowrap">{r.path}</span>
               <span className="gloss text-muted-foreground min-w-0 text-sm">{r.gloss}</span>
@@ -147,7 +147,7 @@ export function VaultTree({
 export function VaultPath({ path }: { path: string | null }) {
   return (
     <span className="text-foreground flex min-w-0 items-center gap-2 font-mono text-sm">
-      <FolderOpen className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
+      <FolderOpen className="text-muted-foreground glyph shrink-0" aria-hidden="true" />
       <span className="min-w-0 break-all">{path ?? t('The demo vault, in this tab')}</span>
     </span>
   );
