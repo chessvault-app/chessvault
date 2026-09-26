@@ -365,9 +365,9 @@ export function SearchInput({
           !titleSearch && 'pointer-fine:hidden',
           'text-muted-foreground hover:text-foreground grid shrink-0 place-items-center overflow-hidden',
           'whitespace-nowrap rounded-full text-sm font-medium',
-          // A quiet tonal pill with the controls' outline (`--border`, as
-          // an outline button draws it), so the word reads as a button
-          // beside the field. Flat, with no blur of its own: the
+          // A quiet tonal pill with a `--border` hairline (a control's
+          // stroke, not a card's `--card-ring`), so the word reads as a
+          // button beside the field. Flat, with no blur of its own: the
           // one translucent material is the glass utility, and an
           // iPhone's glass capsule comes from shell.css
           // (`data-search-cancel`), which outranks these classes there.
