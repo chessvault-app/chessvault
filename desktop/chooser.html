@@ -335,6 +335,22 @@
       </button>
     </div>
     <script>
+      // The caption strip. On Windows and Linux the OS draws minimise,
+      // maximise and close on a strip over this page's top right, and
+      // only a page can colour it (main.mjs, `window:title-bar-colors`):
+      // the app sends its band's colours once its stylesheet resolves,
+      // and this window has to send its own, or the strip keeps whatever
+      // came before it. That was the shell's pre-paint #0a0a0a on a first
+      // launch, a light app's band after Switch vault, and under Mica a
+      // transparent strip with a light app's near-black glyphs on this
+      // dark page, where the buttons all but vanished. The two literals
+      // are --background and --foreground above, oklch(18.25% 0 0) and
+      // oklch(98.5% 0 0), resolved to hex because the overlay takes hex;
+      // re-resolve them whenever those two move. Opaque under a material
+      // too: this page paints its own ground edge to edge, so the strip
+      // sits on #121212 either way. macOS has no strip and the shell
+      // ignores the call there; a browser has no shell at all.
+      window.vaultShell?.titleBar?.setColors?.({ color: '#121212', symbolColor: '#fafafa' });
       // A packaged app has no terminal, so naming one was sending the
       // reader nowhere. Everything the server said is in a file now, and
       // this says which.
