@@ -99,7 +99,9 @@ so far.
   It sat 3px inside a track of its own corner radius, so the gap between
   the two curves opened out at each corner instead of holding at 3px.
   It now takes the track's radius less that 3px, and the Corners setting
-  moves both together.
+  moves both together. The keyboard's focus ring round an option takes
+  the same curve now; it was square on every option but the right side
+  of the last.
 - **A slider in Settings takes the whole row on a phone.** The words sit
   above the track instead of beside it, which is how the phone's own
   Brightness row is drawn. A desktop keeps it in the row, where there is
@@ -133,16 +135,34 @@ so far.
   keeps the size of the title it replaces on a desktop. A word beside a
   number ("accuracy", "puzzles read") is set in the sentence's type while
   the number keeps the figures' face. Several rows and the Settings cards
-  had ignored the Density setting and follow it now. Two lists that
-  glided into place even when the device asks for reduced motion now
-  jump there. On an iPhone, the long-press menu and a select list's rows
-  take the same rounded glass as every other menu.
+  had ignored the Density setting and follow it now; on a desktop that
+  includes every settings row and the opening map's link list. The
+  Vault card's listing in Settings draws its icons at the size every
+  other desktop row's are, and inline code in a note follows the Corners
+  setting down to Square like every other corner. While the editor loads
+  on a wide screen, its outline draws the piece palette where the palette
+  lands. Two lists that glided into place even when the device asks for
+  reduced motion now jump there. On an iPhone, the long-press menu and a
+  select list's rows take the same rounded glass as every other menu,
+  and the More page's chevrons are the size the Puzzles tab's are.
 - **The pages around the app wear its current dark colours.** The
   desktop vault chooser, the website and the manual in dark, and the
   iPhone launch screens had kept the dark greys from before the theme was
   deepened, so an installed iPhone app launched on a darker grey than the
   page it opened into. They use today's greys now, and the chooser names
   them the way the app does.
+- **The vault chooser colours the strip behind the window buttons.** On
+  Windows, the strip behind minimise, maximise and close had kept
+  whatever colour came before the chooser: the window's darker grey on a
+  first launch, a light app's band after Switch vault, and, with the
+  window material on, a light app's dark symbols on the chooser's dark
+  page, where the buttons all but vanished. The chooser sets its own
+  colours now.
+- **Korean reaches three places it had missed.** The engine's Threads
+  setting reads "4 / 8코어" and its time limit "10 초", where both were
+  left in English. And the website and the manual draw the Korean in
+  their monospaced labels and code in Pretendard, like the rest of the
+  page, instead of the system's Korean fixed-width face.
 
 ## 0.11.4
 
