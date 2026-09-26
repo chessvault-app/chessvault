@@ -166,8 +166,8 @@ export function TagPicker({
             <div className="flex min-h-0 grow flex-col gap-1 overflow-y-auto sm:max-h-80">
               {rows[kind] === null ? (
                 // The shelf that is coming: an icon beside a name, on the
-                // same 36px row the real ones keep so the list does not
-                // re-space itself as it lands.
+                // real row's own floor, rung and line box, so the list does
+                // not re-space itself as it lands.
                 listPending ? (
                   // flex + the list's own gap-1: this wrapper is ONE item
                   // of the gapped column, so without a gap of its own the
@@ -186,10 +186,17 @@ export function TagPicker({
                       // rather than barred.
                       const Icon = KINDS[kind].icon;
                       return (
-                        <div key={i} className="flex min-h-9 items-center gap-1">
+                        <div key={i} className="flex min-h-7 items-center gap-1 pointer-coarse:min-h-9">
                           <div className="flex min-w-0 flex-1 items-center gap-2 px-2 py-(--row-py-dense)">
                             <Icon aria-hidden className="text-muted-foreground glyph shrink-0" />
-                            <Skeleton className={`h-3 ${w}`} />
+                            {/* The name's line box, `type-row` tall, which
+                                is what sets the real row's height: the
+                                glyph and a 12px bar alone come to 26px
+                                where the real row is 32 at the default
+                                density, which the old 36px floor hid. */}
+                            <div className="type-row-box flex min-w-0 flex-1 items-center">
+                              <Skeleton className={`h-3 ${w}`} />
+                            </div>
                           </div>
                         </div>
                       );
@@ -209,7 +216,13 @@ export function TagPicker({
                     // a Chapter button: a study row stood a touch target
                     // taller than a note row, so switching the segmented
                     // control above shuffled the whole list's rhythm.
-                    <div key={row.id} className="flex min-h-9 items-center gap-1">
+                    // The floor is that button's own height, size=sm's
+                    // `h-7 pointer-coarse:h-9` (ui/button.tsx), so change
+                    // the two together. It was an unconditional min-h-9,
+                    // which held a desktop's rows at 36 at both densities;
+                    // they are 32 comfortable and 28 compact now (the
+                    // floor, a notch over the rung's 26), 36 on touch.
+                    <div key={row.id} className="flex min-h-7 items-center gap-1 pointer-coarse:min-h-9">
                       <button
                         type="button"
                         disabled={tagged(wholeTag)}
