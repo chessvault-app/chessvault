@@ -124,10 +124,11 @@ export const PALETTE_SQUARE =
  * until the games hunt's setup window, which is always stacked, measured
  * rows of 36 where 56 landed on a desktop and 44 on a phone. Wide, it
  * stayed one cluster of 36px squares where the page splits the row into
- * two flex-1 groups whose pieces fit the lane, up to 40: from the classes
- * (not measured), a 489px cluster against pieces spanning 572 in a 604px
- * lane at 1280x800, and a cluster overflowing the lane by 55px each side
- * at 1100x575 and by 118 at 844x390, where the pieces are 26 and 16.
+ * two flex-1 groups whose pieces fit the lane, up to 40: measured on the
+ * built demo (2026-09-27), a 489px cluster against pieces spanning 554.5
+ * in a 568px lane at 1280x800, and a cluster overflowing the lane by 54.5px
+ * each side at 1100x575 and by 118 at 844x390, where the pieces are 26.5
+ * and 16.
  */
 export function PalettePlaceholder({ className }: { className?: string }) {
   return (
