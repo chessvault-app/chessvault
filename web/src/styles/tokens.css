@@ -81,6 +81,15 @@
      box at the comfortable rung, kept so that turning this into a token
      moves nothing at the default density. */
   --row-h-table: calc(1.625rem + 2 * var(--row-py-tight));
+
+  /* The settings row's padding (components/setting-row.tsx): the filled,
+     bordered well that holds a title over a blurb beside one control, on
+     Settings and in Home's customise window. It was a literal py-2.5 at
+     both densities while the Settings card around it and the destination
+     rows beside it tightened, so Compact left it standing. The card rung
+     plus the 2px it has always had over it: 10px at the default, as
+     before, and 7 at compact. */
+  --row-py-well: calc(var(--row-py) + 0.125rem);
 }
 
 /* Comfortable carries no attribute — it is what :root says above. */

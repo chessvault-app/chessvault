@@ -32,6 +32,17 @@ import { Switch } from '@/components/ui/switch';
  * takes here (components/ui/field.tsx, `field-hint`), and the title the
  * one Label takes, so a switch in a row and a control under a label are
  * lettered alike.
+ *
+ * Its padding reads the density knob like every repeating row
+ * (`--row-py-well`, styles/tokens.css): the card rung, `--row-py`, plus
+ * 2px, because this is a filled, bordered well holding a title over a
+ * blurb and not a bare one-line row. That is the 10px it always drew at
+ * the default, and 7 at compact. It was a literal `py-2.5` at both, so
+ * Compact tightened the Settings card around it and the customise
+ * window's destination rows beside it and left this row standing. A
+ * settings group on an iOS or Android phone still sets its own (the
+ * data-slot rules in settings/SettingsPage.skeleton), which outrank this
+ * class.
  */
 export function SettingRow({
   title,
@@ -94,7 +105,7 @@ export function SettingRow({
     <div
       data-slot="setting-row"
       className={cn(
-        'border-card-ring bg-muted flex gap-3 rounded-md border px-3 py-2.5',
+        'border-card-ring bg-muted flex gap-3 rounded-md border px-3 py-(--row-py-well)',
         'items-center justify-between',
         control === 'full' && 'max-md:flex-col max-md:items-stretch max-md:gap-2',
         className,
