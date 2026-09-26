@@ -394,7 +394,7 @@ function EngineSettings() {
         min={1}
         max={maxThreads}
         disabled={!threadsAvailable}
-        hint={threadsAvailable ? `of ${maxThreads} cores` : t('unavailable in this context')}
+        hint={threadsAvailable ? t('of {n} cores', { n: maxThreads }) : t('unavailable in this context')}
         onChange={(v) => setOption({ threads: v })}
       />
       <Slider
@@ -419,7 +419,7 @@ function EngineSettings() {
         value={moveSeconds}
         min={0}
         max={60}
-        hint={moveSeconds === 0 ? t('off') : 's'}
+        hint={moveSeconds === 0 ? t('off') : t('s')}
         format={(v) => (v === 0 ? '—' : String(v))}
         onChange={(v) => setOption({ moveSeconds: v })}
       />
