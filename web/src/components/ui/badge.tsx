@@ -41,9 +41,9 @@ const badgeVariants = cva(
        * second one by hand seven times over: a badge is a true pill
        * (`rounded-4xl`), a CHIP is the small-cornered tag that carries a
        * code, a theme or a verdict. The chip takes the small text tag's
-       * corner, `--radius-chip` (tokens.css has the numbers), which Kbd and
-       * a note's inline code read too, so the three cannot drift apart
-       * again: the sm rung, so it answers the Corners setting, with a pixel
+       * corner, `--radius-chip` (tokens.css has the numbers and every tag
+       * that reads it), so the small tags cannot drift apart again: the sm
+       * rung, so it answers the Corners setting, with a pixel
        * cap at 6px, so Large does not round this 20px tag to within 0.4px
        * of a pill (the rung alone is 9.6 there). At Default it is the 6px
        * `rounded-sm` it was. It takes the tighter side padding all four

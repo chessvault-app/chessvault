@@ -162,7 +162,7 @@
   background: var(--surface-inset);
   border: 1px solid var(--border);
   /* The small text tag's corner, --radius-chip (tokens.css has the
-     numbers), which a chip Badge and a Kbd take too: the sm rung with a
+     numbers and every tag that takes it): the sm rung with a
      pixel cap, so it follows the Corners setting down to square and stops
      at 6px at Large. The tag is one line of 14px mono text, 23px tall
      with its padding and border (measured in Chromium), where the rung

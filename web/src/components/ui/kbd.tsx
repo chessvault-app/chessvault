@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils"
 
 /*
- * The corner is the small text tag's, `--radius-chip` (tokens.css), which
- * Badge's chip and a note's inline code read too, where the registry draws
+ * The corner is the small text tag's, `--radius-chip` (tokens.css, which
+ * lists every tag that reads it), where the registry draws
  * `rounded-sm`. The registry's corner and this one agree at Square, Small
  * and Default (0 / 2.88 / 6px); at Large the registry's 9.6px on this 20px
  * key is 0.4px short of a pill, and the shared value stops at 6.
