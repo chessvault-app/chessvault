@@ -97,11 +97,30 @@
 @media (max-width: 47.9375rem) {
   /* Icon buttons of any face but the primary: glass circles. Not on the
      compact bar, which is glass itself; the rule at the foot of this
-     block says why and draws them there. */
+     block says why and draws them there.
+
+     Every circle and capsule rule here that sets `ring-1` names the
+     focus state beside it, in the registry's own classes (the search
+     Cancel's do not, and say why). This sheet is unlayered, so the 1px
+     ring it sets outranks the layered `focus-visible:ring-3` on every
+     Button and Toggle, and wherever the glass is not drawn (Glass off,
+     no backdrop-filter, and on the compact bar reduced transparency) a
+     keyboard-focused control computed that 1px ring in --window-ring,
+     transparent in light, and the panel shadow: no 3px ring. The
+     buttons kept only their 1px border in --ring, and a toggle, which
+     has no border width, changed 0 of 24,336 device px (a 40px circle
+     and 6px round it, at 3x). Now it changes 4,108 in Chromium and
+     4,067 in WebKit, the counts the same toggle gives on Android, and
+     the focused box-shadow is the string the primary circle below
+     computes, which never set a ring (static page over the compiled
+     stylesheet, 375 wide, both themes, 2026-09-27). Where the glass IS
+     drawn this changes nothing: the utility's own `:focus-visible` nests
+     `:root:not([data-glass='off'])` and so outranks it, and draws the
+     ring itself. */
   :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
   :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='toggle'],
   :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-chrome-circle]:not([data-variant='default']) {
-    @apply glass size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring active:opacity-70;
+    @apply glass size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring active:opacity-70;
   }
   /* A pressed toggle keeps its own fill (the bookmark filter on a shelf):
      the shape of a circle over the toggle's on state. */
@@ -123,7 +142,7 @@
      word in it beside glass circles read as two vocabularies on one row
      (lanph3re, 2026-09-18); iOS 26 draws its bar buttons as capsules. */
   :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']) {
-    @apply glass h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-window-ring active:opacity-70;
+    @apply glass h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring active:opacity-70;
   }
   :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='sm'][data-variant='default']:not([data-chrome-circle]) {
     @apply h-10 shrink-0 rounded-full px-4 shadow-md active:opacity-70;
@@ -150,7 +169,16 @@
      oklch(0 0 264 / 0) where Android draws oklch(0.88), computed from
      the compiled stylesheet at rest. In dark the two tokens are one
      colour. The quick switcher's Cancel has no face of its own and takes
-     this one. */
+     this one.
+
+     Its focus is left to base.css, unlike the circles'. A raw button
+     with no `outline-none`, it draws the 3px --ring outline in every
+     state, and where the glass draws, the utility's outset 3px ring
+     falls on the same pixels. A ring named here would be inset, as both
+     Cancels draw theirs (`ring-inset`), and a second band inside the
+     first. Read on the same static page: a band of 9 device px outside
+     the top edge and none inside it, Glass on or off, with and without
+     backdrop-filter, both engines, both themes. */
   :root[data-platform='ios'] button[data-search-cancel]:not([aria-hidden='true']):not([data-chrome='bar'] *) {
     @apply glass text-foreground rounded-full shadow-md ring-1 ring-border active:opacity-70;
   }
@@ -164,9 +192,10 @@
      band data-chrome would hand the back chevron and the row's actions
      the chrome shapes of BOTH platforms, and this is an iPhone-only
      control. The button is drawn only for an iOS phone sheet, so the
-     rule has nothing else to exclude. */
+     rule has nothing else to exclude. It names its focus state for the
+     reason given at the circles. */
   :root[data-platform='ios'] [data-slot='dialog-content'] button[data-chrome-circle] {
-    @apply glass size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring active:opacity-70;
+    @apply glass size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring active:opacity-70;
   }
 
   /* A control standing on the compact bar is not a second glass.
@@ -211,14 +240,16 @@
      material is doing, and the opaque treatment that a phone without
      `backdrop-filter`, a reader who has turned Glass off, and reduced
      transparency all keep: there the bar is an opaque card and a filled
-     control on it is the separation those readers asked for. */
+     control on it is the separation those readers asked for. The focus
+     state is named as at the circles, and under reduced transparency it
+     is what the restore below reads. */
   :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
   :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),
   :root[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']) {
-    @apply size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring active:opacity-70;
+    @apply size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring active:opacity-70;
   }
   :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']) {
-    @apply h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-window-ring active:opacity-70;
+    @apply h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring active:opacity-70;
   }
   /* The Cancel keeps a control's stroke here too, for the reason given
      beside its rules above: on the opaque bar the window ring left it
@@ -268,7 +299,11 @@
      The utility's shape: 3px of --ring at full alpha, after the inset
      edge and before the shadow. The restore under `reduce` names the
      focused state too, since `&:focus-visible` outranks its bare
-     selectors. */
+     selectors, and composes it from the variables, where the opaque
+     rules' own `focus-visible:ring-3` puts 3px of --ring. Before they
+     named it, the restore composed their 1px window ring, and a focused
+     toggle on the bar changed zero pixels under `reduce` too (Chromium
+     with reduce emulated, same page, 2026-09-27). */
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
     :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
     :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),
