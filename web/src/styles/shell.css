@@ -222,23 +222,53 @@
     @apply h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-border active:opacity-70;
   }
 
-  /* Then, only where the bar is actually drawing glass, the control gives
-     up its fill and takes the bar's, and draws the hairline and the panel
-     shadow `glass` would have given it. The same three conditions the
-     utility draws under, in the same order and the same form: an
-     override that takes the fill away, never a grant, so a browser that
-     does not know the transparency query reads it as false and the
-     control stays flush with the bar, which is what glass being drawn
-     means. */
+  /* Then, wherever the bar is drawing glass, the control gives up its
+     fill and takes the bar's, and draws the hairline and the panel shadow
+     `glass` would have given it. The same three conditions the utility
+     draws under, in the same form (utilities.css, `glass`): flush is the
+     default wherever the browser can blur and Glass is on, and a POSITIVE
+     `reduce` query below takes it away again, so the control is opaque
+     exactly where the bar is.
+
+     It was written the other way round, flush only inside `not
+     (prefers-reduced-transparency: reduce)`, on the belief that an
+     unknown feature reads as false there. It does, and so does its `not`:
+     Media Queries 4 makes an unknown feature "unknown", `not unknown` is
+     unknown too, and unknown matches nothing. WebKit does not know the
+     feature, so on every iPhone the query failed, the bar was glass and
+     every control on it drew its own fill, shadow and ring over it: the
+     two layers this block exists to remove. Read in Playwright's WebKit
+     26.6, on a static page over the compiled stylesheet (2026-09-27):
+     matchMedia gave false for the feature AND for its `not`, and a
+     secondary circle on the glass bar computed its oklch(0.97) fill and
+     the composed ring and shadow in light, where Chromium computed
+     transparent and the edge. A `not` query is a grant, and a grant is
+     what an unknown feature fails. The glass utility met the same trap on
+     the phone on 2026-09-18, and its comment records it.
+
+     The restore puts back what the rules above draw: the variant's own
+     fill, which lives in the utilities layer, so `revert-layer` from
+     this unlayered sheet rolls back to it; and the shadow those rules
+     compose, rebuilt from the variables their `shadow-md ring-1 ring-*`
+     set, in the order Tailwind composes them. `revert-layer` cannot do
+     that half, since the rules that set it are unlayered too. */
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    @media not (prefers-reduced-transparency: reduce) {
+    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
+    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),
+    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']),
+    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']),
+    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-search-cancel]:not([aria-hidden='true']) {
+      background-color: transparent;
+      box-shadow: inset 0 0 0 var(--glass-edge-w, 1px) var(--glass-edge), var(--shadow-panel);
+    }
+    @media (prefers-reduced-transparency: reduce) {
       :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
       :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),
       :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']),
       :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']),
       :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-search-cancel]:not([aria-hidden='true']) {
-        background-color: transparent;
-        box-shadow: inset 0 0 0 var(--glass-edge-w, 1px) var(--glass-edge), var(--shadow-panel);
+        background-color: revert-layer;
+        box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
       }
     }
   }
