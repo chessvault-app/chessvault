@@ -1,5 +1,6 @@
-import { History, Link, MoreHorizontal, Share, Share2, Tags } from 'lucide-react';
+import { History, Link, MoreHorizontal, Pencil, Share, Share2, Tags } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { ActionMenu, type MenuAction } from '@/components/action-menu';
 import { Button } from '@/components/ui/button';
 import { DocumentHistory, type HistoryKind } from '@/components/history-panel';
@@ -10,6 +11,16 @@ import { useMediaQuery } from '@/lib/media';
 import { shareIcon } from '@/lib/share';
 import { CAN_SHARE, shareDocument } from '@/lib/share-doc';
 import { t } from '@/lib/i18n';
+
+/**
+ * What the phone's Rename asks of a document's title: open its field with
+ * the current name in it. The title hands this over through `ref` rather
+ * than lifting its field into the page, so a keystroke in the draft
+ * re-renders the title and not the whole study or note.
+ */
+export interface TitleRename {
+  startRename: () => void;
+}
 
 /**
  * A document's three quiet tools — other names, what links here, earlier
@@ -30,16 +41,31 @@ import { t } from '@/lib/i18n';
  * menu drops the verb on the same count, so a phone never offers a press
  * that opens nothing. Share is dropped the same way where the browser has
  * no sheet, which is every desktop one.
+ *
+ * The phone's menu also leads with Rename, which has no button on a
+ * desktop. The title renames in place on a double-click, which a finger
+ * cannot give, so this verb opens that same field, as a book's ⋯ does
+ * (BookPage); it leads because the title leads the row. It is a verb in
+ * here and not a pencil on the row for the reason the three fold: a
+ * pencil beside the title, measured on the demo at 375px, took the title
+ * from about 141-146px to 92-102px ("Minority attack" cut off) and stood
+ * a second pencil two slots from Edit's. From md there is no ⋯, and
+ * nothing else on those pages is the document's own menu (the moves
+ * panel's ⋯ is the chapter's moves), so a touch screen that wide, a
+ * tablet, renames from the shelf's row menu.
  */
 export function DocumentTools({
   aliases,
   mentions,
   history,
+  rename,
   share,
 }: {
   aliases: { title: string; names: string[]; onSave: (names: string[]) => void };
   mentions: { section: LinkSection; id: string };
   history: { kind: HistoryKind; id: string; name: string; onRestored: () => void };
+  /** The phone's Rename: the title's own startRename (TitleRename). */
+  rename: () => void;
   /**
    * Send this document to another app, where the browser has a share
    * sheet. Opt-in from the caller, because only the caller knows what
@@ -122,6 +148,28 @@ export function DocumentTools({
     );
 
   const actions: MenuAction[] = [
+    {
+      label: 'Rename',
+      icon: Pencil,
+      onSelect: () => {
+        // The field has to be opened AFTER the menu gives focus back. The
+        // sheet unmounts with the row that was pressed, so it finds focus
+        // on the page and hands it to the ⋯ in a microtask its closing
+        // commit queues (finalFocus, ui/dialog). Opened in that same
+        // commit, the field took focus and lost it 4ms later, which
+        // blurred it shut (measured with these components in Chromium at
+        // 375px as Android). So the close is committed here and the field
+        // opens in the microtask after the hand-back, and keeps the focus.
+        // A microtask and not a frame: a frame is too late for iOS to
+        // raise the keyboard (header-slots.tsx), and a microtask runs
+        // before the press has finished dispatching (not yet read on an
+        // iPhone). The dropdown an iPhone gets gives focus back only once
+        // its exit has played, and not at all to a page that has moved
+        // it, so there the field keeps it either way.
+        flushSync(() => setMenuOpen(false));
+        queueMicrotask(rename);
+      },
+    },
     { label: aliases.title, icon: Tags, onSelect: () => setOpen('aliases') },
     ...(mentionCount > 0
       ? [{ label: 'Linked mentions', icon: Link, onSelect: () => setOpen('mentions') }]
