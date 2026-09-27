@@ -235,9 +235,13 @@ function SearchCancel({ close }: { close: () => void }) {
       type="button"
       // The iOS chrome rule in styles/shell.css draws this: glass, a
       // capsule, the ring and the press dip. Only the height and the
-      // side padding are the field's own business.
+      // side padding are the field's own business, and where the ring
+      // falls: inset, as the field's own Cancel draws it, because this
+      // button sits flush against the command list's clipped right edge
+      // and an outset ring lost that whole side (read with Glass off,
+      // where the ring is the button's only edge).
       data-search-cancel=""
-      className="ml-1.5 h-8 shrink-0 rounded-full px-3 text-sm font-medium whitespace-nowrap"
+      className="ml-1.5 h-8 shrink-0 rounded-full px-3 text-sm font-medium whitespace-nowrap ring-inset"
       onPointerDown={(e) => e.preventDefault()}
       onClick={() => depart(close)}
     >
