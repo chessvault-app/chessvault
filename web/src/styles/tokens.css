@@ -679,6 +679,10 @@
 
   --shadow-color: var(--ui-hue) 22% 30%;
   --radius: 0.625rem;
+  /* The small text tag's corner, stated once for the things that do that
+     job at text height: Badge's chip (ui/badge.tsx) and Kbd (ui/kbd.tsx),
+     which both drew `rounded-sm`. The sm rung, so far. */
+  --radius-chip: var(--radius-sm);
 }
 
 /* ---------------------------------------------------------------------------
