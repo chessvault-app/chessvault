@@ -191,8 +191,13 @@
      the circle was already being told from the bar by. It cost the
      circle one unit of 255 in light and three in dark, re-measured the
      same way: rgb(239,239,239) on 240, and rgb(50,50,50) on 49. Under
-     reduced transparency both were `--card` over each other and already
-     separated by nothing, so that path is unchanged.
+     reduced transparency the utility had drawn both as `--card`, one
+     over the other and separated by nothing, and there the control now
+     keeps the opaque treatment below instead, the one Glass off draws:
+     in light a secondary circle went from `--card` and the edge to
+     oklch(0.97) and the window ring (Chromium with reduce emulated, a
+     static page over the stylesheet compiled from before this rule and
+     from 2026-09-27).
 
      So the bar is cut out of the rules above rather than overridden by a
      rule below them, which is not a style choice: `@apply glass` nests
