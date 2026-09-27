@@ -326,8 +326,8 @@ export function CanvasShell({
               // open, and out of the tab order with it, and the X in its
               // header is how you get back to them. What is left is the
               // page's own gutter, and it is not spacing — it is what
-              // makes the corners, the border
-              // and the shadow visible all the way round, so the panel
+              // makes the corners and the edge visible all the way
+              // round, so the panel
               // reads as one object over the map rather than as a slab
               // bolted to the window. `overflow-hidden` because a sticky
               // footer inside it bleeds to these edges and would
@@ -353,7 +353,16 @@ export function CanvasShell({
               // can keep what the reader just asked about out from under
               // it. Both beat fighting the stack with z-index, which would
               // only move the problem to whatever came second.
-              className="bg-card/90 absolute bottom-6 right-6 top-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl outline-none ring-1 ring-window-ring backdrop-blur-md focus-visible:ring-3 focus-visible:ring-ring xl:w-[26rem]"
+              //
+              // Opaque: the card's own fill, and the window ring any
+              // floating window takes. It was 90% of the card over a blur
+              // of the canvas, a translucent recipe of its own on every
+              // pointer device, and the app's one translucent material is
+              // the glass utility, drawn only on a phone. Nothing here
+              // needs the canvas to show through: the selection is moved
+              // out from under the panel (above), and the sticky action
+              // row inside it was already the opaque card.
+              className="bg-card absolute bottom-6 right-6 top-3 z-10 flex w-[22rem] flex-col overflow-hidden rounded-xl outline-none ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring xl:w-[26rem]"
             >
               {/* The same strip the Sheet wears, for the same reason: the
                   scrim and Escape close a sheet and neither LOOKS like a
