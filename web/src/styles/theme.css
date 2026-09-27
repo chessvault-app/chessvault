@@ -76,11 +76,12 @@
   /* The corner ladder is the registry's: every rung a multiple of the one
      --radius on :root (6 / 8 / 10 / 14 / 18 px at the default 0.625rem), so
      moving that number moves the whole app. Bare `rounded` is NOT on the
-     ladder: Tailwind resolves it from a theme key named --radius itself,
-     which this file keeps as a plain :root property (tokens.css), and
-     nothing in the app uses it. This note once said badges and move chips
-     did, for 4px; they never had. A small text tag's corner is
-     --radius-chip, beside --radius in tokens.css. */
+     ladder: Tailwind resolves it from a theme key of its own, also named
+     --radius, and inlines that key's fixed 0.25rem; the app's knob is a
+     plain :root property in tokens.css, outside this block, and bare
+     `rounded` never reads it. Nothing in the app uses it. This note once
+     said badges and move chips did, for 4px; they never had. A small text
+     tag's corner is --radius-chip, beside --radius in tokens.css. */
   /* The rung below --text-xs, and the last one there is.
      The ramp stopped at the 12px label, and seven places needed
      something smaller than that and wrote it as a magic

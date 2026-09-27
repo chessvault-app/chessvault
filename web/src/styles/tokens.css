@@ -692,7 +692,17 @@
      Kbd already drew at Default, and the sidebar's search hint alone puts
      two Kbds on every page of a desktop browser, while inline code, the
      one tag that drew 4, is in no demo note: the pixel grid, which
-     photographs Default, sees nothing move. */
+     photographs Default, sees nothing move.
+
+     Not yet everything that does the job. Two hand-rolled chips still
+     write the bare rung, `rounded-sm`: the game result (ResultBadge,
+     components/result-badge.tsx) and the opening code (EcoChip,
+     games/shared.tsx). They match this value at Square, Small and Default
+     and draw 9.6px against its 6 at Large (computed), so pointing them
+     here moves nothing the grid photographs; it is owed. And two registry
+     rules restyle a Kbd placed inside them: a tooltip's `rounded-sm` and an
+     input group addon's `calc(var(--radius) - 5px)` (9.6 and 11px at
+     Large, computed), which no Kbd in the app is inside today. */
   --radius-chip: min(var(--radius-sm), 6px);
 }
 
