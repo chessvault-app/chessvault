@@ -782,8 +782,16 @@ while that badges and move chips did; they never have, and a corner that
 stops answering the knob is not what either of them wanted. The two
 small-tag corners both come off the ladder and both live on `Badge`:
 `shape="pill"` is `rounded-4xl`, a true pill, and `shape="chip"` is
-`rounded-sm` with tighter sides, for the tag that carries a code, a
-theme or a verdict.
+`rounded-(--radius-chip)` with tighter sides, for the tag that carries a
+code, a theme or a verdict. `--radius-chip` (tokens.css) is the `sm` rung
+with a pixel cap at 6px: 0 / 2.88 / 6 / 6px at Square / Small / Default /
+Large. The rung alone reaches 9.6px at Large, 0.4px short of a pill on a
+20px tag and a pill on the 18px opening code. Every small text tag reads
+it, so they round alike at every setting: the chip Badge, `Kbd` (a key
+inside a tooltip too), a note's inline code, the game result
+(`ResultBadge`) and the opening code (`EcoChip`). The one key with a
+corner of its own sits inside an input group's addon and keeps the
+registry's concentric `calc(var(--radius) - 5px)`.
 
 Borders are hairlines. Buttons carry a transparent border by default so
 that a variant can fill it in without the control changing size, and
@@ -793,8 +801,11 @@ that a variant can fill it in without the control changing size, and
 
 **The One Knob Rule.** Every corner in the app derives from `--radius`. A
 hand-written radius is a corner that stops responding to the setting, and
-the only sanctioned exceptions are the 4px chip corner, the pixel caps
-that stop small controls turning into pills, and a mark fitted to its
+the only sanctioned exceptions are the 4px chip corner (worn today by
+the result bar and Insights' move-quality and monthly bars, not by the
+chip tag, which answers the knob through `--radius-chip`), the pixel caps
+that stop small controls and small text tags turning into pills, and a
+mark fitted to its
 own few pixels (the 10px side dot at 3px, the 10px activity square and
 Insights legend swatch at 2px, the review strip's 8px diamond at 1px),
 where the ladder's smallest rung would round the shape
@@ -892,11 +903,17 @@ hit areas, `title` as a tooltip. Composites live in
 
 - 20px high, 12px medium text (14 under `md`, with the rows), 12px icons.
 - Two shapes. `pill` (`rounded-4xl`) is the default and is what a status
-  mark wears. `chip` (`rounded-sm`, tighter sides) is the small-cornered
-  tag: an opening code, a puzzle theme, a tablebase verdict. Seven of
-  these were hand-rolled spans until 2026-09-15, each re-deriving its own
-  padding and corner, and two of the seven had quietly lost the weight
-  and the phone step-up the other two carried.
+  mark wears. `chip` (`rounded-(--radius-chip)`, tighter sides) is the
+  small-cornered tag: an opening code, a puzzle theme, a tablebase
+  verdict. Seven of these were hand-rolled spans until 2026-09-15, each
+  re-deriving its own padding and corner, and two of the seven had
+  quietly lost the weight and the phone step-up the other two carried.
+  Two small tags stay spans on purpose (c9a34bc8): the opening code
+  (`EcoChip`, whose tint is computed from the theme and its ECO letter)
+  and the game result (`ResultBadge`, a fixed-width score with a heavier
+  winning digit). They take the chip's corner by name, as `Kbd` and a
+  note's inline code do, so every small text tag rounds alike at every
+  Corners setting.
 - Variants mirror the button's colour assignments, plus the app's own
   grammar: `good` and `destructive` are the OPAQUE `--good-tint` and
   `--destructive-tint`, not a 10% wash. That is the whole reason those
