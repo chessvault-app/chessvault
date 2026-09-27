@@ -139,11 +139,21 @@
      the capsule in the title row beside a grey pill one row down read as
      two search bars (lanph3re, 2026-09-19). The chrome rule below is the
      more specific and adds the row's 40px. */
+  /* Its stroke is a control's, `--border`, the one the field's Cancel
+     draws on every other platform (text-fields.tsx), and not the circles'
+     window ring. Where the glass draws, its edge replaces either (its
+     box-shadow outranks every ring utility here), so this stroke is what
+     a Cancel shows with Glass off or with no backdrop-filter. The window
+     ring is transparent on the light page, and painted over the field's
+     own stroke it left the iPhone's Cancel no edge at all in light:
+     oklch(0 0 264 / 0) where Android draws oklch(0.88), computed from
+     the compiled stylesheet. In dark the two tokens are one colour. The
+     quick switcher's Cancel has no face of its own and takes this one. */
   :root[data-platform='ios'] button[data-search-cancel]:not([aria-hidden='true']):not([data-chrome='bar'] *) {
-    @apply glass text-foreground rounded-full shadow-md ring-1 ring-window-ring active:opacity-70;
+    @apply glass text-foreground rounded-full shadow-md ring-1 ring-border active:opacity-70;
   }
   :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-search-cancel]:not([aria-hidden='true']) {
-    @apply glass text-foreground h-10 rounded-full px-4 shadow-md ring-1 ring-window-ring active:opacity-70;
+    @apply glass text-foreground h-10 rounded-full px-4 shadow-md ring-1 ring-border active:opacity-70;
   }
 
   /* A sheet's own close, in its band's trailing corner (dialog.tsx). The
@@ -200,9 +210,14 @@
   :root[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']) {
     @apply size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring active:opacity-70;
   }
-  :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']),
-  :root[data-platform='ios'] [data-chrome='bar'] button[data-search-cancel]:not([aria-hidden='true']) {
+  :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']) {
     @apply h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-window-ring active:opacity-70;
+  }
+  /* The Cancel keeps a control's stroke here too, for the reason given
+     beside its rules above: on the opaque bar the window ring left it
+     no edge in light. */
+  :root[data-platform='ios'] [data-chrome='bar'] button[data-search-cancel]:not([aria-hidden='true']) {
+    @apply h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-border active:opacity-70;
   }
 
   /* Then, only where the bar is actually drawing glass, the control gives
