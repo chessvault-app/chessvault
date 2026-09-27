@@ -684,8 +684,9 @@
      and a Kbd inside a tooltip, ui/tooltip.tsx), a note's inline code
      (editor.css), the game result (ResultBadge,
      components/result-badge.tsx) and the opening code (EcoChip,
-     games/shared.tsx). They had drawn two corners: inline code a fixed
-     4px, and the rest the bare sm rung, 6px at Default and 9.6 at Large.
+     games/shared.tsx). They had drawn two corners: inline code the sm
+     rung capped at 4px (0 / 2.88 / 4 / 4px at Square / Small / Default /
+     Large), and the rest the bare rung (0 / 2.88 / 6 / 9.6px).
 
      The sm rung with a pixel cap at 6px, which is that rung at the
      default knob (0.6 x 10px): Square, Small and Default are the rung
@@ -702,7 +703,8 @@
      input group addon's `calc(var(--radius) - 5px)` (ui/input-group.tsx)
      is the registry's concentric corner for a key inside a field, the
      field's radius less the key's inset. The key sits 6px inside the
-     field (measured in Chromium), so concentric asks 0 / 0 / 4 / 10px
+     default 32px field, top and bottom, and 6.6 from its end (measured in
+     Chromium), so concentric asks 0 / 0 / 4 / 10px
      and the rule draws 0 / 0 / 5 / 11, within 1px at every setting,
      where this value would draw 0 / 2.88 / 6 / 6: 2px rounder than
      concentric at Default and 4px flatter at Large. No key sits in a
