@@ -149,7 +149,11 @@
    lanph3re's phone, 2026-09-18) evaluates an unknown media feature as
    false, and the first form left the capsule opaque there with the Glass
    switch on. An unknown feature in the override is simply ignored, and
-   the glass stays. */
+   the glass stays. Its `not` is no way round it: Media Queries 4 makes an
+   unknown feature unknown, and `not` of unknown is unknown too, so
+   `not (prefers-reduced-transparency: reduce)` is also false there. That
+   form kept the compact bar's controls opaque on an iPhone until the rule
+   in shell.css was turned round the same way. */
 
 /* The edge width, registered so it does NOT inherit. It is set on one
    surface, the full-bleed compact header, and a custom property set
