@@ -1379,9 +1379,12 @@ drawn, and what one has to prove.
   all from existing tokens, defined once as a utility and never as a
   per-component recipe. It is drawn only under `@supports
   (backdrop-filter)`, taken away under `prefers-reduced-transparency:
-  reduce` (as an override, never as a grant under `no-preference`: a
-  browser that does not know the feature, Safari among them, reads an
-  unknown feature as false, and the grant form left the phone opaque),
+  reduce` (as an override, never as a grant: a browser that does not know the
+  feature, Safari among them, reads an unknown feature as false and
+  reads its `not` as false too, since Media Queries 4 makes both unknown;
+  so the grant under `no-preference` left the phone opaque, and the
+  `not (... reduce)` form did the same to the buttons on the compact page
+  header),
   and only on a phone — `max-md:ios:`, not `ios:`, which reaches an iPad
   too and drew a glass menu over a desktop page with nothing else glassy
   on it (measured at 834px, 2026-09-22); and, fourth, only as far as the
@@ -1458,7 +1461,11 @@ drawn, and what one has to prove.
   under it to work with, separates by 5 and 26). So on that bar they
   keep the hairline, which is what told them from it all along, and
   give up the fill and the filter (`styles/shell.css`, on the bar's
-  `data-chrome="bar"`). Apple's rule says the same in words: do not
+  `data-chrome="bar"`), gated the way the utility is: flush by default,
+  opaque again under `reduce`, where they draw their own fill and ring on
+  the card as with Glass off. Their box-shadow would paint over the focus
+  ring as the glass's did, so they draw the utility's ring too. Apple's
+  rule says the same in words: do not
   layer Liquid Glass elements on top of each other.
 - **What this glass is not, and why it is not going to become it.**
   Apple's material refracts what is behind it and carries a specular
