@@ -237,9 +237,11 @@ function SearchCancel({ close }: { close: () => void }) {
       // capsule, the ring and the press dip. Only the height and the
       // side padding are the field's own business, and where the ring
       // falls: inset, as the field's own Cancel draws it, because this
-      // button sits flush against the command list's clipped right edge
-      // and an outset ring lost that whole side (read with Glass off,
-      // where the ring is the button's only edge).
+      // button sits flush against the Command's clipped right edge and
+      // an outset ring lost that whole side (read with Glass off, where
+      // the ring is the button's only edge). Its focus indicator stays
+      // outset, as every control's is: the Command lets it out instead
+      // (see the Command below).
       data-search-cancel=""
       className="ml-1.5 h-8 shrink-0 rounded-full px-3 text-sm font-medium whitespace-nowrap ring-inset"
       onPointerDown={(e) => e.preventDefault()}
@@ -378,12 +380,35 @@ function QuickSwitcherWindow({
           had the sheet stopping at about half the screen with sixty rows
           scrolling in a box. */}
       <DialogContent className="sm:p-0" fill aria-label={t('Open anything')}>
+        {/* The Command stops clipping while the iPhone's Cancel (below)
+            shows keyboard focus, so the focus indicator is drawn on all
+            four sides. The Cancel sits flush against this box's right edge
+            and 2px under its top, and its indicator (base.css's 3px
+            outline, and with Glass on the glass utility's 3px ring) is
+            drawn OUTSIDE its box, where the registry's overflow-hidden
+            threw away the whole right side and one of the three top rows.
+            Nothing else here needs the clip on a phone: the card is what
+            scrolls, this box is as tall as its rows, and every child sits
+            inside its corners. It still clips at rest, because un-clipping
+            there lets the Cancel's resting shadow out past the same edge,
+            which changes the look at rest and is not what this is for.
+            The slider's focus halo hangs on `has-[:focus-visible]` the
+            same way (ui/slider.tsx).
+
+            Read on a static page over the compiled stylesheet (markup from
+            these components, 375 wide at 3x, Chromium and WebKit, light
+            and dark, Glass on and off, 2026-09-28): ring px on the
+            Cancel's mid-lines, left, top, bottom and right, 9 6 9 0 before
+            and 9 9 9 9 after; the sheet at rest, at its top, scrolled and
+            at its end, 0 px changed. Un-clipped at rest instead, 153 to
+            2,800 device px of the Cancel's resting crop changed, 7 of 255
+            at most. */}
         <Command
           loop
           shouldFilter={false}
           value={value}
           onValueChange={setValue}
-          className="max-sm:min-h-0 max-sm:flex-1 max-sm:p-0"
+          className="max-sm:min-h-0 max-sm:flex-1 max-sm:p-0 has-[[data-search-cancel]:focus-visible]:overflow-visible"
         >
           {/* iOS puts a Cancel beside a search field rather than leaving
               the field alone in the sheet, and this sheet had no visible
