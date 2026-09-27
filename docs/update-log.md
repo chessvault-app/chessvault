@@ -169,11 +169,10 @@ so far.
   their monospaced labels and code in Pretendard, like the rest of the
   page, instead of the system's Korean fixed-width face.
 - **Small tags round alike at every Corners setting.** A shortcut key,
-  an opening code, a puzzle theme, a game's result and inline code in a
-  note now share one small corner. It follows the Corners setting down
-  to Square like every other corner, and at Large it stops at 6px
-  instead of rounding nearly into a pill, which the opening code had
-  become.
+  a puzzle theme, a game's result and inline code in a note now share
+  one small corner. It follows the Corners setting down to Square like
+  every other corner, and at Large it stops at 6px instead of rounding
+  nearly into a pill.
 - **A phone renames a study, a game or a note from inside it.** The
   title renamed on a double-click, which nothing on a phone points to,
   so the one way a phone showed was the shelf's menu. The header's ⋯ now

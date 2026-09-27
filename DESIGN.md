@@ -786,7 +786,8 @@ small-tag corners both come off the ladder and both live on `Badge`:
 code, a theme or a verdict. `--radius-chip` (tokens.css) is the `sm` rung
 with a pixel cap at 6px: 0 / 2.88 / 6 / 6px at Square / Small / Default /
 Large. The rung alone reaches 9.6px at Large, 0.4px short of a pill on a
-20px tag and a pill on the 18px opening code. Every small text tag reads
+20px tag (and past one on the 18px opening code, whose corner paints
+nothing today: its `--eco-wash` is 0%). Every small text tag reads
 it, so they round alike at every setting: the chip Badge, `Kbd` (a key
 inside a tooltip too), a note's inline code, the game result
 (`ResultBadge`) and the opening code (`EcoChip`). The one key with a
