@@ -268,12 +268,16 @@ export function TagPicker({
               {scoping.chapters.map((name) => {
                 const tag: MapTag = { kind: 'study', id: scoping.id, chapter: name };
                 return (
+                  // The study rows' touch floor and shrink-0, for the
+                  // reasons their comment above gives. No floor for a
+                  // mouse: these rows carry no button to match, so their
+                  // own padding sets them and Density reaches them.
                   <button
                     key={name}
                     type="button"
                     disabled={tagged(tag)}
                     onClick={() => onPick(tag)}
-                    className="hover:bg-accent flex items-center gap-2 rounded-lg px-2 py-(--row-py-dense) text-left disabled:opacity-50"
+                    className="hover:bg-accent flex shrink-0 items-center gap-2 rounded-lg px-2 py-(--row-py-dense) text-left disabled:opacity-50 pointer-coarse:min-h-9"
                   >
                     <BookOpen className="text-muted-foreground glyph shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate type-row">{name}</span>
