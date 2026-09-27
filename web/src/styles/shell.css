@@ -251,7 +251,19 @@
      this unlayered sheet rolls back to it; and the shadow those rules
      compose, rebuilt from the variables their `shadow-md ring-1 ring-*`
      set, in the order Tailwind composes them. `revert-layer` cannot do
-     that half, since the rules that set it are unlayered too. */
+     that half, since the rules that set it are unlayered too.
+
+     And the focus ring, drawn here for the reason the utility draws its
+     own: this box-shadow replaces the one `focus-visible:ring-3`
+     composes, so a keyboard-focused control on the glass bar computed
+     the edge and the panel shadow and nothing else. The buttons kept
+     only their 1px border in --ring; the toggle, which has no border
+     width for `focus-visible:border-ring` to colour, changed zero
+     pixels (static page, Chromium and WebKit, both themes, 2026-09-27).
+     The utility's shape: 3px of --ring at full alpha, after the inset
+     edge and before the shadow. The restore under `reduce` names the
+     focused state too, since `&:focus-visible` outranks its bare
+     selectors. */
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
     :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
     :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),
@@ -260,6 +272,12 @@
     :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-search-cancel]:not([aria-hidden='true']) {
       background-color: transparent;
       box-shadow: inset 0 0 0 var(--glass-edge-w, 1px) var(--glass-edge), var(--shadow-panel);
+      &:focus-visible {
+        box-shadow:
+          inset 0 0 0 var(--glass-edge-w, 1px) var(--glass-edge),
+          0 0 0 3px var(--ring),
+          var(--shadow-panel);
+      }
     }
     @media (prefers-reduced-transparency: reduce) {
       :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
@@ -269,6 +287,9 @@
       :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-search-cancel]:not([aria-hidden='true']) {
         background-color: revert-layer;
         box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+        &:focus-visible {
+          box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+        }
       }
     }
   }
