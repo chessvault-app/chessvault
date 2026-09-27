@@ -144,11 +144,13 @@
      window ring. Where the glass draws, its edge replaces either (its
      box-shadow outranks every ring utility here), so this stroke is what
      a Cancel shows with Glass off or with no backdrop-filter. The window
-     ring is transparent on the light page, and painted over the field's
+     ring is the card ring in light, transparent at rest and `--border`
+     only at the top of the contrast knob, and painted over the field's
      own stroke it left the iPhone's Cancel no edge at all in light:
      oklch(0 0 264 / 0) where Android draws oklch(0.88), computed from
-     the compiled stylesheet. In dark the two tokens are one colour. The
-     quick switcher's Cancel has no face of its own and takes this one. */
+     the compiled stylesheet at rest. In dark the two tokens are one
+     colour. The quick switcher's Cancel has no face of its own and takes
+     this one. */
   :root[data-platform='ios'] button[data-search-cancel]:not([aria-hidden='true']):not([data-chrome='bar'] *) {
     @apply glass text-foreground rounded-full shadow-md ring-1 ring-border active:opacity-70;
   }
