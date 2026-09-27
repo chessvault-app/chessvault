@@ -136,15 +136,19 @@ so far.
   number ("accuracy", "puzzles read") is set in the sentence's type while
   the number keeps the figures' face. Several rows and the Settings cards
   had ignored the Density setting and follow it now; on a desktop that
-  includes every settings row and the opening map's link list. The
-  Vault card's listing in Settings draws its icons at the size every
-  other desktop row's are, and inline code in a note follows the Corners
-  setting down to Square like every other corner. While the editor loads
-  on a wide screen, its outline draws the piece palette where the palette
-  lands. Two lists that glided into place even when the device asks for
-  reduced motion now jump there. On an iPhone, the long-press menu and a
-  select list's rows take the same rounded glass as every other menu,
-  and the More page's chevrons are the size the Puzzles tab's are.
+  includes every settings row and the opening map's link list, where a
+  study's chapters are now as tall on a touch screen as the rest of the
+  list. The Vault card's listing in Settings draws its icons at the size
+  every other desktop row's are. While the editor loads on a wide screen,
+  its outline draws the piece palette where the palette lands. On a
+  tablet or a desktop, the opening map's details panel is solid, where
+  the map had shown faintly through it. Two lists that glided into place
+  even when the device asks for reduced motion now jump there. On an
+  iPhone, the long-press menu and a select list's rows take the same
+  rounded glass as every other menu, the More page's chevrons and icon
+  tiles match the Puzzles tab's, and with Glass off the search Cancel
+  keeps its outline in the light theme, as it does on every other
+  platform.
 - **The pages around the app wear its current dark colours.** The
   desktop vault chooser, the website and the manual in dark, and the
   iPhone launch screens had kept the dark greys from before the theme was
@@ -159,10 +163,23 @@ so far.
   page, where the buttons all but vanished. The chooser sets its own
   colours now.
 - **Korean reaches three places it had missed.** The engine's Threads
-  setting reads "4 / 8코어" and its time limit "10 초", where both were
+  setting reads "6 / 8코어" on an eight-core machine and its time limit
+  "10 초", where both were
   left in English. And the website and the manual draw the Korean in
   their monospaced labels and code in Pretendard, like the rest of the
   page, instead of the system's Korean fixed-width face.
+- **Small tags round alike at every Corners setting.** A shortcut key,
+  an opening code, a puzzle theme, a game's result and inline code in a
+  note now share one small corner. It follows the Corners setting down
+  to Square like every other corner, and at Large it stops at 6px
+  instead of rounding nearly into a pill, which the opening code had
+  become.
+- **A phone renames a study, a game or a note from inside it.** The
+  title renamed on a double-click, which nothing on a phone points to,
+  so the one way a phone showed was the shelf's menu. The header's ⋯ now
+  starts with "Rename", which opens the title's own field in place.
+  Nothing is added to the title row, which keeps all its width. A
+  tablet, whose header has no ⋯, still renames from the shelf.
 
 ## 0.11.4
 
