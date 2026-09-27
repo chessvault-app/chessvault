@@ -11,7 +11,7 @@ import {
   Table2,
   Trash2,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from 'react';
 import { useAnalysis } from '@/store/analysis';
 import { AnalysisBoard, BoardControls, ColumnControls, PaneControls } from '@/board/AnalysisBoard';
 import { AnalysisMoveBox } from '@/board/MoveBox';
@@ -48,7 +48,7 @@ import { PaneTabs } from '@/components/pane-tabs';
 import { PromptDialog } from '@/components/prompt-dialog';
 import { RecoveryDialog } from '@/components/recovery-dialog';
 import { SaveControl } from '@/components/save-control';
-import { DocumentTools } from '@/components/document-tools';
+import { DocumentTools, type TitleRename } from '@/components/document-tools';
 import { PGN_TYPE, shareFileName } from '@/lib/share-doc';
 import { usePaneSwipe } from '@/hooks/use-pane-swipe';
 import { AnnotationPane } from './AnnotationPane';
@@ -115,6 +115,10 @@ export function StudyView({
   // — and, in the store, keeps the autosave from writing what a reader
   // merely walked through. See the subscriber in store/study.ts.
   const [loadOpen, setLoadOpen] = useState(false);
+  // The title's field, one per copy of the title row (below): the phone's
+  // ⋯ opens the one on the row it sits on.
+  const topTitle = useRef<TitleRename>(null);
+  const columnTitle = useRef<TitleRename>(null);
   const editing = useStudy((s) => s.editing);
   const setEditing = useStudy((s) => s.setEditing);
   const recovery = useStudy((s) => s.recovery);
@@ -318,11 +322,12 @@ export function StudyView({
       >
         <ChevronLeft className="glyph" />
       </Button>
-      <TitleEditor id={id} backSection={backSection} />
+      <TitleEditor ref={inColumn ? columnTitle : topTitle} id={id} backSection={backSection} />
       {/* What links here, then History, then Edit, then Save: what points
           at this document, what it has been, what it is becoming, what it
           becomes. On a phone the first three fold behind one ⋯. */}
       <DocumentTools
+        rename={() => (inColumn ? columnTitle : topTitle).current?.startRename()}
         aliases={{
           title: t(kind === 'game' ? 'Other names for this game' : 'Other names for this study'),
           names: aliases,
@@ -352,8 +357,8 @@ export function StudyView({
       />
       {/* One edit button for the whole document, in the header — the shape
           Notes uses. There is no separate pencil for the title (double-click
-          it, as in a note) and none inside the moves panel: editing a
-          document is one mode, not two. */}
+          it, as in a note, or on a phone choose Rename from the ⋯) and none
+          inside the moves panel: editing a document is one mode, not two. */}
       <Button data-chrome-circle=""
         variant={editing ? 'default' : 'secondary'}
         size="sm"
@@ -528,16 +533,23 @@ export function StudyView({
 }
 
 /**
- * The document title, renameable in place by double-click. There is no
- * pencil for it: the note on the header's one edit button says why. Renames
- * keep the collection: only the last path segment is edited.
+ * The document title, renameable in place: by a double-click, and on a
+ * phone, where nothing points to a double tap, by Rename in the header's
+ * ⋯ (DocumentTools), which calls startRename through `ref`. Both open this
+ * one field at the title's own size. There is no pencil for it: the note
+ * on the header's one edit button says why, and DocumentTools says what a
+ * pencil here cost the title. A touch screen from md has no ⋯, and renames
+ * from the shelf's row menu. Renames keep the collection: only the last
+ * path segment is edited.
  */
 function TitleEditor({
   id,
   backSection,
+  ref,
 }: {
   id: string;
   backSection: 'studies' | 'games';
+  ref?: Ref<TitleRename>;
 }) {
   const renameOpen = useStudy((s) => s.renameOpen);
   const [editing, setEditing] = useState(false);
@@ -552,6 +564,7 @@ function TitleEditor({
     setDraft(name);
     setEditing(true);
   };
+  useImperativeHandle(ref, () => ({ startRename }));
   const submit = async (): Promise<void> => {
     setEditing(false);
     if (!draft.trim() || draft.trim() === name) return;

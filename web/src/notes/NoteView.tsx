@@ -1,6 +1,6 @@
 import { EditorContent, useEditor } from '@tiptap/react';
 import { ChevronLeft, FileX, Pencil } from 'lucide-react';
-import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from 'react';
 import { cn } from '@/lib/utils';
 import { navigate, navigateNow } from '@/lib/router';
 import { registerLeaveGuard } from '@/lib/leaveGuard';
@@ -11,7 +11,7 @@ import { TitleTip } from '@/components/title-tip';
 import { ClearableInput } from '@/components/text-fields';
 import { RecoveryDialog } from '@/components/recovery-dialog';
 import { SaveControl, type SaveState } from '@/components/save-control';
-import { DocumentTools } from '@/components/document-tools';
+import { DocumentTools, type TitleRename } from '@/components/document-tools';
 import { useSlowLoad } from '@/components/skeletons';
 import NoteOutline from './NoteView.skeleton';
 import { routePlaceholderShown } from '@/lib/lazyRoute';
@@ -179,6 +179,8 @@ function NoteEditor({
   const opensEditable = useState(() => window.matchMedia('(min-width: 48rem) and (pointer: fine)').matches)[0];
   const [editable, setEditable] = useState(opensEditable);
   const headerRef = useRef<HTMLDivElement>(null);
+  // The title's field, which the phone's ⋯ opens (DocumentTools' Rename).
+  const title = useRef<TitleRename>(null);
   // The armed autosave. Owned here, where it is set and cleared: it used
   // to come down from NoteView as a prop, which the React Compiler refuses
   // to see written, and nothing up there read it. Leaving flushes it, so
@@ -554,10 +556,11 @@ function NoteEditor({
         <Button variant="ghost" size="icon-sm" title={t('All notes')} onClick={() => navigate('notes')}>
           <ChevronLeft className="glyph" />
         </Button>
-        <NoteTitle id={id} />
+        <NoteTitle ref={title} id={id} />
         {/* What links here, then History, then Edit, then Save — see
             StudyView's header. */}
         <DocumentTools
+          rename={() => title.current?.startRename()}
           aliases={{
             title: t('Other names for this note'),
             names: readAliases(frontMatter),
@@ -650,7 +653,16 @@ function NoteEditor({
   );
 }
 
-function NoteTitle({ id }: { id: string }) {
+/**
+ * The note's title, renameable in place: by a double-click, and on a
+ * phone, where nothing points to a double tap, by Rename in the header's
+ * ⋯ (DocumentTools), which calls startRename through `ref`. Both open this
+ * one field at the title's own size, the way a study's title does
+ * (StudyView's TitleEditor). A touch screen from md has no ⋯, and renames
+ * from the shelf's row menu. A rename keeps the folder: only the last
+ * path segment is edited.
+ */
+function NoteTitle({ id, ref }: { id: string; ref?: Ref<TitleRename> }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [failure, setFailure] = useState<string | null>(null);
@@ -658,6 +670,11 @@ function NoteTitle({ id }: { id: string }) {
   const name = id.split('/').at(-1)!;
   const folder = id.includes('/') ? id.slice(0, id.lastIndexOf('/')) : '';
 
+  const startRename = (): void => {
+    setDraft(name);
+    setEditing(true);
+  };
+  useImperativeHandle(ref, () => ({ startRename }));
   const submit = async (): Promise<void> => {
     setEditing(false);
     const next = draft.trim();
@@ -702,10 +719,7 @@ function NoteTitle({ id }: { id: string }) {
     <>
       <TitleTip title={failure ?? id}>
       <h1
-        onDoubleClick={() => {
-          setDraft(name);
-          setEditing(true);
-        }}
+        onDoubleClick={startRename}
         // The name the note was given, so a long press selects it.
         data-user-text
         className={cn(
