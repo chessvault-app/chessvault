@@ -150,7 +150,9 @@ so far.
   rounded glass as every other menu, the More page's chevrons and icon
   tiles match the Puzzles tab's, and with Glass off the search Cancel
   keeps its outline in the light theme, as it does on every other
-  platform.
+  platform. And tabbing to the quick switcher's Cancel on an iPhone now
+  draws its focus ring all the way round: the box it sits in had been
+  cutting off the ring's right side and part of its top.
 - **The pages around the app wear its current dark colours.** The
   desktop vault chooser, the website and the manual in dark, and the
   iPhone launch screens had kept the dark greys from before the theme was

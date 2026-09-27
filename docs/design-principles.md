@@ -1304,6 +1304,17 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   that is not inside the scroller, and there the room it reserved did
   the telling, until the disc itself went to the header and the room
   with it.
+- **A ring needs room outside its box.** A focus ring or outline is
+  drawn outside the border box, so a side flush against an
+  `overflow-hidden` ancestor is thrown away, and nothing in the source
+  looks wrong because the four sides are one class. Where the ancestor's
+  clip does nothing visible, it stops clipping (the desktop panel's row,
+  `md:overflow-visible`). Where the clip is part of the resting look, the
+  ancestor lets the ring out only while the control shows focus: the
+  quick switcher's Command does this for the iPhone's Cancel, which sits
+  flush against its right edge and had lost the ring's whole right side
+  and a third of its top, while the clip still trims the Cancel's resting
+  shadow as it always did.
 
 ## Platform-specific design
 
