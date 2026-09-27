@@ -546,7 +546,12 @@ function TitleEditor({
 
   const name = id.split('/').at(-1)!;
   const folder = id.includes('/') ? id.slice(0, id.lastIndexOf('/')) : '';
+  const renameLabel = t(backSection === 'games' ? 'Rename this game' : 'Rename this study');
 
+  const startRename = (): void => {
+    setDraft(name);
+    setEditing(true);
+  };
   const submit = async (): Promise<void> => {
     setEditing(false);
     if (!draft.trim() || draft.trim() === name) return;
@@ -562,7 +567,7 @@ function TitleEditor({
       <ClearableInput
         autoFocus
         inputSize="sm"
-        aria-label={t(backSection === 'games' ? 'Rename this game' : 'Rename this study')}
+        aria-label={renameLabel}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => void submit()}
@@ -582,10 +587,7 @@ function TitleEditor({
   return (
     <TitleTip title={failure ?? id}>
       <h1
-        onDoubleClick={() => {
-          setDraft(name);
-          setEditing(true);
-        }}
+        onDoubleClick={startRename}
         // The name the study was given, so a long press selects it.
         data-user-text
         className={cn('min-w-0 flex-1 truncate text-base font-semibold', failure ? 'text-destructive' : 'text-foreground')}
