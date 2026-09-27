@@ -34,7 +34,10 @@ export function MorePage() {
                   'ios:rounded-none ios:ring-0 ios:border-border ios:not-first:border-t',
                 )}
               >
-                <div className="bg-muted text-muted-foreground grid size-10 shrink-0 place-items-center rounded-lg">
+                {/* The md corner every other 40px icon tile takes: the
+                    registry's own (AlertDialogMedia) and the puzzle hub's
+                    place rows, the same grouped list as this one. */}
+                <div className="bg-muted text-muted-foreground grid size-10 shrink-0 place-items-center rounded-md">
                   <Icon className="size-5" strokeWidth={2} />
                 </div>
                 <div className="min-w-0 flex-1">
