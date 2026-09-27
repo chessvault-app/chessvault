@@ -658,6 +658,10 @@ function NoteTitle({ id }: { id: string }) {
   const name = id.split('/').at(-1)!;
   const folder = id.includes('/') ? id.slice(0, id.lastIndexOf('/')) : '';
 
+  const startRename = (): void => {
+    setDraft(name);
+    setEditing(true);
+  };
   const submit = async (): Promise<void> => {
     setEditing(false);
     const next = draft.trim();
@@ -702,10 +706,7 @@ function NoteTitle({ id }: { id: string }) {
     <>
       <TitleTip title={failure ?? id}>
       <h1
-        onDoubleClick={() => {
-          setDraft(name);
-          setEditing(true);
-        }}
+        onDoubleClick={startRename}
         // The name the note was given, so a long press selects it.
         data-user-text
         className={cn(
