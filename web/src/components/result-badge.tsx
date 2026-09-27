@@ -106,7 +106,10 @@ export function ResultBadge({
         // the verdict is a shape as well as a hue. Same weight whether
         // the chip is the reader's own tint or a reference game's eval
         // colour, so the black chip does not outshout a loss beside it.
-        'w-11 shrink-0 rounded-sm px-1 py-0.5 text-center font-mono text-xs font-medium',
+        // The corner is the small text tag's, --radius-chip (tokens.css
+        // has the numbers), so this chip agrees with the chip Badge and
+        // Kbd at every Corners setting and not only at Default.
+        'w-11 shrink-0 rounded-(--radius-chip) px-1 py-0.5 text-center font-mono text-xs font-medium',
         'tabular-nums leading-4',
         tone,
         className,

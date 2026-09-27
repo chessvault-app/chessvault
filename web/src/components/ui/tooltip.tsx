@@ -79,7 +79,19 @@ function TooltipContent({
           data-slot="tooltip-content"
           className={cn(
             'bg-foreground text-background z-50 inline-flex w-fit max-w-xs origin-(--transform-origin) items-center gap-1.5 rounded-md px-3 py-1.5 text-xs has-data-[slot=kbd]:pr-1.5',
-            'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
+            // A key in the tip takes the key's corner, --radius-chip
+            // (tokens.css), where the registry writes `rounded-sm`. That
+            // rule only restates the registry's own Kbd, which is
+            // `rounded-sm` too in nova, and Kbd now reads --radius-chip,
+            // so the rule follows it: 0 / 2.88 / 6 / 6px at Corners
+            // Square / Small / Default / Large, where `rounded-sm` drew
+            // 9.6 at Large beside 6 on every other key hint (measured in
+            // headless Chromium on the compiled classes; no key sits in a
+            // tip today). Not a concentric pair in either drawing: the key
+            // sits 6px inside the tip (its padding), so concentric asks
+            // 0 / 0 / 2 / 6.8 of the tip's 0 / 3.84 / 8 / 12.8, and both
+            // draw 6 at Default.
+            'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 **:data-[slot=kbd]:relative **:data-[slot=kbd]:isolate **:data-[slot=kbd]:z-50 **:data-[slot=kbd]:rounded-(--radius-chip) data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95',
             className,
           )}
           {...props}
