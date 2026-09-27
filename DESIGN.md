@@ -1021,7 +1021,10 @@ purpose.
 `focus-visible:ring-3` and turn the outline off; anything
 that is not a component gets the same ring from the global
 `:focus-visible` outline in the same colour. A page has one focus style
-whichever kind of control has it. The colour is `ring-ring` at full
+whichever kind of control has it. A stylesheet outside the cascade layers
+that gives a component a ring (`@apply ring-1` in `styles/shell.css`)
+outranks the component's layered `focus-visible:ring-3`, so it names the
+focus state beside the ring. The colour is `ring-ring` at full
 alpha, and `--ring` is held to 3:1 against every surface it lands on
 (WCAG 1.4.11) rather than to a look: the registry's 50% wash measured
 1.35 to 1.88:1, which is not an indicator.

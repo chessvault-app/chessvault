@@ -1280,7 +1280,13 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   again. The same token paints the slider thumb's edge at rest and its
   hover halo, which moved with it, and its focus halo, which had to be
   hung on `has-[:focus-visible]` before it painted at all; `slider.tsx`
-  records what they measure.
+  records what they measure. A stylesheet outside the cascade layers that
+  gives a component a ring (`@apply ring-1` in `styles/shell.css`, the
+  iPhone's chrome circles and capsules) outranks that component's layered
+  `focus-visible:ring-3` in every state, so it names the focus state
+  beside the ring. Until it did, a chrome circle with Glass off drew a
+  1px ring in `--window-ring`, transparent in light, and a toggle tabbed
+  to changed zero pixels.
 - **Anything pinned over a scroller tells it so.** A ring at 3:1 is not
   an indicator if it is painted underneath something. The browser's own
   scroll for Tab and Shift+Tab stops as soon as a control is inside the

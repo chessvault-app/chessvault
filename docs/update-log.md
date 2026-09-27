@@ -93,7 +93,9 @@ so far.
   none, and that reached the buttons on it. A toast on an iPhone in the
   dark theme drew two edges at once. Tabbing to any glass surface with a
   keyboard showed nothing at all, since the glass was painted over the
-  focus ring. And an iPad, which is an iOS device, was getting glass
+  focus ring, and with Glass at zero the same round buttons and capsules
+  showed a hairline at most, for the same kind of reason. Both draw the
+  ring now. And an iPad, which is an iOS device, was getting glass
   menus over a page with nothing else glassy on it.
 - **The segmented control's raised pill is concentric with its track.**
   It sat 3px inside a track of its own corner radius, so the gap between
