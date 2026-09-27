@@ -16,6 +16,7 @@ import {
   HUB_CARD_FILL,
   HUB_CARD_SHAPE,
   HUB_PLACE_SHAPE,
+  HUB_PLACE_TILE,
   HubPlaceRow,
   HubPlaces,
   HubPuzzleRow,
@@ -258,7 +259,7 @@ function PlaceCard({
     >
       {/* The 40px block the shelf row's cover used, so the three line up
           on one left edge with the covers they replaced. */}
-      <span className="bg-muted text-muted-foreground grid size-10 shrink-0 place-items-center rounded-md">
+      <span className={cn('bg-muted text-muted-foreground grid place-items-center', HUB_PLACE_TILE)}>
         <Icon className="size-5" />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-1">

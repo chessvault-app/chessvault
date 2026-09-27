@@ -161,12 +161,13 @@
   font-size: 0.875em;
   background: var(--surface-inset);
   border: 1px solid var(--border);
-  /* A pixel cap on the chip's rung. The tag is one line of 14px mono
-     text, 23px tall with its padding and border (measured in Chromium),
-     and at Large the sm rung alone is 9.6px, nearly half that, which
-     would round it into a pill; so it stops at 4, and below Default it
-     follows the knob down to square. */
-  border-radius: min(var(--radius-sm), 4px);
+  /* The small text tag's corner, --radius-chip (tokens.css has the
+     numbers), which a chip Badge and a Kbd take too: the sm rung with a
+     pixel cap, so it follows the Corners setting down to square and stops
+     at 6px at Large. The tag is one line of 14px mono text, 23px tall
+     with its padding and border (measured in Chromium), where the rung
+     alone would be 9.6px, nearly half that. */
+  border-radius: var(--radius-chip);
   padding: 0.1em 0.3em;
 }
 .note-editor pre {

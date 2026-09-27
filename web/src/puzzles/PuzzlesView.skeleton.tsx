@@ -136,6 +136,12 @@ export const HUB_PLACE_SHAPE = cn(
   // grouped list with no line between its rows is one tall card.
   'ios:rounded-none ios:ring-0 ios:border-border ios:not-first:border-t',
 );
+/**
+ * A place row's leading tile, which PlaceCard fills with a muted ground and
+ * its glyph and HubPlaceRow draws as one bar: the 40px square and its corner,
+ * stated once so the outline's tile is the page's.
+ */
+export const HUB_PLACE_TILE = 'size-10 shrink-0 rounded-md';
 
 /**
  * The three places, as one group.
@@ -164,7 +170,7 @@ export function HubPlaces({ children }: { children: ReactNode }) {
 export function HubPlaceRow() {
   return (
     <div className={HUB_PLACE_SHAPE}>
-      <Skeleton className="size-10 shrink-0 rounded-md" />
+      <Skeleton className={HUB_PLACE_TILE} />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         {/* The title's text-base line box (24px) and the detail's text-sm
             (20px), so the row is the height the real one will be. */}

@@ -40,21 +40,22 @@ const badgeVariants = cva(
        * DESIGN.md names two of these, and the app had been drawing the
        * second one by hand seven times over: a badge is a true pill
        * (`rounded-4xl`), a CHIP is the small-cornered tag that carries a
-       * code, a theme or a verdict. The chip keeps the corner knob
-       * (`rounded-sm`), so it answers the Corners setting, rather than
-       * DESIGN.md's fixed 4px chip corner, and takes the tighter side
-       * padding all four hand-rolled chips had agreed on. That 4px is in
-       * use, only not on a Badge: the result bar and Insights' move-quality
-       * bar draw it (`rounded-[4px]`), as do the three placeholders that
-       * stand in for them, and Insights' monthly bars round their tops with
-       * it (`rounded-t-[4px]`). The note editor's inline code was a fixed
-       * 4px too, and is now this chip's rung with a pixel cap at 4px
-       * (editor.css): the same corner at Default and Large, square at
-       * Square.
+       * code, a theme or a verdict. The chip takes the small text tag's
+       * corner, `--radius-chip` (tokens.css has the numbers), which Kbd and
+       * a note's inline code read too, so the three cannot drift apart
+       * again: the sm rung, so it answers the Corners setting, with a pixel
+       * cap at 6px, so Large does not round this 20px tag to within 0.4px
+       * of a pill (the rung alone is 9.6 there). At Default it is the 6px
+       * `rounded-sm` it was. It takes the tighter side padding all four
+       * hand-rolled chips had agreed on. DESIGN.md's fixed 4px chip corner
+       * is in use, only not on a tag: the result bar and Insights'
+       * move-quality bar draw it (`rounded-[4px]`), as do the three
+       * placeholders that stand in for them, and Insights' monthly bars
+       * round their tops with it (`rounded-t-[4px]`).
        */
       shape: {
         pill: "rounded-4xl",
-        chip: "rounded-sm px-1.5",
+        chip: "rounded-(--radius-chip) px-1.5",
       },
     },
     defaultVariants: {
