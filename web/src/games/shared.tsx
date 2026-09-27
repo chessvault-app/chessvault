@@ -677,12 +677,17 @@ const ecoLightness = (eco: string, base: string): string => {
  * a narrow row clipped the code itself — half a glyph, which reads as a
  * different code ("B20" came out "B2C") rather than as something cut.
  * Measured on the demo at 320px: the box was 6px against the chip's 30.
+ *
+ * The corner is the small text tag's, --radius-chip (tokens.css has the
+ * numbers), so this chip agrees with the chip Badge and Kbd at every
+ * Corners setting and not only at Default: the bare `rounded-sm` it drew
+ * was 9.6px at Large, a pill on this 18px box.
  */
 export function EcoChip({ eco, flush = false }: { eco: string; flush?: boolean }) {
   return (
     <span
       className={cn(
-        'inline-block shrink-0 rounded-sm px-1 py-px align-[1px] font-mono text-xs font-medium leading-4',
+        'inline-block shrink-0 rounded-(--radius-chip) px-1 py-px align-[1px] font-mono text-xs font-medium leading-4',
         // `flush`: pull the box left by exactly its own padding, so what
         // lines up with the column above is the CODE and not the wash
         // behind it. A chip that leads a line under the two side dots

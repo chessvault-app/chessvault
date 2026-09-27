@@ -679,30 +679,34 @@
 
   --shadow-color: var(--ui-hue) 22% 30%;
   --radius: 0.625rem;
-  /* The small text tag's corner, stated once for the three things that do
-     that job at text height: Badge's chip (ui/badge.tsx), Kbd
-     (ui/kbd.tsx) and a note's inline code (editor.css). They had rounded
-     three ways: 6 / 6 / 4px at Default, 9.6 / 9.6 / 4 at Large.
+  /* The small text tag's corner, stated once for the things that do that
+     job at text height: Badge's chip (ui/badge.tsx), Kbd (ui/kbd.tsx,
+     and a Kbd inside a tooltip, ui/tooltip.tsx), a note's inline code
+     (editor.css), the game result (ResultBadge,
+     components/result-badge.tsx) and the opening code (EcoChip,
+     games/shared.tsx). They had drawn two corners: inline code a fixed
+     4px, and the rest the bare sm rung, 6px at Default and 9.6 at Large.
 
      The sm rung with a pixel cap at 6px, which is that rung at the
      default knob (0.6 x 10px): Square, Small and Default are the rung
      itself (0 / 2.88 / 6px), and Large stops at 6 where the rung alone is
-     9.6, which on a 20px Badge or Kbd is 0.4px short of a pill. The cap
-     is 6 and not DESIGN.md's fixed 4 because 6 is what the chip and the
-     Kbd already drew at Default, and the sidebar's search hint alone puts
-     two Kbds on every page of a desktop browser, while inline code, the
-     one tag that drew 4, is in no demo note: the pixel grid, which
+     9.6, which on a 20px Badge or Kbd is 0.4px short of a pill and on the
+     18px opening code is one. The cap is 6 and not DESIGN.md's fixed
+     4 because 6 is what the chip, the Kbd, the result and the opening
+     code already drew at Default, and the sidebar's search hint alone
+     puts two Kbds on every page of a desktop browser, while inline code,
+     the one tag that drew 4, is in no demo note: the pixel grid, which
      photographs Default, sees nothing move.
 
-     Not yet everything that does the job. Two hand-rolled chips still
-     write the bare rung, `rounded-sm`: the game result (ResultBadge,
-     components/result-badge.tsx) and the opening code (EcoChip,
-     games/shared.tsx). They match this value at Square, Small and Default
-     and draw 9.6px against its 6 at Large (computed), so pointing them
-     here moves nothing the grid photographs; it is owed. And two registry
-     rules restyle a Kbd placed inside them: a tooltip's `rounded-sm` and an
-     input group addon's `calc(var(--radius) - 5px)` (9.6 and 11px at
-     Large, computed), which no Kbd in the app is inside today. */
+     One rule still gives a key a corner of its own, and on purpose: an
+     input group addon's `calc(var(--radius) - 5px)` (ui/input-group.tsx)
+     is the registry's concentric corner for a key inside a field, the
+     field's radius less the key's inset. The key sits 6px inside the
+     field (measured in Chromium), so concentric asks 0 / 0 / 4 / 10px
+     and the rule draws 0 / 0 / 5 / 11, within 1px at every setting,
+     where this value would draw 0 / 2.88 / 6 / 6: 2px rounder than
+     concentric at Default and 4px flatter at Large. No key sits in a
+     field today. */
   --radius-chip: min(var(--radius-sm), 6px);
 }
 
