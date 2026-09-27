@@ -655,8 +655,8 @@ function NoteEditor({
 
 /**
  * The note's title, renameable in place: by a double-click, and on a
- * phone, where a finger has no double-click, by Rename in the header's ⋯
- * (DocumentTools), which calls startRename through `ref`. Both open this
+ * phone, where nothing points to a double tap, by Rename in the header's
+ * ⋯ (DocumentTools), which calls startRename through `ref`. Both open this
  * one field at the title's own size, the way a study's title does
  * (StudyView's TitleEditor). A touch screen from md has no ⋯, and renames
  * from the shelf's row menu. A rename keeps the folder: only the last

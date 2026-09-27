@@ -534,8 +534,8 @@ export function StudyView({
 
 /**
  * The document title, renameable in place: by a double-click, and on a
- * phone, where a finger has no double-click, by Rename in the header's ⋯
- * (DocumentTools), which calls startRename through `ref`. Both open this
+ * phone, where nothing points to a double tap, by Rename in the header's
+ * ⋯ (DocumentTools), which calls startRename through `ref`. Both open this
  * one field at the title's own size. There is no pencil for it: the note
  * on the header's one edit button says why, and DocumentTools says what a
  * pencil here cost the title. A touch screen from md has no ⋯, and renames

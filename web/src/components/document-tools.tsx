@@ -43,8 +43,11 @@ export interface TitleRename {
  * no sheet, which is every desktop one.
  *
  * The phone's menu also leads with Rename, which has no button on a
- * desktop. The title renames in place on a double-click, which a finger
- * cannot give, so this verb opens that same field, as a book's ⋯ does
+ * desktop. The title renames in place on a double-click, and nothing on
+ * a phone points to it: a double tap reached it in Chromium's touch
+ * emulation (two taps up to 250ms apart) and not in Playwright's WebKit,
+ * so on touch it is a hidden gesture at best. This verb opens that same
+ * field in place, which is what a book's ⋯ does for its own title
  * (BookPage); it leads because the title leads the row. It is a verb in
  * here and not a pencil on the row for the reason the three fold: a
  * pencil beside the title, measured on the demo at 375px, took the title
