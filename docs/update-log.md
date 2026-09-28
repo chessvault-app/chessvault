@@ -198,6 +198,17 @@ so far.
   starts with "Rename", which opens the title's own field in place.
   Nothing is added to the title row, which keeps all its width. A
   tablet, whose header has no ⋯, still renames from the shelf.
+- **Typing in the Databases tab's search box narrows a search by
+  position, material or motif, however fast you type.** A key pressed
+  while such a search's results stood cleared them, showed the text
+  search's rows for a quarter of a second, then ran the search again,
+  and a second key inside that quarter second lost the search
+  altogether. Closing the search or switching databases in the same
+  moment could bring back the search just closed, or rows from the
+  database just left. Now the box narrows the search that stands, and a
+  pause that finds the box as it was asks for nothing: a phone's Cancel
+  on an empty box no longer runs the search again, and undoing a typo
+  keeps the pages already scrolled through.
 
 ## 0.11.4
 
