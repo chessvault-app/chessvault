@@ -724,15 +724,18 @@ export function DatabaseGames({
     const boxQ = filterRef.current.query.trim();
     huntRead.current = boxQ;
     if (boxQ) params.set('q', boxQ);
+    // The kind picks the branch, never the Motif list's entries: the
+    // list holds a pick whatever kind is up, and a branch that asked
+    // only for the entry sent it for a Material search too.
     if (huntKind === 'position') {
       params.set('fen', (fenOverride ?? huntFen).trim());
       if (rung !== 'exact') params.set('match', rung);
-    } else if (structureEntry) {
+    } else if (huntKind === 'motif' && structureEntry) {
       // A named structure is a pawn sketch on the structure rung —
       // the editor handoff's own shape, with the sketch as data.
       params.set('fen', structureEntry.fen);
       params.set('match', 'structure');
-    } else if (motifEntry) {
+    } else if (huntKind === 'motif' && motifEntry) {
       // The knobs a motif does not have are sent at their neutral
       // values, which is what the server would default them to.
       params.set(
