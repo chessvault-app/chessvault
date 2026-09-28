@@ -1,5 +1,5 @@
 ﻿import { CornerDownLeft, Database, Grid3x3, Info, ListChecks, ListPlus, Play, Plus, ScanSearch, Search, SearchX, SlidersHorizontal, X } from 'lucide-react';
-import { Suspense, lazy, memo, useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { Fragment, Suspense, lazy, memo, useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
 import { getNode, mainlineFrom } from '@shared/tree';
@@ -1560,8 +1560,17 @@ export function DatabaseGames({
           },
         ]}
       />)}
+      {/* Each kind's controls under a key of their own, so a switch
+          mounts the new kind's fresh. Unkeyed, the three fragments shared
+          one slot, and React handed the Motif list's Select to the
+          Material list as the same instance (the same DOM node, probed
+          on the demo). Base UI then saw its items change while it still
+          held the Motif value, and wrote a fallback of its own into the
+          Material state: the value it was first mounted with, or null.
+          A Motif pick left Material reading "—", and a Rook endgame came
+          back from Motif as a Pawn endgame. */}
       {huntKind === 'position' ? (
-        <>
+        <Fragment key="position">
           {named('Paste a FEN', <ClearableInput
             inputSize="sm"
             value={huntFen}
@@ -1612,9 +1621,9 @@ export function DatabaseGames({
             />)}
             {lifted ? sheetRunButton : runButton}
           </span>
-        </>
+        </Fragment>
       ) : huntKind === 'motif' ? (
-        <>
+        <Fragment key="motif">
           {named('Motif', <Select
             value={motifId}
             onValueChange={(v) => {
@@ -1665,9 +1674,9 @@ export function DatabaseGames({
             )}
             {lifted ? sheetRunButton : runButton}
           </span>
-        </>
+        </Fragment>
       ) : (
-        <>
+        <Fragment key="material">
           {named('Material', <Select
             value={presetId}
             onValueChange={(v) => {
@@ -1734,7 +1743,7 @@ export function DatabaseGames({
             />)}
             {lifted ? sheetRunButton : runButton}
           </span>
-        </>
+        </Fragment>
       )}
     </div>
   );
