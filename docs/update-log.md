@@ -127,15 +127,20 @@ so far.
   cost the phone a second blur per button on every scrolled frame and
   was worth two parts in 255 to look at. The buttons take the bar's own
   material now. Nothing else on the page moved.
-- **A shelf's bookmark filter and Games' More filters show that they
-  are on.** On an iPhone the pressed bookmark filter wore the same glass
-  as the buttons beside it, and on the compact header it had no fill at
-  all, so only its filled icon said it was on. More filters, lit while
-  its window holds a filter, had the same fault, and only its corner dot
-  said so. Both keep their own fill now, in the title row and on the
-  header, as they already did on Android. On Android the bookmark filter
-  takes the squared corners a selected control has, where it had stayed
-  round; More filters stays round, since it opens a window rather than
+- **A shelf's bookmark filter, Games' More filters and the Databases
+  tab's position search show that they are on.** On an iPhone the
+  pressed bookmark filter wore the same glass as the buttons beside it,
+  and on the compact header it had no fill at all, so only its filled
+  icon said it was on. More filters, lit while its window holds a
+  filter, had the same fault, and only its corner dot said so. So did
+  the button for the search by position, material or motif, lit while
+  such a search's results are on the list, which only the line under
+  the title said. All three keep their own fill now, in the title row
+  and on the header, as they already did on Android; the search button
+  stays glass while its sheet is open, as a button does while its window
+  is up. On Android the bookmark filter takes the squared corners a
+  selected control has, where it had stayed round; More filters and the
+  search button stay round, since each opens a window rather than
   switching anything.
 - **Parts that had drifted from the rest of the app now match it.** An
   audit of how consistently the app uses its own design found places

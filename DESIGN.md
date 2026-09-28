@@ -965,7 +965,8 @@ hit areas, `title` as a tooltip. Composites live in
   the home-indicator inset, gone while the keyboard is up. On iOS the back chevron and a
   header's icon actions stand in 40px glass circles (a pressed one, the
   bookmark filter, and a lit one marked `data-chrome-lit`, Games' More
-  filters, in its own accent fill instead) and its text buttons
+  filters and the Databases tab's position search while a search stands
+  with its sheet shut, in its own accent fill instead) and its text buttons
   in 40px pills, the primary one filled (`shell.css`, on rows marked
   `data-chrome`). Each tab is a
   28px-tall, 56px-wide pill track over a `text-xs` label; the current
