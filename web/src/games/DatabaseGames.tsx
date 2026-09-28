@@ -479,8 +479,15 @@ export function DatabaseGames({
       if the box moved while the hunt had it, and a settled keystroke
       asks nothing when the box is back to it (settleBox). Null after a
       fresh search failed: the rows still answer an older box, so
-      neither of those may take them for this one. */
+      neither of those may take them for this one. Only a fresh search
+      writes it: a page adds to rows that already answer it. */
   const searchedQ = useRef<string | null>('');
+  /** The text the rows on screen are the first page of, set when that
+      page lands. The next page continues THIS, never the box: the box
+      may have moved since, and a page of the new text under rows of the
+      old was a list answering neither, which a settled keystroke finding
+      the box already asked for then kept. */
+  const rowsQ = useRef('');
   /** The committed filters as query params — the /search and the deep
       hunt speak the same gamesWhere, so one builder serves both. Reads
       through filterRef so its identity never moves. */
@@ -502,7 +509,7 @@ export function DatabaseGames({
   // search. The server seeks below it instead of walking an OFFSET.
   const search = useCallback(async (q: string, cursor: number | null, db: string | null) => {
     const seq = ++searchSeq.current;
-    searchedQ.current = q;
+    if (cursor === null) searchedQ.current = q;
     setLoading(true);
     setFresh(cursor === null);
     const params = new URLSearchParams({ q });
@@ -520,6 +527,7 @@ export function DatabaseGames({
     // first page leaves them answering whatever came before it.
     if (!data && cursor === null) searchedQ.current = null;
     if (data) {
+      if (cursor === null) rowsQ.current = q;
       // Only the first page of a search carries a total — counting matches
       // means scanning, and every later page would count the same thing.
       if (data.total !== null) {
@@ -972,20 +980,21 @@ export function DatabaseGames({
   }, [resultFilter, minElo, structured]);
 
   // Infinite scroll: a sentinel row near the list's end pulls the next
-  // page as it approaches the viewport.
+  // page as it approaches the viewport. The page continues the rows'
+  // own text (rowsQ), not the box's: the cursor is theirs.
   const sentinel = useRef<HTMLLIElement>(null);
   useEffect(() => {
     const el = sentinel.current;
     if (!el || loading || rows.length === 0 || nextCursor === null) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) void search(query, nextCursor, curDb);
+        if (entries[0]?.isIntersecting) void search(rowsQ.current, nextCursor, curDb);
       },
       { rootMargin: '200px' },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [rows.length, nextCursor, loading, query, search, curDb]);
+  }, [rows.length, nextCursor, loading, search, curDb]);
 
   // Which database a game row means — every per-game fetch carries it,
   // and every per-game cache key does too: row ids restart at 1 in each
