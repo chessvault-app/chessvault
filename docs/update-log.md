@@ -222,10 +222,11 @@ so far.
   instead: the Isolated queen's pawn, unless another motif or a pawn
   structure had been picked there. The preset or the custom counts, the
   side and how long it must hold were never sent, so the games it found
-  were that motif's games, not that material's. On a desktop, switching
-  Search by between Material and Motif could also change what the other
-  list held: a preset came back as Pawn endgame or empty, and a motif as
-  the Isolated queen's pawn. Each list now keeps what was picked in it.
+  were that motif's games, not that material's. On a tablet or a
+  desktop, switching Search by between Material and Motif could also
+  change what the other list held, back to an entry it had shown
+  earlier, such as Pawn endgame or the Isolated queen's pawn, or to
+  nothing. Each list now keeps what was picked in it.
 
 ## 0.11.4
 
