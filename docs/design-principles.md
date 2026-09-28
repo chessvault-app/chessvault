@@ -1369,7 +1369,7 @@ drawn, and what one has to prove.
   hook in `components/action-menu.tsx` decides, and the long-press menu
   keeps the sheet on every phone, having no control to hang from). Its
   rows are 44px under a thumb on every platform
-  (`pointer-coarse:py-2.5`, as a Select's are; they measured 32px); the back chevron and a header's icon actions in glass circles, a pressed one (a shelf's bookmark filter) in its own on-state fill instead of the glass, and
+  (`pointer-coarse:py-2.5`, as a Select's are; they measured 32px); the back chevron and a header's icon actions in glass circles, a pressed one (a shelf's bookmark filter) or a lit one that marks itself `data-chrome-lit` (Games' More filters, lit while a filter is on) in its own on-state fill instead of the glass, and
   its text buttons (a shelf's Create, Import) in pills of the same
   height, the primary one in its own fill, rather than bare on the page
   (one rule in `styles/shell.css` on the rows marked `data-chrome`,
