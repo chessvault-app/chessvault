@@ -477,10 +477,12 @@ export function DatabaseGames({
   const searchSeq = useRef(0);
   /** What the text rows last answered — closing a hunt refetches only
       if the box moved while the hunt had it, and a settled keystroke
-      asks nothing when the box is back to it (settleBox). Null after a
-      fresh search failed: the rows still answer an older box, so
-      neither of those may take them for this one. Only a fresh search
-      writes it: a page adds to rows that already answer it. */
+      asks nothing when the box is back to it (settleBox). Null when the
+      rows answer nothing current: a fresh search failed (they still
+      answer an older box), or the filters moved while a hunt had the
+      pane (reask). Neither of those may take them for this box then.
+      Only a fresh search writes a text: a page adds to rows that
+      already answer it. */
   const searchedQ = useRef<string | null>('');
   /** The text the rows on screen are the first page of, set when that
       page lands. The next page continues THIS, never the box: the box
@@ -967,8 +969,13 @@ export function DatabaseGames({
     structured: StructuredFilters;
   } | null>(null);
   const reask = useEffectEvent(() => {
-    if (huntRows !== null) void runHunt();
-    else void search(query, null, curDb);
+    if (huntRows !== null) {
+      // The text rows under the hunt were asked under the filters just
+      // left, so they answer no box now: closing the hunt refetches
+      // them, and so does a keystroke settling after it.
+      searchedQ.current = null;
+      void runHunt();
+    } else void search(query, null, curDb);
   });
   useEffect(() => {
     const was = asked.current;
