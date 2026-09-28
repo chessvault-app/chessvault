@@ -198,6 +198,25 @@ so far.
   starts with "Rename", which opens the title's own field in place.
   Nothing is added to the title row, which keeps all its width. A
   tablet, whose header has no ⋯, still renames from the shelf.
+- **Typing in the Databases tab's search box narrows a search by
+  position, material or motif, however fast you type.** A key pressed
+  while such a search's results stood cleared them, showed the text
+  search's rows for a quarter of a second, then ran the search again,
+  and a second key inside that quarter second lost the search
+  altogether. Closing the search or switching databases in the same
+  moment could bring back the search just closed, or rows from the
+  database just left. Now the box narrows the search that stands, and a
+  pause that finds the box as it was asks for nothing: a phone's Cancel
+  on an empty box no longer runs the search again, and undoing a typo
+  keeps the pages already scrolled through. And closing such a search
+  after changing a filter brings back the text search's rows under the
+  filters that stand, not the ones left.
+- **The explorer's “Find this position in the databases browser” searches
+  the position it hands over.** Back on a Databases tab left open under
+  a game, it ran that tab's previous search instead: the field showed the
+  new position over the old search's games, or over a message that it
+  was not a position. Handed another database, it narrowed the search by
+  text the box had just been emptied of.
 
 ## 0.11.4
 

@@ -46,6 +46,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { EmptyState } from '@/components/empty-state';
 import { GameListShell, type GameListShape } from './GameListShell';
+import { settledBoxAsks } from './settled-box';
 
 import type { RefDb } from '@/databases/RefDbManager';
 import { t } from '@/lib/i18n';
@@ -474,9 +475,21 @@ export function DatabaseGames({
   const tableVars = useGameTableVars(selecting, !besideDetails);
 
   const searchSeq = useRef(0);
-  /** What the text rows last answered — closing a hunt refetches only
-      if the box moved while the hunt had it. */
-  const searchedQ = useRef('');
+  /** What the text rows were last asked for from the top: closing a
+      hunt refetches them unless the box still says this, and a settled
+      keystroke asks nothing when the box is back to it (settleBox).
+      Null when the rows answer nothing current: a fresh search failed
+      (they still answer an older box), or the filters moved while a
+      hunt had the pane (reask). Neither of those may take them for this
+      box then. Only a fresh search writes a text: a page adds to rows
+      that already answer it. */
+  const searchedQ = useRef<string | null>('');
+  /** The text the rows on screen are the first page of, set when that
+      page lands. The next page continues THIS, never the box: the box
+      may have moved since, and a page of the new text under rows of the
+      old was a list answering neither, which a settled keystroke finding
+      the box already asked for then kept. */
+  const rowsQ = useRef('');
   /** The committed filters as query params — the /search and the deep
       hunt speak the same gamesWhere, so one builder serves both. Reads
       through filterRef so its identity never moves. */
@@ -498,7 +511,7 @@ export function DatabaseGames({
   // search. The server seeks below it instead of walking an OFFSET.
   const search = useCallback(async (q: string, cursor: number | null, db: string | null) => {
     const seq = ++searchSeq.current;
-    searchedQ.current = q;
+    if (cursor === null) searchedQ.current = q;
     setLoading(true);
     setFresh(cursor === null);
     const params = new URLSearchParams({ q });
@@ -512,7 +525,11 @@ export function DatabaseGames({
     const data = await api<Page>(`/api/refgames/search?${params.toString()}`).catch((): Page | null => null);
     // Superseded: whoever holds the latest number owns the state.
     if (seq !== searchSeq.current) return;
+    // A failed page leaves the rows answering q, a page short; a failed
+    // first page leaves them answering whatever came before it.
+    if (!data && cursor === null) searchedQ.current = null;
     if (data) {
+      if (cursor === null) rowsQ.current = q;
       // Only the first page of a search carries a total — counting matches
       // means scanning, and every later page would count the same thing.
       if (data.total !== null) {
@@ -611,6 +628,10 @@ export function DatabaseGames({
   const [huntExhaustive, setHuntExhaustive] = useState(true);
   const [huntFailed, setHuntFailed] = useState<'failed' | 'bad-fen' | null>(null);
   const huntSeq = useRef(0);
+  /** The box as the latest hunt read it, trimmed as its request sends
+      it: a settled keystroke that finds the box back to this while a
+      hunt stands has nothing to re-run (settleBox). */
+  const huntRead = useRef('');
   // Unmounting must take an in-flight hunt with it: the bump makes the
   // read loop cancel its reader, which aborts the server's scan.
   useEffect(
@@ -632,8 +653,9 @@ export function DatabaseGames({
 
   const clearHunt = (): void => {
     abandonHunt();
-    // While the hunt was open the box was editing the HUNT — if it
-    // moved, the text rows this returns to answer a stale query.
+    // While the hunt was open the box and the filters were editing the
+    // HUNT: if either moved (a filter press leaves searchedQ null), the
+    // text rows this returns to answer a stale query.
     if (searchedQ.current !== query) void search(query, null, curDb);
   };
 
@@ -700,6 +722,7 @@ export function DatabaseGames({
     // The box narrows the hunt too — the server parses the same
     // query language and folds the terms into the scan's WHERE.
     const boxQ = filterRef.current.query.trim();
+    huntRead.current = boxQ;
     if (boxQ) params.set('q', boxQ);
     if (huntKind === 'position') {
       params.set('fen', (fenOverride ?? huntFen).trim());
@@ -877,6 +900,18 @@ export function DatabaseGames({
     rowsFor.current = next;
     setRows([]);
     setQuery('');
+    // And emptied for whatever reads the box before that render lands:
+    // a hunt started in this same flush (the explorer's hand-off, below)
+    // sends filterRef's text, and it would have narrowed the new
+    // database's hunt by the text this just threw away. The render that
+    // shows the empty box refills the ref with this same ''.
+    filterRef.current = { ...filterRef.current, query: '' };
+    // A keystroke still settling was typed into the box this empties,
+    // for the database this leaves, so it is dropped. Not left for
+    // settleBox to read: this runs as an effect, the emptied box
+    // commits a render later, and a debounce falling due in between
+    // would read the old text against the new database.
+    if (debounce.current) clearTimeout(debounce.current);
     onSelectRef.current?.(null);
     // A hunt's rows answered a database that is no longer the one on
     // screen; the controls keep their draft, the results do not.
@@ -895,24 +930,43 @@ export function DatabaseGames({
     // meta.ready + a matching pick means the reconcile above is done
     // with this database — whether it searched or kept the eager rows.
     if (!handed || !meta?.ready || curDb !== handed.db) return;
+    // And the controls must already say what was handed. A pane kept
+    // under an open game (lib/keep-alive) runs its effects again when it
+    // is shown, with meta in hand: a hand-off to the database already
+    // picked passed the test above in the very flush that consumed it,
+    // before the kind and the FEN it set had rendered, and this render's
+    // runHunt hunted the position searched BEFORE, under the new FEN.
+    if (huntKind !== 'position' || huntFen !== handed.fen) return;
     autoHunt.current = null;
     void runHunt();
-  }, [meta, curDb, runHunt]);
+  }, [meta, curDb, runHunt, huntKind, huntFen]);
+
+  // What the box asks for once the typing settles is decided when the
+  // debounce FIRES, from the pane as it stands then: whether a hunt
+  // stands, which database, what the box says. Not from the keystroke's
+  // render: a timer holding that closure re-ran a hunt that had been
+  // closed since, and searched a database that had been switched away
+  // from. Filled from a layout effect, like filterRef above, so the
+  // timer reads the last commit. And a fire that finds the rows already
+  // answering the box asks for nothing (./settled-box says which paths
+  // lean on that).
+  const settleBox = useRef<() => void>(() => {});
+  useLayoutEffect(() => {
+    settleBox.current = () => {
+      const ask = settledBoxAsks(query, huntRows !== null ? huntRead.current : null, searchedQ.current);
+      if (ask === 'hunt') void runHunt();
+      else if (ask === 'search') void search(query, null, curDb);
+    };
+  });
 
   const onQuery = (q: string): void => {
-    // Typing a text search is leaving the hunt: the rows must answer
-    // the box the user is typing into, not a board they searched before.
-    if (huntRows !== null) clearHunt();
     onSelectRef.current?.(null);
     setQuery(q);
     if (debounce.current) clearTimeout(debounce.current);
     // With a hunt open the box edits the HUNT, exactly as a filter
     // press does below — the stale-sequence guard abandons the scan
     // this keystroke obsoletes.
-    debounce.current = setTimeout(() => {
-      if (huntRows !== null) void runHunt();
-      else void search(q, null, curDb);
-    }, 250);
+    debounce.current = setTimeout(() => settleBox.current(), 250);
   };
 
   // A filter press re-asks from the top, with the query still in the box
@@ -929,8 +983,13 @@ export function DatabaseGames({
     structured: StructuredFilters;
   } | null>(null);
   const reask = useEffectEvent(() => {
-    if (huntRows !== null) void runHunt();
-    else void search(query, null, curDb);
+    if (huntRows !== null) {
+      // The text rows under the hunt were asked under the filters just
+      // left, so they answer no box now, and closing the hunt refetches
+      // them whatever the box says.
+      searchedQ.current = null;
+      void runHunt();
+    } else void search(query, null, curDb);
   });
   useEffect(() => {
     const was = asked.current;
@@ -942,20 +1001,21 @@ export function DatabaseGames({
   }, [resultFilter, minElo, structured]);
 
   // Infinite scroll: a sentinel row near the list's end pulls the next
-  // page as it approaches the viewport.
+  // page as it approaches the viewport. The page continues the rows'
+  // own text (rowsQ), not the box's: the cursor is theirs.
   const sentinel = useRef<HTMLLIElement>(null);
   useEffect(() => {
     const el = sentinel.current;
     if (!el || loading || rows.length === 0 || nextCursor === null) return;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting) void search(query, nextCursor, curDb);
+        if (entries[0]?.isIntersecting) void search(rowsQ.current, nextCursor, curDb);
       },
       { rootMargin: '200px' },
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [rows.length, nextCursor, loading, query, search, curDb]);
+  }, [rows.length, nextCursor, loading, search, curDb]);
 
   // Which database a game row means — every per-game fetch carries it,
   // and every per-game cache key does too: row ids restart at 1 in each
