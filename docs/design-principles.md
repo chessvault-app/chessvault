@@ -1369,7 +1369,7 @@ drawn, and what one has to prove.
   hook in `components/action-menu.tsx` decides, and the long-press menu
   keeps the sheet on every phone, having no control to hang from). Its
   rows are 44px under a thumb on every platform
-  (`pointer-coarse:py-2.5`, as a Select's are; they measured 32px); the back chevron and a header's icon actions in glass circles, and
+  (`pointer-coarse:py-2.5`, as a Select's are; they measured 32px); the back chevron and a header's icon actions in glass circles, a pressed one (a shelf's bookmark filter) in its own on-state fill instead of the glass, and
   its text buttons (a shelf's Create, Import) in pills of the same
   height, the primary one in its own fill, rather than bare on the page
   (one rule in `styles/shell.css` on the rows marked `data-chrome`,
@@ -1582,7 +1582,8 @@ drawn, and what one has to prove.
   Android took Material 3 Expressive's shapes: header icon actions as
   40px round buttons and text actions as 40px capsules in the fill their
   variant already has, the back chevron bare; a press answered by a 10%
-  state layer and a corner morph to 12px (a radius that morphs is
+  state layer and a corner morph to 12px, which a pressed control (a
+  shelf's bookmark filter) keeps while it is on (a radius that morphs is
   written as a number, since `rounded-full` is `calc(infinity)` and
   cannot interpolate) and no ripple, which would be a second clock; a
   page's claimed controls as the floating toolbar, a 64px pill hugging

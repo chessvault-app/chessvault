@@ -963,7 +963,8 @@ hit areas, `title` as a tooltip. Composites live in
   docked face is `bg-card` (its fill is its
   edge; `border-card-ring` draws the line only under High contrast) and
   the home-indicator inset, gone while the keyboard is up. On iOS the back chevron and a
-  header's icon actions stand in 40px glass circles and its text buttons
+  header's icon actions stand in 40px glass circles (a pressed one, the
+  bookmark filter, in its own accent fill instead) and its text buttons
   in 40px pills, the primary one filled (`shell.css`, on rows marked
   `data-chrome`). Each tab is a
   28px-tall, 56px-wide pill track over a `text-xs` label; the current
