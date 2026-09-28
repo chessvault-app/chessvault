@@ -150,14 +150,16 @@
      says with `data-chrome-lit`: More filters on Games, lit while its
      window holds a filter. It is not a toggle and carries no
      aria-pressed, so the cut-out above never reached it: lit, it read
-     the glass in the title row, oklch(0.95 0.004 264 / 0.7) and the
-     blur, its unlit neighbour's exactly, and on the bar transparent, so
-     only its corner dot said filters were on. It now reads oklch(0.889)
-     in the title row and oklch(0.928) on the bar, what Glass off drew
-     (same static page, 2026-09-28). Why a marker and not the lit state
-     itself: `active` (data-active) is also how the app lights a trigger
-     while its own menu or sheet is up (`active={menuOpen}`: the ⋯ on a
-     note's, a study's and a puzzle book's header), and keyed on
+     the glass in the title row (in light oklch(0.95 0.004 264 / 0.7)
+     and the blur, its unlit neighbour's exactly) and on the bar
+     transparent, so only its corner dot said filters were on. It now
+     reads its own fill, what Glass off drew: in light oklch(0.889) in
+     the title row and oklch(0.928) on the bar, in dark oklch(0.410) and
+     oklch(0.380) (same static page, 2026-09-28). Why a marker and not
+     the lit state itself: `active` (data-active) is also how the app
+     lights a trigger while its own menu or sheet is up
+     (`active={menuOpen}`: the ⋯ on a note's, a study's and a puzzle
+     book's header), and keyed on
      data-active alone every such ⋯ would turn into a filled circle while
      its menu was open. Those carry aria-expanded="true" then (Base UI's
      menu trigger, ActionMenu's sheet), but the hunt switch beside More
