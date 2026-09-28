@@ -95,9 +95,10 @@
    Under md only, which is where the label is off and the phone chrome
    is; an iPad from md keeps the docked platforms' shape here. */
 @media (max-width: 47.9375rem) {
-  /* Icon buttons of any face but the primary, while not pressed: glass
-     circles. Not on the compact bar, which is glass itself; the rule at
-     the foot of this block says why and draws them there.
+  /* Icon buttons of any face but the primary, while not pressed and not
+     lit by a standing state: glass circles. Not on the compact bar,
+     which is glass itself; the rule at the foot of this block says why
+     and draws them there.
 
      Every circle and capsule rule here that sets `ring-1` names the
      focus state beside it, in the registry's own classes (the search
@@ -117,9 +118,9 @@
      drawn this changes nothing: the utility's own `:focus-visible` nests
      `:root:not([data-glass='off'])` and so outranks it, and draws the
      ring itself. */
-  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']):not([aria-pressed='true']),
+  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]),
   :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='toggle']:not([aria-pressed='true']),
-  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-chrome-circle]:not([data-variant='default']):not([aria-pressed='true']) {
+  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-chrome-circle]:not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]) {
     @apply glass size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring active:opacity-70;
   }
   /* The primary-filled icon button (a note's Edit while editing) keeps the
@@ -143,12 +144,34 @@
      compiled stylesheet, 375 wide, Chromium and WebKit, 2026-09-28). The
      rule meant to keep it named a Toggle, which no chrome row holds, and
      lost to the glass by specificity even where it matched. No ring is
-     set here, so the registry's `focus-visible:ring-3` composes. */
+     set here, so the registry's `focus-visible:ring-3` composes.
+
+     And so is a lit control whose lit state is a standing one, which it
+     says with `data-chrome-lit`: More filters on Games, lit while its
+     window holds a filter. It is not a toggle and carries no
+     aria-pressed, so the cut-out above never reached it: lit, it read
+     the glass in the title row, oklch(0.95 0.004 264 / 0.7) and the
+     blur, its unlit neighbour's exactly, and on the bar transparent, so
+     only its corner dot said filters were on. It now reads oklch(0.889)
+     in the title row and oklch(0.928) on the bar, what Glass off drew
+     (same static page, 2026-09-28). Why a marker and not the lit state
+     itself: `active` (data-active) is also how the app lights a trigger
+     while its own menu or sheet is up (`active={menuOpen}`: the ⋯ on a
+     note's, a study's and a puzzle book's header), and keyed on
+     data-active alone every such ⋯ would turn into a filled circle while
+     its menu was open. Those carry aria-expanded="true" then (Base UI's
+     menu trigger, ActionMenu's sheet), but the hunt switch beside More
+     filters on the Databases tab is lit while its sheet is open and
+     carries no aria-expanded, so "lit and not expanded" would still have
+     caught it. The marker is what tells a standing state from an open
+     one; an open ⋯ and the hunt switch keep the glass. */
   :root[data-platform='ios'] [data-chrome] button[data-chrome-circle][data-variant='default'],
   :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='icon-sm'][data-variant='default'],
   :root[data-platform='ios'] [data-chrome] button[data-chrome-circle][aria-pressed='true'],
   :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='icon-sm'][aria-pressed='true'],
-  :root[data-platform='ios'] [data-chrome] button[data-slot='toggle'][aria-pressed='true'] {
+  :root[data-platform='ios'] [data-chrome] button[data-slot='toggle'][aria-pressed='true'],
+  :root[data-platform='ios'] [data-chrome] button[data-chrome-circle][data-active][data-chrome-lit],
+  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='icon-sm'][data-active][data-chrome-lit] {
     @apply size-10 shrink-0 rounded-full px-0 shadow-md active:opacity-70;
   }
   /* Text buttons in the chrome are pills of the same height: the shelves'
@@ -156,12 +179,14 @@
      outline button beside them (a glass pill). A rounded rectangle with a
      word in it beside glass circles read as two vocabularies on one row
      (lanph3re, 2026-09-18); iOS 26 draws its bar buttons as capsules.
-     A pressed pill keeps its fill, as a pressed circle does. */
-  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']):not([aria-pressed='true']) {
+     A pressed pill keeps its fill, as a pressed circle does, and so does
+     a lit one that marks itself `data-chrome-lit` (none is drawn today). */
+  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]) {
     @apply glass h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring active:opacity-70;
   }
   :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='sm'][data-variant='default']:not([data-chrome-circle]),
-  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='sm'][aria-pressed='true']:not([data-chrome-circle]):not([data-variant='ghost']) {
+  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='sm'][aria-pressed='true']:not([data-chrome-circle]):not([data-variant='ghost']),
+  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='sm'][data-active][data-chrome-lit]:not([data-chrome-circle]):not([data-variant='ghost']) {
     @apply h-10 shrink-0 rounded-full px-4 shadow-md active:opacity-70;
   }
   /* A search field's own Cancel, where the field has taken a title row
@@ -260,14 +285,15 @@
      control on it is the separation those readers asked for. The focus
      state is named as at the circles, and under reduced transparency it
      is what the restore below reads. A pressed control is in none of
-     these, nor in the flush below: it keeps its own fill on the bar too,
-     as the primary does, drawn by the rules for both above. */
-  :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']):not([aria-pressed='true']),
+     these, nor in the flush below, and nor is a lit one marked
+     `data-chrome-lit` (More filters): each keeps its own fill on the bar
+     too, as the primary does, drawn by the rules for all three above. */
+  :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]),
   :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),
-  :root[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']):not([aria-pressed='true']) {
+  :root[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]) {
     @apply size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring active:opacity-70;
   }
-  :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']):not([aria-pressed='true']) {
+  :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]) {
     @apply h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring active:opacity-70;
   }
   /* The Cancel keeps a control's stroke here too, for the reason given
@@ -324,10 +350,10 @@
      toggle on the bar changed zero pixels under `reduce` too (Chromium
      with reduce emulated, same page, 2026-09-27). */
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']):not([aria-pressed='true']),
+    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]),
     :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),
-    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']):not([aria-pressed='true']),
-    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']):not([aria-pressed='true']),
+    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]),
+    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]),
     :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-search-cancel]:not([aria-hidden='true']) {
       background-color: transparent;
       box-shadow: inset 0 0 0 var(--glass-edge-w, 1px) var(--glass-edge), var(--shadow-panel);
@@ -339,10 +365,10 @@
       }
     }
     @media (prefers-reduced-transparency: reduce) {
-      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']):not([aria-pressed='true']),
+      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]),
       :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),
-      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']):not([aria-pressed='true']),
-      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']):not([aria-pressed='true']),
+      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]),
+      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]),
       :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-search-cancel]:not([aria-hidden='true']) {
         background-color: revert-layer;
         box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -424,7 +450,10 @@
      springs back when it is let go: the bookmark filter on a shelf and on
      Games, which is a registry Button (`active`, aria-pressed) and not a
      Toggle, so a rule naming only the Toggle never reached it and the
-     filter stayed round when on. A Toggle takes it too. */
+     filter stayed round when on. A Toggle takes it too. A control lit
+     without being pressed (More filters, while filters are on) stays
+     round: M3E squares a selected toggle, and that button opens a window
+     rather than toggling anything; its own fill says it is lit. */
   :root[data-platform='android'] [data-chrome] button[data-slot='button'][aria-pressed='true'],
   :root[data-platform='android'] [data-chrome] button[data-slot='toggle'][aria-pressed='true'] {
     border-radius: 0.75rem;
