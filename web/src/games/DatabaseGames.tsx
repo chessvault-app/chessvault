@@ -899,6 +899,12 @@ export function DatabaseGames({
     rowsFor.current = next;
     setRows([]);
     setQuery('');
+    // And emptied for whatever reads the box before that render lands:
+    // a hunt started in this same flush (the explorer's hand-off, below)
+    // sends filterRef's text, and it would have narrowed the new
+    // database's hunt by the text this just threw away. The render that
+    // shows the empty box refills the ref with this same ''.
+    filterRef.current = { ...filterRef.current, query: '' };
     // A keystroke still settling was typed into the box this empties,
     // for the database this leaves, so it is dropped. Not left for
     // settleBox to read: this runs as an effect, the emptied box
@@ -923,9 +929,16 @@ export function DatabaseGames({
     // meta.ready + a matching pick means the reconcile above is done
     // with this database — whether it searched or kept the eager rows.
     if (!handed || !meta?.ready || curDb !== handed.db) return;
+    // And the controls must already say what was handed. A pane kept
+    // under an open game (lib/keep-alive) runs its effects again when it
+    // is shown, with meta in hand: a hand-off to the database already
+    // picked passed the test above in the very flush that consumed it,
+    // before the kind and the FEN it set had rendered, and this render's
+    // runHunt hunted the position searched BEFORE, under the new FEN.
+    if (huntKind !== 'position' || huntFen !== handed.fen) return;
     autoHunt.current = null;
     void runHunt();
-  }, [meta, curDb, runHunt]);
+  }, [meta, curDb, runHunt, huntKind, huntFen]);
 
   // What the box asks for once the typing settles is decided when the
   // debounce FIRES, from the pane as it stands then: whether a hunt
