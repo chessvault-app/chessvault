@@ -877,6 +877,12 @@ export function DatabaseGames({
     rowsFor.current = next;
     setRows([]);
     setQuery('');
+    // A keystroke still settling was typed into the box this empties,
+    // for the database this leaves, so it is dropped. Not left for
+    // settleBox to read: this runs as an effect, the emptied box
+    // commits a render later, and a debounce falling due in between
+    // would read the old text against the new database.
+    if (debounce.current) clearTimeout(debounce.current);
     onSelectRef.current?.(null);
     // A hunt's rows answered a database that is no longer the one on
     // screen; the controls keep their draft, the results do not.
@@ -899,20 +905,29 @@ export function DatabaseGames({
     void runHunt();
   }, [meta, curDb, runHunt]);
 
+  // What the box asks for once the typing settles is decided when the
+  // debounce FIRES, from the pane as it stands then: whether a hunt
+  // stands, which database, what the box says. Not from the keystroke's
+  // render: a timer holding that closure re-ran a hunt that had been
+  // closed since, and searched a database that had been switched away
+  // from. Filled from a layout effect, like filterRef above, so the
+  // timer reads the last commit.
+  const settleBox = useRef<() => void>(() => {});
+  useLayoutEffect(() => {
+    settleBox.current = () => {
+      if (huntRows !== null) void runHunt();
+      else void search(query, null, curDb);
+    };
+  });
+
   const onQuery = (q: string): void => {
-    // Typing a text search is leaving the hunt: the rows must answer
-    // the box the user is typing into, not a board they searched before.
-    if (huntRows !== null) clearHunt();
     onSelectRef.current?.(null);
     setQuery(q);
     if (debounce.current) clearTimeout(debounce.current);
     // With a hunt open the box edits the HUNT, exactly as a filter
     // press does below — the stale-sequence guard abandons the scan
     // this keystroke obsoletes.
-    debounce.current = setTimeout(() => {
-      if (huntRows !== null) void runHunt();
-      else void search(q, null, curDb);
-    }, 250);
+    debounce.current = setTimeout(() => settleBox.current(), 250);
   };
 
   // A filter press re-asks from the top, with the query still in the box
