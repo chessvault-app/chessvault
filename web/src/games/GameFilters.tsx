@@ -74,6 +74,12 @@ export function MoreFiltersButton({
       variant="secondary"
       size="icon-sm"
       active={on}
+      // Lit here means filters are on, never that its window is open,
+      // so the phone chrome keeps the lit fill (styles/shell.css). The
+      // same `active` on a ⋯ means its menu is up, and on the hunt
+      // switch it can mean its sheet is, so those carry no marker and
+      // stay glass.
+      data-chrome-lit=""
       title={t('More filters')}
       // Spread, not `aria-label={… : undefined}`: Button spreads its props
       // after the name it derives from `title`, so an explicit undefined
