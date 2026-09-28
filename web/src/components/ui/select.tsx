@@ -393,6 +393,36 @@ function SelectField({
   // Closed by the router before a page turn (lib/popups); the phone's
   // sheet branch takes the same close through its Dialog.
   useOpenPopup(open, () => setOpen(false));
+  // Base UI (1.8) calls onValueChange on its own from one place: when the
+  // options it renders change and the value its store holds is not among
+  // them (SelectPositioner's onMapChange, once a focus has mounted the
+  // list), it reports the value the root was first mounted with, or null.
+  // Its store lags the value prop by one commit there, so a caller that
+  // changes its options and its value together has a value that IS in
+  // the new list overwritten by that fallback: the Databases hunt's Motif
+  // and Material lists, one instance until they were keyed, turned a Rook
+  // endgame search into a Pawn endgame one. That report is dropped here,
+  // and only that one. When the caller's own value has left its list the
+  // fallback still goes through, as before: by reading, the editor's en
+  // passant square and the puzzle list's tier filter lean on it on a
+  // desktop (a phone's sheet has no Base root and never had it).
+  //
+  // Base makes that call from a layout effect, inside the commit that
+  // changed the options. A pick never comes from there: a click, the
+  // keyboard, typeahead on the closed trigger and autofill all arrive in
+  // events, outside any commit. So the flag spans this component's
+  // commit, set before any layout effect runs (an insertion effect) and
+  // cleared after its descendants' (its own layout effect). Measured in a
+  // two-list reproduction through this file: the fallbacks over a valid
+  // value dropped; clicks, arrow keys with Enter and typeahead still
+  // reported; a value that left its list still reset.
+  const inCommit = React.useRef(false);
+  React.useInsertionEffect(() => {
+    inCommit.current = true;
+  });
+  React.useLayoutEffect(() => {
+    inCommit.current = false;
+  });
   const flat = React.useMemo(() => groups.flatMap((g) => g.options), [groups]);
   const face = (text: string): string => (prefix ? `${t(prefix)}: ${text}` : text);
   const selected = flat.find((o) => o.value === value) ?? null;
@@ -529,7 +559,10 @@ function SelectField({
   return (
     <SelectPrimitive.Root
       value={value === undefined ? undefined : toBase(value)}
-      onValueChange={(v) => onValueChange?.(fromBase(v as string))}
+      onValueChange={(v) => {
+        if (inCommit.current && selected !== null) return;
+        onValueChange?.(fromBase(v as string));
+      }}
       open={open}
       onOpenChange={(next) => setOpen(next)}
       {...root}
