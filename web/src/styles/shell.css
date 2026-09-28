@@ -95,9 +95,9 @@
    Under md only, which is where the label is off and the phone chrome
    is; an iPad from md keeps the docked platforms' shape here. */
 @media (max-width: 47.9375rem) {
-  /* Icon buttons of any face but the primary: glass circles. Not on the
-     compact bar, which is glass itself; the rule at the foot of this
-     block says why and draws them there.
+  /* Icon buttons of any face but the primary, while not pressed: glass
+     circles. Not on the compact bar, which is glass itself; the rule at
+     the foot of this block says why and draws them there.
 
      Every circle and capsule rule here that sets `ring-1` names the
      focus state beside it, in the registry's own classes (the search
@@ -117,34 +117,51 @@
      drawn this changes nothing: the utility's own `:focus-visible` nests
      `:root:not([data-glass='off'])` and so outranks it, and draws the
      ring itself. */
-  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
-  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='toggle'],
-  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-chrome-circle]:not([data-variant='default']) {
+  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']):not([aria-pressed='true']),
+  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='toggle']:not([aria-pressed='true']),
+  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-chrome-circle]:not([data-variant='default']):not([aria-pressed='true']) {
     @apply glass size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring active:opacity-70;
-  }
-  /* A pressed toggle keeps its own fill (the bookmark filter on a shelf):
-     the shape of a circle over the toggle's on state. */
-  :root[data-platform='ios'] [data-chrome] button[data-slot='toggle'][aria-pressed='true'] {
-    @apply bg-accent;
   }
   /* The primary-filled icon button (a note's Edit while editing) keeps the
      primary fill, the button's own: the shape of a circle, not the glass,
      or its primary-foreground ink sat on the card's fill and the pencil
      vanished in dark (lanph3re, 2026-09-18). A filled circle among glass
-     ones is the active state. */
+     ones is the active state.
+
+     So is a pressed one, kept out of the glass above and out of the
+     bar's rules below for the same reason: its on state IS its fill. The
+     one in the chrome today is the bookmark filter on a shelf and on
+     Games, a registry Button whose `active` draws the accent (a rung up
+     on the page ground, button.tsx) under an icon in --primary; a
+     Toggle's own aria-pressed fill is the same accent. The glass drew
+     over that fill in the title row and the bar's flush rule made it
+     transparent, so the filter's on state was its filled icon alone: in
+     light its fill read oklch(0.95 0.004 264 / 0.7), its unpressed
+     neighbour's exactly, where Glass off drew oklch(0.889), and on the
+     bar transparent. It now reads oklch(0.889) in the title row and
+     oklch(0.928) on the bar, Glass on or off (static page over the
+     compiled stylesheet, 375 wide, Chromium and WebKit, 2026-09-28). The
+     rule meant to keep it named a Toggle, which no chrome row holds, and
+     lost to the glass by specificity even where it matched. No ring is
+     set here, so the registry's `focus-visible:ring-3` composes. */
   :root[data-platform='ios'] [data-chrome] button[data-chrome-circle][data-variant='default'],
-  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='icon-sm'][data-variant='default'] {
+  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='icon-sm'][data-variant='default'],
+  :root[data-platform='ios'] [data-chrome] button[data-chrome-circle][aria-pressed='true'],
+  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='icon-sm'][aria-pressed='true'],
+  :root[data-platform='ios'] [data-chrome] button[data-slot='toggle'][aria-pressed='true'] {
     @apply size-10 shrink-0 rounded-full px-0 shadow-md active:opacity-70;
   }
   /* Text buttons in the chrome are pills of the same height: the shelves'
      Create and Import (a primary pill, its own fill) and any secondary or
      outline button beside them (a glass pill). A rounded rectangle with a
      word in it beside glass circles read as two vocabularies on one row
-     (lanph3re, 2026-09-18); iOS 26 draws its bar buttons as capsules. */
-  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']) {
+     (lanph3re, 2026-09-18); iOS 26 draws its bar buttons as capsules.
+     A pressed pill keeps its fill, as a pressed circle does. */
+  :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']):not([aria-pressed='true']) {
     @apply glass h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring active:opacity-70;
   }
-  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='sm'][data-variant='default']:not([data-chrome-circle]) {
+  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='sm'][data-variant='default']:not([data-chrome-circle]),
+  :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='sm'][aria-pressed='true']:not([data-chrome-circle]):not([data-variant='ghost']) {
     @apply h-10 shrink-0 rounded-full px-4 shadow-md active:opacity-70;
   }
   /* A search field's own Cancel, where the field has taken a title row
@@ -242,13 +259,15 @@
      transparency all keep: there the bar is an opaque card and a filled
      control on it is the separation those readers asked for. The focus
      state is named as at the circles, and under reduced transparency it
-     is what the restore below reads. */
-  :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
+     is what the restore below reads. A pressed control is in none of
+     these, nor in the flush below: it keeps its own fill on the bar too,
+     as the primary does, drawn by the rules for both above. */
+  :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']):not([aria-pressed='true']),
   :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),
-  :root[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']) {
+  :root[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']):not([aria-pressed='true']) {
     @apply size-10 shrink-0 rounded-full px-0 shadow-md ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring active:opacity-70;
   }
-  :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']) {
+  :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']):not([aria-pressed='true']) {
     @apply h-10 shrink-0 rounded-full px-4 shadow-md ring-1 ring-window-ring focus-visible:ring-3 focus-visible:ring-ring active:opacity-70;
   }
   /* The Cancel keeps a control's stroke here too, for the reason given
@@ -305,10 +324,10 @@
      toggle on the bar changed zero pixels under `reduce` too (Chromium
      with reduce emulated, same page, 2026-09-27). */
   @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
-    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
+    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']):not([aria-pressed='true']),
     :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),
-    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']),
-    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']),
+    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']):not([aria-pressed='true']),
+    :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']):not([aria-pressed='true']),
     :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-search-cancel]:not([aria-hidden='true']) {
       background-color: transparent;
       box-shadow: inset 0 0 0 var(--glass-edge-w, 1px) var(--glass-edge), var(--shadow-panel);
@@ -320,10 +339,10 @@
       }
     }
     @media (prefers-reduced-transparency: reduce) {
-      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']),
+      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']):not([aria-pressed='true']),
       :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),
-      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']),
-      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']),
+      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-chrome-circle]:not([data-variant='default']):not([aria-pressed='true']),
+      :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']):not([aria-pressed='true']),
       :root:not([data-glass='off'])[data-platform='ios'] [data-chrome='bar'] button[data-search-cancel]:not([aria-hidden='true']) {
         background-color: revert-layer;
         box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
@@ -401,8 +420,12 @@
     transition-duration: 150ms;
     transition-timing-function: ease-out;
   }
-  /* A selected toggle (a shelf's bookmark filter) holds the squared
-     shape while it is on, and springs back when it is let go. */
+  /* A pressed control holds the squared shape while it is on, and
+     springs back when it is let go: the bookmark filter on a shelf and on
+     Games, which is a registry Button (`active`, aria-pressed) and not a
+     Toggle, so a rule naming only the Toggle never reached it and the
+     filter stayed round when on. A Toggle takes it too. */
+  :root[data-platform='android'] [data-chrome] button[data-slot='button'][aria-pressed='true'],
   :root[data-platform='android'] [data-chrome] button[data-slot='toggle'][aria-pressed='true'] {
     border-radius: 0.75rem;
   }
