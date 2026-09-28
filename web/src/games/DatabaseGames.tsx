@@ -4,7 +4,7 @@ import { forgetCollection, loadCollection } from './collection';
 
 import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
-import { isSymmetricMaterial, mirrorMaterialSpec, type MatchMode } from '@shared/scanMatch';
+import { isSymmetricMaterial, type MatchMode } from '@shared/scanMatch';
 import type { MotifSide } from '@shared/scanMotif';
 
 import { api, ApiError, apiErrorMessage, apiStream } from '@/lib/api';
@@ -47,6 +47,7 @@ import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { EmptyState } from '@/components/empty-state';
 import { GameListShell, type GameListShape } from './GameListShell';
 import { settledBoxAsks } from './settled-box';
+import { huntKindParams, motifListPick } from './hunt-request';
 
 import type { RefDb } from '@/databases/RefDbManager';
 import { t } from '@/lib/i18n';
@@ -608,8 +609,9 @@ export function DatabaseGames({
   const [motifId, setMotifId] = useState<string>(MOTIFS[0]!.id);
   const [motifSide, setMotifSide] = useState<MotifSide>('either');
   const [motifHeld, setMotifHeld] = useState(MOTIFS[0]!.stable);
-  const structureEntry = STRUCTURES.find((s) => s.id === motifId) ?? null;
-  const motifEntry = structureEntry ? null : (MOTIFS.find((m) => m.id === motifId) ?? MOTIFS[0]!);
+  // Null for a named structure, which has neither knob. Resolved where
+  // the request resolves it, so a knob shows exactly when it is sent.
+  const motifEntry = motifListPick(motifId).motif;
   // The custom spec: the draft survives the window closing so a reopen
   // edits what was applied, and presetId only becomes 'custom' WITH a
   // spec in hand — a cancelled first visit leaves the preset standing.
@@ -686,16 +688,19 @@ export function DatabaseGames({
   const runHunt = useCallback(async (fenOverride?: string): Promise<void> => {
     // Resolved before any state moves: a custom pick with no spec has
     // nothing to run (the Search button is disabled then too).
-    const preset = ENDGAMES.find((p) => p.id === presetId) ?? ENDGAMES[0]!;
-    const material =
-      huntKind === 'material'
-        ? presetId === 'custom'
-          ? customSpec
-          : materialSide === 'black'
-            ? mirrorMaterialSpec(preset.spec)
-            : preset.spec
-        : null;
-    if (huntKind === 'material' && !material) return;
+    const own = huntKindParams({
+      kind: huntKind,
+      fen: fenOverride ?? huntFen,
+      rung,
+      presetId,
+      materialSide,
+      customSpec,
+      heldPlies,
+      motifId,
+      motifSide,
+      motifHeld,
+    });
+    if (!own) return;
     const mine = ++huntSeq.current;
     setHunting(true);
     // On a phone the hunt's controls are a sheet (see `lifted`), and a
@@ -724,31 +729,8 @@ export function DatabaseGames({
     const boxQ = filterRef.current.query.trim();
     huntRead.current = boxQ;
     if (boxQ) params.set('q', boxQ);
-    // The kind picks the branch, never the Motif list's entries: the
-    // list holds a pick whatever kind is up, and a branch that asked
-    // only for the entry sent it for a Material search too.
-    if (huntKind === 'position') {
-      params.set('fen', (fenOverride ?? huntFen).trim());
-      if (rung !== 'exact') params.set('match', rung);
-    } else if (huntKind === 'motif' && structureEntry) {
-      // A named structure is a pawn sketch on the structure rung —
-      // the editor handoff's own shape, with the sketch as data.
-      params.set('fen', structureEntry.fen);
-      params.set('match', 'structure');
-    } else if (huntKind === 'motif' && motifEntry) {
-      // The knobs a motif does not have are sent at their neutral
-      // values, which is what the server would default them to.
-      params.set(
-        'motif',
-        JSON.stringify({
-          id: motifEntry.id,
-          side: motifEntry.side ? motifSide : 'either',
-          stable: motifEntry.held ? motifHeld : 1,
-        }),
-      );
-    } else {
-      params.set('material', JSON.stringify({ ...material, stable: heldPlies }));
-    }
+    // Then the kind's own, which ./hunt-request holds to every kind.
+    for (const [key, value] of own) params.set(key, value);
     type Frame =
       | ({ type: 'game'; ply: number } & RefGame)
       | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
@@ -815,8 +797,7 @@ export function DatabaseGames({
     heldPlies,
     materialSide,
     customSpec,
-    structureEntry,
-    motifEntry,
+    motifId,
     motifSide,
     motifHeld,
     lifted,
