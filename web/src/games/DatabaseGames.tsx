@@ -46,6 +46,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { EmptyState } from '@/components/empty-state';
 import { GameListShell, type GameListShape } from './GameListShell';
+import { settledBoxAsks } from './settled-box';
 
 import type { RefDb } from '@/databases/RefDbManager';
 import { t } from '@/lib/i18n';
@@ -475,8 +476,11 @@ export function DatabaseGames({
 
   const searchSeq = useRef(0);
   /** What the text rows last answered — closing a hunt refetches only
-      if the box moved while the hunt had it. */
-  const searchedQ = useRef('');
+      if the box moved while the hunt had it, and a settled keystroke
+      asks nothing when the box is back to it (settleBox). Null after a
+      fresh search failed: the rows still answer an older box, so
+      neither of those may take them for this one. */
+  const searchedQ = useRef<string | null>('');
   /** The committed filters as query params — the /search and the deep
       hunt speak the same gamesWhere, so one builder serves both. Reads
       through filterRef so its identity never moves. */
@@ -512,6 +516,9 @@ export function DatabaseGames({
     const data = await api<Page>(`/api/refgames/search?${params.toString()}`).catch((): Page | null => null);
     // Superseded: whoever holds the latest number owns the state.
     if (seq !== searchSeq.current) return;
+    // A failed page leaves the rows answering q, a page short; a failed
+    // first page leaves them answering whatever came before it.
+    if (!data && cursor === null) searchedQ.current = null;
     if (data) {
       // Only the first page of a search carries a total — counting matches
       // means scanning, and every later page would count the same thing.
@@ -611,6 +618,10 @@ export function DatabaseGames({
   const [huntExhaustive, setHuntExhaustive] = useState(true);
   const [huntFailed, setHuntFailed] = useState<'failed' | 'bad-fen' | null>(null);
   const huntSeq = useRef(0);
+  /** The box as the latest hunt read it, trimmed as its request sends
+      it: a settled keystroke that finds the box back to this while a
+      hunt stands has nothing to re-run (settleBox). */
+  const huntRead = useRef('');
   // Unmounting must take an in-flight hunt with it: the bump makes the
   // read loop cancel its reader, which aborts the server's scan.
   useEffect(
@@ -700,6 +711,7 @@ export function DatabaseGames({
     // The box narrows the hunt too — the server parses the same
     // query language and folds the terms into the scan's WHERE.
     const boxQ = filterRef.current.query.trim();
+    huntRead.current = boxQ;
     if (boxQ) params.set('q', boxQ);
     if (huntKind === 'position') {
       params.set('fen', (fenOverride ?? huntFen).trim());
@@ -911,12 +923,15 @@ export function DatabaseGames({
   // render: a timer holding that closure re-ran a hunt that had been
   // closed since, and searched a database that had been switched away
   // from. Filled from a layout effect, like filterRef above, so the
-  // timer reads the last commit.
+  // timer reads the last commit. And a fire that finds the rows already
+  // answering the box asks for nothing (./settled-box says which paths
+  // lean on that).
   const settleBox = useRef<() => void>(() => {});
   useLayoutEffect(() => {
     settleBox.current = () => {
-      if (huntRows !== null) void runHunt();
-      else void search(query, null, curDb);
+      const ask = settledBoxAsks(query, huntRows !== null ? huntRead.current : null, searchedQ.current);
+      if (ask === 'hunt') void runHunt();
+      else if (ask === 'search') void search(query, null, curDb);
     };
   });
 
