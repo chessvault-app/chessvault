@@ -13,9 +13,10 @@ import STRUCTURES from './structures.json';
  * Each kind keeps its draft while another is up: the Motif list always
  * holds a pick and the material select a preset, whichever kind is
  * showing. So the kind alone says which of them the request carries.
- * A request built by asking for the Motif list's entry sent the
- * Isolated queen's pawn, or a pawn structure's sketch, for every
- * Material search from 0.8.2 through 0.11.4.
+ * A request built by asking for the Motif list's entry sent that entry
+ * for every Material search from 0.8.2 through 0.11.4: the Isolated
+ * queen's pawn, unless another pattern or a pawn structure had been
+ * picked there.
  */
 export type HuntKind = 'position' | 'material' | 'motif';
 

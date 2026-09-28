@@ -91,8 +91,9 @@ describe('a material hunt', () => {
   });
 
   it('sends the material after a pawn structure was picked in the Motif list', () => {
-    // The case that broke: a structure picked, then Search by moved to
-    // Material, sent the structure's sketch on the structure rung.
+    // The other shape it broke in: a structure picked, then Search by
+    // moved to Material, sent the structure's sketch on the structure
+    // rung.
     expect(huntKindParams(controls({ kind: 'material', motifId: 'carlsbad', presetId: 'rook' }))).toEqual([
       ['material', JSON.stringify({ ...ROOK, stable: 1 })],
     ]);
