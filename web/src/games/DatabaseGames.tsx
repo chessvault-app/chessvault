@@ -1702,6 +1702,14 @@ export function DatabaseGames({
       variant="secondary"
       size="icon-sm"
       active={huntOpen || (lifted && inHunt)}
+      // Lit on a phone's page for one of two reasons: its sheet is up, or
+      // a hunt stands with the sheet shut. Only the second is a standing
+      // state, so only it carries the marker that keeps the lit fill in
+      // the phone chrome (styles/shell.css), as More filters does. While
+      // the sheet is up the switch is a trigger whose window is open, and
+      // stays glass like an open ⋯. Off the page it stands in the search
+      // row, in no chrome, and never carries it.
+      data-chrome-lit={lifted && inHunt && !huntOpen ? '' : undefined}
       title={t('Search by position, material or motif')}
       className="shrink-0"
       onClick={() => {

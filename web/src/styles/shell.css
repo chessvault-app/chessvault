@@ -166,7 +166,10 @@
      filters on the Databases tab is lit while its sheet is open and
      carries no aria-expanded, so "lit and not expanded" would still have
      caught it. The marker is what tells a standing state from an open
-     one; an open ⋯ and the hunt switch keep the glass. */
+     one; an open ⋯ and the hunt switch with its sheet up keep the glass.
+     The hunt switch carries it only while a hunt stands with its sheet
+     shut (games/DatabaseGames.tsx), and then keeps its lit fill here as
+     More filters does. */
   :root[data-platform='ios'] [data-chrome] button[data-chrome-circle][data-variant='default'],
   :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='icon-sm'][data-variant='default'],
   :root[data-platform='ios'] [data-chrome] button[data-chrome-circle][aria-pressed='true'],
@@ -288,7 +291,8 @@
      state is named as at the circles, and under reduced transparency it
      is what the restore below reads. A pressed control is in none of
      these, nor in the flush below, and nor is a lit one marked
-     `data-chrome-lit` (More filters): each keeps its own fill on the bar
+     `data-chrome-lit` (More filters, and the hunt switch while a hunt
+     stands with its sheet shut): each keeps its own fill on the bar
      too, as the primary does, drawn by the rules for all three above. */
   :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='button'][data-size='icon-sm']:not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]),
   :root[data-platform='ios'] [data-chrome='bar'] button[data-slot='toggle']:not([aria-pressed='true']),

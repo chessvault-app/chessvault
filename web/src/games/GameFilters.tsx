@@ -76,9 +76,10 @@ export function MoreFiltersButton({
       active={on}
       // Lit here means filters are on, never that its window is open,
       // so the phone chrome keeps the lit fill (styles/shell.css). The
-      // same `active` on a ⋯ means its menu is up, and on the hunt
-      // switch it can mean its sheet is, so those carry no marker and
-      // stay glass.
+      // same `active` on a ⋯ means its menu is up, so a ⋯ carries no
+      // marker and stays glass; the hunt switch's can mean either, so
+      // it carries the marker only while a hunt stands with its sheet
+      // shut (DatabaseGames).
       data-chrome-lit=""
       title={t('More filters')}
       // Spread, not `aria-label={… : undefined}`: Button spreads its props
