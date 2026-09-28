@@ -475,14 +475,14 @@ export function DatabaseGames({
   const tableVars = useGameTableVars(selecting, !besideDetails);
 
   const searchSeq = useRef(0);
-  /** What the text rows last answered — closing a hunt refetches only
-      if the box moved while the hunt had it, and a settled keystroke
-      asks nothing when the box is back to it (settleBox). Null when the
-      rows answer nothing current: a fresh search failed (they still
-      answer an older box), or the filters moved while a hunt had the
-      pane (reask). Neither of those may take them for this box then.
-      Only a fresh search writes a text: a page adds to rows that
-      already answer it. */
+  /** What the text rows were last asked for from the top: closing a
+      hunt refetches them unless the box still says this, and a settled
+      keystroke asks nothing when the box is back to it (settleBox).
+      Null when the rows answer nothing current: a fresh search failed
+      (they still answer an older box), or the filters moved while a
+      hunt had the pane (reask). Neither of those may take them for this
+      box then. Only a fresh search writes a text: a page adds to rows
+      that already answer it. */
   const searchedQ = useRef<string | null>('');
   /** The text the rows on screen are the first page of, set when that
       page lands. The next page continues THIS, never the box: the box
@@ -653,8 +653,9 @@ export function DatabaseGames({
 
   const clearHunt = (): void => {
     abandonHunt();
-    // While the hunt was open the box was editing the HUNT — if it
-    // moved, the text rows this returns to answer a stale query.
+    // While the hunt was open the box and the filters were editing the
+    // HUNT: if either moved (a filter press leaves searchedQ null), the
+    // text rows this returns to answer a stale query.
     if (searchedQ.current !== query) void search(query, null, curDb);
   };
 
@@ -984,8 +985,8 @@ export function DatabaseGames({
   const reask = useEffectEvent(() => {
     if (huntRows !== null) {
       // The text rows under the hunt were asked under the filters just
-      // left, so they answer no box now: closing the hunt refetches
-      // them, and so does a keystroke settling after it.
+      // left, so they answer no box now, and closing the hunt refetches
+      // them whatever the box says.
       searchedQ.current = null;
       void runHunt();
     } else void search(query, null, curDb);
