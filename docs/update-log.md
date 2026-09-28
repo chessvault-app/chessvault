@@ -208,15 +208,15 @@ so far.
   database just left. Now the box narrows the search that stands, and a
   pause that finds the box as it was asks for nothing: a phone's Cancel
   on an empty box no longer runs the search again, and undoing a typo
-  keeps the pages already scrolled through.
+  keeps the pages already scrolled through. And closing such a search
+  after changing a filter brings back the text search's rows under the
+  filters that stand, not the ones left.
 - **The explorer's “Find this position in the databases browser” searches
   the position it hands over.** Back on a Databases tab left open under
   a game, it ran that tab's previous search instead: the field showed the
-  new position over the old search's games, or said it held no position
-  at all. Handed another database, it narrowed the search by text the
-  box had just been emptied of. And closing a search by position,
-  material or motif after changing a filter brings back the text
-  search's rows under the filters that stand, not the ones left.
+  new position over the old search's games, or over a message that it
+  was not a position. Handed another database, it narrowed the search by
+  text the box had just been emptied of.
 
 ## 0.11.4
 
