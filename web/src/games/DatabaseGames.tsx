@@ -1,10 +1,10 @@
 ﻿import { CornerDownLeft, Database, Grid3x3, Info, ListChecks, ListPlus, Play, Plus, ScanSearch, Search, SearchX, SlidersHorizontal, X } from 'lucide-react';
-import { Suspense, lazy, memo, useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { Fragment, Suspense, lazy, memo, useCallback, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 import { forgetCollection, loadCollection } from './collection';
 
 import { getNode, mainlineFrom } from '@shared/tree';
 import { pgnToChapters } from '@shared/pgn';
-import { isSymmetricMaterial, mirrorMaterialSpec, type MatchMode } from '@shared/scanMatch';
+import { isSymmetricMaterial, type MatchMode } from '@shared/scanMatch';
 import type { MotifSide } from '@shared/scanMotif';
 
 import { api, ApiError, apiErrorMessage, apiStream } from '@/lib/api';
@@ -47,6 +47,7 @@ import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { EmptyState } from '@/components/empty-state';
 import { GameListShell, type GameListShape } from './GameListShell';
 import { settledBoxAsks } from './settled-box';
+import { huntKindParams, motifListPick } from './hunt-request';
 
 import type { RefDb } from '@/databases/RefDbManager';
 import { t } from '@/lib/i18n';
@@ -608,8 +609,9 @@ export function DatabaseGames({
   const [motifId, setMotifId] = useState<string>(MOTIFS[0]!.id);
   const [motifSide, setMotifSide] = useState<MotifSide>('either');
   const [motifHeld, setMotifHeld] = useState(MOTIFS[0]!.stable);
-  const structureEntry = STRUCTURES.find((s) => s.id === motifId) ?? null;
-  const motifEntry = structureEntry ? null : (MOTIFS.find((m) => m.id === motifId) ?? MOTIFS[0]!);
+  // Null for a named structure, which has neither knob. Resolved where
+  // the request resolves it, so a knob shows exactly when it is sent.
+  const motifEntry = motifListPick(motifId).motif;
   // The custom spec: the draft survives the window closing so a reopen
   // edits what was applied, and presetId only becomes 'custom' WITH a
   // spec in hand — a cancelled first visit leaves the preset standing.
@@ -686,16 +688,19 @@ export function DatabaseGames({
   const runHunt = useCallback(async (fenOverride?: string): Promise<void> => {
     // Resolved before any state moves: a custom pick with no spec has
     // nothing to run (the Search button is disabled then too).
-    const preset = ENDGAMES.find((p) => p.id === presetId) ?? ENDGAMES[0]!;
-    const material =
-      huntKind === 'material'
-        ? presetId === 'custom'
-          ? customSpec
-          : materialSide === 'black'
-            ? mirrorMaterialSpec(preset.spec)
-            : preset.spec
-        : null;
-    if (huntKind === 'material' && !material) return;
+    const own = huntKindParams({
+      kind: huntKind,
+      fen: fenOverride ?? huntFen,
+      rung,
+      presetId,
+      materialSide,
+      customSpec,
+      heldPlies,
+      motifId,
+      motifSide,
+      motifHeld,
+    });
+    if (!own) return;
     const mine = ++huntSeq.current;
     setHunting(true);
     // On a phone the hunt's controls are a sheet (see `lifted`), and a
@@ -724,28 +729,8 @@ export function DatabaseGames({
     const boxQ = filterRef.current.query.trim();
     huntRead.current = boxQ;
     if (boxQ) params.set('q', boxQ);
-    if (huntKind === 'position') {
-      params.set('fen', (fenOverride ?? huntFen).trim());
-      if (rung !== 'exact') params.set('match', rung);
-    } else if (structureEntry) {
-      // A named structure is a pawn sketch on the structure rung —
-      // the editor handoff's own shape, with the sketch as data.
-      params.set('fen', structureEntry.fen);
-      params.set('match', 'structure');
-    } else if (motifEntry) {
-      // The knobs a motif does not have are sent at their neutral
-      // values, which is what the server would default them to.
-      params.set(
-        'motif',
-        JSON.stringify({
-          id: motifEntry.id,
-          side: motifEntry.side ? motifSide : 'either',
-          stable: motifEntry.held ? motifHeld : 1,
-        }),
-      );
-    } else {
-      params.set('material', JSON.stringify({ ...material, stable: heldPlies }));
-    }
+    // Then the kind's own, which ./hunt-request holds to every kind.
+    for (const [key, value] of own) params.set(key, value);
     type Frame =
       | ({ type: 'game'; ply: number } & RefGame)
       | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
@@ -812,8 +797,7 @@ export function DatabaseGames({
     heldPlies,
     materialSide,
     customSpec,
-    structureEntry,
-    motifEntry,
+    motifId,
     motifSide,
     motifHeld,
     lifted,
@@ -1576,8 +1560,17 @@ export function DatabaseGames({
           },
         ]}
       />)}
+      {/* Each kind's controls under a key of their own, so a switch
+          mounts the new kind's fresh. Unkeyed, the three fragments shared
+          one slot, and React handed the Motif list's Select to the
+          Material list as the same instance (the same DOM node, probed
+          on the demo). Base UI then saw its items change while it still
+          held the Motif value, and wrote a fallback of its own into the
+          Material state: the value it was first mounted with, or null.
+          A Motif pick left Material reading "—", and a Rook endgame came
+          back from Motif as a Pawn endgame. */}
       {huntKind === 'position' ? (
-        <>
+        <Fragment key="position">
           {named('Paste a FEN', <ClearableInput
             inputSize="sm"
             value={huntFen}
@@ -1628,9 +1621,9 @@ export function DatabaseGames({
             />)}
             {lifted ? sheetRunButton : runButton}
           </span>
-        </>
+        </Fragment>
       ) : huntKind === 'motif' ? (
-        <>
+        <Fragment key="motif">
           {named('Motif', <Select
             value={motifId}
             onValueChange={(v) => {
@@ -1681,9 +1674,9 @@ export function DatabaseGames({
             )}
             {lifted ? sheetRunButton : runButton}
           </span>
-        </>
+        </Fragment>
       ) : (
-        <>
+        <Fragment key="material">
           {named('Material', <Select
             value={presetId}
             onValueChange={(v) => {
@@ -1750,7 +1743,7 @@ export function DatabaseGames({
             />)}
             {lifted ? sheetRunButton : runButton}
           </span>
-        </>
+        </Fragment>
       )}
     </div>
   );

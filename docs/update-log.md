@@ -217,6 +217,16 @@ so far.
   new position over the old search's games, or over a message that it
   was not a position. Handed another database, it narrowed the search by
   text the box had just been emptied of.
+- **A Material search on the Databases tab searches the material you
+  picked.** Since 0.8.2 it searched for whatever the Motif list held
+  instead: the Isolated queen's pawn, unless another motif or a pawn
+  structure had been picked there. The preset or the custom counts, the
+  side and how long it must hold were never sent, so the games it found
+  were that motif's games, not that material's. On a tablet or a
+  desktop, switching Search by between Material and Motif could also
+  change what the other list held, back to an entry it had shown
+  earlier, such as Pawn endgame or the Isolated queen's pawn, or to
+  nothing. Each list now keeps what was picked in it.
 
 ## 0.11.4
 
