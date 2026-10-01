@@ -28,5 +28,5 @@
       "@/*": ["./web/src/*"]
     }
   },
-  "include": ["shared/**/*.ts", "server/**/*.ts", "scripts/**/*.ts", "web/src/**/*.ts", "web/src/**/*.tsx", "web/*.ts"]
+  "include": ["shared/**/*.ts", "server/**/*.ts", "scripts/**/*.ts", "scripts/**/*.tsx", "web/src/**/*.ts", "web/src/**/*.tsx", "web/*.ts"]
 }

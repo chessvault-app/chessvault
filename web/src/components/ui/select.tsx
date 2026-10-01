@@ -412,10 +412,14 @@ function SelectField({
   // keyboard, typeahead on the closed trigger and autofill all arrive in
   // events, outside any commit. So the flag spans this component's
   // commit, set before any layout effect runs (an insertion effect) and
-  // cleared after its descendants' (its own layout effect). Measured in a
-  // two-list reproduction through this file: the fallbacks over a valid
-  // value dropped; clicks, arrow keys with Enter and typeahead still
-  // reported; a value that left its list still reset.
+  // cleared after its descendants' (its own layout effect). Base's
+  // eventDetails cannot stand in for the timing: the fallback and a
+  // closed-trigger typeahead pick both arrive as reason "none" with a
+  // synthetic, untrusted Event. And because the guard hangs on when Base
+  // makes the call, `npm run check:select` holds it in a browser through
+  // this file: the fallbacks over a valid value dropped; clicks, arrow
+  // keys with Enter and typeahead still reported; a value that left its
+  // list still reset. An upgrade that moves the call fails that check.
   const inCommit = React.useRef(false);
   React.useInsertionEffect(() => {
     inCommit.current = true;

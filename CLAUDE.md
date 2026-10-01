@@ -261,10 +261,12 @@ All three of these, every time, before the version is bumped:
 **Audit the repo against this file.** `npm run verify` now does the
 mechanical parts on every push and pull request (`check:compiler` among
 them: every component must compile under the React Compiler, since a
-refusal is silent), and `check:contrast`, `check:page-turn` and
-`check:skeletons` run beside it as their own CI job — not in `verify` because they are the checks that
-need a browser and a built demo, and the first was a script nobody ran
-until that job existed. `check:repo` documents
+refusal is silent), and `check:contrast`, `check:page-turn`,
+`check:skeletons` and `check:select` run beside it as their own CI job — not in `verify` because they are the checks that
+need a browser, the first three a built demo as well (`check:select`
+bundles its own page around the app's Select, whose guard against Base
+UI's fallback hangs on when Base makes a call), and the first was a
+script nobody ran until that job existed. `check:repo` documents
 its own list at the top of `scripts/check-repo.ts` — currently absolute
 paths and credentials, a rating rendered without `bandOf()`, the lockfile
 agreeing with package.json, the Rust crate notice matching Cargo.lock, the
