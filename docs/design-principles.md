@@ -1284,8 +1284,10 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   them; on an iOS phone, where the menu is glass, it takes `2xl`. What
   sits INSIDE one of those takes `md`: a menu row, a select row, the
   icon chip in an alert, the tooltip (a label, not a surface), and the
-  buttons, which cap the rung at 10 or 12px where a full one measured
-  too round for its row. On an iOS phone a menu row and a select row
+  small buttons (`xs`, `sm` and their icon sizes), which cap the rung at
+  10 or 12px where a full one measured too round for its row; a button
+  at the default size takes `lg`, as the text field beside it does. On
+  an iOS phone a menu row and a select row
   take `xl`, the menu's `2xl` less its 4px padding. Toast is the one
   deliberate exception at `2xl` on every platform: it floats over everything and belongs to no page. This is
   written down because the sheet spent 0.4.7 to 0.9.3 on the menus'
