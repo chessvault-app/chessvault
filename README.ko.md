@@ -602,22 +602,24 @@ npm run build:native-goldens # 계약이 바뀌었을 때 그 고정 답안을 �
 *온라인* 탐색기 보강, 레퍼토리 트레이너의 Lichess 소스, Lichess 계정에서
 스터디 가져오기를 켭니다.
 [lichess.org/account/oauth/token/create](https://lichess.org/account/oauth/token/create)에서
-**권한은 아무것도 체크하지 않고** 만드세요(비공개 스터디에는 `study:read`,
-Lichess 퍼즐 기록 가져오기에는 `puzzle:read`를 추가). 설정 페이지에
-붙여넣거나 `vault/config.json`(git에서 제외됨)에 넣습니다:
+**권한은 아무것도 체크하지 않고** 만드세요(비공개 스터디에는 `study:read`를
+추가). 설정 페이지에 붙여넣거나 `vault/config.json`(git에서 제외됨)에
+넣습니다:
 
 ```json
 { "lichessToken": "lip_..." }
 ```
 
 엔드게임 테이블베이스에는 토큰이 아예 필요 없습니다. 다만 포지션을 밖으로
-보내고 싶지 않다면 주소를 지정할 수 있습니다. Lichess의 테이블베이스 서버는
+보내고 싶지 않다면 주소를 지정할 수 있습니다. 설정 → 테이블베이스에서 답의
+출처를 고릅니다. 기본값인 Lichess의 공개 테이블베이스, 직접 운영하는
+테이블베이스 서버, 또는 테이블 파일입니다. Lichess의 테이블베이스 서버는
 오픈 소스이므로([lila-tablebase](https://github.com/lichess-org/lila-tablebase)),
-직접 가진 Syzygy 파일 위에 띄운 뒤 설정 → 테이블베이스에서, 또는 손으로 적어
-가리키면 됩니다:
+직접 가진 Syzygy 파일 위에 띄운 뒤 그 주소를 설정에 넣거나, 그 선택을
+`vault/config.json`에 손으로 적으면 됩니다:
 
 ```json
-{ "tablebaseUrl": "http://localhost:7788/standard" }
+{ "tablebaseSource": "server", "tablebaseUrl": "http://localhost:7788/standard" }
 ```
 
 서버를 아예 건너뛸 수도 있습니다. 네이티브 코어를 빌드해 두면
@@ -625,11 +627,12 @@ Lichess 퍼즐 기록 가져오기에는 `puzzle:read`를 추가). 설정 페이
 직접 읽습니다. 설치할 프로세스도, 네트워크도 필요 없습니다:
 
 ```json
-{ "tablebaseDir": "/srv/syzygy/3-4-5" }
+{ "tablebaseSource": "files", "tablebaseDir": "/srv/syzygy/3-4-5" }
 ```
 
-읽을 수 있는 로컬 테이블이 있으면 그쪽이 우선하고, 아니면 위의 서버가
-답합니다. 출처마다 답은 `data/tablebase-cache` 아래에 따로 캐시됩니다.
+폴더가 사라졌거나 네이티브 코어가 없는 빌드라서 테이블 파일을 읽을 수
+없으면 Lichess의 공개 테이블베이스로 되돌아가고, 설정이 그 선택 아래에서
+그렇다고 알려 줍니다. 출처마다 답은 `data/tablebase-cache` 아래에 따로 캐시됩니다.
 두 출처가 같은 테이블을 가지고 있으리라는 법이 없기 때문입니다.
 `npm run check:tablebase -- --tables <dir>`로 내 테이블을 기준 서버와
 포지션 단위·수 단위로 대조할 수 있습니다.

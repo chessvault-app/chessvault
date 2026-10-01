@@ -633,22 +633,24 @@ something either of them computes.
 Powers the *online* explorer augmentation, the Repertoire trainer's
 Lichess source, and importing studies from a Lichess account. Create one at
 [lichess.org/account/oauth/token/create](https://lichess.org/account/oauth/token/create)
-with **no scopes ticked** (add `study:read` for private studies,
-`puzzle:read` for Lichess puzzle-history import). Paste it into the
-Settings page, or put it in `vault/config.json` (gitignored):
+with **no scopes ticked** (add `study:read` for private studies). Paste
+it into the Settings page, or put it in `vault/config.json` (gitignored):
 
 ```json
 { "lichessToken": "lip_..." }
 ```
 
 The endgame tablebase needs no token at all — but it does take an
-address, if you would rather not send positions anywhere. Lichess's
-tablebase server is open source ([lila-tablebase](https://github.com/lichess-org/lila-tablebase));
-run it over your own copy of the Syzygy files and name it in Settings →
-Tablebase, or by hand:
+address, if you would rather not send positions anywhere. Settings →
+Tablebase picks where its answers come from: Lichess's public
+tablebase, which is the default, a tablebase server of your own, or
+table files. Lichess's tablebase server is open source
+([lila-tablebase](https://github.com/lichess-org/lila-tablebase)); run
+it over your own copy of the Syzygy files and give Settings its address,
+or write the choice into `vault/config.json` by hand:
 
 ```json
-{ "tablebaseUrl": "http://localhost:7788/standard" }
+{ "tablebaseSource": "server", "tablebaseUrl": "http://localhost:7788/standard" }
 ```
 
 Or skip the server entirely. With the native core built
@@ -656,13 +658,14 @@ Or skip the server entirely. With the native core built
 directly — no second process to install, no network:
 
 ```json
-{ "tablebaseDir": "/srv/syzygy/3-4-5" }
+{ "tablebaseSource": "files", "tablebaseDir": "/srv/syzygy/3-4-5" }
 ```
 
-Local tables win where they are readable; otherwise the server above
-answers. Each source's answers are cached separately, under
-`data/tablebase-cache`, because two sources need not hold the same
-tables. `npm run check:tablebase -- --tables <dir>` compares your tables
+Table files that cannot be read, because the folder has gone or the
+build has no native core, fall back to Lichess's public tablebase, and
+Settings says so under the choice. Each source's answers are cached
+separately, under `data/tablebase-cache`, because two sources need not
+hold the same tables. `npm run check:tablebase -- --tables <dir>` compares your tables
 against the reference server, position by position and move by move.
 
 `config.json` also holds `appPassword` and the 2FA `totpSecret` when the
