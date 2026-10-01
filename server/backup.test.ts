@@ -47,8 +47,9 @@ describe('vault backup', () => {
     expect(bytes.length % 512).toBe(0);
     // A relative path and a cwd: GNU tar reads `C:\…` as a host name. A
     // UTF-8 locale, or its listing escapes every byte of a Korean name.
+    // Windows' own tar (bsdtar) ends each listed line with CRLF.
     writeFileSync(join(out, 'v.tar'), bytes);
-    const listed = execFileSync('tar', ['-tf', 'v.tar'], { cwd: out, encoding: 'utf-8', env: { ...process.env, LC_ALL: 'C.UTF-8' } }).trim().split('\n').sort();
+    const listed = execFileSync('tar', ['-tf', 'v.tar'], { cwd: out, encoding: 'utf-8', env: { ...process.env, LC_ALL: 'C.UTF-8' } }).trim().split(/\r?\n/).sort();
     expect(listed).toEqual(
       [
         '.history.git/',
