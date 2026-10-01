@@ -274,4 +274,16 @@ describe('engine networks api', () => {
     expect(readdirSync(dir)).toEqual([]);
     expect(uncaught).toEqual([]);
   });
+
+  it('reports a networks folder that cannot be made, and lets the next attempt run', async () => {
+    const blocked = join(dir, 'nets');
+    writeFileSync(blocked, ''); // a file where the folder would go
+    const app = build(blocked, respond(matchingBody()));
+    expect((await app.request(`/api/engine/nets/${NAME}`, { method: 'POST' })).status).toBe(202);
+    expect(await settle(app)).toMatchObject({ ready: false, downloading: null, error: expect.stringMatching(/EEXIST|ENOTDIR/) });
+
+    rmSync(blocked);
+    await app.request(`/api/engine/nets/${NAME}`, { method: 'POST' });
+    expect(await settle(app)).toMatchObject({ ready: true, error: null });
+  });
 });

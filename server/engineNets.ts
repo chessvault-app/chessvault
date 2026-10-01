@@ -156,10 +156,17 @@ export function engineNetsApi({
     if (jobs.get(name)?.running) return c.json(status(name), 409);
     const job = { progress: { bytes: 0, total: 0 }, error: null as string | null, running: true };
     jobs.set(name, job);
-    mkdirSync(dir, { recursive: true });
-    void downloadNet(name, pathOf(name), fetcher, (p) => {
-      job.progress = p;
-    }, known(name)!.size)
+    // The folder is made inside the job, so a folder that cannot be made
+    // fails the job like any download does. Thrown from the handler, it
+    // left the job running for good: every retry and the remove answered
+    // 409 until the server restarted.
+    const run = async (): Promise<void> => {
+      mkdirSync(dir, { recursive: true });
+      await downloadNet(name, pathOf(name), fetcher, (p) => {
+        job.progress = p;
+      }, known(name)!.size);
+    };
+    void run()
       .catch((error: unknown) => {
         job.error = error instanceof Error ? error.message : String(error);
       })
