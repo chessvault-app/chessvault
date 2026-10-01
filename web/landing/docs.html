@@ -2353,18 +2353,22 @@
                   <tr><td data-ko="힌트(Hint)">Hint</td><td data-ko="두 번 누릅니다: 처음엔 기물에 동그라미, 다음엔 수 전체입니다. «실패로 세지 않음»(not counted as a fail). 두 번째 누른 뒤에 푼 것은 «힌트로 해결, 기록되지 않음»(Solved with a hint, not counted)으로 표시되고, 깨끗한 해결로 기록되지 않습니다.">Two presses: first the piece is circled, then the full move, “not counted as a fail”. A solve after the second press reads “Solved with a hint, not counted” and is not recorded as a clean win.</td></tr>
                   <tr><td data-ko="정답(Solution)">Solution</td><td data-ko="«실패한 시도로 기록됩니다»(Counts as a failed attempt) — 해답을 보여 주고 실패로 기록합니다.">“Counts as a failed attempt” — shows the answer and scores a fail.</td></tr>
                   <tr><td data-ko="건너뛰기(Skip)">Skip</td><td data-ko="넘어갑니다. 트레이너가 들고 있는 퍼즐을 지나치는 유일한 컨트롤입니다. 한번 내준 퍼즐은 시도하기 전까지 그대로 남습니다. 특정 퍼즐 다시 풀기 모드에는 없습니다.">Moves on, and is the one control that asks past the puzzle the trainer is holding: a puzzle it has offered stays the one on offer until you attempt it. Absent when replaying one specific puzzle.</td></tr>
-                  <tr><td data-ko="끝난 뒤">After it ends</td><td data-ko="<strong>이 게임에서</strong>(From this game)(«Lichess에서 열림 (인터넷 필요)»(Opens Lichess (needs internet))) · <strong>다시 시도</strong>(Try again)(연습, 기록되지 않음) · <strong>다음 퍼즐</strong>(Next puzzle). 판정은 «해결»(Solved) / «틀린 뒤에 해결»(Solved after a wrong try) / «정답을 봄»(Solution shown)으로 표시되며, 난이도(낱말), 등장 횟수, 테마가 함께 나옵니다.">
+                  <tr><td data-ko="끝난 뒤">After it ends</td><td data-ko="<strong>이 게임에서</strong>(From this game)(«Lichess에서 열림 (인터넷 필요)»(Opens Lichess (needs internet))) · <strong>다시 시도</strong>(Try again)(연습, 기록되지 않음) · <strong>다음 퍼즐</strong>(Next puzzle). 판정은 «해결»(Solved) / «틀린 뒤에 해결»(Solved after a wrong try) / «정답을 봄»(Solution shown)으로 표시되며, 난이도(낱말), 등장 횟수, 테마가 함께 나옵니다. 대시보드에서 다시 푼 퍼즐은 다음 퍼즐 대신 «대시보드로»(Back to dashboard)로 끝납니다. 보드는 퍼즐이 끝난 자리에서 분석 보드가 되고 수순 패널이 그 라인을 담습니다. 퍼즐 패널 머리의 엔진 버튼이 수순 위에 엔진을 열고, 휴대폰에서는 엔진이 세 번째 탭으로 생깁니다.">
                     <strong>From this game</strong> (“Opens Lichess (needs internet)”) ·
                     <strong>Try again</strong> (practice, nothing is reported) · <strong>Next
                     puzzle</strong>. The verdict reads “Solved” / “Solved after a wrong try” /
                     “Solution shown”, with the difficulty (a word), the play count and the themes.
+                    A puzzle replayed from the dashboard ends on “Back to dashboard” instead of
+                    Next puzzle. The board becomes the analysis board where the puzzle ended, with
+                    the line in the moves panel: the Engine button on the Puzzle panel's header
+                    opens the engine above the moves, and on a phone the engine is a third tab.
                   </td></tr>
                   <tr><td data-ko="하단 바 <small>(휴대폰)</small>">The bottom bar <small>(phone)</small></td><td data-ko="다른 보드 페이지처럼 지금까지 둔 수를 앞뒤로 넘기고 보드를 뒤집습니다. 퍼즐의 버튼은 패널 바닥줄에 있습니다.">Steps through the moves played so far and flips the board, like every other board page. The puzzle's own buttons are in the panel's footer.</td></tr>
                 </tbody>
               </table>
             </div>
             <h3 data-ko="퍼즐 설정">Puzzle settings</h3>
-            <p data-ko="패널의 설정 줄이 여는 창에서 <strong>난이도</strong>(Difficulty)(<strong>전체 · 적응형</strong>(Any · Adaptive)(«풀이 실력을 따라감»(follows your solving)) <strong>· Easy · 보통 · 어려움 · 전문가</strong>(· Easy · Medium · Hard · Expert))와 <strong>테마</strong>(Theme)(«모든 테마»(All themes) 또는 하나)을 고릅니다. Themes 페이지(«퍼즐 테마»(Puzzle themes), 검색 «테마 찾기»(Find a theme))가 테마별 훈련의 입구입니다. 검색은 그룹 이름과 Lichess 표기도 찾고, 결과 줄이 «테마 {total}개 중 {n}개 일치»({n} of {total} themes match)와 «검색 지우기»(Clear search)를 보이며, 하나도 없으면 «일치하는 테마가 없습니다.»(No theme matches it.)라고 하며, 하나만 남으면 <kbd>Enter</kbd>가 그것을 엽니다. 퍼즐 데이터베이스가 없으면 «아직 퍼즐 데이터베이스가 없습니다»(No puzzle database yet)와 «준비하기»(Set up)가 나오고, 서버가 답하지 않으면 허브가 «불러오지 못했습니다» 카드와 «다시 시도»(Try again)를 그립니다.">
+            <p data-ko="패널의 설정 줄이 여는 창에서 <strong>난이도</strong>(Difficulty)(<strong>전체 · 적응형</strong>(Any · Adaptive)(«풀이 실력을 따라감»(follows your solving)) <strong>· 쉬움 · 보통 · 어려움 · 전문가</strong>(· Easy · Medium · Hard · Expert))와 <strong>테마</strong>(Theme)(«모든 테마»(All themes) 또는 하나)을 고릅니다. Themes 페이지(«퍼즐 테마»(Puzzle themes), 검색 «테마 찾기»(Find a theme))가 테마별 훈련의 입구입니다. 검색은 그룹 이름과 Lichess 표기도 찾고, 결과 줄이 «테마 {total}개 중 {n}개 일치»({n} of {total} themes match)와 «검색 지우기»(Clear search)를 보이며, 하나도 없으면 «일치하는 테마가 없습니다.»(No theme matches it.)라고 하며, 하나만 남으면 <kbd>Enter</kbd>가 그것을 엽니다. 퍼즐 데이터베이스가 없으면 «아직 퍼즐 데이터베이스가 없습니다»(No puzzle database yet)와 «준비하기»(Set up)가 나오고, 서버가 답하지 않으면 허브가 «불러오지 못했습니다» 카드와 «다시 시도»(Try again)를 그립니다.">
               The settings row opens a dialog for <strong>Difficulty</strong>: <strong>Any ·
               Adaptive</strong> (“follows your solving”) <strong>· Easy · Medium · Hard
               · Expert</strong>, and <strong>Theme</strong> (“All themes”, or one). The Themes
@@ -2381,13 +2385,13 @@
               solve at every step. The review banner explains itself: “Reviewing, not counted. Each clean solve spaces the puzzle further out, and enough in a row retire it.”
             </p>
             <h2 data-ko="대시보드">The dashboard</h2>
-            <p data-ko="Puzzles → 대시보드(Dashboard): <strong>시도 · 해결 · 복습 대상</strong>(Attempts · Solved · To review), 난이도별 분해(«난이도별 시도»(Attempts by difficulty)), 책 진행, 그리고 모든 시도의 이력이 있습니다. 이력은 결과와 난이도로 거를 수 있고(«결과별 필터»(Filter by outcome) / «난이도별 필터»(Filter by difficulty)), 어느 퍼즐이든 «퍼즐 #{id} 다시 풀기»(Replay puzzle #{id})로 다시 풀 수 있습니다. 페이지는 버튼 하나로 시작합니다. 기다리는 퍼즐이 있으면 «퍼즐 복습 · 때가 된 {n}개»(Review puzzles · {n} due), 때가 된 것은 없지만 놓친 퍼즐이 남아 있으면 «실패한 퍼즐 복습»(Review failed puzzles)과 개수, 그 밖에는 «훈련»(Train)입니다. 이력 아래, 페이지 맨 끝에 «기록 지우기»(Wipe history)가 있습니다. 이력은 Tab 한 번에 들어가는 자리이고, 화살표로 줄 사이를 옮기며 오른쪽 키가 그 줄의 포지션 미리보기를 엽니다. 휴대폰에는 별도의 허브 화면이 있습니다. «테마»(연습할 만한 테마와 함께), «퍼즐 책»(마지막으로 읽던 책과 그 진행 막대), «대시보드»(«오늘 푼 퍼즐: {n}») 세 줄이 있고, 그 아래 «다음 퍼즐», «놓친 퍼즐», 책의 다음 퍼즐 세 개의 판이 있습니다. 판을 누르면 바로 그 퍼즐이 열리며, 첫 판이 훈련을 시작하는 길이고 난이도 낱말을 함께 보여 줍니다.">
+            <p data-ko="Puzzles → 대시보드(Dashboard): <strong>시도 · 해결 · 복습 대상</strong>(Attempts · Solved · To review), 난이도별 분해(«난이도별 시도»(Attempts by difficulty)), 책 진행, 그리고 모든 시도의 이력이 있습니다. 이력은 결과와 난이도로 거를 수 있고(«결과별 필터»(Filter by outcome) / «난이도별 필터»(Filter by difficulty)), 어느 퍼즐이든 «퍼즐 #{id} 다시 풀기»(Replay puzzle #{id})로 다시 풀 수 있습니다. 페이지는 버튼 하나로 시작합니다. 기다리는 퍼즐이 있으면 «퍼즐 복습 · 때가 된 {n}개»(Review puzzles · {n} due), 때가 된 것은 없지만 놓친 퍼즐이 남아 있으면 «실패한 퍼즐 복습»(Review failed puzzles)과 개수, 그 밖에는 «훈련»(Train)이며, 일정에 남은 복습이 있으면 그 아래에 «지금은 복습할 것이 없습니다. 다음 복습은 {when}»(Nothing due. The next review lands {when})이 붙습니다. 이력 아래, 페이지 맨 끝에 «기록 지우기»(Wipe history)가 있습니다. 이력은 Tab 한 번에 들어가는 자리이고, 화살표로 줄 사이를 옮기며 오른쪽 키가 그 줄의 포지션 미리보기를 엽니다. 휴대폰에는 별도의 허브 화면이 있습니다. «테마»(연습할 만한 테마와 함께), «퍼즐 책»(마지막으로 읽던 책과 그 진행 막대), «대시보드»(«오늘 푼 퍼즐: {n}») 세 줄이 있고, 그 아래 «다음 퍼즐», «놓친 퍼즐», 책의 다음 퍼즐 세 개의 판이 있습니다. 판을 누르면 바로 그 퍼즐이 열립니다. 첫 판이 훈련을 시작하는 길이며, 전체(Any)가 아닌 난이도를 골라 두었으면 그 낱말을 함께 보여 줍니다.">
               Puzzles → Dashboard: <strong>Attempts · Solved · To review</strong>, the
               “Attempts by difficulty” breakdown, book progress, and a history of every attempt — filtered
               by outcome and difficulty, any puzzle replayable via “Replay puzzle #{id}”. The
               page leads with its one button: “Review puzzles · {n} due” when something is waiting, “Review failed puzzles” with the count when nothing is due but misses remain, “Train” otherwise (with “Nothing due. The next review lands {when}” under it while the schedule holds something); under the history, last on the page, sits “Wipe history”. The history is one Tab
               stop: the arrows move between rows and Right opens a row's position preview. A
-              phone gets a hub screen instead: three rows for “Themes” (with the theme “Worth practising: {theme}”), “Puzzle books” (the book you were last in, with its bar) and “Dashboard” (“Solved today: {n}”), and under them three boards, “Next puzzle”, “Missed puzzle” and your book's next puzzle. Pressing a board opens that very puzzle; the first one is how you start training, and carries the difficulty word.
+              phone gets a hub screen instead: three rows for “Themes” (with the theme “Worth practising: {theme}”), “Puzzle books” (the book you were last in, with its bar) and “Dashboard” (“Solved today: {n}”), and under them three boards, “Next puzzle”, “Missed puzzle” and your book's next puzzle. Pressing a board opens that very puzzle; the first one is how you start training, and carries the difficulty word when one other than Any is chosen.
             </p>
           </div>
         </section>
@@ -2428,9 +2432,10 @@
                 Two options up front — “Ask the engine where the book cannot be read” and “Try
                 harder on boards that fail” — and one request: “Import only a book you own.”
               </li>
-              <li data-ko="진행이 페이지 단위로 보입니다: «{page}/{pages}쪽, 지금까지 다이어그램 {n}개»(page {page}/{pages}, {n} diagrams so far)와 «이 기기 밖으로는 아무것도 나가지 않으며, 진행되는 동안에도 앱을 계속 쓸 수 있습니다»(nothing leaves this device, and you can keep using the app while it runs)가 표시됩니다. <strong>일시정지</strong>(Pause)를 눌러도 잃는 것이 없고(«{pages}쪽 중 {page}쪽에서 멈췄습니다. 잃은 것은 없습니다.»), 다음에 열면 «{page}쪽부터 이어서»(Carry on from page {page})가 이어받습니다.">
-                Progress reports page by page: “page {page}/{pages}, {n} diagrams so far” —
-                “nothing leaves this device, and you can keep using the app while it runs”.
+              <li data-ko="PDF를 고르는 칸이 «이 기기 밖으로는 아무것도 나가지 않으며, 진행되는 동안에도 앱을 계속 쓸 수 있습니다»(nothing leaves this device, and you can keep using the app while it runs)라고 알리고, 진행은 페이지 단위로 보입니다: «{page}/{pages}쪽, 지금까지 다이어그램 {n}개»(page {page}/{pages}, {n} diagrams so far). <strong>일시정지</strong>(Pause)를 눌러도 잃는 것이 없고(«{pages}쪽 중 {page}쪽에서 멈췄습니다. 잃은 것은 없습니다.»), 다음에 열면 «{page}쪽부터 이어서»(Carry on from page {page})가 이어받습니다.">
+                The picker says “nothing leaves this device, and you can keep using the app
+                while it runs”, and progress reports page by page: “page {page}/{pages}, {n}
+                diagrams so far”.
                 <strong>Pause</strong> loses nothing (“Paused at page {page} of {pages}. Nothing is
                 lost.”); the next visit offers “Carry on from page {page}”.
               </li>
@@ -2471,9 +2476,13 @@
                 in passes, every puzzle once per pass, scored by first attempts, “Cycle {n}” and
                 past passes kept.
               </li>
-              <li data-ko="<strong>퍼즐 추가</strong>(Add a puzzle)가 수동 입력을 엽니다. Diagram / Board / Solutions 세 탭입니다: 다이어그램에 맞게 보드를 차리고, «양쪽의 모든 수로 정답을 기록하세요.» 상대 수를 클릭해 «아무 수나»(any move)(책의 ~)로 표시할 수 있고, <strong>검증</strong>(Verify)은 «풀이의 모든 수가 정말 이기는지 Stockfish에 확인»을 실행합니다. 잘못 읽힌 퍼즐은 «책 스캔과 대조해 이 퍼즐 바로잡기»로 바로잡습니다.">
-                <strong>Add a puzzle</strong> opens manual entry — three tabs, Diagram / Board /
-                Solutions: make the board match the diagram, then “Record the solution, every move for both sides.” An opponent move clicked becomes “any move” (the book's ~), and
+              <li data-ko="<strong>퍼즐 추가</strong>(Add a puzzle)가 수동 입력을 엽니다: 보드에 포지션을 차리고 «양쪽의 모든 수로 정답을 기록하세요.» 초안이나 바로잡는 퍼즐은 같은 페이지를 책의 스캔과 함께 엽니다. 넓은 화면에서는 스캔이 보드 옆에 놓이고(다이어그램, 그리고 책의 정답을 찾았으면 정답), 휴대폰에서는 보드 / 다이어그램 / 정답 탭이 되므로, 다이어그램에 맞게 보드를 차릴 수 있습니다. 상대 수를 클릭해 «아무 수나»(any move)(책의 ~)로 표시할 수 있고, <strong>검증</strong>(Verify)은 «풀이의 모든 수가 정말 이기는지 Stockfish에 확인»을 실행합니다. 잘못 읽힌 퍼즐은 «책 스캔과 대조해 이 퍼즐 바로잡기»로 바로잡습니다.">
+                <strong>Add a puzzle</strong> opens manual entry: set the position on the board,
+                then “Record the solution, every move for both sides.” A draft, or a puzzle being
+                corrected, opens the same page with the book's scan, so the board can be made to
+                match the diagram: beside the board on a wide screen (Diagram, and Solutions where
+                the book's answers were found), as Board / Diagram / Solutions tabs on a phone. An
+                opponent move clicked becomes “any move” (the book's ~), and
                 <strong>Verify</strong> will “Ask Stockfish whether every solver move really
                 wins”. A misread puzzle is fixed via “Correct this puzzle against the book scan”.
               </li>
@@ -2519,11 +2528,11 @@
             <div class="scroll-x">
               <table class="controls">
                 <tbody>
-                  <tr><td data-ko="모드(Mode)">Mode</td><td data-ko="<strong>자유 대국</strong>(Free play)(자유 대국) 또는 <strong>스터디 드릴</strong>(Drill a study)(스터디 암송).">Two ways to train: <strong>Free play</strong>, or <strong>Drill a study</strong>.</td></tr>
-                  <tr><td data-ko="플레이할 진영(Play as)">Play as</td><td>White / Black</td></tr>
+                  <tr><td data-ko="모드(Mode)">Mode</td><td data-ko="두 가지 훈련 방식: <strong>자유 대국</strong>(Free play) 또는 <strong>스터디 드릴</strong>(Drill a study).">Two ways to train: <strong>Free play</strong>, or <strong>Drill a study</strong>.</td></tr>
+                  <tr><td data-ko="플레이할 진영(Play as)">Play as</td><td data-ko="백 / 흑">White / Black</td></tr>
                   <tr><td data-ko="출처(Source)">Source</td><td data-ko="«응수의 출처»(Where replies come from): <strong>Lichess 데이터베이스</strong>(Lichess database)(온라인, 토큰 필요. 옆의 <strong>레이팅</strong>(Rating)으로 상대 기력대를 고릅니다) 또는 아무 <strong>참고 데이터베이스</strong>(동봉된 것 포함, 오프라인으로 동작합니다).">“Where replies come from”: the <strong>Lichess database</strong> (online, token needed — a <strong>Rating</strong> select picks the opponent band) or any <strong>reference database</strong>, the bundled one included, offline.</td></tr>
-                  <tr><td>Opening <small>(Free play)</small></td><td data-ko="이름이나 ECO 코드로 약 3,800개 중에서 검색합니다: «오프닝 또는 ECO 코드 검색…»(Search any opening or ECO code…).">Searchable by name or ECO code, about 3,800 of them — “Search any opening or ECO code…”.</td></tr>
-                  <tr><td>Study · Chapter <small>(Drill)</small></td><td data-ko="암송할 스터디와 범위. «스터디 전체»(Whole study) 또는 챕터 하나입니다. 오프닝 맵에서 보내온 드릴이면 «오프닝 맵에서»(From the opening map) 블록이 그 범위를 설명합니다.">What to recite and how much — “Whole study” or one chapter. A drill sent from the opening map shows a “From the opening map” block naming its scope.</td></tr>
+                  <tr><td data-ko="오프닝(Opening) <small>(자유 대국)</small>">Opening <small>(Free play)</small></td><td data-ko="이름이나 ECO 코드로 약 3,800개 중에서 검색합니다: «오프닝 또는 ECO 코드 검색…»(Search any opening or ECO code…).">Searchable by name or ECO code, about 3,800 of them — “Search any opening or ECO code…”.</td></tr>
+                  <tr><td data-ko="스터디 · 챕터(Study · Chapter) <small>(드릴)</small>">Study · Chapter <small>(Drill)</small></td><td data-ko="암송할 스터디와 범위. «스터디 전체»(Whole study) 또는 챕터 하나입니다. 오프닝 맵에서 보내온 드릴이면 «오프닝 맵에서»(From the opening map) 블록이 그 범위를 설명합니다.">What to recite and how much — “Whole study” or one chapter. A drill sent from the opening map shows a “From the opening map” block naming its scope.</td></tr>
                   <tr><td data-ko="시작(Start)">Start</td><td data-ko="시작. 그 아래, 기록이 쌓이면 <strong>복습할 때가 된 포지션 드릴</strong>(Drill a position due for review)(기한이 아직이면 <strong>놓친 포지션 드릴</strong>(Drill a missed position))도 표시됩니다.">Begins. Below it, once a record exists, <strong>Drill a position due for review</strong> — or <strong>Drill a missed position</strong> while nothing is due yet.</td></tr>
                 </tbody>
               </table>
@@ -2537,14 +2546,17 @@
               <li data-ko="<strong>드릴</strong>에서는 스터디에 없는 수가 거부됩니다: «여기서 스터디의 수는 {moves}입니다. 다시 시도해 보세요.» 세션은 셋 중 하나로 끝납니다: «준비한 라인의 끝입니다. 모든 수가 스터디와 일치했습니다.», 갭(«필드가 {san}으로 응수했습니다(이 포지션의 {pct}%). 스터디에 준비된 답이 없습니다.»), 또는 «이 라인은 데이터베이스를 벗어났습니다. 여기부터는 직접 판단해야 합니다.» 라인이 이어지는 동안 상대가 스터디에 없는 응수를 둘 수 있는 자리를 지나면 호박색 경고로 알립니다: «필드는 게임의 {pct}%에서 {san}도 두는데, 스터디에 아직 준비된 답이 없습니다.» 그 응수는 보드에 화살표로 그려지고, 수순 패널에 두어진 응수 곁의 변화수로 들어가며 «게임의 {pct}%. 스터디에 답이 없습니다.»({pct}% of games. No answer in the study.)를 주석으로 답니다. 응수, 거부, 갭 알림, 끝맺음은 스크린 리더에도 읽히고, 응수를 가져오는 동안 수 입력 상자는 포커스를 잃지 않습니다.">
                 In a <strong>drill</strong>, a move your study does not play is refused: “Your study plays {moves} here. Try again.” A session ends one of three ways — “End of your prepared line. Every move matched the study.”, a gap (“The field answered {san}, played in {pct}% of games here, and your study holds no reply.”), or “This line has run past the database. You are on your own now.” A position the line passes through where the field also plays a reply your study does not answer is flagged in amber as it goes: “The field also plays {san} in {pct}% of games, and your study has no answer to it.” That reply is drawn on the board as an arrow and enters the moves panel as a variation beside the reply that was played, with “{pct}% of games. No answer in the study.” as its comment. Replies, refusals, gap notes and the ending are announced to a screen reader, and the move box keeps focus while the reply is fetched.
               </li>
-              <li data-ko="<strong>자유 대국</strong>에서 라인이 북을 벗어나면 엔진이 상대를 이어받아 게임이 계속됩니다.">
-                In <strong>free play</strong>, when the line leaves book the engine takes over the
-                replies and the game keeps going.
+              <li data-ko="<strong>자유 대국</strong>에서는 출처에 그 포지션의 게임이 남아 있는 동안 필드가 응수하고, 더 없으면 «이 라인은 데이터베이스를 벗어났습니다. 여기부터는 직접 판단해야 합니다.»와 함께 게임이 끝납니다. 엔진이 상대를 이어받지는 않습니다.">
+                In <strong>free play</strong> the field replies for as long as the source holds
+                games from the position, and where it holds none the game ends: “This line has run
+                past the database. You are on your own now.” No engine takes over the replies.
               </li>
-              <li data-ko="끝나면: 엔진 평가, <strong>분석</strong>(Analyse), 그리고 <strong>라인을 스터디로 저장</strong>(Save line to study)(자유 대국) 또는 <strong>스터디로 가기</strong>(Go to study)(드릴), <strong>새 게임</strong>(New game).">
-                Afterwards: an engine verdict, <strong>Analyse</strong>, then <strong>Save line to
-                study</strong> (free play) or <strong>Go to study</strong> (drill), and
-                <strong>New game</strong>.
+              <li data-ko="끝나면 엔진 평가가 나오고, 보드는 라인이 끝난 자리에서 엔진이 켜진 분석 보드가 되므로 따로 누를 분석 버튼은 없습니다. 그다음 <strong>라인을 스터디로 저장</strong>(Save line to study)(자유 대국) 또는 <strong>스터디로 가기</strong>(Go to study)(드릴), 그리고 <strong>새 게임</strong>(New game). 대국 중에는 <strong>뒤로</strong>(Back)(«이 라인을 떠나 새 게임 시작하기»)가 라인을 두고 설정으로 돌아갑니다.">
+                Afterwards: an engine verdict, and the board becomes the analysis board where the
+                line ended, with the engine on, so there is no Analyse to press. Then
+                <strong>Save line to study</strong> (free play) or <strong>Go to study</strong>
+                (drill), and <strong>New game</strong>. Mid-game, <strong>Back</strong> (“Leave this
+                line and set up a new game”) leaves the line for the setup.
               </li>
             </ul>
             <h2 data-ko="기록">The record</h2>
@@ -2559,10 +2571,10 @@
               “Forget the drill record” confirmation.
             </p>
             <h2 data-ko="엔드게임 드릴">Endgame drills</h2>
-            <p data-ko="도구 → «엔드게임 드릴»(휴대폰에서는 더보기 페이지의 도구 아래)은 게임 검색의 기물 구성 프리셋을 «폰과 마이너 피스»(Pawns and minor pieces), «룩 엔드게임»(Rook endgames), «퀸과 메이저 기물»(Queen and major pieces), «미들게임과 기물 우위»(Middlegames and material edges), «직접 지정»(Your own)의 다섯 묶음으로 나열합니다. 마지막 묶음의 한 줄 «기물 구성 직접 지정»(Custom material)은 검색과 같은 편집기를 엽니다. 아무것도 기록하지 않습니다. 하나를 열면 테이블베이스가 둘 차례인 진영의 승리로 판정하는 위치, 또는 지는 수가 있는 무승부 위치 중 그 묶음에서 더 날카로운 쪽을 무작위로 뽑고, 그 진영을 맡아 둡니다. 패널의 제목이 퍼즐 트레이너처럼 «백 차례»(White to move) 또는 «흑 차례»(Black to move)라고 말하고, 그 아래 줄이 드릴 중인 묶음을 이름으로 보여 주며 누르면 목록으로 돌아가고, 테이블베이스는 가장 오래 버티는 수로 응수합니다. 승리를 놓치는 수는 시도를 끝내고 지켰을 수를 보드에 화살표로 그리며, 체크메이트는 시도를 성공으로 끝냅니다. 끝나면 제목이 판정이 됩니다: «체크메이트»(Checkmate), «승리를 놓쳤습니다»(The win slipped), «중지했습니다»(Stopped). ??와 ! 배지, 지켰을 수의 화살표는 분석 보드에 남고, 그 수는 들어가 볼 수 있는 변화수로 추가됩니다. 끝나면 퍼즐 트레이너처럼 같은 자리에서 분석 보드와 엔진이 열리고, «다시 시도»나 «다음 엔드게임»이 있습니다. «건너뛰기»는 아무것도 기록하지 않고 다른 위치를 뽑고, 그 옆의 «분석»은 채점 없이 시도를 그 자리에서 끝내며 같은 방식으로 보드를 엔진과 함께 분석 보드로 바꿉니다. 응답하는 테이블베이스가 없으면 페이지가 그 이유를 말하고 «설정 열기»가 테이블베이스 카드로 바로 갑니다. 시도 중에는 패널이 «승리를 지키세요. 테이블베이스가 무승부나 패배로 판정하는 수를 두면 시도가 끝납니다.»라고 알립니다. 지킬 무승부 위치에서는 테이블베이스가 지킬 수가 가장 적게 남는 수로 공격하고, 패널이 «무승부를 지키세요. 테이블베이스가 패배로 판정하는 수를 두면 시도가 끝나고, 열 수를 지키면 무승부로 끝납니다.»라고 알리며, 지는 수는 «무승부를 놓쳤습니다»(«{san}은(는) 무승부를 놓치는 수입니다. {best}이(가) 무승부를 지킵니다.»)로, 열 수를 지키거나 공격 측에 메이트할 기물이 남지 않으면 «무승부를 지켰습니다»로 끝납니다. «분석»(Analyse)의 툴팁은 «시도를 끝내고 엔진을 엽니다»입니다. 데모에는 테이블베이스가 없어 «데모는 테이블베이스에 접근하지 않습니다. 앱에서는 설정에서 지정한 테이블베이스를 상대로 드릴을 진행합니다.»라고 말합니다.">
+            <p data-ko="도구 → «엔드게임 드릴»(휴대폰에서는 더보기 페이지의 도구 아래)은 게임 검색의 기물 구성 프리셋을 «폰과 마이너 피스»(Pawns and minor pieces), «룩 엔드게임»(Rook endgames), «퀸과 메이저 기물»(Queen and major pieces), «미들게임과 기물 우위»(Middlegames and material edges), «직접 지정»(Your own)의 다섯 묶음으로 나열합니다. 마지막 묶음의 한 줄 «기물 구성 직접 지정»(Custom material)은 검색과 같은 편집기를 엽니다. 아무것도 기록하지 않습니다. 하나를 열면 테이블베이스가 둘 차례인 진영의 승리로 판정하는 위치, 또는 지는 수가 있는 무승부 위치 중 그 기물 구성에서 더 날카로운 쪽을 무작위로 뽑고, 그 진영을 맡아 둡니다. 패널의 제목이 퍼즐 트레이너처럼 «백 차례»(White to move) 또는 «흑 차례»(Black to move)라고 말하고, 그 아래 줄이 드릴 중인 기물 구성(예: «폰 엔드게임»)을 이름으로 보여 주며 누르면 목록으로 돌아가고, 테이블베이스는 가장 오래 버티는 수로 응수합니다. 승리를 놓치는 수는 시도를 끝내고 지켰을 수를 보드에 화살표로 그리며, 체크메이트는 시도를 성공으로 끝냅니다. 끝나면 제목이 판정이 됩니다: «체크메이트»(Checkmate), «승리를 놓쳤습니다»(The win slipped), «중지했습니다»(Stopped). ??와 ! 배지, 지켰을 수의 화살표는 분석 보드에 남고, 그 수는 들어가 볼 수 있는 변화수로 추가됩니다. 끝나면 퍼즐 트레이너처럼 같은 자리에서 분석 보드와 엔진이 열리고, «다시 시도»나 «다음 엔드게임»이 있습니다. «건너뛰기»는 아무것도 기록하지 않고 다른 위치를 뽑고, 그 옆의 «분석»은 채점 없이 시도를 그 자리에서 끝내며 같은 방식으로 보드를 엔진과 함께 분석 보드로 바꿉니다. 응답하는 테이블베이스가 없으면 페이지가 그 이유를 말하고 «설정 열기»가 테이블베이스 카드로 바로 갑니다. 시도 중에는 패널이 «승리를 지키세요. 테이블베이스가 무승부나 패배로 판정하는 수를 두면 시도가 끝납니다.»라고 알립니다. 지킬 무승부 위치에서는 테이블베이스가 지킬 수가 가장 적게 남는 수로 공격하고, 패널이 «무승부를 지키세요. 테이블베이스가 패배로 판정하는 수를 두면 시도가 끝나고, 열 수를 지키면 무승부로 끝납니다.»라고 알리며, 지는 수는 «무승부를 놓쳤습니다»(«{san}은(는) 무승부를 놓치는 수입니다. {best}이(가) 무승부를 지킵니다.»)로, 열 수를 지키거나 공격 측에 메이트할 기물이 남지 않으면 «무승부를 지켰습니다»로 끝납니다. «분석»(Analyse)의 툴팁은 «시도를 끝내고 엔진을 엽니다»입니다. 데모에는 테이블베이스가 없어 «데모는 테이블베이스에 접근하지 않습니다. 앱에서는 설정에서 지정한 테이블베이스를 상대로 드릴을 진행합니다.»라고 말합니다.">
               Tools → “Endgame drills” (under Tools on a phone's More page) lists the games hunt's material presets by family: “Pawns and minor pieces”, “Rook endgames”, “Queen and major pieces”, “Middlegames and material edges”, and “Your own”, whose one row, “Custom material”, opens the same editor the hunt uses. Nothing is recorded. Opening a class
               draws a random position the tablebase calls a win for the side to move, or a drawn one with moves that lose in it, whichever is the sharper test the class has, and you play
-              that side: the panel's headline says “White to move” or “Black to move”, as the puzzle trainer's does, the row under it names the family being drilled and returns to the list when pressed, and the tablebase
+              that side: the panel's headline says “White to move” or “Black to move”, as the puzzle trainer's does, the row under it names the class being drilled (“Pawn endgame”, say) and returns to the list when pressed, and the tablebase
               answers with the move that takes longest to lose. A move that lets the win slip ends
               the attempt and arrows the move that would have kept it (“{san} lets the win slip.
               {best} keeps it.”); checkmate ends it the other way. Once it ends the headline is the
@@ -2608,9 +2620,10 @@
               </picture>
             </figure>
             <h2 data-ko="맵 메뉴">The map menu</h2>
-            <p data-ko="데스크톱에서는 머리의 아이콘 줄, Android 휴대폰에서는 오른쪽 아래의 «맵 메뉴»(Map menu) 원반, iPhone에서는 제목 줄의 같은 나침반 버튼. 순서대로:">
-              Icons in the header on a desktop, the “Map menu” disc in the bottom-right corner on an
-              Android phone, the same compass on the title row on an iPhone. In order:
+            <p data-ko="데스크톱과 태블릿에서는 맵 위 오른쪽 구석의 아이콘 줄, Android 휴대폰에서는 오른쪽 아래의 «맵 메뉴»(Map menu) 버튼(모서리가 둥근 사각형), iPhone에서는 제목 줄의 같은 나침반 버튼. 순서대로:">
+              Icons along the map's top right corner on a desktop or a tablet, the “Map menu”
+              button (a rounded square) in the bottom-right corner on an Android phone, the same
+              compass on the title row on an iPhone. In order:
             </p>
             <div class="scroll-x">
               <table class="controls">
@@ -2619,8 +2632,8 @@
                   <tr><td data-ko="축소(Zoom out)">Zoom out</td><td data-ko="한 단계 축소합니다.">Steps the zoom out.</td></tr>
                   <tr><td data-ko="화면에 맞추기(Align the map)">Align the map</td><td data-ko="흐트러진 배치를 다시 폅니다.">Lays a pulled-about map back out.</td></tr>
                   <tr><td data-ko="전체 그래프 복원(Restore the whole graph)">Restore the whole graph</td><td data-ko="가지치기(Prune)를 되돌립니다. 그때만 나타납니다.">Undoes a prune — appears only while one line is isolated.</td></tr>
-                  <tr><td>Show the constellation / Show the tree</td><td data-ko="같은 수들의 두 배치. 기기가 어느 쪽을 썼는지 기억합니다.">Two arrangements of the same moves; the device remembers which.</td></tr>
-                  <tr><td>Switch to the black map / … white map</td><td data-ko="색마다 맵 하나.">One map per colour.</td></tr>
+                  <tr><td data-ko="별자리로 보기(Show the constellation) / 트리로 보기(Show the tree)">Show the constellation / Show the tree</td><td data-ko="같은 수들의 두 배치. 기기가 어느 쪽을 썼는지 기억합니다.">Two arrangements of the same moves; the device remembers which.</td></tr>
+                  <tr><td data-ko="흑 맵으로 전환(Switch to the black map) / 백 맵으로 전환(… white map)">Switch to the black map / … white map</td><td data-ko="색마다 맵 하나.">One map per colour.</td></tr>
                   <tr><td data-ko="커버리지 비교 대상…(Check coverage against…)">Check coverage against…</td><td data-ko="필드 고르기 — 아래 참조.">Picking the field — below.</td></tr>
                 </tbody>
               </table>
@@ -2744,7 +2757,7 @@
                 <tbody>
                   <tr><td data-ko="기간(Played within)">Played within</td><td data-ko="«모든 기간»(Any time), 최근 7일, 30일, 3·6·12개월, 또는 «직접 지정»(Custom dates). 직접 지정을 고르면 «시작일»(From date)과 «종료일»(To date) 선택기가 옆에 열립니다. 빠른 범위는 두 날짜가 아니라 상대적으로 저장되므로, «최근 30일»은 다음 주에 와도 최근 30일입니다.">“Any time”, the last 7 or 30 days, the last 3, 6 or 12 months, or “Custom dates”, which opens “From date” and “To date” pickers beside it. A quick range is kept as a range, not as two dates, so “Last 30 days” still means the last 30 days next week.</td></tr>
                   <tr><td data-ko="진영(Side)">Side</td><td data-ko="«양쪽 모두»(Either side), «백으로»(As White) 또는 «흑으로»(As Black).">“Either side”, “As White” or “As Black”.</td></tr>
-                  <tr><td>Bullet · Blitz · Rapid · Classical</td><td data-ko="시간제 칩입니다. 여러 개를 켤 수 있고, 하나도 켜지 않으면 모든 시간제입니다.">Time control chips. Any number can be on; none on means every time control.</td></tr>
+                  <tr><td data-ko="불렛 · 블리츠 · 래피드 · 클래시컬(Bullet · Blitz · Rapid · Classical)">Bullet · Blitz · Rapid · Classical</td><td data-ko="시간제 칩입니다. 여러 개를 켤 수 있고, 하나도 켜지 않으면 모든 시간제입니다.">Time control chips. Any number can be on; none on means every time control.</td></tr>
                   <tr><td data-ko="담아 둔 것만(Kept only)">Kept only</td><td data-ko="모음에 담긴 게임으로 좁힙니다. 툴팁: «모음에 담은 게임만 봅니다. 전체 기보가 아닙니다»">Narrows to the games in your collection; its tip reads “Only the games in your collection, not every archived game”.</td></tr>
                 </tbody>
               </table>
@@ -2787,9 +2800,9 @@
         <section class="page" id="settings">
           <div class="doc">
             <h1 data-ko="설정">Settings</h1>
-            <p class="lede" data-ko="사용자로서 하는 모든 일은 앱 안에서 할 수 있습니다. 셸이 필요한 일은 없습니다. 각 카드 제목의 ? 표시(«매뉴얼 열기»(Open the manual))는 이 페이지를 새 탭에 엽니다. 카드 이름을 누르면 그 카드로 갑니다. 넓은 창에서는 이름들이 설정 왼쪽 여백에 세로로 서서 스크롤을 따라오며 읽고 있는 카드를, 그리고 누른 카드는 스크롤이 끝날 때까지 밝혀 두고, 좁은 창에서는 맨 위에 한 줄로 붙어 있습니다. 카드 순서대로:">
+            <p class="lede" data-ko="사용자로서 하는 모든 일은 앱 안에서 할 수 있습니다. 셸이 필요한 일은 없습니다. 각 카드 제목의 ? 표시(«매뉴얼 열기»(Open the manual))는 이 페이지를 새 탭에 엽니다. 카드 이름을 누르면 그 카드로 갑니다. 넓은 창에서는 이름들이 설정 왼쪽 여백에 세로로 서서 스크롤을 따라오며 읽고 있는 카드를, 그리고 누른 카드는 스크롤이 끝날 때까지 밝혀 두고, 좁은 창에서는 맨 위에 한 줄로 붙어 있습니다. 손가락으로 넘겨 볼 만큼 짧은 휴대폰의 페이지에는 어느 쪽도 없습니다. 카드 순서대로:">
               Everything you do as a user happens in the app — nothing needs a shell. The ? on each
-              card's title (“Open the manual”) opens this page in a new tab, and the card names jump to their card: on a wide window they stand in a column to the left of the settings, follow the page as it scrolls and light the card you are reading, and the one you clicked until its scroll ends; on a narrower window they sit in a row at the top. Card by card, in
+              card's title (“Open the manual”) opens this page in a new tab, and the card names jump to their card: on a wide window they stand in a column to the left of the settings, follow the page as it scrolls and light the card you are reading, and the one you clicked until its scroll ends; on a narrower window they sit in a row at the top, and a phone, whose page is short enough to thumb through, draws neither. Card by card, in
               order:
             </p>
             <div class="scroll-x">
@@ -2806,14 +2819,14 @@
                   </tr>
                   <tr>
                     <td data-ko="보관함(Vault)">Vault</td>
-                    <td data-ko="<strong>보관함 이름</strong>(Vault name)(«사이드바 아래와 창 제목에 이 보관함의 이름을 보여 줍니다. 이 보관함을 여는 모든 기기에 같은 이름이 보입니다.»)과 <strong>이름 저장</strong>(Save name). 비워 두면 폴더 이름이 그 자리에 옵니다. 이름은 보관함 자체의 config.json에 있으므로, 같은 폴더를 여는 휴대폰과 데스크톱이 같은 이름을 봅니다. 그 아래에 폴더로서의 보관함이 있습니다: 경로, 용량, 그리고 안에 든 것마다 한 줄씩과 파일 수. <strong>사본 내려받기</strong>(Download a copy)는 모든 문서와 변경 기록을 tar 파일 하나로 내려받습니다(«설정과 토큰은 서버에 남습니다.»(Settings and tokens stay on the server.)). 파일 이름은 보관함 이름과 날짜입니다. <strong>경로 복사</strong>(Copy the path), 데스크톱 앱에서는 <strong>파일 관리자에서 보기</strong>(Show in the file manager).">
+                    <td data-ko="<strong>보관함 이름</strong>(Vault name)(«사이드바 아래와 창 제목에 이 보관함의 이름을 보여 줍니다. 이 보관함을 여는 모든 기기에 같은 이름이 보입니다.»)과 <strong>이름 저장</strong>(Save name). 비워 두면 폴더 이름이 그 자리에 옵니다. 이름은 보관함 자체의 config.json에 있으므로, 같은 폴더를 여는 휴대폰과 데스크톱이 같은 이름을 봅니다. 그 아래에 폴더로서의 보관함이 있습니다: 경로, 용량, 그리고 안에 든 것마다 한 줄씩과 파일 수. 버튼에 크기가 적힌 <strong>사본 내려받기</strong>(Download a copy)는 모든 문서와 변경 기록을 tar 파일 하나로 내려받습니다(«설정과 토큰은 서버에 남습니다.»(Settings and tokens stay on the server.)). 파일 이름은 보관함 이름과 날짜입니다. <strong>경로 복사</strong>(Copy the path), 데스크톱 앱에서는 <strong>파일 관리자에서 보기</strong>(Show in the file manager).">
                       <strong>Vault name</strong> — “Names this vault at the foot of the sidebar and
                       in the window title. Every device that opens it sees the same name.” — and
                       <strong>Save name</strong>. Left blank, the folder's name stands in. The name
                       lives in the vault's own config.json, so a phone and a desktop opening the same
                       folder see the same one. Under it, the vault as a folder: its path, what it
                       weighs, and one row per thing in it with how many files that is.
-                      <strong>Download a copy</strong> fetches every document and the change
+                      <strong>Download a copy</strong>, its size on the button, fetches every document and the change
                       history as one tar file, named after the vault and the day; “Settings and
                       tokens stay on the server.” <strong>Copy the path</strong>, and in the
                       desktop app <strong>Show in the file manager</strong>.
@@ -2851,7 +2864,7 @@
                   </tr>
                   <tr>
                     <td data-ko="테이블베이스(Tablebase)">Tablebase</td>
-                    <td data-ko="<strong>테이블베이스 사용</strong>(Use the tablebase) 스위치는 이 기기에만 적용됩니다. 끄면 여기서는 아무것도 묻지 않습니다. 그 아래 «답의 출처»(Answers come from)는 보관함의 설정으로, <strong>Lichess의 공개 테이블베이스</strong>(Lichess’s public tablebase) · <strong>직접 운영하는 테이블베이스 서버</strong>(A tablebase server of your own) · <strong>서버에 있는 테이블 파일</strong>(Table files on the server) 중 하나를 고릅니다. 고른 것에 필요한 칸만 그 아래에 나타납니다. 저장하면 재시작 없이 적용되며, 출처마다 캐시가 따로 쌓입니다. <strong>Table files</strong>는 앱과 서버가 같은 컴퓨터일 때만 나타납니다. 볼 수 없는 디스크의 경로를 묻는 것은 답할 수 없는 질문이므로, 다른 곳의 서버라면 그 서버의 보관함 설정에 있는 <code>tablebaseDir</code>을 가리킵니다. 설정해 두고도 답하지 않을 수 있는 유일한 선택이기도 합니다. 폴더가 사라졌거나 네이티브 코어가 없는 빌드면 조용히 Lichess로 되돌아가므로, 둘 중 어느 쪽인지는 그 아래 한 줄이 알려 줍니다. <strong>캐시된 답</strong>(Cached answers)은 답을 몇 개 갖고 있고 디스크를 얼마나 쓰는지 보여 주며, 옆의 휴지통(«캐시된 답 지우기»(Clear cached answers))이 그것을 모두 버립니다. 줄은 «캐시 없음»(Nothing cached)으로 바뀌고 아래 Storage used의 숫자도 함께 갱신됩니다. 직접 운영하는 서버에 테이블을 추가한 뒤 눌러야 하는 버튼입니다. 답에는 만료가 없어서, 이미 «없음»으로 답한 엔드게임은 다시 묻지 않기 때문입니다. 카드는 <code>#/settings/tablebase</code> 주소로 열리며, 엔드게임 드릴의 «설정 열기»(Open Settings)가 여기로 옵니다.">
+                    <td data-ko="<strong>테이블베이스 사용</strong>(Use the tablebase) 스위치는 이 기기에만 적용됩니다. 끄면 여기서는 아무것도 묻지 않습니다. 그 아래 «답의 출처»(Answers come from)는 보관함의 설정으로, <strong>Lichess의 공개 테이블베이스</strong>(Lichess’s public tablebase) · <strong>직접 운영하는 테이블베이스 서버</strong>(A tablebase server of your own) · <strong>서버에 있는 테이블 파일</strong>(Table files on the server) 중 하나를 고릅니다. 고른 것에 필요한 칸만 그 아래에 나타납니다. 저장하면 재시작 없이 적용되며, 출처마다 캐시가 따로 쌓입니다. 세 가지는 어느 기기에서나 고를 수 있지만, <strong>Table files</strong> 아래의 폴더 칸은 앱과 서버가 같은 컴퓨터일 때만 나타납니다. 볼 수 없는 디스크의 경로를 묻는 것은 답할 수 없는 질문이므로, 다른 곳의 서버라면 그 서버의 보관함 설정에 있는 <code>tablebaseDir</code>을 가리킵니다. 데스크톱 앱에서는 «고르기…»(Choose…)로 폴더를 고릅니다. Table files는 설정해 두고도 답하지 않을 수 있는 유일한 선택이기도 합니다. 폴더가 사라졌거나 네이티브 코어가 없는 빌드면 조용히 Lichess로 되돌아가므로, 둘 중 어느 쪽인지는 그 아래 한 줄이 알려 줍니다. <strong>캐시된 답</strong>(Cached answers)은 답을 몇 개 갖고 있고 디스크를 얼마나 쓰는지 보여 주며, 옆의 휴지통(«캐시된 답 지우기»(Clear cached answers))이 그것을 모두 버립니다. 줄은 «캐시 없음»(Nothing cached)으로 바뀌고 아래 Storage used의 숫자도 함께 갱신됩니다. 직접 운영하는 서버에 테이블을 추가한 뒤 눌러야 하는 버튼입니다. 답에는 만료가 없어서, 이미 «없음»으로 답한 엔드게임은 다시 묻지 않기 때문입니다. 카드는 <code>#/settings/tablebase</code> 주소로 열리며, 엔드게임 드릴의 «설정 열기»(Open Settings)가 여기로 옵니다.">
                       <strong>Use the tablebase</strong> is the switch, and it is this device's
                       alone: off, nothing is asked from here at all. Under it,
                       <strong>Answers come from</strong> — the vault's own setting, one choice of
@@ -2860,10 +2873,12 @@
                       beneath it. Saved without a restart, and each source's answers are cached
                       apart from the others'.
 
+                      All three are offered from any device, but the folder box under
                       <strong>Table files</strong> appears only when the app and the server are the
                       same computer — a path on a disk you cannot see is not a question worth
                       asking, so on a server elsewhere the panel points at
-                      <code>tablebaseDir</code> in that server's vault config instead. It is also
+                      <code>tablebaseDir</code> in that server's vault config instead. In the
+                      desktop app “Choose…” picks the folder. Table files is also
                       the one choice that can be set and not be answering — a folder that has gone
                       missing, or a build with no native core, falls back to Lichess in silence —
                       so a line beneath it says which of the two is happening.
@@ -2889,7 +2904,7 @@
                   </tr>
                   <tr>
                     <td data-ko="모양(Appearance)">Appearance</td>
-                    <td data-ko="<strong>앱 언어</strong>(App language)(English · 한국어) · <strong>앱 테마</strong>(App theme)(Follow system / Light / Dark) · <strong>밀도</strong>(Density)(Comfortable / Compact) · <strong>색</strong>(Colours)(중성색 다섯, 유채색 여덟 중 하나인 “보드를 따름”(Follow the board)은 고른 보드에서 강조색을 가져옵니다, High contrast) · <strong>보드</strong>(Board)(열두 테마, 목록의 줄마다 그 테마로 칠한 견본이 붙고, «나뭇결» 하나는 무늬가 있습니다) · <strong>기물</strong>(Pieces)(Cburnett부터 열 세트, 줄마다 그 세트의 나이트가 붙습니다) · <strong>캐슬링</strong>(Castling)(킹 두 칸 g1 / 룩 위 h1) · <strong>보드 좌표</strong>(Board coordinates) · <strong>수 입력 상자</strong>(Move box)(키보드로 수를 두는 «수 입력…»(Type a move…) 칸), 그리고 «옵션 더 보기»(More options) 아래의 <strong>모서리</strong>(Corners)(모서리 반경), <strong>주석 크기</strong>(Annotation size), <strong>유리</strong>(Glass)와 <strong>유리 명도</strong>(Glass tint)(iPhone에서만. 바와 메뉴, 토스트 너머로 페이지가 얼마나 비칠지와 유리가 얼마나 어두울지입니다. 유리를 0에 두면 불투명해집니다), <strong>리뷰 제안</strong>(Review offer)(게임을 열 때 나오는 “게임 리뷰”(Review game) 제안. 꺼도 보드 도구 모음의 버튼은 남습니다). 전부 기기별 설정입니다.">
+                    <td data-ko="<strong>앱 언어</strong>(App language)(English · 한국어) · <strong>앱 테마</strong>(App theme)(Follow system / Light / Dark) · <strong>밀도</strong>(Density)(Comfortable / Compact) · <strong>색</strong>(Colours)(중성색 다섯, 유채색 여덟 중 하나인 “보드를 따름”(Follow the board)은 고른 보드에서 강조색을 가져옵니다, High contrast) · <strong>보드</strong>(Board)(열두 테마, 목록의 줄마다 그 테마로 칠한 견본이 붙고, «나뭇결» 하나는 무늬가 있습니다) · <strong>기물</strong>(Pieces)(Cburnett부터 열 세트, 줄마다 그 세트의 나이트가 붙습니다) · <strong>캐슬링</strong>(Castling)(킹 두 칸 g1 / 룩 위 h1) · <strong>보드 좌표</strong>(Board coordinates) · <strong>수 입력 상자</strong>(Move box)(키보드로 수를 두는 «수 입력…»(Type a move…) 칸), 그리고 «옵션 더 보기»(More options) 아래의 <strong>모서리</strong>(Corners)(모서리 반경), <strong>유리</strong>(Glass)와 <strong>유리 명도</strong>(Glass tint)(iPhone에서만. 바와 메뉴, 토스트 너머로 페이지가 얼마나 비칠지와 유리가 얼마나 어두울지입니다. 유리를 0에 두면 불투명해집니다), <strong>주석 크기</strong>(Annotation size), <strong>리뷰 제안</strong>(Review offer)(게임을 열 때 나오는 “게임 리뷰”(Review game) 제안. 꺼도 보드 도구 모음의 버튼은 남습니다). 전부 기기별 설정입니다.">
                       <strong>App language</strong> (English · 한국어) · <strong>App theme</strong>
                       (Follow system / Light / Dark) · <strong>Density</strong> (Comfortable /
                       Compact) · <strong>Colours</strong> (five neutrals, eight coloured
@@ -2902,10 +2917,10 @@
                       <strong>Castling</strong> (king two squares g1 / onto the rook h1) ·
                       <strong>Board coordinates</strong> · <strong>Move box</strong> (the “Type a move…”
                       field, for playing moves from the keyboard) — and, behind “More options”,
-                      <strong>Corners</strong>, <strong>Annotation size</strong>, <strong>Glass</strong>
+                      <strong>Corners</strong>, <strong>Glass</strong>
                       and <strong>Glass tint</strong> (an iPhone only: how much of the page
                       shows through the bars, menus and toasts, and how dark the glass is;
-                      Glass at zero makes them solid) and
+                      Glass at zero makes them solid), <strong>Annotation size</strong> and
                       <strong>Review offer</strong> (the “Review game” offer an opened game
                       makes; off, the button in the board's toolbar is still there). All
                       per-device.
@@ -2913,11 +2928,13 @@
                   </tr>
                   <tr>
                     <td data-ko="저장 공간 사용량(Storage used)">Storage used</td>
-                    <td data-ko="디스크에 있는 것과 그중 비울 수 있는 것: <strong>보관함</strong>(내 문서와 변경 기록, 위의 Vault 카드로 이어집니다), <strong>둘러본 게임</strong>, <strong>참고 데이터베이스</strong>(Reference databases), <strong>탐색기 캐시</strong>(Explorer cache), <strong>테이블베이스 캐시</strong>(Tablebase cache), 그리고 «모두 {size}». 읽기 전용이며, 각 줄은 그것을 지우는 카드나 페이지로 이어집니다. 앱에서 아직 지울 수 없는 Explorer cache만 숫자로만 남습니다.">
+                    <td data-ko="디스크에 있는 것과 그중 비울 수 있는 것: <strong>보관함</strong>(내 문서와 변경 기록, 위의 Vault 카드로 이어집니다), <strong>둘러본 게임</strong>, <strong>참고 데이터베이스</strong>(Reference databases), <strong>탐색기 캐시</strong>(Explorer cache), <strong>테이블베이스 캐시</strong>(Tablebase cache), <strong>엔진 신경망</strong>(Engine networks)(엔진의 전체 신경망. 보드의 엔진 설정에서 지우며, 이 줄을 누르면 보드가 열립니다), 그리고 «모두 {size}». 읽기 전용이며, 각 줄은 그것을 지우는 카드나 페이지로 이어집니다. 앱에서 아직 지울 수 없는 Explorer cache만 숫자로만 남습니다.">
                       What is on disk and what of it can be freed: <strong>Vault</strong> (your
                       documents and their history; it links to the Vault card above),
                       <strong>Browsed games</strong>, <strong>Reference databases</strong>,
-                      <strong>Explorer cache</strong>, <strong>Tablebase cache</strong>, and
+                      <strong>Explorer cache</strong>, <strong>Tablebase cache</strong>,
+                      <strong>Engine networks</strong> (the engine's full network, which the
+                      engine's settings on the Board remove; the row opens the Board), and
                       “{size} in total”. Read-only; each row links to the card or page that
                       clears it, except Explorer cache, which nothing in the app clears yet and so
                       stays a figure alone.
@@ -2933,9 +2950,12 @@
                   </tr>
                   <tr>
                     <td data-ko="데스크톱 앱(Desktop app)">Desktop app</td>
-                    <td data-ko="데스크톱 셸 안에서만. <strong>보관함 → 전환…</strong>(Vault → Switch…) — «이 창을 서버에 연결하거나, 이 기기의 폴더를 사용하세요.»">
+                    <td data-ko="데스크톱 셸 안에서만. <strong>보관함 → 전환…</strong>(Vault → Switch…) — «이 창을 서버에 연결하거나, 이 기기의 폴더를 사용하세요.» 시스템이 재질을 그려 주는 곳(Windows 11, macOS)에서는 <strong>창 재질</strong>(Window material)이 앱 뒤로 바탕 화면이 비치게 합니다. «바꾸면 창이 새로 고쳐집니다.» 기본은 꺼짐입니다.">
                       Inside the desktop shell only. <strong>Vault → Switch…</strong> — “Point
-                      this window at a server, or host a folder on this device.”
+                      this window at a server, or host a folder on this device.” Where the system
+                      draws a material of its own (Windows 11, macOS), <strong>Window
+                      material</strong> lets the desktop show through behind the app: “The window
+                      reloads when you change it.” Off by default.
                     </td>
                   </tr>
                   <tr>
@@ -3016,23 +3036,25 @@
             </figure>
             <h2 data-ko="무엇이 달라지나">What changes</h2>
             <ul>
-              <li data-ko="하단 바에 <strong>홈 · 게임 · 스터디 · 퍼즐 · 더보기</strong>(Home · Games · Studies · Puzzles · More)가 있고, 나머지는 More 안에 있습니다. iPhone에서는 바가 아래 가장자리에서 떠 있는 반투명한 둥근 캡슐이며 아이콘만 있고, 페이지가 그 아래로 스크롤됩니다. 아래로 스크롤하면 작아지고, 위로 스크롤하거나 바를 누르면 돌아옵니다. Android에서는 바가 가장자리에 붙어 있습니다. 각 페이지의 만들기·추가는 데스크톱과 같이 제목 줄의 버튼(«만들기»(Create), Games에서는 «가져오기»(Import))에 있고, 여러 가지를 만들 수 있는 페이지에서는 그 버튼이 동작 시트를, iPhone에서는 버튼 아래 메뉴를 엽니다. Android에서는 오프닝 맵만 오른쪽 아래의 나침반 원반으로 메뉴를 열고, iPhone에서는 그 나침반이 제목 줄에 있습니다. 줄의 ⋯ 메뉴도 같은 식으로, iPhone에서는 버튼에서 펼쳐지는 메뉴, Android에서는 아래에서 올라오는 시트입니다.">
+              <li data-ko="하단 바에 <strong>홈 · 게임 · 스터디 · 퍼즐 · 더보기</strong>(Home · Games · Studies · Puzzles · More)가 있고, 나머지는 More 안에 있습니다. iPhone에서는 바가 아래 가장자리에서 떠 있는 반투명한 둥근 캡슐이며 아이콘만 있고, 페이지가 그 아래로 스크롤됩니다. 아래로 스크롤하면 작아지고, 위로 스크롤하거나 바를 누르면 돌아옵니다. Android에서는 바가 가장자리에 붙어 있습니다. 각 페이지의 만들기·추가는 데스크톱과 같이 제목 줄에 있고, 휴대폰에서는 더하기 표시만 있는 버튼입니다(이름은 «만들기»(Create), Games에서는 «게임 가져오기»(Import a game)). 여러 가지를 만들 수 있는 페이지에서는 그 버튼이 동작 시트를, iPhone에서는 버튼 아래 메뉴를 엽니다. Android에서는 오프닝 맵만 오른쪽 아래의 나침반 버튼(모서리가 둥근 사각형)으로 메뉴를 열고, iPhone에서는 그 나침반이 제목 줄에 있습니다. 줄의 ⋯ 메뉴도 같은 식으로, iPhone에서는 버튼에서 펼쳐지는 메뉴, Android에서는 아래에서 올라오는 시트입니다.">
                 The bottom bar carries <strong>Home · Games · Studies · Puzzles · More</strong>,
                 the rest under More. On an iPhone the bar is a translucent rounded capsule floating
                 off the bottom edge, icons only, with the page scrolling under it; it shrinks as you
                 scroll down, and a scroll up or a tap on it brings it back. On Android the bar is
                 docked to the edge. Each page's create/add actions sit on the title row as on a
-                desktop (“Create”, or “Import” on Games); where a page can make several things the
+                desktop, as a plus alone on a phone (named “Create”, or “Import a game” on Games);
+                where a page can make several things the
                 button opens an action sheet, or on an iPhone a menu under the button. On Android only
-                the opening map keeps a round button in the bottom-right corner, the compass, which
-                opens its menu; on an iPhone the compass is on the title row. A row's ⋯ menu goes
+                the opening map keeps a button in the bottom-right corner, the compass, a rounded
+                square that opens its menu; on an iPhone the compass is on the title row. A row's ⋯ menu goes
                 the same way: a menu hanging from the button on an iPhone, a bottom sheet on Android.
               </li>
-              <li data-ko="보드가 있는 페이지에서는 하단 바가 <strong>그 페이지의 조작</strong>이 됩니다. Chess.com·Lichess 앱과 같은 방식입니다: 보드에서는 수 이동, 퍼즐에서는 퍼즐 이동, 책에서는 열린 탭(Book/Board)의 도구, 오프닝 맵에서는 선택한 수의 띠. 페이지를 떠나면 원래 탭들이 돌아옵니다.">
+              <li data-ko="보드가 있는 페이지에서는 하단 바가 <strong>그 페이지의 조작</strong>이 됩니다. Chess.com·Lichess 앱과 같은 방식입니다: 보드에서는 수 이동, 퍼즐에서는 퍼즐 이동, 책에서는 열린 탭(Book/Board)의 도구, 오프닝 맵에서는 선택한 수의 띠. Android에서는 이 조작들이 바의 줄을 채우지 않고 페이지 위에 뜬 도구 모음이 됩니다. 페이지를 떠나면 원래 탭들이 돌아옵니다.">
                 On a page with a board, the bar becomes <strong>that page's controls</strong> —
                 the way the Chess.com and Lichess apps do it: move navigation on boards, puzzle
                 navigation in the trainer, the open tab's tools in the book reader, the selected
-                move's strip on the opening map. Leaving the page brings the tabs back.
+                move's strip on the opening map. On Android they float over the page as a
+                toolbar instead of filling the bar's row. Leaving the page brings the tabs back.
               </li>
               <li data-ko="보드 옆의 패널들은 탭(Moves / Engine / Chapters / Explorer)이 되고, 상세 패널들은 아래에서 올라오는 시트가 됩니다. 탭 줄은 패널 카드의 머리이며, 열린 탭은 채워진 칸 위에 놓이고 그 칸이 미는 손가락을 따라갑니다. 패널 위에서 좌우로 밀면 위쪽 탭 줄까지 올라가지 않아도 옆 탭으로 넘어갑니다. 양 끝에서는 멈추며, 옆으로 스크롤되는 줄이나 글자를 입력하는 칸 위에서 시작한 손짓은 그 컨트롤이 가져갑니다.">
                 The panels beside a board become tabs — Moves / Engine / Chapters / Explorer — and
@@ -3047,15 +3069,17 @@
                 The comment box opens as a sheet, and while a note is being edited the bottom bar
                 steps aside for the keyboard.
               </li>
-              <li data-ko="오프닝 맵의 수 패널은 전체 높이로 열리고, 아래로 끌면 화면의 절반에서 멈춰 위로 맵이 보이며, 그보다 더 끌면 닫힙니다. 시트는 낮게 놓일수록 카드에 가까워집니다: 위 모서리가 더 둥글어지고 양옆이 가장자리에서 조금 물러납니다. 전체 높이에서는 전과 같이 가장자리에 붙습니다. 절반 높이의 시트는 어디서든 손가락을 위로 끌면 다시 전체 높이로 올라가고, 시트의 내용은 맨 위에 서 있을 때만 스크롤됩니다. 한 칸짜리 물음(새 스터디, 새 노트, 이름 바꾸기)은 휴대폰에서 취소 버튼이 없고, 시트의 손잡이가 나가는 길입니다.">
+              <li data-ko="오프닝 맵의 수 패널은 전체 높이로 열리고, 아래로 끌면 화면의 절반에서 멈춰 위로 맵이 보이며, 그보다 더 끌면 닫힙니다. 시트는 낮게 놓일수록 카드에 가까워집니다: 위 모서리가 더 둥글어지고 양옆이 가장자리에서 조금 물러납니다. 전체 높이에서는 전과 같이 가장자리에 붙습니다. 절반 높이의 시트는 어디서든 손가락을 위로 끌면 다시 전체 높이로 올라가고, 시트의 내용은 맨 위에 서 있을 때만 스크롤됩니다. 물음은 시트가 아닙니다: 확인 창, 한 칸짜리 물음(새 폴더, 목록에서 이름 바꾸기), 저장하지 않은 변경 사항을 묻는 창은 화면 가운데의 카드이고 답 옆에 «취소»(Cancel)가 있습니다. iPhone에서는 iOS의 경고 창, Android에서는 Material의 대화 상자 모양입니다.">
                 The opening map's move panel opens at its full height; a drag down stops at half
                 the screen, with the map in view above it, and a drag past that closes it. A sheet
                 becomes more of a card the lower it rests: its top corners round further and its
                 sides stand a little in from the edges; at full height it is flush, as before. A
                 finger drawn up anywhere on a half-height sheet raises it to full height again, and
-                the sheet's content scrolls only once it stands at the top. The
-                one-field questions (a new study, a new note, a rename) have no Cancel on a phone,
-                where the sheet's handle is the way out.
+                the sheet's content scrolls only once it stands at the top. A question is not a
+                sheet: a confirmation, a one-field prompt (a new folder, a rename from a shelf) and
+                the unsaved-changes question are a card in the middle of the screen with “Cancel”
+                beside the answer, drawn as iOS's alert on an iPhone and Material's dialog on
+                Android.
               </li>
               <li data-ko="페이지 이름은 큰 제목이고 페이지의 버튼은 그 옆에 있으며, 페이지와 함께 스크롤됩니다. 목록 페이지와 Games에서는 위로 스크롤하면 같은 버튼을 든 작은 바가 돌아오고, 노트의 머리도 아래로 읽는 동안 물러났다가 위로 스크롤하면 돌아옵니다. 목록에서 연 페이지는 오른쪽에서 밀려 들어오고 뒤로 가기 셰브론이 그것을 되돌립니다. 탭을 바꾸면 새 페이지가 한 프레임에 바로 나타나고, 바의 알약만 탭 사이를 미끄러집니다. 게임이나 스터디에서 뒤로 가면 보드가 원래 있던 썸네일 속으로 날아 들어갑니다. 시스템의 움직임 줄이기 설정에서는 모두 멈춥니다.">
                 The page's name is a large title with the page's buttons beside it, and it scrolls
@@ -3067,6 +3091,10 @@
                 the board into the thumbnail it came from. All of it stays still under the system's
                 reduced-motion setting.
               </li>
+              <li data-ko="게임, 스터디, 노트, 책, 퍼즐 책에서 아래로 당기면 목록을 다시 불러옵니다.">
+                Pulling down on Games, Studies, Notes, Books or Puzzle books fetches the list
+                again.
+              </li>
               <li data-ko="탭을 누르면 그 섹션이 서 있던 페이지로 돌아갑니다. 현재 탭을 한 번 더 누르면 섹션의 첫 페이지로, 첫 페이지에서는 페이지 맨 위로 올라갑니다.">
                 A tab returns to the page its section was on; a second tap on the current tab goes
                 up to the section's root, and from the root to the top of the page.
@@ -3077,15 +3105,18 @@
                 search and filters included, and the last three sections stay live. The Board, the
                 Editor and the Workspace start fresh each time.
               </li>
-              <li data-ko="홈 제목 줄 끝의 검색 버튼이 빠른 전환 창(«무엇이든 열기»(Open anything))을 엽니다: 이 기기에서 마지막으로 연 문서, 섹션, 모든 스터디·노트·기보·책·퍼즐 책을 이름으로, 그리고 입력한 단어가 든 문서를 본문으로 찾습니다. <a href='#around'>앱 둘러보기</a> 참조.">
+              <li data-ko="홈 제목 줄 끝의 검색 버튼이 빠른 전환 창(«무엇이든 열기»(Open anything))을 엽니다: 이 기기에서 마지막으로 연 문서, 섹션, 모든 스터디·노트·기보·책·퍼즐 책을 이름으로, 그리고 입력한 단어가 든 문서를 본문으로 찾습니다. iPhone에서는 입력 칸 옆의 «취소»(Cancel)가 창을 닫습니다. <a href='#around'>앱 둘러보기</a> 참조.">
                 The search button at the end of Home's title row opens the quick switcher
                 (“Open anything”): what this device opened last, the sections, every study, note,
                 game, book and puzzle book by name, and the documents that hold the words typed, by
-                their text; see <a href="#around">Around the app</a>.
+                their text. On an iPhone a “Cancel” beside its field closes it; see
+                <a href="#around">Around the app</a>.
               </li>
-              <li data-ko="문서의 도구(다른 이름, 여기로 오는 링크, 이전 버전)는 제목 줄의 ⋯ 하나 뒤로 접히고, 줄에는 이름, Edit, Save만 남습니다.">
-                A document's tools (other names, what links here, earlier versions) fold behind one
-                ⋯ in the title row; the row keeps the name, Edit and Save.
+              <li data-ko="문서 제목 줄의 ⋯는 «이름 바꾸기»(Rename)로 시작해 제목 칸을 그 자리에서 열고, 그 아래에 문서의 도구(다른 이름, 여기로 오는 링크, 이전 버전)를 담습니다. 줄에는 이름, Edit, Save만 남습니다. 도구가 버튼으로 나오고 ⋯가 없는 태블릿에서는 목록에서 이름을 바꿉니다.">
+                A document's ⋯ in the title row starts with “Rename”, which opens the title's own
+                field in place, and holds its tools under it (other names, what links here, earlier
+                versions); the row keeps the name, Edit and Save. A tablet, whose title row draws
+                those tools as buttons and has no ⋯, renames from the shelf.
               </li>
               <li data-ko="리뷰 제안은 수 목록 창의 띠 대신 페이지 위에 몇 초 동안 뜨는 토스트이며 X로 닫습니다. 설정 → 모양(Appearance) → 옵션 더 보기(More options)의 <strong>리뷰 제안</strong>(Review offer)으로 끌 수 있습니다.">
                 The review offer is a toast over the page for a few seconds, with an X, instead of a
@@ -3099,8 +3130,10 @@
                 places that read two fingers themselves keep them: a book's page, the evidence
                 pages and the opening map each enlarge what they show.
               </li>
-              <li data-ko="보드 아래의 처음, 이전, 다음, 마지막 화살표는 손가락 아래에서 22px입니다.">
-                The first, previous, next and last arrows under the board are 22px under a thumb.
+              <li data-ko="처음, 이전, 다음, 마지막 화살표와 보드 뒤집기는 하단 바에서 탭과 같은 크기로 그려집니다: iPhone의 캡슐에서 28px, Android의 도구 모음에서 24px입니다. 휴대폰보다 넓은 터치 화면에서 보드 아래에 놓일 때는 22px입니다.">
+                The first, previous, next and last arrows and the flip are drawn in the bottom bar
+                at the tabs' own size: 28px in an iPhone's capsule, 24px on Android's toolbar. Where
+                they stand under the board on a touch screen wider than a phone, they are 22px.
               </li>
             </ul>
             <p data-ko="같은 서버를 보는 모든 기기는 같은 것을 봅니다: 기보도, 진행도. 기기별인 것은 표시 설정(테마, 보드, 밀도)과 홈 배치뿐입니다.">
@@ -3115,10 +3148,11 @@
             <h1 data-ko="자주 묻는 것들">Common questions</h1>
 
             <h2 data-ko="데모는 진짜 앱과 뭐가 다른가요?">What is different in the demo?</h2>
-            <p data-ko="데모는 진짜 앱이 브라우저 탭 안의 샘플 보관함 위에서 실행되는 것입니다. 배너에 적힌 대로입니다: «데모: 나만의 예시 보관함입니다. 무엇이든 고쳐 보세요. 새로고침하면 되돌아갑니다.» 서버가 있어야 하는 것들은 빠져 있습니다: 프로필, 비밀번호와 2FA, Lichess 토큰(따라서 Lichess에서 가져오기), 그리고 데이터베이스 만들기와 책 올리기. 대신 참고 데이터베이스와 예시 책이 읽기 전용으로 함께 실려 있고, 인사이트는 수치가 채워진 채 열립니다. 퍼즐 책 하나가 그 예시 책에서 만들어져 함께 들어 있습니다. 앱을 설치하거나 호스팅하면 그 자리들이 진짜가 됩니다.">
+            <p data-ko="데모는 진짜 앱이 브라우저 탭 안의 샘플 보관함 위에서 실행되는 것입니다. 배너에 적힌 대로입니다: «데모: 나만의 예시 보관함입니다. 무엇이든 고쳐 보세요. 새로고침하면 되돌아갑니다.» 서버가 있어야 하는 것들은 빠져 있습니다: 프로필, 비밀번호와 2FA, Lichess 토큰(따라서 Lichess에서 가져오기), 테이블베이스(그래서 엔드게임 드릴이 포지션을 뽑지 못합니다), 그리고 데이터베이스 만들기와 책 올리기. 대신 참고 데이터베이스와 예시 책이 읽기 전용으로 함께 실려 있고, 인사이트는 수치가 채워진 채 열립니다. 퍼즐 책 하나가 그 예시 책에서 만들어져 함께 들어 있습니다. 앱을 설치하거나 호스팅하면 그 자리들이 진짜가 됩니다.">
               The demo is the real app running on a sample vault inside your browser tab — as its
               banner says: “Demo: a sample vault of your own. Edit anything, and a reload puts it back.” What needs a server of your own is absent: profile, password and 2FA, the
-              Lichess token (and so importing from Lichess), and building databases or uploading books — the
+              Lichess token (and so importing from Lichess), the tablebase (so Endgame drills
+              cannot draw a position), and building databases or uploading books — the
               reference database and the sample book ship read-only instead, and Insights opens with
               its figures in place. A puzzle book made from
               that sample book ships with it. Install or host the app and those places become real.
@@ -3131,11 +3165,14 @@
             </p>
 
             <h2 data-ko="오프라인에서는 뭐가 되나요?">What works offline?</h2>
-            <p data-ko="로컬 설치라면: 사실상 전부입니다. 엔진·글꼴·아이콘이 앱에 동봉되어 런타임에 부르는 CDN이 없습니다. 인터넷이 필요한 것은 온라인 데이터베이스(Lichess), 온라인 기보의 새 달 받아 오기, Lichess에서 가져오기뿐이고, 이미 열어 본 온라인 기보 달은 캐시에서 열립니다.">
+            <p data-ko="로컬 설치라면: 사실상 전부입니다. 엔진·글꼴·아이콘이 앱에 동봉되어 런타임에 부르는 CDN이 없습니다. 인터넷이 필요한 것은 온라인 데이터베이스(Lichess), 온라인 기보의 새 달 받아 오기, Lichess에서 가져오기, 기본 출처인 Lichess의 공개 테이블베이스(엔드게임의 정확한 결과와 엔드게임 드릴. 설정 → 테이블베이스에서 다른 출처를 고를 수 있습니다), 그리고 한 번씩 받는 퍼즐 데이터베이스와 엔진의 전체 신경망입니다. 이미 열어 본 온라인 기보 달은 캐시에서 열리고, 한 번 받은 테이블베이스의 답은 보관됩니다.">
               On a local install: essentially everything. The engine, fonts and icons ship with
               the app, and there are no runtime CDN calls. What needs the internet is the online
-              database (Lichess), fetching new archive months, and importing from Lichess —
-              archive months you have browsed open from the cache.
+              database (Lichess), fetching new archive months, importing from Lichess, Lichess's
+              public tablebase (the default source of exact endgame results and of the endgame
+              drills; Settings → Tablebase names another), and the two downloads made once: the
+              puzzle database and the engine's full network. Archive months you have browsed
+              open from the cache, and a tablebase answer, once fetched, is kept.
             </p>
 
             <h2 data-ko="내 데이터는 어디에 있나요?">Where is my data?</h2>
