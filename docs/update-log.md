@@ -227,6 +227,13 @@ so far.
   change what the other list held, back to an entry it had shown
   earlier, such as Pawn endgame or the Isolated queen's pawn, or to
   nothing. Each list now keeps what was picked in it.
+- **A backup's Korean names extract with Windows' own tar.** “Download a
+  copy” wrote each file's name without saying which encoding it was in,
+  and the tar built into Windows assumes the system's own: on a Windows
+  set to Korean it refused every file and folder with a Korean name. A
+  name that is not plain ASCII is now written in the form the tar
+  standard defines as UTF-8, so Windows' tar extracts the whole copy, and
+  GNU tar, which had read it all along, still does.
 
 ## 0.11.4
 
