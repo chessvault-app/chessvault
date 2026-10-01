@@ -230,10 +230,13 @@ so far.
 - **A backup's Korean names extract with Windows' own tar.** “Download a
   copy” wrote each file's name without saying which encoding it was in,
   and the tar built into Windows assumes the system's own: on a Windows
-  set to Korean it refused every file and folder with a Korean name. A
-  name that is not plain ASCII is now written in the form the tar
-  standard defines as UTF-8, so Windows' tar extracts the whole copy, and
-  GNU tar, which had read it all along, still does.
+  set to Korean it refused every file and folder with a Korean name, and
+  gave an accented one such as Ruy López a garbled name. A name that is
+  not plain ASCII is now written in the form the tar standard defines as
+  UTF-8, so Windows' tar extracts both under their own names, and GNU
+  tar, which had read them all along, still does. Windows' tar still
+  cannot write a name with a character the system's code page has no
+  room for, such as an emoji, and skips that file; GNU tar extracts it.
 
 ## 0.11.4
 
