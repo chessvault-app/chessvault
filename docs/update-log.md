@@ -247,6 +247,15 @@ so far.
   since without pressing Search. The list fills in from where it
   stopped, and the games already on it, the row you had selected and
   the place you had scrolled to all stay where they were.
+- **A Stockfish 19 download the server cannot save no longer stops the
+  server.** The server keeps the full network, 99 MB, on its own disk.
+  If writing it failed on the way in, because its folder had been
+  removed or could not be written to, or the disk was full, the server
+  stopped altogether, and the app with it. If the folder could not be
+  made in the first place, the engine settings stayed at “Starting the
+  download…” and no new attempt could start until the server restarted.
+  Either way the download now ends with “Could not download” and the
+  reason, beside “Try again”, and nothing half-written is kept.
 
 ## 0.11.4
 
