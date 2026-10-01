@@ -21,13 +21,17 @@ vault/
     collection/       *.pgn        (손수 고른, 주석 가능한)
     chesscom/<user>/  YYYY-MM.pgn  (기보 캐시)
     lichess/<user>/   YYYY-MM.pgn
+  puzzlebooks/.bookmarks.json        (퍼즐 책 목록의 즐겨찾기)
   puzzlebooks/<id>/                  (b + 16진수 16자리, 제목은 book.json에)
     book.json  puzzles.json  drafts.json  progress.json  ocr.json  cycles.json
     diagrams/  *.jpg          (근거 스캔, 표지)
   books/.collections.json            (목록의 폴더, 이름으로)
+  books/.bookmarks.json              (목록의 즐겨찾기)
   books/<id>/                        (목록: 보드 옆에서 읽는 PDF)
-    book.pdf   book.json  reading.json  cover.jpg  diagrams.json
+    book.pdf   book.json  reading.json  cover.jpg  diagrams.json  open.bin
                           (book.json에 책이 든 폴더 이름이 있으면 적히고,
+                           open.bin은 PDF를 여는 데 필요한 바이트로
+                           처음 열 때 기록됨, server/pdfWarm.ts;
                            book.pdf은 .history.git에서 제외)
   puzzles/            history.jsonl  state.json
   repertoire/         history.jsonl  (드릴 기록)
@@ -166,13 +170,15 @@ flowchart LR
   서버를 로컬 폴더에 대해 띄움)입니다. UI가 HTTP 전용이므로 셸은
   아키텍처가 아니라 포장입니다. IPC가 아주 없지는 않습니다. 설정 페이지가
   있는지 확인한 뒤 쓰는 좁은 선택적 다리(`window.vaultShell`,
-  desktop/preload.cjs)가 있어, 보관함 바꾸기, 업데이터, 보관함이나
-  테이블베이스 파일 폴더를 고르는 네이티브 대화 상자, 그리고 페이지가
-  그리는 제목 표시줄(`components/title-bar`: 뒤로, 앞으로, ☰ 메뉴의
-  다시 불러오기·확대·종료) 뒤의 창 명령을 맡습니다. 그 뒤에
-  있는 것 중 **동작**은 하나도 없고, 거기서 나온 값도 모두 같은 HTTP API로
-  서버에 갑니다. 다리가 없는 브라우저에서는 그 조작들이 표시되지 않을
-  뿐입니다.
+  desktop/preload.cjs)가 있어, 보관함 바꾸기, 보관함 폴더를 시스템의 파일
+  관리자에서 보여 주기, 업데이터, 보관함이나 테이블베이스 파일 폴더를
+  고르는 네이티브 대화 상자, 페이지가 그리는 제목 표시줄
+  (`components/title-bar`: 뒤로, 앞으로, ☰ 메뉴의 다시 불러오기·확대·종료)
+  뒤의 창 명령, 그리고 창 자체의 차림새, 즉 제목 띠의 색과 Windows 11이나
+  macOS가 창 뒤에 그려 줄 수 있는 재질(설정 → 데스크톱 앱, 기본은 꺼짐)을
+  맡습니다. 그 뒤에 있는 것 중 **동작**은 하나도 없습니다. 거기서 나온
+  값은 창의 차림새가 되거나 같은 HTTP API로 서버에 갑니다. 다리가 없는
+  브라우저에서는 그 조작들이 표시되지 않을 뿐입니다.
 - **PWA**: 브라우저에서 설치한 같은 웹 앱입니다. 매니페스트 + 서비스
   워커(네트워크 우선, 캐시 대체, `/api`는 절대 캐시하지 않음), 노치를 위한
   안전 영역 처리, `scripts/render-icons.mjs`가 테마별로 만들어 내는 시작
@@ -206,15 +212,18 @@ flowchart LR
 
 ## 배포 모델
 
-목표는 이렇습니다. 작은 리눅스 서버 한 대가 서버를 실행하고, 원격 모드의
-데스크톱 앱이든 휴대폰 PWA든 모든 기기는 클라이언트입니다. 지금 쓰는 Windows
-개발 머신은 임시이며, 어떤 것도 거기에 의존해서는 안 됩니다. 플랫폼 중립적인
-경로와 LF 줄바꿈은 반드시 지킵니다.
+목표는 이렇습니다. 늘 켜져 있는 작은 기계 한 대(systemd 아래의 리눅스,
+또는 launchd 아래의 Mac)가 서버를 실행하고, 원격 모드의 데스크톱 앱이든
+휴대폰 PWA든 모든 기기는 클라이언트입니다. 지금 쓰는 Windows 개발 머신은
+임시이며, 어떤 것도 거기에 의존해서는 안 됩니다. 플랫폼 중립적인 경로와 LF
+줄바꿈은 반드시 지킵니다.
 
-배포는 `scripts/deploy.sh`로 합니다(git 번들 전송 → `npm ci` → 빌드 →
-`systemctl restart chess-vault`). 이 스크립트는 준비된 데이터베이스의 색인이
-유지되도록 `tune-dbs.ts`도 함께 실행합니다. SSH는 방화벽에서 공개 22번 포트를
-닫은 채 Tailscale 테일넷 위에서 동작합니다.
+배포는 `scripts/deploy.sh`로 합니다(로컬에서 빌드 → git 번들 전송 →
+`npm ci` → 서비스 재시작, 리눅스는 `systemctl`, macOS는 `launchctl`). 이
+스크립트는 준비된 데이터베이스의 색인이 유지되도록 `tune-dbs.ts`도 함께
+실행하고, Rust 툴체인이 있는 곳에서는 네이티브 바이너리도 다시 빌드합니다.
+SSH는 방화벽에서 공개 22번 포트를 닫은 채 Tailscale 테일넷 위에서
+동작합니다.
 
 앱 자체에 어떻게 접속하느냐는 아키텍처가 아니라 배포의 선택입니다. 공개
 주소에서 HTTPS를 끝내는 리버스 프록시를 둘 수도 있고, 공개된 것 없이
@@ -231,6 +240,10 @@ Tailscale만 쓸 수도 있습니다. 둘 다 같은 서버로 가는 HTTP일 �
 
 백업은 여러 겹입니다. `vault/.history.git`(변경마다 되돌리기), 호스트
 스냅숏, 그리고 호스트 밖으로 받아 두는 `scripts/backup-vault.sh`입니다.
+어느 클라이언트든 셸 없이 직접 사본을 받을 수도 있습니다. 설정 → 보관함의
+사본 내려받기가 모든 문서와 히스토리를 tar 하나로 내려보내며
+(`server/backup.ts`), 자격 증명을 담은 `config.json`과 `sessions.json`은
+뺍니다.
 
 `server/vaultHistory.ts`가 그 첫 겹을 앱에 돌려주므로 복구에 셸이 필요
 없습니다. 한 문서의 버전 목록, 특정 버전의 내용, 히스토리에는 있지만
@@ -255,6 +268,13 @@ Tailscale만 쓸 수도 있습니다. 둘 다 같은 서버로 가는 HTTP일 �
 
 ## 공유 코드
 
-`shared/`에는 서버와 웹이 함께 쓰는 수 트리와 PGN 코덱이 들어 있습니다.
-트리, 주석, NAG, 화살표, 시계를 담는 무손실 표현 하나뿐이라, 스터디는
-디스크와 서버와 UI 사이를 바이트 단위로 충실하게 왕복합니다.
+`shared/`는 둘 이상의 쪽(서버, 웹 앱, 그 옆의 스크립트)이 실행하는
+코드입니다. 한 번만 적어 두므로 어느 둘도 같은 질문에 두 가지로 답할 수
+없습니다. 시작은 수 트리와 PGN 코덱(`tree.ts`, `pgn.ts`)이었습니다. 트리,
+주석, NAG, 화살표, 시계를 담는 무손실 표현 하나뿐이라, 스터디는 디스크와
+서버와 UI 사이를 바이트 단위로 충실하게 왕복합니다. 지금은 포지션 키와
+데이터베이스 검색의 규칙(`zobrist.ts`, `scanPack.ts`, `keyIndex.ts`,
+`scanMatch.ts`, `scanMotif.ts`, 모두 `native/`에 쌍둥이가 있습니다), 검색창의
+질의 언어(`searchQuery.ts`), 두 트레이너가 일정을 잡는 복습 사다리
+(`review.ts`), 그리고 브라우저와 오프라인 파이프라인이 함께 실행하는 책
+가져오기(`bookImport.ts`와 그 옆의 `book*.ts`)도 들어 있습니다.
