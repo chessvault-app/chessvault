@@ -47,7 +47,7 @@ is one connected body of work, and the links are what make it that.
   full move trees with variations, comments, NAGs (`!`, `?!` and the
   rest of the annotation glyphs) and arrows, an
   opening explorer (local databases + Lichess) that adds the endgame
-  tablebase's exact verdict under seven pieces — the result, and every
+  tablebase's exact verdict at seven pieces or fewer — the result, and every
   move ranked by it — game review with accuracy
   and honest brilliancy detection, and position loading from FEN, PGN,
   or a *photo/screenshot* of any board.
@@ -104,8 +104,8 @@ is one connected body of work, and the links are what make it that.
   progress dashboard, and a review schedule: what you miss comes back on
   a spaced ladder (a day, then 3, 7 and 21) and retires after a clean
   solve at every step. Plus **book puzzles**: hand a scanned tactics
-  book PDF to the importer (in the app: Puzzles → Puzzle books → Import a
-  book) and an ML pipeline reads the diagrams,
+  book PDF to the importer (in the app: Puzzles → Puzzle books → New
+  book → Import PDF) and an ML pipeline reads the diagrams,
   parses the printed solutions, verifies them by replay, and imports
   each puzzle with an honest fidelity tier and a one-click peek at the
   original page scan. A book reviews on the same ladder, and can also be
@@ -164,9 +164,13 @@ is one connected body of work, and the links are what make it that.
   positions where your move is one a database's players rarely choose.
 - **Home** — the landing page leads with what you were last doing, and
   is yours to arrange: pick which destinations get a tile and in what
-  order, and switch the Continue and setup cards on or off. Anything
-  switched off keeps a button in the row underneath, so nothing can be
-  arranged out of reach. The arrangement is kept per device, not in the
+  order, which drop to the row of buttons underneath and which leave the
+  page, and which of its cards it shows, from Continue and the setup
+  checklist to an Activity calendar of what each day held across the
+  vault (puzzles solved, repertoire positions recalled, studies and notes
+  saved, games collected, books started). Whatever leaves home is still
+  in the sidebar or the phone's More tab, so nothing can be arranged out
+  of reach. The arrangement is kept per device, not in the
   vault: a phone's home is its navigation and a desktop's is a dashboard,
   so each is arranged on its own.
 - **Settings** — change the app password, turn on authenticator 2FA,
@@ -177,7 +181,8 @@ is one connected body of work, and the links are what make it that.
   (home-screen icon, splash screens, offline shell), and a desktop app
   (Windows, macOS and Linux installers) that keeps the vault on that
   device by default, or runs as a client to your server. On a phone the
-  bottom bar turns into move navigation on board pages,
+  app draws its platform's own controls, an iPhone's or Android's, and
+  the bottom bar turns into move navigation on board pages,
   Chess.com/Lichess-style.
 
 Keyboard: `←` `→` step through moves · `↑`/`Home` start · `↓`/`End`
@@ -384,7 +389,10 @@ firewall, and `deploy.sh` reaches it over the tailnet.
 Backups are layered: the server auto-commits every vault change to
 `vault/.history.git` (fine-grained undo), your host's snapshots guard
 against instance loss, and `scripts/backup-vault.sh` pulls the whole vault
-— history included — to any machine for an off-cloud copy.
+— history included — to any machine for an off-cloud copy. The app makes
+that copy too, with no shell: Settings → Vault → “Download a copy” saves
+every document and the history as one tar file, leaving out the
+credentials in `config.json` and `sessions.json`.
 
 That history leaves `config.json` and `sessions.json` out, and has since
 0.4.x; a vault older than that may still carry them in early commits,
@@ -400,8 +408,9 @@ then rotate the password and the Lichess token, since copies already
 pulled off-box keep the old values.
 
 That first layer is reachable from the app, not only from git. Every
-study, game and note has a clock in its header which lists the times it
-was saved, shows what any of them held, and puts one back;
+study, game and note has a clock in its header (on a phone, Earlier
+versions in its ⋯ menu) which lists the times it was saved, shows what
+any of them held, and puts one back;
 Settings → Deleted documents does the same for documents that are gone
 entirely.
 Restoring writes in place and is itself undoable — the state it replaces
@@ -532,10 +541,16 @@ none.
 
 ## It never calls anyone but your own server
 
-No CDNs, no telemetry, no third-party requests at runtime: fonts, icons,
-WASM and CSS are all bundled. The only features that reach outside are
-*imports* — one-time by nature — and the optional Lichess explorer
-augmentation, which you can leave off.
+No CDNs, no telemetry: fonts, icons, WASM and CSS are all bundled, and
+the page itself talks to your own server and nothing else. The server
+reaches outside only for the features that need another service:
+*imports* and the downloads you ask for, one-time by nature; your
+Chess.com and Lichess archives, once you give it your usernames; the
+optional Lichess explorer augmentation, which you can leave off; and the
+endgame tablebase, which is on from the start and asks Lichess's public
+server unless you give it tables of your own
+([below](#lichess-token-optional)). Settings → Tablebase turns it off.
+The desktop app also asks GitHub for a newer release when it starts.
 
 **With no network at all: yes.** That is the default arrangement — the
 app and the vault both on your device — and nothing about it needs the
@@ -588,9 +603,12 @@ npm install
 npm run dev          # server + web with hot reload, http://localhost:5173
 ```
 
-First run copies the Stockfish engine assets out of `node_modules`
-(Stockfish 19 from the Lichess build with its 1 MB small network, and
-the 7 MB Stockfish 18 single-threaded fallback). Stockfish's full
+First run stages the Stockfish engine in `web/public/engine/`: Stockfish
+19 from the Lichess build and the 7 MB Stockfish 18 single-threaded
+fallback are copied out of `node_modules`, and Stockfish 19's 1 MB small
+network, which that package does not carry, is fetched once from the
+Stockfish project's own net server and checked against the checksum in
+its name. Stockfish's full
 network (99 MB) is not shipped: the engine's settings in the app have
 the server download and keep it on request; `npm run setup:engine --
 --full` stages it into the build instead.
@@ -664,7 +682,7 @@ npm run build          # production build to dist/
 npm start              # serve the built app
 npm test               # unit tests
 npm run typecheck      # tsc --noEmit
-npm run setup:engine   # copy Stockfish into web/public/engine/
+npm run setup:engine   # stage Stockfish in web/public/engine/
 npm run build:bundled-refgames # curate reference games into the starter set an installer ships
 npm run build:openings # recompile ECO names (the app does this itself)
 npm run build:refgames # build a reference database (games + position index)
@@ -681,7 +699,7 @@ server, `bash scripts/backup-vault.sh` pulls its vault down.
 ## Importing a book from a shell (optional)
 
 Importing a PDF is something the app does — Puzzles → Puzzle books →
-Import a book — and nothing about it needs a terminal. If you live in one anyway,
+New book → Import PDF — and nothing about it needs a terminal. If you live in one anyway,
 the same import can be driven from `scripts/ml/`, which buys you two
 things the app does not have: reads and engine answers cached to disk, so
 a second run over a book you have already imported is seconds, and
