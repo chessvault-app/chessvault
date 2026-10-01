@@ -127,7 +127,9 @@ What a built database answers, and from where:
   the names the box suggests find games on a database whose PGN carried
   none (the big dumps), the same way the explorer names them.
 - The same browser **hunts by position, material or motif**. The
-  scan-search toggle beside the search box unfolds the controls. A position hunt
+  scan-search toggle beside the search box unfolds the controls; on a
+  phone's Games page the toggle stands in the title row beside the
+  magnifier, and the controls open as a sheet. A position hunt
   takes a FEN — pasted, or set up on a board — and how closely to
   match (`docs/deferred.md` records why this is a fixed ladder and not
   a query language). Concretely, per rung:
@@ -163,12 +165,15 @@ What a built database answers, and from where:
   unbalanced ones (rook and pawns against a rook, queen against two
   rooks), the middlegame classes (queenless, major pieces only) and
   the imbalances from a pawn up to three minor pieces against a queen.
-  An imbalance takes a side: "a queen up" for White or for Black, the
-  one preset mirrored (`mirrorMaterialSpec` in `shared/scanMatch.ts`
-  swaps the sides and flips the differences), while a symmetric
-  endgame shows no side because it reads the same either way. Or a
+  A preset that reads differently from each side takes a side — the
+  unbalanced endgames and the imbalances, fifteen of the twenty-six:
+  "a queen up" for White or for Black, the one preset mirrored
+  (`mirrorMaterialSpec` in `shared/scanMatch.ts` swaps the sides and
+  flips the differences), while the symmetric endgames and the two
+  middlegame classes show no side because they read the same either
+  way (`isSymmetricMaterial` decides which, by mirroring). Or a
   custom per-piece, per-side count editor. Plus how long the material
-  must hold (any moment, 4+ or 8+ moves). A motif hunt picks a pattern rather than a position or a
+  must hold (any moment, the default, 4+ or 8+ moves). A motif hunt picks a pattern rather than a position or a
   count — what the ladder cannot express, and never a query language
   (`docs/deferred.md` records that line). Twelve are offered, each a
   fixed definition (`shared/scanMotif.ts`) and each somebody's unless
@@ -207,7 +212,9 @@ What a built database answers, and from where:
   (`web/src/games/structures.json`, every pawn on its square) that
   runs the *Same pawn structure* rung, so the answer is exactly what
   drawing that sketch on the editor's board would find. The motifs are
-  data too, `web/src/games/motifs.json`; through the API a motif holds
+  data too, `web/src/games/motifs.json`: each entry says whether it
+  takes a side, whether it asks how long, and its default length in
+  plies, which picking it in the list restores. Through the API a motif holds
   for one ply unless the request says otherwise, as a material spec
   does. Hits stream in as the scan runs, with progress; the filter
   row above and the search box both narrow a hunt exactly as they
