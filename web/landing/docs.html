@@ -1088,10 +1088,11 @@
                 The <strong>player bars</strong> on either side show names, ratings and clocks
                 (when the PGN carries them). On the Board page the name fields are editable.
               </li>
-              <li data-ko="<strong>평가 막대</strong>는 엔진이 켜져 있는 동안 보드 곁에 그려집니다 — 항상 백의 관점입니다. 앞선 쪽 끝에 점수가 소수 첫째 자리까지 인쇄되며(마트는 <code>#4</code>), 부호는 막대 위치가 대신 말해 줍니다. 부호가 붙은 자세한 값은 막대에 마우스를 올리면 나옵니다. 보드가 화면 폭을 가득 채우는 휴대폰에서는 막대가 보드 위쪽 가장자리에 가로로 놓이고, 앞선 쪽 끝에 같은 숫자를 표시합니다.">
+              <li data-ko="<strong>평가 막대</strong>는 엔진이 켜져 있는 동안 보드 곁에 그려집니다 — 항상 백의 관점입니다. 앞선 쪽 끝에 점수가 소수 첫째 자리까지 인쇄되며(메이트까지 남은 수는 <code>#4</code>, 이미 메이트된 보드에서는 <code>1-0</code> 또는 <code>0-1</code>), 부호는 막대 위치가 대신 말해 줍니다. 부호가 붙은 자세한 값은 막대에 마우스를 올리면 나옵니다. 보드가 화면 폭을 가득 채우는 휴대폰에서는 막대가 보드 위쪽 가장자리에 가로로 놓이고, 앞선 쪽 끝에 같은 숫자를 표시합니다.">
                 The <strong>evaluation bar</strong> is drawn beside the board while the engine is
                 on — always from White's point of view. The score is printed to one decimal at the
-                leading side's end of it (<code>#4</code> for a mate); the sign is left to that
+                leading side's end of it (<code>#4</code> for a mate to come, <code>1-0</code> or
+                <code>0-1</code> on a board already mated); the sign is left to that
                 placement, and the tooltip carries the signed, more precise figure. On a phone,
                 where the board is as wide as the screen, the bar lies along the top edge of the
                 board instead and prints the same number at its leading end.
@@ -1103,17 +1104,18 @@
               </li>
             </ul>
             <h3 data-ko="패널 밑의 이동 버튼">The navigation buttons at a panel's foot</h3>
-            <p data-ko="한 번에 한 창씩 보는 화면에서는 이동 버튼이 그 칸의 맨 아래에 고정됩니다 — Moves, Engine, Explorer, 스터디의 Chapters 어느 탭을 열어도 같은 자리입니다. 창을 모두 펼쳐 보여 주는 넓은 화면에서는 Moves 패널 밑에 붙습니다. 휴대폰에서는 화면 맨 아래 막대가 대신 맡고, 보드 아래에는 아무것도 놓이지 않습니다.">
+            <p data-ko="한 번에 한 창씩 보는 화면에서는 이동 버튼이 그 칸의 맨 아래에 고정됩니다 — Moves, Engine, Explorer, 스터디의 Chapters 어느 탭을 열어도 같은 자리입니다. 창을 모두 펼쳐 보여 주는 넓은 화면에서는 Moves 패널 밑에 붙습니다. 휴대폰에서는 화면 맨 아래 막대(iPhone에서는 캡슐, Android에서는 떠 있는 도구 막대)가 대신 맡고, 보드 아래에는 아무것도 놓이지 않습니다.">
               Where the panes are tabs — one at a time — they are pinned to the foot of the
               column, so they are in the same place whatever tab is open: Moves, Engine, Explorer,
               a study's Chapters. On a screen wide enough to show every pane at once they sit at
               the foot of the Moves panel. On a phone the bar at the bottom of the screen carries
-              them instead, and nothing stands under the board.
+              them instead (a capsule on an iPhone, a floating toolbar on Android), and nothing
+              stands under the board.
             </p>
             <div class="scroll-x">
               <table class="controls">
                 <tbody>
-                  <tr><td data-ko="처음 (↑) · 뒤로 (←) · 앞으로 (→) · 끝 (↓)">Start (↑) · Back (←) · Forward (→) · End (↓)</td><td data-ko="수 이동. Back/Forward는 누르고 있으면 반복됩니다.">Move navigation; Back/Forward repeat while held.</td></tr>
+                  <tr><td data-ko="처음 (↑) · 뒤로 (←) · 앞으로 (→) · 끝 (↓)">Start (↑) · Back (←) · Forward (→) · End (↓)</td><td data-ko="수 이동. 뒤로/앞으로는 누르고 있으면 반복됩니다.">Move navigation; Back/Forward repeat while held.</td></tr>
                   <tr><td data-ko="보드 뒤집기 (f)(Flip board (f))">Flip board (f)</td><td data-ko="보드 뒤집기.">Turns the board around.</td></tr>
                 </tbody>
               </table>
@@ -1159,13 +1161,13 @@
                   <tr><td data-ko="FEN, PGN 또는 이미지에서 포지션 불러오기">Load a position from FEN, PGN or an image</td><td data-ko="아래 «포지션 불러오기» 참조.">See Loading a position below.</td></tr>
                   <tr><td data-ko="이 수와 그 이후를 모두 삭제(Delete this move and everything after it)">Delete this move and everything after it</td><td data-ko="휴지통 아이콘. 실행 취소 토스트가 잠깐 떠 있습니다. 휴대폰에서는 ⋯ 메뉴의 행이며, 시작 포지션에서는 흐려집니다. 스터디에서는 편집 중일 때만 나타납니다.">The trash icon; undoable via a toast for a moment. On a phone it is a row in the ⋯ menu instead, dimmed at the starting position; in a study it appears only while editing.</td></tr>
                   <tr><td data-ko="모든 수 지우기 · 보드 지우기(Clear all moves · Clear the board)">Clear all moves · Clear the board</td><td data-ko="트리 비우기, 그리고 (허용된 곳에서) 보드까지 비우기.">Empty the tree — and, where allowed, the board too.</td></tr>
-                  <tr><td>More (⋯)</td><td data-ko="좁은 화면에서 밀려난 항목이 모이는 메뉴입니다. <strong>FEN 복사</strong>(Copy FEN)와 <strong>PGN 복사</strong>(Copy PGN)도 여기에 있습니다.">The overflow menu for whatever the width pushed out — and the home of <strong>Copy FEN</strong> and <strong>Copy PGN</strong>.</td></tr>
+                  <tr><td data-ko="더보기 (⋯)(More)">More (⋯)</td><td data-ko="좁은 화면에서 밀려난 항목이 모이는 메뉴입니다. 휴대폰에서는 위의 버튼 중 첫째를 뺀 전부가 여기에 있습니다. <strong>FEN 복사</strong>(Copy FEN)와 <strong>PGN 복사</strong>(Copy PGN)도 여기에 있고, 시스템에 공유 시트가 있는 곳에서는 각각 그 아래에 <strong>FEN 공유</strong>(Share FEN)와 <strong>PGN 공유</strong>(Share PGN)가 붙습니다.">The overflow menu for whatever the width pushed out (on a phone, every button above but the first) — and the home of <strong>Copy FEN</strong> and <strong>Copy PGN</strong>, each with <strong>Share FEN</strong> or <strong>Share PGN</strong> under it wherever the system has a share sheet.</td></tr>
                 </tbody>
               </table>
             </div>
 
             <h2 data-ko="주석 달기">Annotating</h2>
-            <p data-ko="주석 도구는 수 목록 패널 발치의 주석 패널에 있습니다. 스터디와 기보에서만, 그것도 <strong>편집</strong>(Edit) 모드에서만 보입니다. 기호 팔레트는 두 무리입니다. 품질: <code>!</code> <code>?</code> <code>!!</code> <code>??</code> <code>!?</code> <code>?!</code>, 평가: <code>⩲</code> <code>±</code> <code>+−</code> <code>=</code> <code>∞</code> <code>⩱</code> <code>∓</code> <code>−+</code>. 각 무리 안에서는 하나만 켜지고, 켜진 것을 다시 누르면 지워집니다. 기호마다 툴팁이 이름을 말합니다(«좋은 수»(Good move), «블런더»(Blunder), «백이 약간 우세»(White is slightly better) 등). 곁의 접기 화살표(«기호 보기»(Show glyphs) / «기호 숨기기»(Hide glyphs))가 팔레트를 접습니다. 그 아래 상자가 이 수의 주석입니다. 트리의 뿌리에서는 챕터 서문이 되고, 그때는 기호도 접기 화살표도 함께 사라집니다. 챕터에는 평가할 수가 없기 때문입니다. 화살표와 동그라미는 여기 없습니다: <a href='#shortcuts'>보드에 직접 그립니다</a>.">
+            <p data-ko="주석 도구는 수 목록 패널 발치의 주석 패널에 있습니다. 스터디와 기보에서만, 그것도 <strong>편집</strong>(Edit) 모드에서만 보입니다. 기호 팔레트는 두 무리입니다. 품질: <code>!</code> <code>?</code> <code>!!</code> <code>??</code> <code>!?</code> <code>?!</code>, 평가: <code>⩲</code> <code>±</code> <code>+−</code> <code>=</code> <code>∞</code> <code>⩱</code> <code>∓</code> <code>−+</code>. 각 무리 안에서는 하나만 켜지고, 켜진 것을 다시 누르면 지워집니다. 기호마다 툴팁이 이름을 말합니다(«좋은 수»(Good move), «블런더»(Blunder), «백이 약간 우세»(White is slightly better) 등). 곁의 접기 화살표(«기호 보기»(Show glyphs) / «기호 숨기기»(Hide glyphs))가 팔레트를 접습니다. 그 아래 상자가 이 수의 주석입니다. 트리의 뿌리에서는 챕터 서문(기보에서는 그 게임에 대한 메모)이 되고, 그때는 기호도 접기 화살표도 함께 사라집니다. 챕터에는 평가할 수가 없기 때문입니다. 화살표와 동그라미는 여기 없습니다: <a href='#shortcuts'>보드에 직접 그립니다</a>.">
               The annotation tools live in a pane at the foot of the Moves panel, in studies and
               games only, and only in <strong>Edit</strong> mode. The glyph palette comes in two groups — quality:
               <code>!</code> <code>?</code> <code>!!</code> <code>??</code> <code>!?</code>
@@ -1173,7 +1175,8 @@
               <code>=</code> <code>∞</code> <code>⩱</code> <code>∓</code> <code>−+</code>. One per
               group; pressing the active one clears it. Each glyph's tooltip names it (“Good move”, “Blunder”, “White is slightly better” and so on). The chevron beside the box (“Show glyphs” /
               “Hide glyphs”) folds the palette. The text box below is the comment on this move —
-              at the root it becomes the chapter introduction, and there the glyphs and the chevron
+              at the root it becomes the chapter introduction (in a game, the notes on the game),
+              and there the glyphs and the chevron
               are gone with it, a chapter having no move to judge. Arrows and circles are not here:
               <a href="#shortcuts">they are drawn on the board itself</a>.
             </p>
@@ -1185,7 +1188,7 @@
               shows up under the named document's “Linked mentions”. On a phone it works inside
               the comment sheet too.
             </p>
-            <p data-ko="주석에 담을 수 없는 두 가지는 입력하는 동안 고쳐 씁니다. `}`는 `)`가 됩니다. PGN 주석은 `}`에서 끝나고 이를 피할 방법이 없기 때문입니다. `[%eval 9.9]` 모양은 공백 하나를 끼워 끊어 놓습니다. 그러지 않으면 그 문장이 수의 평가나 아무도 그리지 않은 화살표로 읽히기 때문입니다. 상자 아래 한 줄이 그렇게 했다고 알리고 저절로 사라집니다.">
+            <p data-ko="주석에 담을 수 없는 두 가지는 입력하는 동안 고쳐 씁니다. <code>}</code>는 <code>)</code>가 됩니다. PGN 주석은 <code>}</code>에서 끝나고 이를 피할 방법이 없기 때문입니다. <code>[%eval 9.9]</code> 모양은 공백 하나를 끼워 끊어 놓습니다. 그러지 않으면 그 문장이 수의 평가나 아무도 그리지 않은 화살표로 읽히기 때문입니다. 상자 아래 한 줄이 그렇게 했다고 알리고 저절로 사라집니다.">
               Two things a comment cannot keep are rewritten as you type them. A <code>}</code>
               becomes a <code>)</code> — a PGN comment ends at one and has no way to escape it —
               and anything shaped like <code>[%eval 9.9]</code> gets one space through it, or the
@@ -1194,8 +1197,8 @@
             </p>
 
             <h2 data-ko="포지션 불러오기">Loading a position</h2>
-            <p data-ko="<strong>포지션 불러오기</strong>(Load a position) 대화 상자는 세 가지를 받습니다: 입력란에 붙여 넣는 <strong>FEN</strong> 또는 <strong>PGN</strong>(<kbd>Enter</kbd>로 실행, 비어 있을 때는 구석의 «붙여넣기»(Paste) 버튼이 클립보드를 읽습니다), 그리고 점선 상자에 놓는 <strong>그림</strong> — «클릭해 선택하거나, 파일을 끌어놓거나, 이미지를 붙여넣으세요». 그림은 스크린샷이나 스캔이 가장 잘 읽히고, 네 손잡이를 다이어그램의 모서리에 맞춘 뒤 <strong>포지션 읽기</strong>(Read position)를 누릅니다. 아래쪽이 흑이면 «흑이 아래쪽»(Black at the bottom)을 켭니다.">
-              The <strong>Load a position</strong> dialog takes three things: a <strong>FEN</strong>
+            <p data-ko="<strong>포지션 불러오기</strong>(Load position) 대화 상자는 세 가지를 받습니다: 입력란에 붙여 넣는 <strong>FEN</strong> 또는 <strong>PGN</strong>(<kbd>Enter</kbd>로 실행, 비어 있을 때는 구석의 «붙여넣기»(Paste) 버튼이 클립보드를 읽습니다), 그리고 점선 상자에 놓는 <strong>그림</strong> — «클릭해 선택하거나, 파일을 끌어놓거나, 이미지를 붙여넣으세요». 그림은 스크린샷이나 스캔이 가장 잘 읽히고, 네 손잡이를 다이어그램의 모서리에 맞춘 뒤 <strong>포지션 읽기</strong>(Read position)를 누릅니다. 아래쪽이 흑이면 «흑이 아래쪽»(Black at the bottom)을 켭니다.">
+              The <strong>Load position</strong> dialog takes three things: a <strong>FEN</strong>
               or <strong>PGN</strong> pasted into the field (<kbd>Enter</kbd> submits; while empty,
               a corner “Paste” button reads the clipboard), or a <strong>picture</strong> dropped on
               the dashed box — “click to choose, drop a file, or paste an image”. A screenshot or
@@ -1204,11 +1207,13 @@
             </p>
 
             <h2 data-ko="게임 리뷰">Game review</h2>
-            <p data-ko="<strong>엔진 리뷰</strong>(현미경 아이콘 — «judge every move (?!/?/??) and measure accuracy»)가 게임 전체를 훑습니다. 실행 전에는 수 목록 아래 띠가 리뷰를 권하고, 휴대폰에서는 그 대신 페이지 위에 몇 초 동안 토스트가 떠 X로 닫을 수 있습니다. 끝나면 수 목록 아래 띠에:">
+            <p data-ko="<strong>엔진 리뷰</strong>(현미경 아이콘 — «모든 수를 평가(?!/?/??)하고 정확도를 측정합니다»)가 게임 전체를 훑습니다. 게임을 불러오면 실행 전에 수 목록 아래 띠가 리뷰를 권하고, 휴대폰에서는 그 대신 페이지 위에 몇 초 동안 토스트가 떠 X로 닫을 수 있습니다. 설정 → 모양(Appearance) → 옵션 더 보기(More options)의 <strong>리뷰 제안</strong>(Review offer)으로 이 제안을 끌 수 있습니다. 끝나면 수 목록 아래 띠에:">
               <strong>Engine review</strong> (the microscope — “judge every move (?!/?/??) and
-              measure accuracy”) sweeps the whole game. Before it runs, a band under the move list
-              offers it; on a phone that offer is a toast over the page for a few seconds instead,
-              with an X. When it finishes, the strip under the move list holds:
+              measure accuracy”) sweeps the whole game. Once a game is loaded, a band under the
+              move list offers it before it runs; on a phone that offer is a toast over the page
+              for a few seconds instead, with an X. Settings → Appearance → More options →
+              <strong>Review offer</strong> switches the offer off. When it finishes, the strip
+              under the move list holds:
             </p>
             <ul>
               <li data-ko="클릭(또는 끌기)으로 이동하는 <strong>평가 그래프</strong> — 포인터 아래의 수가 파란 점과 안내선으로 표시되어 클릭이 어디로 가는지 미리 보여 주고, 접었다 펼 수 있습니다.">
@@ -1216,7 +1221,7 @@
                 pointer marks itself with a blue dot and a guide line, so you see where a click
                 lands before it does. Folds away.
               </li>
-              <li data-ko="진영별 요약: 정확도 %, 평균 손실, 북 무브 수(«known opening theory, not judged»), 그리고 <code>!!</code> <code>?!</code> <code>?</code> <code>??</code>의 개수. 판정 기호는 수 목록과 보드에도 그대로 붙습니다.">
+              <li data-ko="진영별 요약: 정확도 %, 평균 손실, 북 무브 수(«알려진 오프닝 이론이므로 평가하지 않습니다»), 그리고 <code>!!</code> <code>?!</code> <code>?</code> <code>??</code>의 개수. 판정 기호는 수 목록과 보드에도 그대로 붙습니다.">
                 Per-side summaries: accuracy %, average loss, the book-move count (“known opening
                 theory, not judged”), and how many <code>!!</code> <code>?!</code> <code>?</code>
                 <code>??</code> each side earned — the verdicts land on the move list and the board
@@ -1247,7 +1252,7 @@
               docks above the moves on a desktop and gets its own tab on a phone.
             </p>
             <h2 data-ko="패널 머리">The panel header</h2>
-            <p data-ko="«엔진»(Engine)이라는 제목 옆에는 엔진이 켜져 있는 동안 현재 평가(초록도 빨강도 아닌 글자색. 평가는 결과가 아니라 수치입니다)와 <code>depth</code> 값이 표시됩니다. 오른쪽에는 버튼 둘:">
+            <p data-ko="«엔진»(Engine)이라는 제목 옆에는 엔진이 켜져 있는 동안 현재 평가(초록도 빨강도 아닌 글자색. 평가는 결과가 아니라 수치입니다)와 깊이(<code>depth</code>) 값이 표시됩니다. 오른쪽에는 버튼 둘:">
               Beside the word “Engine”, while it runs, sit the current score (in the text colour, not
               green or red: an evaluation is a quantity, not an outcome) and the <code>depth</code> readout. To the right, two
               controls:
@@ -1267,11 +1272,11 @@
                   <tr><th data-ko="항목">Setting</th><th data-ko="범위">Range</th><th data-ko="뜻">Meaning</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td data-ko="엔진">Engine</td><td data-ko="Stockfish 19 lite · Stockfish 19 · Stockfish 18">Stockfish 19 lite · Stockfish 19 · Stockfish 18</td><td data-ko="어느 엔진이 돌아가는지 고르는 목록입니다. Stockfish 19 lite는 모든 빌드에 실린 1 MB 신경망으로, Stockfish 19는 자체의 전체 신경망으로 돌아가며 더 강하고 불러오는 데 더 오래 걸립니다. Stockfish 18은 단일 스레드 빌드입니다. Stockfish 19를 처음 고르면 서버가 99 MB를 내려받아 보관하고(진행 막대가 보입니다), 다 받으면 선택이 적용됩니다. 그 아래 «제거»(Remove)가 서버에서 지웁니다. 데모는 Stockfish 19를 내놓지 않고, 스레드가 없는 페이지는 Stockfish 18만 내놓습니다.">A list of which engine runs. Stockfish 19 lite runs on the 1 MB network every build ships; Stockfish 19 on its own full network, stronger and slower to load; Stockfish 18 is the single-threaded build. The first pick of Stockfish 19 has the server download 99 MB and keep it (a progress bar shows it), and the pick takes effect once it has arrived; “Remove” under it deletes it from the server again. The demo does not offer Stockfish 19, and a page without threads offers only Stockfish 18.</td></tr>
+                  <tr><td data-ko="엔진">Engine</td><td data-ko="Stockfish 19 lite · Stockfish 19 · Stockfish 18">Stockfish 19 lite · Stockfish 19 · Stockfish 18</td><td data-ko="어느 엔진이 돌아가는지 고르는 목록입니다. Stockfish 19 lite는 모든 빌드에 실린 1 MB 신경망으로, Stockfish 19는 자체의 전체 신경망으로 돌아가며 더 강하고 불러오는 데 더 오래 걸립니다. Stockfish 18은 단일 스레드 빌드입니다. Stockfish 19를 처음 고르면 서버가 99 MB를 내려받아 보관하고(진행 막대가 보입니다), 다 받으면 선택이 적용됩니다. 그 아래 «제거»(Remove)가 서버에서 지우고, 내려받기에 실패하면 그 이유가 «다시 시도»(Try again) 옆에 표시됩니다. 데모는 Stockfish 19를 내놓지 않고, 스레드가 없는 페이지는 Stockfish 18만 내놓습니다.">A list of which engine runs. Stockfish 19 lite runs on the 1 MB network every build ships; Stockfish 19 on its own full network, stronger and slower to load; Stockfish 18 is the single-threaded build. The first pick of Stockfish 19 has the server download 99 MB and keep it (a progress bar shows it), and the pick takes effect once it has arrived; “Remove” under it deletes it from the server again, and a download that fails says why beside “Try again”. The demo does not offer Stockfish 19, and a page without threads offers only Stockfish 18.</td></tr>
                   <tr><td data-ko="스레드(Threads)">Threads</td><td data-ko="1 – 코어 수">1 – your cores</td><td data-ko="병렬 검색. 다중 스레드는 교차 출처 격리된 페이지(HTTPS)가 필요합니다. 그렇지 않은 곳에서는 슬라이더가 «이 환경에서는 쓸 수 없음»(unavailable in this context)으로 잠깁니다.">Parallel search. Multi-threading needs a cross-origin-isolated page (HTTPS); where that is missing the slider is locked with “unavailable in this context”.</td></tr>
                   <tr><td data-ko="라인 수(Lines)">Lines</td><td>1 – 6</td><td data-ko="동시에 보여 줄 후보 수(MultiPV).">How many candidate lines to show at once (MultiPV).</td></tr>
                   <tr><td data-ko="깊이(Depth)">Depth</td><td>10 – 40</td><td data-ko="검색을 멈추는 깊이.">Where the search stops.</td></tr>
-                  <tr><td data-ko="시간 제한(Time limit)">Time limit</td><td data-ko="0 – 60초">0 – 60 s</td><td data-ko="수당 시간 상한. 0이면 꺼짐(—).">A per-position ceiling; 0 means off (—).</td></tr>
+                  <tr><td data-ko="시간 제한(Time limit)">Time limit</td><td data-ko="0 – 60초">0 – 60 s</td><td data-ko="포지션마다의 시간 상한. 0이면 꺼짐(—).">A per-position ceiling; 0 means off (—).</td></tr>
                   <tr><td data-ko="해시(Hash)">Hash</td><td>16 – 1024 MB</td><td data-ko="치환표 크기.">The transposition table.</td></tr>
                 </tbody>
               </table>
@@ -1342,11 +1347,11 @@
                 <tbody>
                   <tr>
                     <td data-ko="탐색기 소스(Explorer source)">Explorer source</td>
-                    <td data-ko="출처 선택. 세 무리: <strong>내 보관함</strong>(Your vault) → 내 게임(My games)(보관함의 모든 기보), <strong>참고 데이터베이스</strong>(Reference databases) → 만든 데이터베이스마다 하나, <strong>온라인 (프록시 경유)</strong>(Online (via proxy)) → Lichess 데이터베이스(설정의 토큰 필요).">
+                    <td data-ko="출처 선택. 세 무리: <strong>내 보관함</strong>(Your vault) → 내 게임(My games)(보관함의 모든 기보), <strong>참고 데이터베이스</strong>(Reference databases) → 만든 데이터베이스마다 하나, <strong>온라인 (프록시 경유)</strong>(Online (via proxy)) → Lichess의 Masters와 Players 데이터베이스(설정의 토큰 필요).">
                       The source picker, in three groups: <strong>Your vault</strong> → My games
                       (every game in the vault); <strong>Reference databases</strong> — one per
                       database you built; <strong>Online (via proxy)</strong> — the Lichess
-                      database (needs the token from Settings).
+                      Masters and Players databases (they need the token from Settings).
                     </td>
                   </tr>
                   <tr>
@@ -1357,7 +1362,7 @@
                     </td>
                   </tr>
                   <tr><td data-ko="참고 데이터베이스 관리(Manage reference databases)">Manage reference databases</td><td data-ko="Databases 페이지로 갑니다.">Goes to the Databases page.</td></tr>
-                  <tr><td>Show the explorer / Hide the explorer</td><td data-ko="패널 스위치.">The panel's switch.</td></tr>
+                  <tr><td data-ko="탐색기 켜기/끄기(Explorer on/off)">Explorer on/off</td><td data-ko="패널 스위치. 툴팁이 «탐색기 보기»(Show the explorer) / «탐색기 숨기기»(Hide the explorer)를 오갑니다.">The panel's switch; its tooltip reads “Show the explorer” / “Hide the explorer”.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1390,9 +1395,10 @@
               <strong>Clicking a row plays that move.</strong> A position that can still castle is
               in no table, so the block does not appear for one.
             </p>
-            <p data-ko="답은 Lichess의 공개 테이블베이스에서(또는 설정에서 지정한 내 서버에서) 오고 서버가 영구히 캐시하므로, 한 번 본 엔드게임은 그 뒤 오프라인에서도 나옵니다. 어느 쪽이 답했는지는 «테이블베이스» 낱말에 마우스를 올리면 나옵니다. 연결이 안 되고 캐시에도 없으면 호박색 한 줄과 «다시 시도»(Try again)가 그 자리에 나타나고, 탐색기 자신의 답은 그 아래에 그대로 남습니다. 설정 → 테이블베이스에서 통째로 끄거나 서버를 바꿀 수 있습니다.">
-              Answers come from Lichess's public tablebase — or from your own server, if you have
-              set one in Settings — and are cached by your server for good, so an ending you have
+            <p data-ko="답은 Lichess의 공개 테이블베이스에서(또는 설정에서 지정한 직접 운영하는 테이블베이스 서버나 서버에 있는 테이블 파일에서) 오고 서버가 영구히 캐시하므로, 한 번 본 엔드게임은 그 뒤 오프라인에서도 나옵니다. 어느 쪽이 답했는지는 «테이블베이스» 낱말에 마우스를 올리면 나옵니다. 연결이 안 되고 캐시에도 없으면 호박색 한 줄과 «다시 시도»(Try again)가 그 자리에 나타나고, 탐색기 자신의 답은 그 아래에 그대로 남습니다. 설정 → 테이블베이스에서 통째로 끄거나 출처를 바꿀 수 있습니다.">
+              Answers come from Lichess's public tablebase — or from a tablebase server of your
+              own, or table files on the server, if Settings names one — and are cached by your
+              server for good, so an ending you have
               looked at once is answered offline afterwards. Which one answered is on the word
               “Tablebase”, under the pointer. Out of reach and not yet cached, the block becomes
               one amber line and “Try again”, and the explorer's own answer stays below it.
@@ -1400,19 +1406,19 @@
             </p>
             <h2 data-ko="필터">The filters</h2>
             <ul>
-              <li data-ko="<strong>내 게임</strong> — Side(Any/White/Black), Result(All/Won/Drew/Lost), Time control(Bullet/Blitz/Rapid/Classical, 복수 선택), «담아 둔 것만»(Kept only)(온라인 기보 전체가 아니라 모음에 담은 게임만), Played between(기간). 실시간 카운트가 아래 줄에 표시됩니다.">
+              <li data-ko="<strong>내 게임</strong> — 진영(Side)(전체/백/흑), 결과(Result)(전체/승/무/패), 시간제(Time control)(불렛/블리츠/래피드/클래시컬, 복수 선택), «담아 둔 것만»(Kept only)(온라인 기보 전체가 아니라 모음에 담은 게임만), 대국 기간(Played between). 실시간 카운트가 아래 줄에 표시됩니다.">
                 <strong>My games</strong> — Side (Any/White/Black), Result (All/Won/Drew/Lost),
                 Time control (Bullet/Blitz/Rapid/Classical, multi-select), “Kept only” (only the
                 games in your collection, not every archived one), Played between (dates). A live
                 count sits under the controls.
               </li>
-              <li data-ko="<strong>참고 데이터베이스</strong> — Result, Strength(Any/2300+/2500+/2700+), Level, Player(진영·결과 조건과 함께), Opening or ECO, Event, Played between.">
+              <li data-ko="<strong>참고 데이터베이스</strong> — 결과(Result), 기력(Strength)(전체/2300+/2500+/2700+), 레벨(Level), 플레이어(Player)(진영·결과 조건과 함께), 오프닝 또는 ECO(Opening or ECO), 대회(Event), 대국 기간(Played between).">
                 <strong>A reference database</strong> — Result, Strength (Any/2300+/2500+/2700+),
                 Level, Player (with side and outcome conditions), Opening or ECO, Event,
                 Played between.
               </li>
-              <li data-ko="<strong>Lichess 데이터베이스</strong> — Opponent strength(레이팅 구간)만. Masters 데이터베이스에는 필터 창이 없습니다.">
-                <strong>The Lichess database</strong> — Opponent strength (the rating bands); the
+              <li data-ko="<strong>Lichess Players 데이터베이스</strong> — 상대 기력(Opponent strength)(레이팅 구간)만. Masters 데이터베이스에는 필터 창이 없습니다.">
+                <strong>The Lichess Players database</strong> — Opponent strength (the rating bands); the
                 Masters database has no filter window.
               </li>
             </ul>
@@ -1483,7 +1489,7 @@
                   <tr><td data-ko="초기화(Reset)">Reset</td><td data-ko="시작 포지션으로. 토스트의 «되돌리기»(Undo)가 잠시 동안 이전 보드를 되돌립니다.">Back to the starting position. A toast offers “Undo” for a moment.</td></tr>
                   <tr><td data-ko="지우기(Clear)">Clear</td><td data-ko="빈 보드로. 같은 «되돌리기» 토스트가 뜹니다.">An empty board, with the same “Undo” toast.</td></tr>
                   <tr><td data-ko="포지션(Position)">Position</td><td data-ko="좁은 화면에서 상세 패널을 여는 버튼 — 넓은 화면에서는 패널이 항상 곁에 있습니다.">Opens the details sheet on a narrow screen — on a wide one the panel is always beside the board.</td></tr>
-                  <tr><td data-ko="분석(Analyse)">Analyse</td><td data-ko="완성된 포지션을 분석 보드로 넘깁니다. 불법 포지션이면 잠기고, 이유는 도구 모음 아래(넓은 화면에서는 포지션 패널)에 표시됩니다.">Hands the position to the analysis board. Locked while the position is illegal. The reason is shown under the toolbar, and in the Position panel on a wide screen.</td></tr>
+                  <tr><td data-ko="분석(Analyse)">Analyse</td><td data-ko="완성된 포지션을 분석 보드로 넘깁니다. 불법 포지션이면 잠기고, 이유는 도구 모음 아래(넓은 화면에서는 포지션 패널)에 표시됩니다.">Hands the position to the analysis board. Locked while the position is illegal; the reason is shown under the toolbar, or in the Position panel on a wide screen.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1492,7 +1498,7 @@
               <table class="controls">
                 <tbody>
                   <tr><td data-ko="오프닝(Opening)">Opening</td><td data-ko="«오프닝 또는 ECO 코드 선택»(Pick an opening or ECO code) — 이름이나 코드로 찾아 고르면 그 라인의 끝 포지션이 차려집니다. 보드가 달라지는 순간 표시는 지워집니다.">“Pick an opening or ECO code” — search by name or code and the line's end position is set up. The label clears the moment the board no longer matches.</td></tr>
-                  <tr><td data-ko="차례(Side to move)">Side to move</td><td>White / Black</td></tr>
+                  <tr><td data-ko="차례(Side to move)">Side to move</td><td data-ko="백 / 흑">White / Black</td></tr>
                   <tr><td data-ko="캐슬링 권리(Castling rights)">Castling rights</td><td data-ko="<code>K</code> <code>Q</code> <code>k</code> <code>q</code> 네 토글 — 백 O-O, 백 O-O-O, 흑 O-O, 흑 O-O-O.">Four toggles — <code>K</code> <code>Q</code> <code>k</code> <code>q</code>: White O-O, White O-O-O, Black O-O, Black O-O-O.</td></tr>
                   <tr><td data-ko="앙파상 대상(En passant target)">En passant target</td><td data-ko="«없음»(none) 또는 합법인 칸들만.">“none”, or only the squares that are legal.</td></tr>
                   <tr><td data-ko="반수 카운터 · 수 번호(Halfmove clock · Move number)">Halfmove clock · Move number</td><td data-ko="FEN의 두 숫자.">The FEN's two counters.</td></tr>
@@ -1544,14 +1550,14 @@
               </picture>
             </figure>
             <h2 data-ko="넓은 화면 전용">Wide screens only</h2>
-            <p data-ko="이 페이지의 존재 이유는 동시성이므로, 여러 창을 나란히 담을 수 없는 창에서는 물러납니다. 좁은 창에서 열면 안내 카드가 대신 표시되고(“워크스페이스는 보드, 수순, 탐색기, 게임 브라우저를 나란히 놓을 만큼 넓은 창이 필요합니다. 이 화면에서는 각 창이 저마다의 페이지로 열립니다.”), 사이드바의 Workspace 항목도 그런 창에서는 아예 그려지지 않습니다. 창을 다시 넓히면 모든 것이 그대로 돌아옵니다: 상태는 페이지가 아니라 앱이 들고 있습니다.">
+            <p data-ko="이 페이지의 존재 이유는 동시성이므로, 여러 창을 나란히 담을 수 없는 창에서는 물러납니다. 좁은 창에서 열면 안내 카드가 대신 표시되고(“워크스페이스는 보드, 수순, 탐색기, 게임 브라우저를 나란히 놓을 만큼 넓은 창이 필요합니다. 이 화면에서는 각 창이 저마다의 페이지로 열립니다.”) 보드와 게임으로 가는 버튼이 함께 놓이며, 사이드바의 워크스페이스(Workspace) 항목도 그런 창에서는 아예 그려지지 않습니다. 창을 다시 넓히면 모든 것이 그대로 돌아옵니다: 상태는 페이지가 아니라 앱이 들고 있습니다.">
               The page's whole premise is simultaneity, so on a window that cannot hold its panes
-              it steps aside: a card explains — “The workspace needs a window wide enough for the board, the moves, the explorer and the games browser side by side. On this screen each pane is a page of its own.” — and the sidebar's
+              it steps aside: a card explains — “The workspace needs a window wide enough for the board, the moves, the explorer and the games browser side by side. On this screen each pane is a page of its own.” — with a button to the Board and one to Games, and the sidebar's
               Workspace row is not drawn there at all. Widen the window and everything returns as
               it was: the state belongs to the app, not the page.
             </p>
             <h2 data-ko="배치">The layout</h2>
-            <p data-ko="위 행은 세 기둥입니다: 보드(창의 높이가 허락하는 만큼 커지고, 남는 높이는 전부 아래 게임 밴드의 줄이 됩니다), 엔진이 얹힌 수 목록 패널, 그리고 탐색기 기둥 — 탐색기 아래에 <strong>분석</strong>(Analysis) 패널이 놓입니다. 아래 밴드는 <a href='#games'>Games 페이지의 브라우저 전체</a>입니다: Collection · Databases · Chess.com · Lichess, 네 탭 그대로, 검색과 필터와 포지션 검색까지 전부.">
+            <p data-ko="위 행은 세 기둥입니다: 보드(창의 높이가 허락하는 만큼 커지고, 남는 높이는 전부 아래 게임 밴드의 줄이 됩니다), 엔진이 얹힌 수 목록 패널, 그리고 탐색기 기둥 — 탐색기 아래에 <strong>분석</strong>(Analysis) 패널이 놓입니다. 아래 밴드는 <a href='#games'>Games 페이지의 브라우저 전체</a>입니다: 모음(Collection) · 데이터베이스(Databases) · Chess.com · Lichess, 네 탭 그대로, 검색과 필터와 포지션 검색까지 전부.">
               The top row is three columns: the board (as large as the window's height allows —
               every line it cannot use becomes a games-band row instead), the moves panel with the
               engine docked on top, and the explorer's column with the <strong>Analysis</strong>
