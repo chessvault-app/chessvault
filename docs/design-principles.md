@@ -132,13 +132,14 @@ default knobs: `--muted-foreground` 5.83:1 on `--surface-3` where it read
 5.54, `--text-subtle` 4.96 (4.72), `--good` 5.20 (4.94), `--destructive`
 4.80 (4.54), `--info` 4.88 on the `--accent` fill (4.58), `--ring` 3.67
 on the same fill (3.44). `check:contrast` passes with nothing below the
-floor. `--glass-fill` keeps the dark value of its own it was given, 72%
-against the shared 70%, because glass is tinted with `--surface-3` and a
-lighter glass hides white content less: the ink on a glass band scrolled
-over white fell from 4.75:1 to 4.44 when that rung rose, 72% took it back
-to 4.69, and the rung's fall to 33.1% now reads 4.90. 70% would read
-4.61 and would also clear the floor; the override stays because a number
-placed by measurement is not worth unplacing to save a line. That one is analytic and `check:contrast` cannot hold it, because
+floor. `--glass-fill` keeps a dark range of its own, 82% to 62% where
+light runs 80% to 60%, so its middle is the 72% it was placed at while
+glass was still tinted with `--surface-3`: a lighter glass hides white
+content less, and the ink on a glass band scrolled over white fell from
+4.75:1 to 4.44 when that rung rose, until 72% took it back to 4.69. The
+tint has since left the ladder for a dark 15% to 5% of its own (read in
+"Platform-specific design"), so no rung moving here moves the glass.
+Those readings are analytic and `check:contrast` cannot hold them, because
 the check composites a glass surface over the DOM under it and not over
 what is scrolled behind it. A ladder is not the rungs alone.
 
@@ -219,11 +220,11 @@ usage moved up a rung instead:
 | --- | --- | --- |
 | the last rung, below type | `text-micro` | 10px |
 | captions | `text-xs` | 12px |
-| a small control's label (the registry's) | `text-[0.8rem]` | 12.8px |
+| a small control's label (the registry's) | `text-[0.8rem]` | 12.8px; 14 on a phone |
 | body, list rows, panel text | `text-sm` | 14px |
-| a list row and the panel heading over it | `type-row` | 14px; 16 on a phone |
-| the tail beside a row's text (a date, a count) | `type-row-sub` | 12px; 14 on a phone |
-| titles, setting rows, an empty state's title | `text-base` | 16px |
+| a list row, a setting row, and the panel heading over them | `type-row` | 14px; 16 on a phone |
+| the tail beside a row's text (a date, a count, a setting's blurb) | `type-row-sub` | 12px; 14 on a phone |
+| titles, an empty state's title | `text-base` | 16px |
 | page titles (`PageHeader`, desktop) | `text-xl` | 20px |
 | the one display figure, and a phone's page title | `text-2xl` | 24px |
 
@@ -252,8 +253,8 @@ different size: a list row's line is 16 or 17 on both phone platforms
 and the app's rows sat one rung under each on every screen. Desktop
 conventions (macOS 13pt, Windows 14px, dense tables) are the 14 over
 12, so the rows keep it there and step up under `md`. Named in
-`index.css` rather than written as `text-sm max-md:text-base` at each
-site, for the reason the 10px rung was named.
+`styles/utilities.css` rather than written as `text-sm max-md:text-base`
+at each site, for the reason the 10px rung was named.
 
 "The ONE display figure" is load-bearing and was not true for a while:
 the puzzle dashboard spent that rung four times in a single row, on four
@@ -277,19 +278,23 @@ a comment above it; `check:repo` refuses a new one without that
 sentence. (The 11px variation text is not a literal but the bottom rung
 of the annotation-size setting, kept in `store/prefs.ts`.)
 `web/src/components/ui/` has its own, which are the registry's and not
-ours to name — with one exception, now in the table above, because a
-rung a reader meets on every page is a rung whatever directory it is
-declared in. shadcn's `sm` size sets `text-[0.8rem]` on Button, Toggle
-and the calendar's cells: 12.8px, between captions and body. It reaches
-further than the word "exception" suggests, since `size="sm"` is what a
-toolbar uses — measured on the editor's FEN panel, three text sizes on
-one screen and the middle one is this. It keeps the registry's value,
-for the reason the component section gives: what this app adds to a
-registry file is behaviour, not geometry. What changed is only that the
+ours to name, with two exceptions. The first is now in the table above,
+because a rung a reader meets on every page is a rung whatever directory
+it is declared in. shadcn's `sm` size sets `text-[0.8rem]` on Button,
+Toggle and the calendar's cells: 12.8px, between captions and body. It
+reaches further than the word "exception" suggests, since `size="sm"` is
+what a toolbar uses — measured on the editor's FEN panel, three text
+sizes on one screen and the middle one is this. It keeps the registry's
+value on a desktop, because nothing measured has asked it to move (the
+registry's drawing is where a file starts, "The component layer" says,
+and a departure is earned by a number), and under `md` it takes
+`type-row-sub` with every other row tail. What changed is only that the
 table stopped saying the ladder has six rungs where the app renders
-seven. Note that `check:repo` cannot hold this one, since the literal
-lives in the directory the check exempts — the table is the only record
-of it there is.
+seven. The second is the iPhone's alert card, whose title and message are
+the platform's own 17 and 15px (`ui/dialog.tsx`), drawn on that card
+alone. Note that `check:repo` cannot hold either, since the literals live
+in the directory the check exempts — this paragraph is the only record
+of them there is.
 
 Placeholders are what a scale change breaks. A skeleton line box must
 equal the real line-height, and line-heights do not all move together —
@@ -343,12 +348,14 @@ Three things this shape is deliberately not:
   either, read in columns rather than scanned as cards. Folding them into
   the dense rung would have made them taller at comfortable in order to
   make them shorter at compact.
-- **Not the book reader.** It is the one surface worth naming as absent,
+- **Not the book reader's bands.** It is the one surface worth naming,
   because "why is the reader not here" is the question this table invites.
-  It has no list — no `<ul>`, no `<li>`, no `<tr>` — it is a PDF canvas
-  beside an analysis board, and its `h-9` and `h-7` are toolbar bands.
-  Shrinking a control strip is not what this knob promises, and it would
-  fight the coarse-pointer hit areas besides.
+  It is a PDF canvas beside an analysis board, and its `h-9` and `h-7` are
+  toolbar bands. Shrinking a control strip is not what this knob promises,
+  and it would fight the coarse-pointer hit areas besides. Its chapter
+  list is a list, though, and reads the dense rung like every other one
+  (a spacing audit on 2026-09-16 found it standing still while the knob
+  moved everything round it).
 
 Anything derived from a rung must be derived, not restated. The move
 tree's branch elbow has to end on the middle of the first line of the row
@@ -403,9 +410,10 @@ picker 32px → 28px.
   row is 76rem up to about 1350px and then follows the window to a
   96rem ceiling, so a large monitor draws a large board. Two shells,
   because "fit the viewport" has two readings when stacked:
-  `BOARD_SCROLL_SHELL` lets the page itself scroll (board, repertoire,
-  editor), `BOARD_HELD_SHELL` holds the page still and gives its side
-  column the scrolling (analysis, study, both trainers). A held page
+  `BOARD_SCROLL_SHELL` lets the page itself scroll (the editor, and a
+  book puzzle's solution recorder), `BOARD_HELD_SHELL` holds the page
+  still and gives its side column the scrolling (the board, study,
+  repertoire, both trainers, the endgame drill, the book reader). A held page
   scrolls only where the column can no longer be squeezed — a short
   landscape window, where a floor on the column binds and the shell is
   what gives.
@@ -428,14 +436,16 @@ picker 32px → 28px.
   edge. Inside that surface — not over the page — float the page's own
   controls, a detail panel that becomes a bottom sheet on a phone, and
   `CanvasOverlay` for the centred empty and error states. A canvas
-  page's Fab is phone-only, and its actions are one array the corner
-  draws as icons and the Fab opens as the action sheet, the same
-  two-presentations-one-list shape `CreateControl` uses. It is the one
-  floating disc left in the app: a canvas pans under the finger, so a
-  header is out of reach the moment the map is in use. A shelf's create
-  button is in its header at every width, one word beside a phone's
-  large title, and the several things a shelf can make open as the
-  action sheet its rows already use. The disc fanned them as pills over
+  page's actions are one array the corner draws as icons and a phone
+  opens as one menu, the same two-presentations-one-list shape
+  `CreateControl` uses. On Android that menu hangs off a Fab, the one
+  floating button left in the app: a canvas pans under the finger, so a
+  header is out of reach the moment the map is in use. iOS has no
+  floating action button, so there the same list is a glass circle on
+  the title row (lanph3re, 2026-09-19). A shelf's create button is in
+  its header at every width, a bare plus beside a phone's large title
+  (the word is still read out), and the several things a shelf can make
+  open as the menu its rows' ⋯ already opens. The disc fanned them as pills over
   the last rows for a while, which is the stacked FAB every current
   phone platform has stepped back from, and it stood on whichever row a
   scroll or Tab ended on; the cost of the header, a scroll back after a
@@ -466,7 +476,12 @@ picker 32px → 28px.
   Material 3's medium app bar); it came out because it cost 44px of
   every scrolled list to keep a name on screen that the tab bar already
   gives, and the shrink was one more thing moving while a list was
-  being read. The phone-only back chevron sits where a page is
+  being read. A page whose list is long enough to want its controls one
+  flick away passes `pinned` instead: a compact copy of the row (the
+  chevron, the name at `text-base`, the same actions) pinned to the
+  scroller's top and shown only on a scroll up (`hooks/use-scroll-reveal`),
+  drawn as a second row so nothing in the flow moves. The shelves, Themes
+  and Games take it. The phone-only back chevron sits where a page is
   reached through More. `subtitle` (what the page has: 12 studies; while a filter
   narrows a shelf, how many of those it shows, "3 of 12 studies", as a
   status so the result is spoken),
@@ -498,8 +513,9 @@ picker 32px → 28px.
   `label-caps` voice is gone with the old look.)
 - A panel's header is the registry's card header as a row (`PanelHeader`:
   title, actions). It pads itself across only, from the card's own
-  `--card-spacing`. It has one floor — 44px, 52px on a coarse pointer, the
-  height an icon button gives it — so a header holding only a switch, or
+  `--card-spacing`. It has one floor — 44px under either pointer, an icon
+  button (28px, or 36 under a thumb) and the room around it — so a header
+  holding only a switch, or
   nothing, is as tall as its neighbours and the title does not jump when a
   phone's pane tabs switch; nothing else is sized against it.
 - **A panel's bands sit flush; only its footer takes the card's spacing.**
@@ -512,7 +528,10 @@ picker 32px → 28px.
   rules floating. Measured on the header, the worst case: 16px above a
   52px band and 16px below it, 84px before a word of body where the old
   header took 52. What is kept is the card's floor and the space above a
-  footer, which is what the adoption was for. Stated once in `Panel`, not
+  footer, which is what the adoption was for; the floor from `lg` up only
+  (`--card-floor`), since below it the phone's contextual bar already ends
+  the column and the floor stood under the last move row as 16px of
+  nothing. Stated once in `Panel`, not
   at each call site — that was the mistake being undone — and the `>`
   matters, because the two trainers keep their footer inside the scrolling
   body where that body's own gap already spaces it.
@@ -532,7 +551,7 @@ picker 32px → 28px.
   only** — `px-(--card-spacing)`, or a tighter `px-` where rows are meant
   to sit near the edge — and never its own `p-`, `mt-auto` spacer or
   negative margin to fake what the root already does. The root's VERTICAL
-  half is the part `Panel` turns off for its bands — see the bullet below
+  half is the part `Panel` turns off for its bands — see the bullet above
   — but what it hands out is still the card's to hand out, and a body that
   starts padding itself again is the thing this rule exists to stop.
 
@@ -555,19 +574,23 @@ picker 32px → 28px.
   stops and the one lichess ships; Notes, Books, the opening map and
   Insights are reached through More and the Home tiles. The current tab wears the
   sidebar's current-row pill (`bg-nav-pill`, 12% of primary over the
-  card behind the icon, a semibold label), so both navigations say "you are
-  here" the same way. The bar stays docked and pinned: the floating
-  capsule is iOS 26's idiom alone, and hiding on scroll would resize
-  every page, since the bar is a flex sibling of `main`. It is the
+  card behind the icon, a semibold label; on the iOS capsule a wash of the
+  ink, so the glass shows through it), so both navigations say "you are
+  here" the same way. On Android the bar stays docked and pinned; the
+  floating capsule that shrinks while a page is read down is iOS's
+  ("Platform-specific design"). Either is an overlay on the shell's row
+  that measures itself, with `main` padding by its height, so neither
+  reflows a page. It is the
   navigation on hub pages, but a **leaf page claims it** — board, study, puzzle and
   repertoire replace the global tabs with their own controls (move
   navigation, puzzle actions) via `MobileActionBar`, and you leave by the
   back chevron, Chess.com/Lichess-style. Desktop navigates by sidebar, no
   back arrows on top-level pages.
 - **The desktop sidebar is measured off Linear's, not composed.** 240px
-  across, 28px rows on a 30px pitch, an 8px corner and a 14px glyph whose
+  across, 28px rows on a 29px pitch, an 8px corner and a 14px glyph whose
   centre sits 24px in from the window's edge, each of them sampled off a
-  screenshot of Linear's dark desktop (2026-09-22) rather than chosen.
+  screenshot of Linear's dark desktop (2026-09-22) rather than chosen; the
+  pitch lands at 30 here, the column's own gap being 2.
   The label is the exception and is `text-sm`: theirs measures 13, and 14
   is this app's regular text, so a 13 here would have been the only one
   in the window and would have set the nav one step under the list it
@@ -582,7 +605,7 @@ picker 32px → 28px.
   primary down the left edge of the selected row was a second marker
   beside the pill it sits in, and Linear marks its own with the fill
   alone (lanph3re, at the deployed build, 2026-09-22). The tonal pill
-  stays (`bg-nav-pill`, below), because it is the same "you are here"
+  stays (`bg-nav-pill`, above), because it is the same "you are here"
   the phone's tab bar draws and the two navigations have to say it the
   same way; the phone never had the rail, so this is one fewer thing
   the two disagree about.
@@ -597,24 +620,32 @@ picker 32px → 28px.
   the one VS Code and Slack settled on, and the band is the one strip
   that exists on every page at every width. Centred on the window, not
   the page, so it stays put when the sidebar folds. It is a button, not
-  a field: typing happens in the window it opens. No rule under it, and
-  no glass or Mica behind it: the band and the sidebar are one L of card
-  around the toned page, and a material that samples the wallpaper would
-  put a second ground behind the cards (the tonal rule). A browser build
-  has no band and, by decision, no search control anywhere in its chrome;
-  Ctrl/⌘ K and the Home button reach the same window.
+  a field: typing happens in the window it opens. No rule under it: the
+  band and the sidebar are one L of the window's ground round the inset
+  page. The OS's own material, where the desktop window asks for one, goes
+  behind that L and nowhere else (the desktop's half of the second pass,
+  under "Platform-specific design"). A browser build has no band, so its
+  way in is a field-shaped Search button under the sidebar's wordmark,
+  with the same keycaps; Ctrl/⌘ K and Home's own button reach the same
+  window.
 - **A phone's hub is a launcher, not a dashboard.** The Puzzles tab lands
   on `#/puzzles/hub` (`puzzles/HubPage.tsx`), which is its destinations
   and nothing else. It landed on the dashboard until that page — stats
   and a 200-row attempt log — had to carry a row of shortcuts at its top
   to get anyone anywhere, which is the corner of a phone a thumb cannot
   reach. Two rules came out of building it, and they generalise:
-  a launcher's targets sit at the BOTTOM of the viewport (`min-h-full`
-  on `PageShell` and `mt-auto` on the block, so it still scrolls rather
-  than hiding a target if the screen is tiny); and anything that arrives
-  from the network goes ABOVE the primary button, so a late answer grows
-  the block upward instead of shoving a target out from under a thumb
-  already moving towards it. Above `md` the route renders the dashboard
+  a launcher's targets sit at the BOTTOM of the viewport (`h-full` on
+  `PageShell`, so the column has a height to share, and the cluster of
+  boards taking its slack with `flex-1 justify-end`; the outer shell
+  still scrolls rather than hiding a target if the screen is tiny); and
+  nothing that arrives from the network moves a target once it is drawn.
+  The page waits for all five of its answers and draws them in one
+  piece, giving up on one only after four seconds in which nothing has
+  landed. It began as "a late answer goes ABOVE the primary button, so it
+  grows the block upward instead of shoving a target out from under a
+  thumb"; the button went (the first board is the way in, and it opens
+  the very puzzle it shows), and drawing once is the same rule with
+  nothing left to shove. Above `md` the route renders the dashboard
   instead — the sidebar lists those destinations already — rendered, not
   redirected, because a redirect leaves a history entry Back bounces off.
 - Board and piece appearance are user-chosen (Settings → Appearance):
@@ -659,7 +690,7 @@ picker 32px → 28px.
   excerpt whatever the words do, a game row 72 px because its three
   lines are 20 + 20 + 16. Compose the
   real thing's own layout constants where they exist — `SkeletonBoard`
-  builds from `BOARD_WIDE_SHELL`, `BOARD_MAX_W` and `BOARD_WIDE_SIDE`
+  builds from `BOARD_HELD_SHELL`, `BOARD_MAX_W` and `BOARD_WIDE_SIDE`
   rather than from something that looks like them, because a copy drifts
   the first time one of them moves.
 
@@ -782,7 +813,7 @@ picker 32px → 28px.
   page looks like: the endgame drill's drew a document's row, a third
   pane and a panel called Moves over a trainer, and shared only the skip
   link and the toast layers with it. It runs in CI beside
-  `check:contrast` and `check:page-turn`.
+  `check:contrast`, `check:page-turn` and `check:select`.
 - **A section is warmed before it is asked for.** The placeholder covers
   a cold chunk; `lib/prefetch` sees to it that few are cold. Once the app
   has loaded and the browser is idle, the sections' chunks are fetched
@@ -862,10 +893,12 @@ The way out is a **Cancel**, stated in words, next to the thing it
 cancels. Escape and the scrim also close, but neither is advertised. A
 window whose changes apply as you make them (the filters) offers
 Cancel — restoring what was there when it opened — beside Done. The
-one-field prompt is the exception on a phone: its sheet carries the
-handle, which is the advertised way out there, and a Cancel beside the
-single answer was a second button for the thumb to tell apart, so the
-answer takes the whole row and Cancel is a desktop control.
+one-field prompt was the exception on a phone while it was a sheet: the
+handle was the advertised way out, and a Cancel beside the single
+answer was a second button for the thumb to tell apart. It is a
+question now, the centred `ask` card on both phones, which has neither
+a handle nor an X, so its Cancel is back beside the answer: two
+capsules of equal width on an iPhone, at the row's end on Android.
 
 A sheet may have **resting heights** (`snapPoints` on `Dialog`): a
 drag stops at the nearest one instead of closing, and a drag past the
@@ -1025,7 +1058,7 @@ at the end of a popup's exit animation. So every popup is closed by the
 router before the turn starts (`lib/popups`): the tooltip is controlled,
 closes with no exit and is deaf to hover while the turn plays; the
 Popover, DropdownMenu, ContextMenu and Select roots register their close
-while open, and `index.css` turns a popup's closing animation off while
+while open, and `styles/motion.css` turns a popup's closing animation off while
 the root carries `data-nav`, so Base UI sees its end inside the router's
 own flush, before the transition exists to be skipped. A popup that was
 already closing when the turn began is not on that list, having stopped
@@ -1108,15 +1141,17 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   Input, InputOTP, Textarea, Label, Field, InputGroup, Checkbox,
   RadioGroup, Slider, Dialog, AlertDialog, DropdownMenu, ContextMenu,
   Select, Popover, Tooltip, Tabs, ToggleGroup, Toggle, Switch, Progress,
-  Spinner, Skeleton, Empty, Card, Badge, Separator, Calendar, Toast, Command —
+  Spinner, Skeleton, Empty, Card, Badge, Kbd, Separator, Calendar, Toast, Command —
   each the shape
   `npx shadcn add` writes (Base UI underneath, `cva` variants, `data-slot`),
   each in the registry's own face (the nova style: its sizes, radius
   ladder, focus rings, the inverted tooltip, the card that is a ring
-  rather than a border — drawn in `--border` here, not the registry's
+  rather than a border — drawn in `--card-ring` here, the `--border`
+  hairline as far as the contrast knob asks for it, not the registry's
   fixed `foreground/10`, so the contrast schemes can reach it) and
   carrying this app's physics on top: every window a bottom sheet on a
-  phone, dragged away from anywhere on itself; the page/layer distinction
+  phone (a question a centred card), dragged away from anywhere on
+  itself; the page/layer distinction
   and the back chevron; the keyboard band; the sole-text-field focus;
   Android Back through CloseWatcher; the coarse-pointer hit areas;
   `title` as a tooltip. The look is where you START, not where you are
@@ -1193,13 +1228,13 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   itself is a rung above `--muted` (the hover fill) instead of the same rung,
   because a pressed toggle on a card was 3% of lightness from its
   surroundings in the light and 6% in the dark and could not be seen —
-  92.8% and 37% now. On the page ground the light tone is a hazard the
+  92.8% and 38% now. On the page ground the light tone is a hazard the
   other way: `--secondary` and `--muted` are the light page's own 97%,
   so a secondary button, a progress track or an empty state's tile
   standing on the page rather than on a card drew nothing (1.00:1 on
   eight pages, 2026-09-12). An element that stands on the page says so
   with `data-ground` (a page header's rows, a gate, a toolbar), and
-  under that mark `index.css` points both roles one rung up, at
+  under that mark `styles/tokens-dark.css` points both roles one rung up, at
   `--surface-3`; dark keeps its values, since there the page already
   sits below the card. The mark goes only on boxes that hold no card,
   because a card under it would take the rung too; the ghost button's
@@ -1249,8 +1284,10 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   them; on an iOS phone, where the menu is glass, it takes `2xl`. What
   sits INSIDE one of those takes `md`: a menu row, a select row, the
   icon chip in an alert, the tooltip (a label, not a surface), and the
-  buttons, which cap the rung at 10 or 12px where a full one measured
-  too round for its row. On an iOS phone a menu row and a select row
+  small buttons (`xs`, `sm` and their icon sizes), which cap the rung at
+  10 or 12px where a full one measured too round for its row; a button
+  at the default size takes `lg`, as the text field beside it does. On
+  an iOS phone a menu row and a select row
   take `xl`, the menu's `2xl` less its 4px padding. Toast is the one
   deliberate exception at `2xl` on every platform: it floats over everything and belongs to no page. This is
   written down because the sheet spent 0.4.7 to 0.9.3 on the menus'
@@ -1301,7 +1338,7 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   board's controls, and a phone's create disc hid a card's and a game
   row's more-actions button. `scroll-padding` is the property for that,
   and its number is the band's OWN measured height, published to the
-  scroller by `hooks/use-pinned-band` and read back in `index.css`. So a
+  scroller by `hooks/use-pinned-band` and read back in `styles/base.css`. So a
   60px row, the 84px that row becomes when it wraps and a 65px document
   header all clear themselves with no constant written down: a band that
   grows grows the clearance, measured live at 60px to 132px as names
@@ -1358,8 +1395,8 @@ drawn, and what one has to prove.
   a feature test. A wrong guess costs a phone the other platform's
   chrome, not a broken page, since neither variant removes a control the
   cross-platform layout has. `localStorage` `chess-vault:platform`
-  overrides the guess; it exists for the screenshot grid and the
-  Settings debug card, not for users, and nothing else reads it.
+  overrides the guess; it exists for the screenshot grid, not for users,
+  no control in the app writes it, and nothing else reads it.
 - **iOS owns its chrome; the content is the same everywhere.** On iOS
   the chrome may follow iOS 26: the tab bar as a floating capsule inset
   from the edges over scrolling content, icons only, and getting
@@ -1375,8 +1412,9 @@ drawn, and what one has to prove.
   keeps the sheet on every phone, having no control to hang from). Its
   rows are 44px under a thumb on every platform
   (`pointer-coarse:py-2.5`, as a Select's are; they measured 32px); the back chevron and a header's icon actions in glass circles, a pressed one (a shelf's bookmark filter) or a lit one that marks itself `data-chrome-lit` (Games' More filters, lit while a filter is on, and the Databases tab's position search while a search stands with its sheet shut; with the sheet open it stays glass, as an open ⋯ does) in its own on-state fill instead of the glass, and
-  its text buttons (a shelf's Create, Import) in pills of the same
-  height, the primary one in its own fill, rather than bare on the page
+  its text buttons (a document's Save) in pills of the same height, the
+  primary one in its own fill (a shelf's Create, a bare plus on a phone,
+  is that fill as a circle), rather than bare on the page
   (one rule in `styles/shell.css` on the rows marked `data-chrome`,
   reaching the registry button by its own attributes); grouped inset lists with a chevron on every
   navigable row (the More page's groups, one card per group with a
@@ -1520,8 +1558,9 @@ drawn, and what one has to prove.
   width instead (2026-09-22). `phone-ios-revealed` and its Android
   twin scroll down and then back up, and are where a change to that
   bar shows. A glass surface owes two more numbers. Frame time while
-  scrolling under it, on the phone, Low Power Mode off, from the
-  on-device probe in the Settings debug card:
+  scrolling under it, read on the phone itself with Low Power Mode off
+  (no probe for it is part of the app; the Settings card a lag build
+  adds delays requests and records nothing):
   the bottom bar was made opaque in 2026-09 because a full-width 24px
   blur was re-blurred on every scrolled frame, and that is the reading
   a glass bar has to beat. And contrast: text over glass has no fixed
@@ -1536,11 +1575,13 @@ drawn, and what one has to prove.
   they are every platform's idiom: a QUESTION is a centred card on every
   phone and not a rising sheet (`ask` on the Dialog root takes the Dialog
   primitive instead of the Drawer; iOS draws it as iOS 26's own alert,
-  300px wide on the 4xl rung with 20px of padding all round, a started
-  17px title over a 15px message, no icon and no action band at all, and
-  its answers as 48px capsules of equal width side by side (stacked when
-  there are three, the leave question), the destructive one the same
-  quiet capsule as Cancel with the destructive ink; Android as Material's basic dialog,
+  in glass, 300px wide on the 4xl rung with 20px of padding all round, a
+  started 17px title over a 15px message, no icon and no action band at
+  all, and its answers as 48px capsules of equal width side by side
+  (stacked when there are three, the leave question): Cancel a quiet
+  wash of the ink and the answer always filled, a destructive one in a
+  solid destructive fill, since red ink on a wash over the glass measured
+  2.5 to 3.1:1 in both themes; Android as Material's basic dialog,
   312px, started text, text buttons in an end-aligned row; the scrim
   still closes it, as every small window here does, and "Dialog policy"
   carries the exception); the segmented track's raised thumb SLIDES
@@ -1560,8 +1601,8 @@ drawn, and what one has to prove.
   to a hundred and a line of empty card beside a one-word label
   (measured), which is why macOS and Windows both keep a slider in the
   control column. A switch or a menu gains nothing at either width and
-  stays in the row. It is the two glass knobs, which are only ever drawn
-  on a phone, and Sound's Volume, which moved with them rather than be
+  stays in the row. It is the two glass knobs, which are drawn only on
+  iOS, and Sound's Volume, which moved with them rather than be
   the odd slider out. The two phones then group
   in their own flavour from one place, `SettingsCard`: iOS one inset
   card per group with hairlines from the label's edge and 44px rows,
@@ -1625,8 +1666,8 @@ drawn, and what one has to prove.
   their own, and the page is one `rounded-xl` panel inset in it, so
   every page's interior is what it was and only the frame moved (this
   reopens the white sidebar of 2026-09-07). The frame is a rung UNDER
-  the page in both themes: 95% under 97% in light, and 19% under 20.5%
-  in dark since the dark ladder was lifted off the floor on 2026-09-22
+  the page in both themes: 95% under 97% in light, and 14% under 18.25%
+  in dark since the dark ladder was placed on Linear's own on 2026-09-22
   ("The colour grammar"). The rule is not about elevation, which would
   have to pick a direction and defend it: the frame steps once back
   from the READING surface, whichever end of the scale that surface
@@ -1674,8 +1715,9 @@ drawn, and what one has to prove.
   Still to be read on a device: every item above.
 - **What did not reopen.** Five tabs with Notes under More: iOS also
   stops at five. The radius ladder: iOS 26's continuous corners cannot
-  be drawn in CSS, and a glass surface takes the `2xl` rung or a true
-  pill from the ladder rather than a hand-written number. Concentricity
+  be drawn in CSS, and a glass surface takes a rung of the ladder (a
+  menu's `2xl`, the alert's `4xl`) or a true pill rather than a
+  hand-written number. Concentricity
   is the other half of what iOS 26 asks of a corner (an inner radius of
   the outer radius less the inset, `ConcentricRectangle`), and it is not
   a rung the ladder owes: it is an arithmetic between two rungs. Every
