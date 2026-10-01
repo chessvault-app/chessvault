@@ -818,10 +818,22 @@ export function DatabaseGames({
   // Databases tab switched for another while the page stays, and the
   // workspace, which is not kept, being left. Outside any kept page the
   // test is the same, and an unmount the only way here.
+  //
+  // The element is the one last drawn on screen, kept by a layout effect
+  // on every commit, not the one there when this effect was set up. Only
+  // the main path draws it, so a pane that showed "Could not load
+  // reference games" and came back through Try again draws a new one,
+  // and the one read at setup stayed out of the document: the next hide
+  // read as an unmount and stopped the hunt for good, leaving "Searching…"
+  // over the rows found so far. Null while an early return is drawn,
+  // which reads as an unmount too, harmlessly: such a pane shows no rows.
+  const drawn = useRef<HTMLSpanElement | null>(null);
+  useLayoutEffect(() => {
+    drawn.current = topRef.current;
+  });
   useEffect(() => {
-    const drawn = topRef.current;
     return () => {
-      if (drawn?.isConnected) return;
+      if (drawn.current?.isConnected) return;
       huntSeq.current += 1;
       if (debounce.current) clearTimeout(debounce.current);
     };
