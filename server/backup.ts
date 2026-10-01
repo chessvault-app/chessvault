@@ -32,7 +32,7 @@ const SKIP_FILES = new Set(['config.json', 'sessions.json']);
 const HISTORY = '.history.git';
 
 /** A ustar header for one entry. `name` is the archive path, `/`-joined. */
-function header(name: string, size: number, mode: number, mtime: number, type: '0' | '5' | 'L'): Buffer {
+function header(name: string, size: number, mode: number, mtime: number, type: '0' | '5' | 'x'): Buffer {
   const buf = Buffer.alloc(512);
   const put = (text: string, at: number, len: number): void => {
     buf.write(text.slice(0, len), at, 'latin1');
@@ -40,11 +40,10 @@ function header(name: string, size: number, mode: number, mtime: number, type: '
   const num = (n: number, at: number, len: number): void => {
     put(n.toString(8).padStart(len - 1, '0'), at, len - 1);
   };
-  // A name over 100 bytes goes in a GNU long-name entry ahead of the file,
-  // read by every tar since the eighties; the header then carries a stub.
-  // Written as UTF-8 bytes, not characters: a Korean title is three bytes
-  // a letter, and tar knows nothing but bytes.
-  Buffer.from(name, 'utf-8').copy(buf, 0, 0, 100);
+  // A name this field cannot hold as it is also travels in a pax record
+  // ahead of the entry (paxPath), and the field keeps an ASCII stand-in
+  // for a tar that reads no pax.
+  put(name.replace(/[\u0080-\u{10ffff}]/gu, '_'), 0, 100);
   num(mode, 100, 8);
   num(0, 108, 8);
   num(0, 116, 8);
@@ -84,7 +83,7 @@ async function* entries(root: string, rel: string[]): AsyncGenerator<Buffer> {
       } catch {
         continue;
       }
-      yield* longName(`${name}/`);
+      yield* paxPath(`${name}/`);
       yield header(`${name}/`, 0, 0o755, mtime, '5');
       yield* entries(root, path);
     } else if (entry.isFile()) {
@@ -100,7 +99,7 @@ async function* entries(root: string, rel: string[]): AsyncGenerator<Buffer> {
         // have outdated; a file that grows while it is read is cut at
         // the size announced.
         const info = await handle.stat();
-        yield* longName(name);
+        yield* paxPath(name);
         yield header(name, info.size, 0o644, info.mtimeMs, '0');
         let left = info.size;
         const chunk = Buffer.alloc(Math.min(left, 1 << 16) || 1);
@@ -121,14 +120,30 @@ async function* entries(root: string, rel: string[]): AsyncGenerator<Buffer> {
   }
 }
 
-/** The GNU long-name entry ahead of a header whose name will not fit. */
-function* longName(name: string): Generator<Buffer> {
-  const bytes = Buffer.from(name, 'utf-8');
-  if (bytes.length <= 100) return;
-  const body = Buffer.concat([bytes, Buffer.alloc(1)]);
-  yield header('././@LongLink', body.length, 0o644, Date.now(), 'L');
+/**
+ * The pax record ahead of an entry whose name the ustar field cannot
+ * hold as it is: over 100 bytes, or anything but ASCII. Pax says its
+ * record is UTF-8, where a ustar name has no charset at all, and
+ * Windows' own tar reads one in the system's code page: a Korean title
+ * written there as UTF-8 bytes would not extract on a Korean Windows
+ * ("Invalid empty pathname"). GNU tar and Windows' tar both read this.
+ */
+function* paxPath(name: string): Generator<Buffer> {
+  if (name.length <= 100 && Buffer.byteLength(name) === name.length) return; // ASCII, and fits
+  const body = paxRecord('path', name);
+  yield header('././@PaxHeader', body.length, 0o644, Date.now(), 'x');
   yield body;
   yield pad(body.length);
+}
+
+/** `<length> <key>=<value>\n`, the length counting its own digits. */
+function paxRecord(key: string, value: string): Buffer {
+  const rest = Buffer.byteLength(` ${key}=${value}\n`);
+  // Two passes settle it: the second adds at most the one digit the
+  // first pushed the length over.
+  let length = rest + String(rest).length;
+  length = rest + String(length).length;
+  return Buffer.from(`${length} ${key}=${value}\n`, 'utf-8');
 }
 
 /** The whole archive as a stream: the entries, then two zero blocks. */
