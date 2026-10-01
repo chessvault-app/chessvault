@@ -26,9 +26,11 @@ OCR한 결과는 깨진 피겨린 기호 덩어리입니다), 그래서 글자�
 숫자 조각을 제공하고(`harvest`, 약 2,770개 표본, 5-폴드 99.86%), 최근접 중심
 모델과 연결 성분 분할이 임의의 다이어그램 사각형 위에 인쇄된 번호를
 읽습니다(`selftest`: 끝에서 끝까지 855/858). 검출은 되었으나 맞춰지지 않은
-모든 다이어그램을 여기에 넣으면(페이지 렌더에 대해 `dump-rects` 후 `read`)
-잃어버린 143개 번호 중 125개를 되찾았고, 모두 번호 순서와 어긋나지
-않았습니다. `data/ml/recovered-numbers.json` + `all-diagram-rects.json`
+모든 다이어그램을 여기에 넣으면(페이지 렌더에서 검출기를 한 번 돌려 쪽
+번호와 비율 좌표 사각형을 뽑아낸 뒤 `read <rects.json>`. 그 일회성 실행은
+여기에 남겨 두지 않았습니다) 잃어버린 143개 번호 중 125개를 되찾았고, 모두
+번호 순서와 어긋나지 않았습니다. `data/ml/recovered-numbers.json` +
+`all-diagram-rects.json`
 참고(`pages-extra/`에는 보관함에 없던 16개 페이지의 렌더가 있습니다). 환경:
 `python -m uv venv data/ml/venv -p 3.12` + `numpy pillow pymupdf`.
 

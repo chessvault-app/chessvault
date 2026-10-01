@@ -8,11 +8,14 @@
 
 - **원격** — 다른 곳에 있는 Chess Vault 서버를 들여다보는 창입니다. 순수한
   클라이언트입니다.
-- **로컬** — 자체 호스팅입니다. 셸이 저장소의 서버를 자식 프로세스로
-  띄우고(`node --import tsx server/index.ts`, 8788번 포트) 창을 거기에
-  연결합니다. 저장소 자신의 `vault/`와 `data/`를 쓰며, 패키징된 빌드는
-  `CHESS_VAULT_DIR` / `CHESS_VAULT_DATA`를 사용자별 앱 데이터로 가리키게
-  합니다.
+- **로컬** — 자체 호스팅입니다. 셸이 서버를 자식 프로세스로 8788번
+  포트에, 루프백에서만 응답하도록 띄우고 창을 거기에 연결합니다. 소스
+  체크아웃에서는 저장소의 서버를 시스템 Node로
+  띄우고(`node --import tsx server/index.ts`) 저장소의 `vault/`와
+  `data/`를 씁니다. 패키징된 빌드는 대신 번들된 서버를 사용자별 앱 데이터
+  위에서 실행합니다(패키징 참고). «Open a folder…»로 고른 폴더는 어느
+  쪽이든 대신합니다. 그 폴더가 `CHESS_VAULT_DIR`가 되고, 파생 데이터는 그
+  안의 `.data` 폴더에 들어갑니다.
 
 실행: `npm run build`를 한 번 실행한 뒤(서버가 `dist/`를 서빙합니다)
 `npm run desktop`.
@@ -31,14 +34,16 @@ Windows 11(22H2 이상)은 창의 크롬 뒤에 Mica를, macOS는 사이드바
 읽습니다.
 
 바뀌는 것은 틀뿐이고, 창에 틀이 있는 `md` 너비부터입니다. 제목 띠와
-사이드바와 페이지를 둘러싼 8px 여백이 재질을 통과시키고, 페이지 자체는
-제 불투명 패널 위에 그대로 남습니다. 두 시스템이 경계를 두는 자리도
-그곳입니다. 더 좁은 창에는 틀이 없으므로 예전 바탕 그대로입니다.
+사이드바와 페이지의 오른쪽·아래쪽 가장자리에 둔 8px 여백이 재질을
+통과시키고, 페이지 자체는 제 불투명 패널 위에 그대로 남습니다. 두
+시스템이 경계를 두는 자리도 그곳입니다. 더 좁은 창에는 틀이 없으므로
+예전 바탕 그대로입니다.
 
 꺼진 채로 나가는 까닭은 창을 열어 읽어 본 적이 없기 때문입니다. 기본값이
 되려면 실제 바탕화면을 뒤에 두고 두 가지를 봐야 합니다. 70% 비브런시
-위에서도 사이드바의 글자가 4.5:1을 지키는지, 그리고 재질 위 투명한 띠에
-앉는 OS의 창 버튼이 복잡한 배경화면에서도 읽히는지입니다.
+위에서도 사이드바의 글자가 4.5:1을 지키는지, 그리고 앱에서 재질 위
+투명한 띠에 앉는 OS의 창 버튼이(페이지가 불투명한 보관함 선택기는 그
+띠를 제 회색으로 칠합니다) 복잡한 배경화면에서도 읽히는지입니다.
 
 ## macOS에 설치하기
 
@@ -70,9 +75,12 @@ macOS가 그냥 열어 주지는 않습니다. 무엇이 보이는지는 빌드�
 
 ## 패키징
 
-`npm run desktop:package` → `release/installer/Chess Vault Setup <v>.exe`
-(NSIS 원클릭). `desktop:package:mac`은 dmg를, `desktop:package:linux`는
-AppImage와 deb를 만듭니다. 과정은 이렇습니다:
+`npm run desktop:package` → `release/installer/Chess-Vault-Setup.exe`
+(NSIS 원클릭). `desktop:package:mac`은 `Chess-Vault-<arch>.dmg`를,
+`desktop:package:linux`는 같은 방식으로 이름 붙인 AppImage와 deb를
+만듭니다. 어느 설치 파일의 이름에도 버전이 없으며(`package.json`의
+`artifactName`), 그래서 웹사이트가 `/releases/latest/download/<file>`로
+바로 링크할 수 있습니다. 과정은 이렇습니다:
 
 1. `desktop/build-server.mjs`: 서버를 esbuild로 묶어
    `release/server/index.mjs`로, 데이터베이스 빌더들을
@@ -176,7 +184,8 @@ HTTPS로 옵니다. 코드 서명은 없습니다. 윈도우 빌드는 서명되
 # 1. package.json의 "version"을 올리고 커밋
 # 2. 검사, 태그, 푸시 — GitHub이 그 태그에서 빌드합니다
 npm run desktop:release
-# 3. 워크플로가 끝나면 초안을 확인하고 Publish
+# 3. 워크플로가 끝나면 초안을 확인하고, 릴리스 노트를 쓰고
+#    (docs/release-notes.ko.md) Publish
 gh release view v<version> --web
 ```
 
@@ -186,7 +195,7 @@ gh release view v<version> --web
 | --- | --- |
 | `release.sh` | 타입 검사와 테스트, 지저분한 트리·이미 있는 태그는 거부, 태그 푸시 |
 | `desktop` 워크플로 | 윈도우·macOS·리눅스를 하나의 **초안** 릴리스에 빌드 |
-| 사람 | 설치 파일 세 개가 다 올라왔는지 확인하고 초안을 공개 |
+| 사람 | 설치 파일 세 개가 다 올라왔는지 확인하고, 노트를 쓰고, 초안을 공개 |
 
 **릴리스에는 서버도, 개인 설정도 필요 없습니다.** 릴리스는 버전, 태그,
 그리고 그 커밋에서 만든 설치 파일 세 개로 이루어진 프로젝트의 속성이므로,

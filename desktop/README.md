@@ -8,10 +8,14 @@ vault… in the ☰ menu at the left of the title bar):
 
 - **remote** — a window onto a Chess Vault server somewhere else. Pure
   client.
-- **local** — self-hosted: the shell starts the repo's server as a child
-  process (`node --import tsx server/index.ts`, port 8788) and points the
-  window at it. Uses the repo's own `vault/` and `data/`; a packaged build
-  will point `CHESS_VAULT_DIR` / `CHESS_VAULT_DATA` at per-user app data.
+- **local** — self-hosted: the shell starts a server as a child process
+  on port 8788, answering on loopback only, and points the window at it.
+  From a source checkout that is the repo's own server on the system
+  Node (`node --import tsx server/index.ts`) with the repo's `vault/` and
+  `data/`; a packaged build runs its bundled server on per-user app data
+  instead (see Packaging). A folder picked with Open a folder… replaces
+  either: it becomes `CHESS_VAULT_DIR`, with its derived data in a
+  `.data` folder inside it.
 
 Run it: `npm run build` once (the server serves `dist/`), then
 `npm run desktop`.
@@ -32,9 +36,10 @@ on, and changing it reloads the window.
 
 What it changes is the FRAME only, and only from the `md` width where
 the window has a frame: the title band, the sidebar and the 8px gutter
-around the page let the material through, and the page itself stays on
-its own opaque panel, which is where both systems put the division. A
-narrower window has no frame and keeps the ground it always had.
+at the page's right and bottom edges let the material through, and the
+page itself stays on its own opaque panel, which is where both systems
+put the division. A narrower window has no frame and keeps the ground it
+always had.
 
 It ships off because no window has been opened to read it. Two things
 want a real desktop behind them before it could be the default: whether
@@ -73,9 +78,12 @@ and delete the ad-hoc hook.
 
 ## Packaging
 
-`npm run desktop:package` → `release/installer/Chess Vault Setup <v>.exe`
-(NSIS one-click); `desktop:package:mac` builds the dmg and
-`desktop:package:linux` the AppImage and deb. Pipeline:
+`npm run desktop:package` → `release/installer/Chess-Vault-Setup.exe`
+(NSIS one-click); `desktop:package:mac` builds `Chess-Vault-<arch>.dmg`
+and `desktop:package:linux` the AppImage and deb, named the same way. No
+installer's name carries the version (`artifactName` in `package.json`),
+which is what lets the website link `/releases/latest/download/<file>`.
+Pipeline:
 
 1. `desktop/build-server.mjs`: esbuild-bundles the server to
    `release/server/index.mjs`, the database builders beside it
@@ -179,7 +187,8 @@ presses rather than a step the workflow takes.
 # 1. bump "version" in package.json, and commit
 # 2. check, tag, push — GitHub builds from the tag
 npm run desktop:release
-# 3. when the workflow finishes, check the draft and press Publish
+# 3. when the workflow finishes, check the draft, write its notes
+#    (docs/release-notes.md) and press Publish
 gh release view v<version> --web
 ```
 
@@ -189,7 +198,7 @@ Three parties, in order:
 | --- | --- |
 | `release.sh` | typechecks, tests, refuses a dirty tree or an existing tag, pushes the tag |
 | the `desktop` workflow | builds Windows, macOS and Linux onto one **draft** release |
-| you | check the three installers are there, publish the draft |
+| you | check the three installers are there, write the notes, publish the draft |
 
 **A release needs no server and no personal configuration.** It is a
 property of the project — a version, a tag, and three installers built from
