@@ -1983,16 +1983,19 @@
               </table>
             </div>
             <h2 data-ko="포지션으로">By position</h2>
-            <p data-ko="검색 상자 옆의 보드-스캔 토글(«포지션·기물 구성·모티프로 검색»(Search by position, material or motif))이 검색 줄을 엽니다. «검색 기준»(Search by)을 <strong>포지션</strong>(Position)으로 바꾸고(«FEN 붙여넣기»(Paste a FEN) 또는 «보드에서 포지션 만들기»(Set the position up on a board)), FEN 칸에서 <kbd>Enter</kbd>를 누르거나 줄 끝의 ↵ 버튼을 눌러 검색을 실행합니다. 휴대폰의 게임 페이지에서는 같은 컨트롤이 줄이 아니라 시트로 열립니다. 검색을 실행하면 시트가 닫히고 결과는 제목 아래 줄이 알려 주며, 토글을 다시 누르면 시트가 «지우기»(Clear)와 함께 돌아옵니다. 시트 안에서는 컨트롤이 두 줄로 나뉘어 첫 줄에 검색 기준과 칸이, 둘째 줄에 일치 기준과 ↵가 옵니다. 버튼은 늘 선택 상자 옆에 있고 혼자 줄바꿈되지 않습니다. 일치의 뜻은 두 사다리로 정합니다:">
+            <p data-ko="검색 상자 옆의 보드-스캔 토글(«포지션·기물 구성·모티프로 검색»(Search by position, material or motif))이 검색 줄을 엽니다. «검색 기준»(Search by)을 <strong>포지션</strong>(Position)으로 바꾸고(«FEN 붙여넣기»(Paste a FEN) 또는 «보드에서 포지션 만들기»(Set the position up on a board)), FEN 칸에서 <kbd>Enter</kbd>를 누르거나 줄 끝의 ↵ 버튼을 눌러 검색을 실행합니다. 판이 좁아 한 줄에 다 들어가지 않으면 줄이 접히는데, «일치 기준»(How closely to match)과 ↵는 함께 움직이므로 버튼은 늘 그 선택 상자 옆에서 줄을 끝내고 혼자 한 줄을 차지하지 않습니다. 휴대폰의 게임 페이지에서는 토글이 제목 줄의 돋보기 옆에 있고, 같은 컨트롤이 줄이 아니라 시트로 열립니다. 시트 안에서는 컨트롤마다 이름 아래에 한 줄씩 세로로 놓이고(«검색 기준», 그다음 «FEN 붙여넣기»와 «일치 기준»), 맨 아래에는 너비를 다 쓰는 «검색»(Search) 버튼이 있습니다. 검색을 실행하면 시트가 닫히고 결과는 제목 아래 줄이 알려 주며, 토글을 다시 누르면 시트가 «지우기»(Clear)와 함께 돌아옵니다. 일치의 뜻은 일치 기준의 다섯 단계가 정합니다:">
               The board-scan toggle beside the search box (“Search by position, material or motif”)
               opens the hunt row. Flip “Search by” to <strong>Position</strong> — “Paste a FEN” or
               “Set the position up on a board” — and <kbd>Enter</kbd> in the FEN field, or the ↵
-              button at the row's end, runs it. On a phone's Games page the same controls open as
-              a sheet rather than a row: running a search closes it, the line under the title says
-              what was found, and pressing the toggle again brings the sheet back with “Clear”. In
-              the sheet the controls break in two, the kind and the field on the first line and the
-              match rung with ↵ on the second; the button stays beside its select and never wraps
-              alone. Two ladders then define what a match means:
+              button at the row's end, runs it. A pane too narrow for one line wraps the row, and
+              “How closely to match” and ↵ move as one: the button ends the row beside its select
+              and never lands on a line of its own. On a phone's Games page the toggle stands in
+              the title row beside the magnifier, and the same controls open as a sheet rather
+              than a row: one column, each control under its name (“Search by”, then “Paste a
+              FEN” and “How closely to match”), closed by a full-width “Search” button. Running a
+              search closes the sheet, the line under the title says what was found, and pressing
+              the toggle again brings the sheet back with “Clear”. The match select's five rungs
+              say what a match means:
             </p>
             <div class="scroll-x">
               <table class="controls">
@@ -2014,14 +2017,6 @@
                       rook-and-pawn-against-rook ending, wherever the men stood.
                     </td>
                   </tr>
-                  <tr>
-                    <td data-ko="유지 기간(How long it must hold)">How long it must hold</td>
-                    <td data-ko="<strong>한 순간이라도</strong>(At any moment) · <strong>4수 이상 유지</strong>(Held 4+ moves) · <strong>8수 이상 유지</strong>(Held 8+ moves) — 스쳐 간 포지션과 자리 잡은 구조를 가릅니다.">
-                      <strong>At any moment</strong> · <strong>Held 4+ moves</strong> ·
-                      <strong>Held 8+ moves</strong> — telling a passing position from a settled
-                      structure.
-                    </td>
-                  </tr>
                 </tbody>
               </table>
             </div>
@@ -2038,45 +2033,56 @@
               gain games at the same time.
             </p>
             <h2 data-ko="기물 구성으로">By material</h2>
-            <p data-ko="<strong>기물 구성</strong>(Material)은 프리셋 스물여섯 가지, 또는 <strong>직접 지정…</strong>(Custom…) — 진영·기물별 개수(«0–1», «1–2», «2+»)를 직접 정합니다. 프리셋은 폰부터 퀸까지의 대칭 엔드게임, «룩+폰 대 룩»(Rook and pawns vs rook)이나 «퀸 대 룩 둘»(Queen vs two rooks) 같은 불균형 엔드게임, «퀸 없는 미들게임»(Queenless middlegame)과 «메이저 기물만»(Major pieces only), 그리고 «폰 하나 우위»(A pawn up)부터 «마이너 셋 대 퀸»(Three minor pieces vs queen)까지의 불균형입니다. 불균형은 «어느 진영의 것인지»(Which side has it)로 진영을 고릅니다. «퀸 하나 우위»(A queen up)를 백으로도 흑으로도 물을 수 있고, 대칭 엔드게임은 그 선택 상자를 보이지 않습니다. 아무 조건도 없으면 앱이 막습니다: «적어도 하나는 골라야 합니다. 아니면 모든 게임이 일치합니다.»">
+            <p data-ko="<strong>기물 구성</strong>(Material)은 프리셋 스물여섯 가지, 또는 <strong>직접 지정…</strong>(Custom…) — 진영·기물별 개수(«0–1», «1–2», «2+»)를 직접 정합니다. 프리셋은 폰부터 퀸까지의 대칭 엔드게임, «룩+폰 대 룩»(Rook and pawns vs rook)이나 «퀸 대 룩 둘»(Queen vs two rooks) 같은 불균형 엔드게임, «퀸 없는 미들게임»(Queenless middlegame)과 «메이저 기물만»(Major pieces only), 그리고 «폰 하나 우위»(A pawn up)부터 «마이너 셋 대 퀸»(Three minor pieces vs queen)까지의 불균형입니다. 어느 쪽에서 보느냐에 따라 달라지는 프리셋, 곧 불균형 엔드게임과 불균형은 «어느 진영의 것인지»(Which side has it)로 진영을 고르며, 백에서 시작합니다. 그래서 «퀸 하나 우위»(A queen up)를 백으로도 흑으로도 물을 수 있습니다. 대칭 엔드게임과 두 미들게임 분류는 어느 쪽에서 보나 같아 진영을 보이지 않습니다. 직접 지정은 진영을 스스로 나눠 정하며, 아무 조건도 없으면 막습니다: «적어도 하나는 골라야 합니다. 아니면 모든 게임이 일치합니다.» 무엇을 고르든 «유지 기간»(How long it must hold)이 스쳐 간 상황과 자리 잡은 상황을 가릅니다: 기본값인 <strong>한 순간이라도</strong>(At any moment), <strong>4수 이상 유지</strong>(Held 4+ moves), <strong>8수 이상 유지</strong>(Held 8+ moves).">
               <strong>Material</strong> offers twenty-six presets, or <strong>Custom…</strong> —
               per-side, per-piece counts (“0–1”, “1–2”, “2+”). The presets are the symmetric
               endgames from pawns to queens, the unbalanced ones such as “Rook and pawns vs rook”
               and “Queen vs two rooks”, “Queenless middlegame” and “Major pieces only”, and the
-              imbalances from “A pawn up” to “Three minor pieces vs queen”. An imbalance takes a side,
-              “Which side has it”: “A queen up” for White or for Black; a symmetric endgame reads
-              the same either way and shows no side. With no constraint at all the app objects: “Pick
-              at least one count, or every game matches.”
+              imbalances from “A pawn up” to “Three minor pieces vs queen”. A preset that reads
+              differently from each side takes one, “Which side has it”, starting at White: the
+              unbalanced endgames and the imbalances, so “A queen up” can be asked for White or for
+              Black. The symmetric endgames and the two middlegame classes read the same either
+              way and show no side. Custom… names its sides itself, and with no constraint at all
+              it objects: “Pick at least one count, or every game matches.” Whichever is picked,
+              “How long it must hold” tells a passing situation from a settled one: <strong>At any
+              moment</strong>, the default, <strong>Held 4+ moves</strong> or <strong>Held 8+
+              moves</strong>.
             </p>
             <h2 data-ko="모티프로">By motif</h2>
-            <p data-ko="<strong>모티프</strong>(Motif)는 목록이 둘입니다. «패턴»(Patterns)에는 열두 가지가 있습니다. 보드 패턴 — <strong>고립 퀸폰</strong>(Isolated queen's pawn)(d파일에 폰이 정확히 하나, c·e파일에는 없고, 상대에게 d폰이 없는 것), <strong>더블 폰</strong>(Doubled pawns), <strong>통과 폰</strong>(Passed pawn), <strong>7랭크의 룩</strong>(Rook on the seventh), <strong>피앙케토</strong>(Fianchetto)(비숍과 그 앞의 폰), <strong>나이트 전초기지</strong>(Knight outpost)(폰의 보호를 받고 상대 폰이 닿을 수 없는 5·6랭크의 나이트), <strong>반대색 비숍</strong>(Opposite-coloured bishops)(그 엔딩) — 은 누구의 것인지(«어느 쪽이든»(Whichever side) / White / Black)와 «유지 기간»을 고르며, 기본값은 «4수 이상 유지»입니다. <strong>반대 방향 캐슬링</strong>(Opposite-side castling)과 <strong>같은 방향 캐슬링</strong>(Same-side castling)은 두 번째 캐슬링 직후의 포지션에서 찾습니다. <strong>그리스 선물</strong>(Greek gift)(g8의 킹 옆 h7을 비숍이 체크와 함께 잡는 것), <strong>언더프로모션</strong>(Underpromotion), <strong>앙파상</strong>(En passant)은 그 수를 둔 진영의 것으로, 그 수부터 기억됩니다. «폰 구조»(Pawn structures): 스물아홉 가지가 오프닝 순서로 있습니다. 지오코 피아니시모와 루이 로페즈, 오픈 시실리안과 그 형태들(셰베닝겐, 나이도르프, 드래곤, 스베시니코프, 마로치 바인드, 헤지호그), 프렌치, 카로칸, 피르츠, 퀸스 갬빗과 카를스바트, 슬라브, 카탈란, 런던, 스톤월, 님조인디안, 그륀펠트, 킹스 인디언, 베노니. 각각은 폰만 그린 스케치로 <strong>같은 폰 구조</strong> 단계를 실행하므로, 그 스케치를 보드에 그려 찾는 것과 같습니다.">
-              <strong>Motif</strong> is two lists. “Patterns” holds twelve. The board patterns —
+            <p data-ko="<strong>모티프</strong>(Motif)는 목록이 둘입니다. «패턴»(Patterns)에는 열두 가지가 있습니다. 보드 패턴은 <strong>고립 퀸폰</strong>(Isolated queen's pawn)(d파일에 폰이 정확히 하나, c·e파일에는 없고, 상대에게 d폰이 없는 것), <strong>더블 폰</strong>(Doubled pawns), <strong>통과 폰</strong>(Passed pawn), <strong>7랭크의 룩</strong>(Rook on the seventh), <strong>피앙케토</strong>(Fianchetto)(비숍과 그 앞의 폰), <strong>나이트 전초기지</strong>(Knight outpost)(폰의 보호를 받고 상대 폰이 닿을 수 없는 5·6랭크의 나이트), <strong>반대색 비숍</strong>(Opposite-coloured bishops)(그 엔딩)입니다. 모두 «유지 기간»(How long it must hold)을 고르며, 패턴을 고르면 그 패턴의 기본값으로 맞춰집니다. 기본값은 «4수 이상 유지»(Held 4+ moves)이고, 룩은 잠깐 들렀다 가는 일이 많아 <strong>7랭크의 룩</strong>만 «한 순간이라도»(At any moment)입니다. 비숍 엔딩을 뺀 여섯은 «어느 진영의 것인지»(Which side has it)도 고르며, «어느 쪽이든»(Whichever side)에서 시작해 백이나 흑으로 바꿀 수 있습니다. 비숍 엔딩은 누구의 것도 아닙니다. <strong>반대 방향 캐슬링</strong>(Opposite-side castling)과 <strong>같은 방향 캐슬링</strong>(Same-side castling)은 두 번째 캐슬링 직후의 포지션에서 찾으며, 진영도 유지 기간도 고르지 않습니다. <strong>그리스 선물</strong>(Greek gift)(g8의 킹 옆 h7을 비숍이 체크와 함께 잡는 것), <strong>언더프로모션</strong>(Underpromotion), <strong>앙파상</strong>(En passant)은 진영만 고르는데, 그 수를 둔 진영을 뜻하며 그 수부터 기억됩니다. «폰 구조»(Pawn structures): 스물아홉 가지가 오프닝 순서로 있습니다. 지오코 피아니시모와 루이 로페즈, 필리도르 중앙과 대칭 d폰 중앙, 오픈 시실리안과 그 형태들(셰베닝겐, 나이도르프, 드래곤, 스베시니코프, 마로치 바인드, 헤지호그), 프렌치, 카로칸, 피르츠, 퀸스 갬빗과 카를스바트, 슬라브, 카탈란, 런던, 스톤월, 레닌그라드 더치, 님조인디안, 그륀펠트, 킹스 인디언, 베노니. 각각은 폰만 그린 스케치로 <strong>같은 폰 구조</strong> 단계를 실행하므로 그 스케치를 보드에 그려 찾는 것과 같고, 진영도 유지 기간도 고르지 않습니다.">
+              <strong>Motif</strong> is two lists. “Patterns” holds twelve. The board patterns are
               <strong>Isolated queen's pawn</strong> (exactly one pawn on the d-file, none on c or
               e, and the opponent without a d-pawn), <strong>Doubled pawns</strong>,
               <strong>Passed pawn</strong>, <strong>Rook on the seventh</strong>,
               <strong>Fianchetto</strong> (the bishop with its pawn in front),
               <strong>Knight outpost</strong> (on its fifth or sixth rank, supported by a pawn,
               out of every enemy pawn's reach) and <strong>Opposite-coloured bishops</strong> (the
-              ending) — ask whose it is (“Whichever side” / White / Black) and “How long it must
-              hold”, with “Held 4+ moves” the default. <strong>Opposite-side castling</strong> and
-              <strong>Same-side castling</strong> are found at the position after the second
-              castle. <strong>Greek gift</strong> (a bishop taking h7 with check beside a king on
-              g8), <strong>Underpromotion</strong> and <strong>En passant</strong> are the side
-              that played the move's, remembered from the move on. “Pawn structures” holds twenty-nine, in
-              opening order: the Giuoco Pianissimo and the Ruy Lopez, the Open Sicilian and its
-              shapes (Scheveningen, Najdorf, Dragon, Sveshnikov, Maróczy bind, Hedgehog), the
-              French, Caro-Kann and Pirc, then the Queen's Gambit and Carlsbad, Slav, Catalan,
-              London, Stonewall, Nimzo-Indian, Grünfeld, King's Indian and Benoni — each a
+              ending). Each asks “How long it must hold”, and picking a pattern resets that to the
+              pattern's own default: “Held 4+ moves”, except for <strong>Rook on the
+              seventh</strong>, which starts at “At any moment” since a rook visits. All but the bishop ending also ask
+              “Which side has it”, which starts at “Whichever side” and offers White or Black; the
+              ending is nobody's. <strong>Opposite-side castling</strong> and <strong>Same-side
+              castling</strong> are found at the position after the second castle, and ask
+              neither. <strong>Greek gift</strong> (a bishop taking h7 with check beside a king on
+              g8), <strong>Underpromotion</strong> and <strong>En passant</strong> ask only whose,
+              meaning the side that played the move, remembered from the move on. “Pawn structures” holds
+              twenty-nine, in opening order: the Giuoco Pianissimo and the Ruy Lopez, the Philidor
+              and symmetrical d-pawn centres, the Open Sicilian and its shapes (Scheveningen,
+              Najdorf, Dragon, Sveshnikov, Maróczy bind, Hedgehog), the French, Caro-Kann and
+              Pirc, then the Queen's Gambit and Carlsbad, Slav, Catalan, London, Stonewall,
+              Leningrad Dutch, Nimzo-Indian, Grünfeld, King's Indian and Benoni — each a
               pawns-only sketch run on the <strong>Same pawn structure</strong> rung, so it finds
-              what drawing that sketch on the board would.
+              what drawing that sketch on the board would, and asks neither.
             </p>
             <h2 data-ko="결과">The results</h2>
             <ul>
-              <li data-ko="정확한 포지션 검색은 색인에서 즉시 답합니다. 근사·기물 검색은 스캔이라 진행이 보입니다: «검색 중… {total}개 중 {scanned}개»(Searching… {scanned} of {total} games) — 데이터베이스의 <strong>Fast search</strong>가 켜져 있으면 수십 배 빠릅니다(<a href='#databases'>데이터베이스 관리</a>).">
+              <li data-ko="정확한 포지션 검색은 색인에서 즉시 답합니다. 근사·기물 검색은 스캔이라 진행이 보입니다: «검색 중… {total}개 중 {scanned}개»(Searching… {scanned} of {total} games) — 데이터베이스의 <strong>Fast search</strong>가 켜져 있으면 수십 배 빠릅니다(<a href='#databases'>데이터베이스 관리</a>). 모티프 검색도 같은 진행을 보이는 스캔이지만, 필터를 통과한 모든 게임을 처음부터 다시 두어 보므로 Fast search로 빨라지지 않습니다. 이름 붙은 폰 구조는 근사 검색이라 함께 빨라집니다.">
                 Exact position search answers from the index, instantly. The relaxed and material
                 hunts are scans, with visible progress — “Searching… {scanned} of {total} games” —
                 and run many times faster when the database's <strong>Fast search</strong> is on
-                (<a href="#databases">Managing databases</a>).
+                (<a href="#databases">Managing databases</a>). A motif hunt is a scan with the same
+                progress, but it replays every game the filters let through, so Fast search does not
+                speed it; a named pawn structure is a relaxed hunt and does get faster.
               </li>
               <li data-ko="찾은 게임은 <a href='#games'>기보 테이블</a> 그대로입니다: <strong>보드에서 열기 · 모음에 추가 · 게임 정보</strong>. 결과가 너무 많으면 그렇다고 알리며 멈춥니다: «발견한 게임 {n}개 이상. 목록은 여기까지입니다.»({n}+ games found. The list stops here.).">
                 Found games land in <a href="#games">the same game table</a>: <strong>Open on the
