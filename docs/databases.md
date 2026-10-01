@@ -39,7 +39,7 @@ The self-maintaining one, in more detail — it is the other half of every
 - **Who reads it.** The explorer's My games source (your moves with
   your results, recent games newest-first), the opening map's field
   statistics, the Grow sheet's deviations, the Insights page's sums
-  (`/api/mygames/analysis`, one pass over the index), and
+  (`/api/mygames/insights`, one pass over the index), and
   `/api/mygames/compare`.
 - **It is derived data.** Deleting `data/mygames.sqlite` costs one
   re-scan and nothing else — the PGN files are the truth.
@@ -481,8 +481,9 @@ sources.
 
 ## Deleting
 
-Both deletes ask first through `ConfirmDialog` — a centred window on a
-desktop, a bottom sheet on a phone. Nothing keeps a copy:
+Both deletes ask first through `ConfirmDialog` — a centred card
+everywhere: a window on a desktop, iOS's alert on an iPhone, Material's
+dialog on an Android phone. Nothing keeps a copy:
 there is no trash directory behind either route, so the question is the
 only thing in the way. Each question says what is *not* affected, because
 that is the part that gets guessed at — deleting a database keeps the

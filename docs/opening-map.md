@@ -191,9 +191,10 @@ web are the constellation's, where a picture of a shape reads the same
 whichever few units a dot has wandered; a tree is a statement about
 order, and rows that wander make a straight line wander with them.
 
-**Prune** (the scissors, in a node's panel and in a phone's bottom bar)
-draws the moves that lead to that node and everything that follows it,
-and drops the siblings on the way — the way a wide map becomes readable
+**Prune**, which only the tree offers (the scissors, in a node's panel
+and in a phone's bottom bar), draws the moves that lead to that node and
+everything that follows it, and drops the siblings on the way — the way
+a wide map becomes readable
 is not folding one node at a time but saying "this line, never mind the
 rest". **Restore the whole graph** ends it, switching arrangements ends
 it, and it is not remembered between visits: coming back to a map that is
