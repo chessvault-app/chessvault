@@ -127,8 +127,9 @@ What a built database answers, and from where:
   the names the box suggests find games on a database whose PGN carried
   none (the big dumps), the same way the explorer names them.
 - The same browser **hunts by position, material or motif**. The
-  scan-search toggle beside the search box unfolds the controls (on a
-  phone's Games page, as a sheet). A position hunt
+  scan-search toggle beside the search box unfolds the controls; on a
+  phone's Games page the toggle stands in the title row beside the
+  magnifier, and the controls open as a sheet. A position hunt
   takes a FEN — pasted, or set up on a board — and how closely to
   match (`docs/deferred.md` records why this is a fixed ladder and not
   a query language). Concretely, per rung:
