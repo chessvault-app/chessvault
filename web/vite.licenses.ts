@@ -133,12 +133,15 @@ const ASSETS: {
     url: REPO_URL, file: null },
   // The native core's crates. No dependency walk here can see them — they
   // are cargo's, not npm's — and since 0.5.0 the installer carries the
-  // compiled binary, so 47 crates are conveyed with it. The text is
+  // compiled binary, so its crates are conveyed with it (the notice counts
+  // them; a number here only goes stale). The text is
   // generated from native/Cargo.lock by scripts/collect-crate-licenses.ts
   // and committed, because the builds that must ship the notice (and the
-  // ones that must not) have no cargo to ask.
+  // ones that must not) have no cargo to ask. The pill names every licence
+  // the notice's own tally does, as THIRD-PARTY.md's row does; Unlicense
+  // is left out because both crates under it offer MIT beside it.
   { name: 'chessvault-core Rust crates', note: 'native core, desktop app', version: '—',
-    license: 'MIT / Apache-2.0 / GPL-3.0-or-later / Zlib',
+    license: 'MIT / Apache-2.0 / GPL-3.0-or-later / Zlib / Unicode-3.0',
     url: 'https://crates.io', file: 'rust-crates.txt', desktopOnly: true },
 ];
 
