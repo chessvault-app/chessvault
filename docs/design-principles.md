@@ -410,9 +410,10 @@ picker 32px → 28px.
   row is 76rem up to about 1350px and then follows the window to a
   96rem ceiling, so a large monitor draws a large board. Two shells,
   because "fit the viewport" has two readings when stacked:
-  `BOARD_SCROLL_SHELL` lets the page itself scroll (board, repertoire,
-  editor), `BOARD_HELD_SHELL` holds the page still and gives its side
-  column the scrolling (analysis, study, both trainers). A held page
+  `BOARD_SCROLL_SHELL` lets the page itself scroll (the editor, and a
+  book puzzle's solution recorder), `BOARD_HELD_SHELL` holds the page
+  still and gives its side column the scrolling (the board, study,
+  repertoire, both trainers, the endgame drill, the book reader). A held page
   scrolls only where the column can no longer be squeezed — a short
   landscape window, where a floor on the column binds and the shell is
   what gives.
@@ -435,14 +436,16 @@ picker 32px → 28px.
   edge. Inside that surface — not over the page — float the page's own
   controls, a detail panel that becomes a bottom sheet on a phone, and
   `CanvasOverlay` for the centred empty and error states. A canvas
-  page's Fab is phone-only, and its actions are one array the corner
-  draws as icons and the Fab opens as the action sheet, the same
-  two-presentations-one-list shape `CreateControl` uses. It is the one
-  floating disc left in the app: a canvas pans under the finger, so a
-  header is out of reach the moment the map is in use. A shelf's create
-  button is in its header at every width, one word beside a phone's
-  large title, and the several things a shelf can make open as the
-  action sheet its rows already use. The disc fanned them as pills over
+  page's actions are one array the corner draws as icons and a phone
+  opens as one menu, the same two-presentations-one-list shape
+  `CreateControl` uses. On Android that menu hangs off a Fab, the one
+  floating button left in the app: a canvas pans under the finger, so a
+  header is out of reach the moment the map is in use. iOS has no
+  floating action button, so there the same list is a glass circle on
+  the title row (lanph3re, 2026-09-19). A shelf's create button is in
+  its header at every width, a bare plus beside a phone's large title
+  (the word is still read out), and the several things a shelf can make
+  open as the menu its rows' ⋯ already opens. The disc fanned them as pills over
   the last rows for a while, which is the stacked FAB every current
   phone platform has stepped back from, and it stood on whichever row a
   scroll or Tab ended on; the cost of the header, a scroll back after a
@@ -473,7 +476,12 @@ picker 32px → 28px.
   Material 3's medium app bar); it came out because it cost 44px of
   every scrolled list to keep a name on screen that the tab bar already
   gives, and the shrink was one more thing moving while a list was
-  being read. The phone-only back chevron sits where a page is
+  being read. A page whose list is long enough to want its controls one
+  flick away passes `pinned` instead: a compact copy of the row (the
+  chevron, the name at `text-base`, the same actions) pinned to the
+  scroller's top and shown only on a scroll up (`hooks/use-scroll-reveal`),
+  drawn as a second row so nothing in the flow moves. The shelves, Themes
+  and Games take it. The phone-only back chevron sits where a page is
   reached through More. `subtitle` (what the page has: 12 studies; while a filter
   narrows a shelf, how many of those it shows, "3 of 12 studies", as a
   status so the result is spoken),
@@ -505,8 +513,9 @@ picker 32px → 28px.
   `label-caps` voice is gone with the old look.)
 - A panel's header is the registry's card header as a row (`PanelHeader`:
   title, actions). It pads itself across only, from the card's own
-  `--card-spacing`. It has one floor — 44px, 52px on a coarse pointer, the
-  height an icon button gives it — so a header holding only a switch, or
+  `--card-spacing`. It has one floor — 44px under either pointer, an icon
+  button (28px, or 36 under a thumb) and the room around it — so a header
+  holding only a switch, or
   nothing, is as tall as its neighbours and the title does not jump when a
   phone's pane tabs switch; nothing else is sized against it.
 - **A panel's bands sit flush; only its footer takes the card's spacing.**
@@ -519,7 +528,10 @@ picker 32px → 28px.
   rules floating. Measured on the header, the worst case: 16px above a
   52px band and 16px below it, 84px before a word of body where the old
   header took 52. What is kept is the card's floor and the space above a
-  footer, which is what the adoption was for. Stated once in `Panel`, not
+  footer, which is what the adoption was for; the floor from `lg` up only
+  (`--card-floor`), since below it the phone's contextual bar already ends
+  the column and the floor stood under the last move row as 16px of
+  nothing. Stated once in `Panel`, not
   at each call site — that was the mistake being undone — and the `>`
   matters, because the two trainers keep their footer inside the scrolling
   body where that body's own gap already spaces it.
@@ -539,7 +551,7 @@ picker 32px → 28px.
   only** — `px-(--card-spacing)`, or a tighter `px-` where rows are meant
   to sit near the edge — and never its own `p-`, `mt-auto` spacer or
   negative margin to fake what the root already does. The root's VERTICAL
-  half is the part `Panel` turns off for its bands — see the bullet below
+  half is the part `Panel` turns off for its bands — see the bullet above
   — but what it hands out is still the card's to hand out, and a body that
   starts padding itself again is the thing this rule exists to stop.
 
@@ -562,19 +574,23 @@ picker 32px → 28px.
   stops and the one lichess ships; Notes, Books, the opening map and
   Insights are reached through More and the Home tiles. The current tab wears the
   sidebar's current-row pill (`bg-nav-pill`, 12% of primary over the
-  card behind the icon, a semibold label), so both navigations say "you are
-  here" the same way. The bar stays docked and pinned: the floating
-  capsule is iOS 26's idiom alone, and hiding on scroll would resize
-  every page, since the bar is a flex sibling of `main`. It is the
+  card behind the icon, a semibold label; on the iOS capsule a wash of the
+  ink, so the glass shows through it), so both navigations say "you are
+  here" the same way. On Android the bar stays docked and pinned; the
+  floating capsule that shrinks while a page is read down is iOS's
+  ("Platform-specific design"). Either is an overlay on the shell's row
+  that measures itself, with `main` padding by its height, so neither
+  reflows a page. It is the
   navigation on hub pages, but a **leaf page claims it** — board, study, puzzle and
   repertoire replace the global tabs with their own controls (move
   navigation, puzzle actions) via `MobileActionBar`, and you leave by the
   back chevron, Chess.com/Lichess-style. Desktop navigates by sidebar, no
   back arrows on top-level pages.
 - **The desktop sidebar is measured off Linear's, not composed.** 240px
-  across, 28px rows on a 30px pitch, an 8px corner and a 14px glyph whose
+  across, 28px rows on a 29px pitch, an 8px corner and a 14px glyph whose
   centre sits 24px in from the window's edge, each of them sampled off a
-  screenshot of Linear's dark desktop (2026-09-22) rather than chosen.
+  screenshot of Linear's dark desktop (2026-09-22) rather than chosen; the
+  pitch lands at 30 here, the column's own gap being 2.
   The label is the exception and is `text-sm`: theirs measures 13, and 14
   is this app's regular text, so a 13 here would have been the only one
   in the window and would have set the nav one step under the list it
@@ -589,7 +605,7 @@ picker 32px → 28px.
   primary down the left edge of the selected row was a second marker
   beside the pill it sits in, and Linear marks its own with the fill
   alone (lanph3re, at the deployed build, 2026-09-22). The tonal pill
-  stays (`bg-nav-pill`, below), because it is the same "you are here"
+  stays (`bg-nav-pill`, above), because it is the same "you are here"
   the phone's tab bar draws and the two navigations have to say it the
   same way; the phone never had the rail, so this is one fewer thing
   the two disagree about.
@@ -604,24 +620,32 @@ picker 32px → 28px.
   the one VS Code and Slack settled on, and the band is the one strip
   that exists on every page at every width. Centred on the window, not
   the page, so it stays put when the sidebar folds. It is a button, not
-  a field: typing happens in the window it opens. No rule under it, and
-  no glass or Mica behind it: the band and the sidebar are one L of card
-  around the toned page, and a material that samples the wallpaper would
-  put a second ground behind the cards (the tonal rule). A browser build
-  has no band and, by decision, no search control anywhere in its chrome;
-  Ctrl/⌘ K and the Home button reach the same window.
+  a field: typing happens in the window it opens. No rule under it: the
+  band and the sidebar are one L of the window's ground round the inset
+  page. The OS's own material, where the desktop window asks for one, goes
+  behind that L and nowhere else (the desktop's half of the second pass,
+  under "Platform-specific design"). A browser build has no band, so its
+  way in is a field-shaped Search button under the sidebar's wordmark,
+  with the same keycaps; Ctrl/⌘ K and Home's own button reach the same
+  window.
 - **A phone's hub is a launcher, not a dashboard.** The Puzzles tab lands
   on `#/puzzles/hub` (`puzzles/HubPage.tsx`), which is its destinations
   and nothing else. It landed on the dashboard until that page — stats
   and a 200-row attempt log — had to carry a row of shortcuts at its top
   to get anyone anywhere, which is the corner of a phone a thumb cannot
   reach. Two rules came out of building it, and they generalise:
-  a launcher's targets sit at the BOTTOM of the viewport (`min-h-full`
-  on `PageShell` and `mt-auto` on the block, so it still scrolls rather
-  than hiding a target if the screen is tiny); and anything that arrives
-  from the network goes ABOVE the primary button, so a late answer grows
-  the block upward instead of shoving a target out from under a thumb
-  already moving towards it. Above `md` the route renders the dashboard
+  a launcher's targets sit at the BOTTOM of the viewport (`h-full` on
+  `PageShell`, so the column has a height to share, and the cluster of
+  boards taking its slack with `flex-1 justify-end`; the outer shell
+  still scrolls rather than hiding a target if the screen is tiny); and
+  nothing that arrives from the network moves a target once it is drawn.
+  The page waits for all five of its answers and draws them in one
+  piece, giving up on one only after four seconds in which nothing has
+  landed. It began as "a late answer goes ABOVE the primary button, so it
+  grows the block upward instead of shoving a target out from under a
+  thumb"; the button went (the first board is the way in, and it opens
+  the very puzzle it shows), and drawing once is the same rule with
+  nothing left to shove. Above `md` the route renders the dashboard
   instead — the sidebar lists those destinations already — rendered, not
   redirected, because a redirect leaves a history entry Back bounces off.
 - Board and piece appearance are user-chosen (Settings → Appearance):
