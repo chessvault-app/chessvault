@@ -14,59 +14,58 @@ Home's activity card has grown into the whole vault. Nothing here has been
 read on a phone or in the desktop window yet; the pixel grid is the proof
 so far.
 
-- **The dark theme is a shade deeper, and the sidebar is the window.**
-  Its greys had been placed against a reading of Linear's dark desktop
-  that turned out to be of some other window. Measured off a screenshot
-  of the real one, the frame and the sidebar are a single colour and the
-  page sits above them, so the window is darker than it was and the page
-  and the cards come down with it. The step from the frame to the page is
-  twice what it was, which is the step the light theme has always had.
-  Nothing reads fainter for it: every colour drawn on those surfaces
-  gained contrast, and the check that measures it passes with nothing
-  below the floor. The hairline round the page was drawing a line three
-  times stronger than Linear's, so it comes down to a shade over the
-  grey a card is, which is as close to theirs as the app's own contrast
-  floor allows. The high-contrast setting still gets the strong line.
+- **In the dark theme the sidebar is the window, and the page is the
+  lightest thing in it.** The page was a near-black grey with the sidebar
+  a lighter card grey beside it, so the navigation was the lit surface
+  and what you read sat in a hole. As measured off a screenshot of
+  Linear's dark desktop, the frame and the sidebar are now one dark grey,
+  the page sits a step lighter inside it and the cards a step above
+  that: the page and the cards are a little lighter than they were, the
+  sidebar darker. The step from the frame to the page is the one the
+  light theme has always had. The quieter greys and the colours drawn on
+  those surfaces were lifted with them where they needed it, and the
+  check that measures their contrast passes with nothing below the
+  floor. A hairline a shade over the grey a card is edges the page,
+  which is as close to Linear's as the app's own contrast floor allows;
+  the high-contrast setting still gets the strong line.
 - **The desktop sidebar is Linear's size.** 240px across where it was
-  208, with 28px rows and 14px icons where they were 40 and 18; the labels
-  stay at the app's regular 14 rather than taking Linear's 13. Folded, the rail is 48px instead of 68, which is what lets a
-  row's icon sit where Linear puts it without moving when the sidebar
-  folds. A touch screen keeps the 36px rows it had. The row you are on
-  is marked by its tinted pill alone: the 3px bar that stood down its
-  left edge is gone, which is one fewer thing the sidebar and the
-  phone's tab bar disagree about. Its hover has come back down, too: the
-  sidebar stands on the window frame, the frame fell further than
-  anything else when the dark theme deepened, and the fill that lights a
-  row under the pointer had not followed it down.
-- **The page sits in the window the way Linear's does.** The panel is
-  flush to the sidebar and to the band above it and inset 8px on the
-  right and bottom, where it used to carry the same 2px on all four
-  sides; its corners are 14px again. In light it now casts a shadow, so
-  it reads as resting on the frame instead of being a slightly whiter
-  rectangle on it.
-- **Home's Activity card is the whole vault now, not the puzzle
-  trainer.** A square counts everything that day held: puzzles solved
-  (from a book as well as from the trainer), repertoire positions
-  recalled, studies and notes saved, games brought into the collection,
-  books started. Hovering a day says what made it up. A document counts
-  once a day however often it is saved, and bringing in an archive counts
-  as the one thing it was, with the number of games in the words rather
+  208, with 28px rows and 14px icons where they were 40 and 18, and its
+  labels at the app's regular 14px where they were 16 (Linear's are 13).
+  Folded, the rail is 48px instead of 68, which is what lets a row's
+  icon sit where Linear puts it without moving when the sidebar folds.
+  Under a touch screen's coarse pointer the rows are 36px. The row you
+  are on is marked by its tinted pill alone: the 3px bar that stood down
+  its left edge is gone, which is one fewer thing the sidebar and the
+  phone's tab bar disagree about.
+- **The page sits in the window the way Linear's does.** It is one panel
+  with 14px corners, flush to the sidebar and to the band above it and
+  inset 8px from the window's right and bottom edges. In light it casts
+  a shadow, so it reads as resting on the frame rather than as a
+  slightly whiter rectangle on it; in dark the hairline above is its
+  edge.
+- **Home has an Activity card: a square for each day, counting the whole
+  vault.** A square adds up what that day held: puzzles solved (from a
+  book as well as from the trainer), repertoire positions recalled,
+  studies and notes saved, games brought into the collection, books
+  started. Hovering a day says what made it up. A document counts once a
+  day however often it is saved, and bringing in an archive counts as
+  the one thing it was, with the number of games in the words rather
   than in the colour. Days before this version know the two trainers
   only, since nothing was writing the rest down; those days say so on
-  their own tips.
-- **The card fills its panel.** It drew a fixed half year, 310px wide,
-  in a panel measured at 648, 480 and 482px, so up to 338px of it was
-  blank and the picture stopped mid-card. The squares stay the size they
-  were and the card draws as many weeks as it has room for, between half
-  a year and a year.
+  their own tips. The card draws as many weeks as its panel has room
+  for, between half a year and a year, on a phone as on a desktop, and
+  Customise home can take it off.
 - **On every phone, a question is a centred card.** Confirmations, the
   name prompt and the unsaved-changes question no longer rise as sheets:
   iOS's alert on an iPhone, Material's dialog on Android.
 - **Settings is rows.** Nine choices that were a label over a full-width
-  list (App language, App theme, Density, Castling, Corners, Annotation
-  size, Move sound, Capture sound, Volume) are a label on the left and
-  the control on the right, everywhere. An iPhone groups them as inset
-  lists, an Android phone as Material's grouped rows.
+  control (App language, App theme, Density, Castling, Corners,
+  Annotation size, Move sound, Capture sound, Volume) are a label on the
+  left and the control on the right. A slider keeps that row on a
+  desktop and takes the card's whole width on a phone, its words above
+  the track, which is how the phone's own Brightness row is drawn. An
+  iPhone groups them as inset lists, an Android phone as Material's
+  grouped rows.
 - **iPhone:** circles for selecting rows, checkmark lists for one of
   many, the compact date picker, the system font, the spoke spinner, the
   capsule slider, buttons that dim when pressed, plainer empty states, a
@@ -83,10 +82,10 @@ so far.
 - **Desktop:** the window is a frame with the page inset in it, the
   sidebar has a Search button (Ctrl/Cmd K), the games table has lost its
   stripes and shows its column handles on hover, the quick filters are
-  chips with Clear all, Home's rows lose their chevrons under a mouse,
-  and Home has an Activity card, on which more below.
-  Settings → Desktop app can ask Windows 11 or macOS to draw its material
-  behind the window; it is off until it has been seen in a window.
+  chips with Clear all, and Home's rows lose their chevrons under a
+  mouse. Settings → Desktop app can ask Windows 11 or macOS to draw its
+  material behind the window; it is off until it has been seen in a
+  window.
 - **Glass is one material again.** Four surfaces had drifted from the one
   recipe. The round chrome buttons standing on a scrolled page's compact
   header drew no edge, because the header is full width and asks for
@@ -104,10 +103,6 @@ so far.
   moves both together. The keyboard's focus ring round an option takes
   the same curve now; it was square on every option but the right side
   of the last.
-- **A slider in Settings takes the whole row on a phone.** The words sit
-  above the track instead of beside it, which is how the phone's own
-  Brightness row is drawn. A desktop keeps it in the row, where there is
-  already room. Sound's Volume moved with the new glass knobs.
 - **The glass has two knobs, and the dark theme's is darker.** Settings,
   under Appearance and More options, has Glass and Glass tint on an
   iPhone: how much of the page shows through the bars, menus and
@@ -168,12 +163,12 @@ so far.
   platform. And tabbing to the quick switcher's Cancel on an iPhone now
   draws its focus ring all the way round: the box it sits in had been
   cutting off the ring's right side and part of its top.
-- **The pages around the app wear its current dark colours.** The
+- **The pages around the app wear this version's dark colours.** The
   desktop vault chooser, the website and the manual in dark, and the
-  iPhone launch screens had kept the dark greys from before the theme was
-  deepened, so an installed iPhone app launched on a darker grey than the
-  page it opened into. They use today's greys now, and the chooser names
-  them the way the app does.
+  iPhone launch screens draw the app's dark greys by hand, and they had
+  kept the old ones, so an installed iPhone app launched on a darker grey
+  than the page it opened into. They draw the new greys now, and the
+  chooser names them the way the app does.
 - **The vault chooser colours the strip behind the window buttons.** On
   Windows, the strip behind minimise, maximise and close had kept
   whatever colour came before the chooser: the window's darker grey on a
