@@ -232,15 +232,19 @@ flowchart LR
 
 Target: a small always-on box (Linux under systemd, or a Mac under
 launchd) running the server; every device —
-desktop app in remote mode, phone PWA — is a client. The current Windows
-dev box is temporary; nothing may depend on it. Cross-platform paths and
-LF endings are policy.
+desktop app in remote mode, phone PWA — is a client. Nothing may depend
+on the machine the code is developed on: cross-platform paths and LF
+endings are policy.
 
 Ship with `scripts/deploy.sh` (build locally → git-bundle push → `npm ci`
 → restart the service, `systemctl` on Linux and `launchctl` on macOS),
 which also runs `tune-dbs.ts` so the prepared databases keep their
-indexes and rebuilds the native binary where a Rust toolchain is found. SSH runs over a Tailscale tailnet
-with public port 22 closed at the firewall.
+indexes and rebuilds the native binary where a Rust toolchain is found.
+It asks the network for nothing but SSH to the box (`ssh` and `scp` to
+`CHESS_VAULT_HOST`; the health check runs on the server itself), so
+what guards that SSH, and from where it can be reached, is the
+operator's choice: the server expects to sit behind whatever access
+control its operator puts in front of it.
 
 How the app itself is reached is a deployment choice, not an architectural
 one: a reverse proxy terminating HTTPS on a public address, or Tailscale

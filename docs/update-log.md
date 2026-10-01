@@ -5390,9 +5390,8 @@ configuration at all.
   studies and two linked notes ship as first-run examples; README
   screenshots show them.
 - **Ops** — deploys build the web app locally and ship `dist/`
-  (the 2 GB server stopped OOM-ing on builds), SSH rides the tailnet
-  with public 22/80/443 closed, and the desktop app auto-updates from
-  GitHub releases.
+  (so a 2 GB server stops OOM-ing on builds), and the desktop app
+  auto-updates from GitHub releases.
 
 ## 2026-08-08
 

@@ -75,7 +75,7 @@ matching the version, the way the engine is fetched at setup. The
 Linux packaging job already produces exactly that artefact, so it is
 mostly plumbing. It buys little while `deploy.sh` targets machines
 their operators already control and where installing rustup is a
-one-off (measured: a 2 GB Lightsail box builds the whole crate
+one-off (measured: a 2 GB cloud instance builds the whole crate
 graph — peak well under its RAM, with swap never touched). Worth doing
 if toolchain-free servers become a real case.
 
