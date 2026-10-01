@@ -47,7 +47,7 @@ import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { EmptyState } from '@/components/empty-state';
 import { GameListShell, type GameListShape } from './GameListShell';
 import { settledBoxAsks } from './settled-box';
-import { huntKindParams, motifListPick } from './hunt-request';
+import { huntKindParams, motifListPick, type HuntKind } from './hunt-request';
 
 import type { RefDb } from '@/databases/RefDbManager';
 import { t } from '@/lib/i18n';
@@ -123,6 +123,17 @@ interface RefGame {
   opening: string | null;
   plyCount: number;
   sanPrefix: string | null;
+}
+
+/** A hunt's request as it went out. */
+interface HuntRun {
+  /** The deep-search URL: the database, the filters, the box and the
+      kind's own params. */
+  url: string;
+  /** Which kind it hunts, which says what a refusal means. */
+  kind: HuntKind;
+  /** The box as the request read it, trimmed (huntRead). */
+  box: string;
 }
 
 /**
@@ -634,19 +645,18 @@ export function DatabaseGames({
       it: a settled keystroke that finds the box back to this while a
       hunt stands has nothing to re-run (settleBox). */
   const huntRead = useRef('');
-  // Unmounting must take an in-flight hunt with it: the bump makes the
-  // read loop cancel its reader, which aborts the server's scan.
-  useEffect(
-    () => () => {
-      huntSeq.current += 1;
-    },
-    [],
-  );
+  /** The request of the hunt in flight, until it ends or is abandoned:
+      what hiding the pane cancels and showing it sends again. */
+  const huntLive = useRef<HuntRun | null>(null);
+  /** The hunt the pane's hide cancelled, waiting for the show, until a
+      hunt sent since replaces it (streamHunt). */
+  const huntInterrupted = useRef<HuntRun | null>(null);
   /** Cancel any hunt in flight and drop its results. The bump makes the
       read loop cancel its reader, which aborts the server's scan. Stable,
       so effects can depend on it. */
   const abandonHunt = useCallback((): void => {
     huntSeq.current += 1;
+    huntLive.current = null;
     setHuntRows(null);
     setHunting(false);
     setHuntProgress(null);
@@ -682,6 +692,146 @@ export function DatabaseGames({
     consumeHandoff();
   }, []);
 
+  /**
+   * Send one hunt's request and read its frames into the hunt's rows.
+   * Kept apart from runHunt, which builds the request from the controls
+   * as they stand, so that a request already built can be sent as it
+   * is. Stable: everything it touches is a setter or a ref.
+   *
+   * `kept`: the games already on the list, which a resumed hunt leaves
+   * where they are (see the show effect below). The scan answers the
+   * same request with the same games in the same order whichever path
+   * runs it (server/refgames.ts), so the re-run sends those first and
+   * they are not added twice; the list then grows from where it stopped.
+   */
+  const streamHunt = useCallback(async (run: HuntRun, kept?: ReadonlySet<number>): Promise<void> => {
+    const mine = ++huntSeq.current;
+    huntLive.current = run;
+    // A hunt sent outranks one a hide cancelled, which the show then
+    // leaves alone. The one send that can land between the two is the
+    // box's debounce falling due while the pane is hidden (settleBox),
+    // for the box as typed. Resuming the older hunt over it cancelled
+    // it and filled the rest of its list with the older answer, under a
+    // box that answer ignored.
+    huntInterrupted.current = null;
+    huntRead.current = run.box;
+    setHunting(true);
+    setHuntProgress(null);
+    setHuntExhaustive(true);
+    setHuntFailed(null);
+    let sawDone = false;
+    // Counted here as well as in state: the verdict below is spoken from
+    // inside this closure, where the state's value is the one it started
+    // with.
+    let got = 0;
+    let exhaustive = true;
+    // The frames are handled outside the try: the React Compiler cannot
+    // lower a conditional inside a try or a catch yet, so the try holds
+    // the one call that can throw and nothing else, and what the failure
+    // means is read after it.
+    type Frame =
+      | ({ type: 'game'; ply: number } & RefGame)
+      | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
+    const onFrame = (frame: Frame): void => {
+      if (frame.type === 'game') {
+        const { type: _type, ply: _ply, ...game } = frame;
+        if (!kept?.has(game.id)) setHuntRows((prev) => [...(prev ?? []), game]);
+        got += 1;
+      } else {
+        setHuntProgress({ scanned: frame.scanned, total: frame.total });
+        if (frame.type === 'done') {
+          sawDone = true;
+          exhaustive = frame.exhaustive !== false;
+          setHuntExhaustive(exhaustive);
+        }
+      }
+    };
+    const live = (): boolean => huntSeq.current === mine;
+    let ended = false;
+    let threw = false;
+    let error: unknown = null;
+    try {
+      ended = await apiStream<Frame>(run.url, onFrame, live);
+    } catch (e) {
+      threw = true;
+      error = e;
+    }
+    if (threw) {
+      if (error instanceof ApiError && error.status === 400) {
+        // The one refusal a user can cause from here is a FEN that is
+        // not a position; say that instead of a generic failure.
+        if (huntSeq.current === mine) {
+          huntLive.current = null;
+          setHunting(false);
+          setHuntFailed(run.kind === 'position' ? 'bad-fen' : 'failed');
+          announce(t('The search failed.'));
+        }
+        return;
+      }
+      // offline, or the route refused — failed, not empty
+    } else if (!ended) {
+      return;
+    }
+    if (huntSeq.current === mine) {
+      huntLive.current = null;
+      setHunting(false);
+      if (!sawDone && huntSeq.current === mine) setHuntFailed((f) => f ?? 'failed');
+      // The count line above is repainted, which a screen reader does not
+      // hear; the verdict of a hunt that took seconds is said once.
+      announce(
+        !sawDone
+          ? t('The search failed.')
+          : exhaustive
+            ? t('{n} games found', { n: got.toLocaleString() })
+            : t('{n}+ games found. The list stops here.', { n: got.toLocaleString() }),
+      );
+    }
+  }, []);
+
+  // A hunt in flight goes with the pane: the bump makes the read loop
+  // cancel its reader, which aborts the server's scan. This pane is kept
+  // mounted under an open game (lib/keep-alive), and Activity runs this
+  // cleanup when it HIDES the pane as well as when it unmounts it, with
+  // nothing in here to tell the two apart. So the cleanup also keeps the
+  // cancelled hunt's request, and the show sends it again: Back from a
+  // game opened off a hunt still scanning lands on the complete answer.
+  // It used to land on the count frozen at "Searching…" over the rows
+  // found so far, with both Search buttons disabled. An unmount takes
+  // the kept request with it, and a hunt that ended before the hide left
+  // nothing in flight to keep.
+  //
+  // Not left scanning while hidden instead: Activity runs a hidden
+  // pane's cleanups once, at the hide, so when the keep-alive budget
+  // later drops the hidden pane nothing runs at its unmount, and a scan
+  // left going under it could not be stopped.
+  //
+  // A resume is not a press, and differs from one in three ways. It
+  // sends the request the hunt sent, not the controls as they stand,
+  // which a tablet or a desktop leaves open to edit without pressing
+  // Search. It keeps the rows, under the scroll position the keep-alive
+  // has just put back. And it leaves the selection and a phone's sheet
+  // as they were: the selected row came from those rows, and is usually
+  // the game just opened, standing in the details column (a phone's
+  // cards select nothing); the sheet was shut by the press that ran the
+  // hunt, so if it is open now the reader opened it.
+  //
+  // StrictMode runs a show as effect, cleanup, effect: the first send is
+  // cancelled and kept again by the cleanup and the second sends it, with
+  // nothing rendered between, so one request stands.
+  const resumeHunt = useEffectEvent(() => {
+    const run = huntInterrupted.current;
+    huntInterrupted.current = null;
+    if (run) void streamHunt(run, new Set((huntRows ?? []).map((g) => g.id)));
+  });
+  useEffect(() => {
+    resumeHunt();
+    return () => {
+      huntInterrupted.current = huntLive.current;
+      huntLive.current = null;
+      huntSeq.current += 1;
+    };
+  }, []);
+
   // fenOverride: the setup board hands its position and runs in one
   // press — the setState it also does has not landed by the time this
   // closure reads huntFen.
@@ -701,94 +851,24 @@ export function DatabaseGames({
       motifHeld,
     });
     if (!own) return;
-    const mine = ++huntSeq.current;
-    setHunting(true);
-    // On a phone the hunt's controls are a sheet (see `lifted`), and a
-    // sheet left standing would cover the rows it has just asked for.
-    if (lifted) setHuntOpen(false);
-    onSelectRef.current?.(null);
-    setHuntRows([]);
-    setHuntProgress(null);
-    setHuntExhaustive(true);
-    setHuntFailed(null);
-    let sawDone = false;
-    // Counted here as well as in state: the verdict below is spoken from
-    // inside this closure, where the state's value is the one it started
-    // with.
-    let got = 0;
-    let exhaustive = true;
-    // The request is built, and its frames handled, outside the try: the
-    // React Compiler cannot lower a conditional inside a try or a catch
-    // yet, so the try holds the one call that can throw and nothing else,
-    // and what the failure means is read after it.
     const params = new URLSearchParams();
     if (curDb) params.set('db', curDb);
     applyFilters(params);
     // The box narrows the hunt too — the server parses the same
     // query language and folds the terms into the scan's WHERE.
-    const boxQ = filterRef.current.query.trim();
-    huntRead.current = boxQ;
-    if (boxQ) params.set('q', boxQ);
+    const box = filterRef.current.query.trim();
+    if (box) params.set('q', box);
     // Then the kind's own, which ./hunt-request holds to every kind.
     for (const [key, value] of own) params.set(key, value);
-    type Frame =
-      | ({ type: 'game'; ply: number } & RefGame)
-      | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
-    const onFrame = (frame: Frame): void => {
-      if (frame.type === 'game') {
-        const { type: _type, ply: _ply, ...game } = frame;
-        setHuntRows((prev) => [...(prev ?? []), game]);
-        got += 1;
-      } else {
-        setHuntProgress({ scanned: frame.scanned, total: frame.total });
-        if (frame.type === 'done') {
-          sawDone = true;
-          exhaustive = frame.exhaustive !== false;
-          setHuntExhaustive(exhaustive);
-        }
-      }
-    };
-    const live = (): boolean => huntSeq.current === mine;
-    const url = `/api/refgames/deep-search?${params.toString()}`;
-    let ended = false;
-    let threw = false;
-    let error: unknown = null;
-    try {
-      ended = await apiStream<Frame>(url, onFrame, live);
-    } catch (e) {
-      threw = true;
-      error = e;
-    }
-    if (threw) {
-      if (error instanceof ApiError && error.status === 400) {
-        // The one refusal a user can cause from here is a FEN that is
-        // not a position; say that instead of a generic failure.
-        if (huntSeq.current === mine) {
-          setHunting(false);
-          setHuntFailed(huntKind === 'position' ? 'bad-fen' : 'failed');
-          announce(t('The search failed.'));
-        }
-        return;
-      }
-      // offline, or the route refused — failed, not empty
-    } else if (!ended) {
-      return;
-    }
-    if (huntSeq.current === mine) {
-      setHunting(false);
-      if (!sawDone && huntSeq.current === mine) setHuntFailed((f) => f ?? 'failed');
-      // The count line above is repainted, which a screen reader does not
-      // hear; the verdict of a hunt that took seconds is said once.
-      announce(
-        !sawDone
-          ? t('The search failed.')
-          : exhaustive
-            ? t('{n} games found', { n: got.toLocaleString() })
-            : t('{n}+ games found. The list stops here.', { n: got.toLocaleString() }),
-      );
-    }
+    // On a phone the hunt's controls are a sheet (see `lifted`), and a
+    // sheet left standing would cover the rows it has just asked for.
+    if (lifted) setHuntOpen(false);
+    onSelectRef.current?.(null);
+    setHuntRows([]);
+    return streamHunt({ url: `/api/refgames/deep-search?${params.toString()}`, kind: huntKind, box });
   }, [
     applyFilters,
+    streamHunt,
     curDb,
     huntKind,
     huntFen,

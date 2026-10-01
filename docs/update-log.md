@@ -237,6 +237,16 @@ so far.
   tar, which had read them all along, still does. Windows' tar still
   cannot write a name with a character the system's code page has no
   room for, such as an emoji, and skips that file; GNU tar extracts it.
+- **A search by position, material or motif finishes when you come back
+  to it.** Opening a game from the Databases tab while such a search was
+  still running stopped it, and back on the tab the count stayed at
+  “Searching…” over the games found so far, with Search disabled, until
+  the search was closed, the box or a filter changed, or another
+  database was picked. Coming back now runs the stopped search again:
+  the one that was running, even if its controls have been changed
+  since without pressing Search. The list fills in from where it
+  stopped, and the games already on it, the row you had selected and
+  the place you had scrolled to all stay where they were.
 
 ## 0.11.4
 
