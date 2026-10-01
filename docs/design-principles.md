@@ -690,7 +690,7 @@ picker 32px → 28px.
   excerpt whatever the words do, a game row 72 px because its three
   lines are 20 + 20 + 16. Compose the
   real thing's own layout constants where they exist — `SkeletonBoard`
-  builds from `BOARD_WIDE_SHELL`, `BOARD_MAX_W` and `BOARD_WIDE_SIDE`
+  builds from `BOARD_HELD_SHELL`, `BOARD_MAX_W` and `BOARD_WIDE_SIDE`
   rather than from something that looks like them, because a copy drifts
   the first time one of them moves.
 
@@ -813,7 +813,7 @@ picker 32px → 28px.
   page looks like: the endgame drill's drew a document's row, a third
   pane and a panel called Moves over a trainer, and shared only the skip
   link and the toast layers with it. It runs in CI beside
-  `check:contrast` and `check:page-turn`.
+  `check:contrast`, `check:page-turn` and `check:select`.
 - **A section is warmed before it is asked for.** The placeholder covers
   a cold chunk; `lib/prefetch` sees to it that few are cold. Once the app
   has loaded and the browser is idle, the sections' chunks are fetched
@@ -893,10 +893,12 @@ The way out is a **Cancel**, stated in words, next to the thing it
 cancels. Escape and the scrim also close, but neither is advertised. A
 window whose changes apply as you make them (the filters) offers
 Cancel — restoring what was there when it opened — beside Done. The
-one-field prompt is the exception on a phone: its sheet carries the
-handle, which is the advertised way out there, and a Cancel beside the
-single answer was a second button for the thumb to tell apart, so the
-answer takes the whole row and Cancel is a desktop control.
+one-field prompt was the exception on a phone while it was a sheet: the
+handle was the advertised way out, and a Cancel beside the single
+answer was a second button for the thumb to tell apart. It is a
+question now, the centred `ask` card on both phones, which has neither
+a handle nor an X, so its Cancel is back beside the answer: two
+capsules of equal width on an iPhone, at the row's end on Android.
 
 A sheet may have **resting heights** (`snapPoints` on `Dialog`): a
 drag stops at the nearest one instead of closing, and a drag past the
@@ -1056,7 +1058,7 @@ at the end of a popup's exit animation. So every popup is closed by the
 router before the turn starts (`lib/popups`): the tooltip is controlled,
 closes with no exit and is deaf to hover while the turn plays; the
 Popover, DropdownMenu, ContextMenu and Select roots register their close
-while open, and `index.css` turns a popup's closing animation off while
+while open, and `styles/motion.css` turns a popup's closing animation off while
 the root carries `data-nav`, so Base UI sees its end inside the router's
 own flush, before the transition exists to be skipped. A popup that was
 already closing when the turn began is not on that list, having stopped
@@ -1139,15 +1141,17 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   Input, InputOTP, Textarea, Label, Field, InputGroup, Checkbox,
   RadioGroup, Slider, Dialog, AlertDialog, DropdownMenu, ContextMenu,
   Select, Popover, Tooltip, Tabs, ToggleGroup, Toggle, Switch, Progress,
-  Spinner, Skeleton, Empty, Card, Badge, Separator, Calendar, Toast, Command —
+  Spinner, Skeleton, Empty, Card, Badge, Kbd, Separator, Calendar, Toast, Command —
   each the shape
   `npx shadcn add` writes (Base UI underneath, `cva` variants, `data-slot`),
   each in the registry's own face (the nova style: its sizes, radius
   ladder, focus rings, the inverted tooltip, the card that is a ring
-  rather than a border — drawn in `--border` here, not the registry's
+  rather than a border — drawn in `--card-ring` here, the `--border`
+  hairline as far as the contrast knob asks for it, not the registry's
   fixed `foreground/10`, so the contrast schemes can reach it) and
   carrying this app's physics on top: every window a bottom sheet on a
-  phone, dragged away from anywhere on itself; the page/layer distinction
+  phone (a question a centred card), dragged away from anywhere on
+  itself; the page/layer distinction
   and the back chevron; the keyboard band; the sole-text-field focus;
   Android Back through CloseWatcher; the coarse-pointer hit areas;
   `title` as a tooltip. The look is where you START, not where you are
@@ -1224,13 +1228,13 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   itself is a rung above `--muted` (the hover fill) instead of the same rung,
   because a pressed toggle on a card was 3% of lightness from its
   surroundings in the light and 6% in the dark and could not be seen —
-  92.8% and 37% now. On the page ground the light tone is a hazard the
+  92.8% and 38% now. On the page ground the light tone is a hazard the
   other way: `--secondary` and `--muted` are the light page's own 97%,
   so a secondary button, a progress track or an empty state's tile
   standing on the page rather than on a card drew nothing (1.00:1 on
   eight pages, 2026-09-12). An element that stands on the page says so
   with `data-ground` (a page header's rows, a gate, a toolbar), and
-  under that mark `index.css` points both roles one rung up, at
+  under that mark `styles/tokens-dark.css` points both roles one rung up, at
   `--surface-3`; dark keeps its values, since there the page already
   sits below the card. The mark goes only on boxes that hold no card,
   because a card under it would take the rung too; the ghost button's
@@ -1332,7 +1336,7 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   board's controls, and a phone's create disc hid a card's and a game
   row's more-actions button. `scroll-padding` is the property for that,
   and its number is the band's OWN measured height, published to the
-  scroller by `hooks/use-pinned-band` and read back in `index.css`. So a
+  scroller by `hooks/use-pinned-band` and read back in `styles/base.css`. So a
   60px row, the 84px that row becomes when it wraps and a 65px document
   header all clear themselves with no constant written down: a band that
   grows grows the clearance, measured live at 60px to 132px as names
