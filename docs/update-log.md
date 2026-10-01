@@ -7,12 +7,16 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-Each platform takes its own controls, and the ones that were never a
-platform's come out from behind the guard. The desktop window, meanwhile,
-is measured against Linear's twice over: its dark greys and its sidebar.
-Home's activity card has grown into the whole vault. Nothing here has been
-read on a phone or in the desktop window yet; the pixel grid is the proof
-so far.
+Each phone takes its own platform's controls, and the desktop window is a
+frame with the page set in it, measured off Linear's. Home has an Activity
+card for the whole vault, a study, a game or a note can be sent to another
+app, and an audit brought what had drifted back into line. The Databases
+tab's search by position, material or motif narrows as you type, searches
+the material picked and keeps running while a game is read; a backup's
+Korean names extract under Windows' own tar, and a Stockfish 19 download
+the server cannot save no longer stops it. Parts were read on an iPhone
+and in a Windows desktop window along the way; nothing has been read on an
+Android phone yet, nor the share sheet on any device.
 
 - **In the dark theme the sidebar is the window, and the page is the
   lightest thing in it.** The page was a near-black grey with the sidebar
