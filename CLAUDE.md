@@ -271,12 +271,20 @@ its own list at the top of `scripts/check-repo.ts` — currently absolute
 paths and credentials, a rating rendered without `bandOf()`, the lockfile
 agreeing with package.json, the Rust crate notice matching Cargo.lock, the
 retired colour names in either the class or the `var()` form, every
-UI string the manual "quotes" still existing in the app's source, no
-em-dash in a UI string, no `title` attribute on a raw element (the app's
-tooltip is the themed one, through a primitive's prop or `TitleTip`), and
-one Korean word per concept in the dictionary
-(the glossary at the top of `web/src/lib/ko.ts` is the canon; 보관함 is
-the vault and nothing else). Add to
+UI string the manual "quotes" still existing in the app's source, SAN
+and Elo in their own faces (move text never in `font-mono`, an Elo
+in it), a Korean entry for every `t()` literal, every native
+source naming the TypeScript it mirrors (a file that exists, and a row
+in `native/README.md`'s layout table), no em-dash in a UI string, one
+Korean word per concept in the dictionary (the glossary at the top of
+`web/src/lib/ko.ts` is the canon; 보관함 is the vault and nothing else),
+a fitted size literal saying what it is fitted to (a `text-`,
+`rounded-` or `shadow-` bracket value that reads no `var()`), no
+`title` attribute on a raw element (the app's tooltip is the themed
+one, through a primitive's prop or `TitleTip`), a list row (`<li>`) not
+pinning its own vertical padding where a density rung would move it,
+and a row that reads a rung not pinning `text-base` at every width
+(the Phone Row Rule: 16 is a phone's row only). Add to
 that list whenever a mistake turns out to have a shape a grep can catch;
 keep the header in step with what the file does, or this paragraph starts
 lying about it.
