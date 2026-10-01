@@ -823,7 +823,12 @@ without blanking, since effects run again on every show, not only on
 mount (`NoteList.refresh` keeps `loaded` true through a refetch). And
 anything that must not survive the hide, an open menu or a selection
 mode, closes in a layout-effect cleanup, which runs as the page is
-hidden. The slot itself puts every scroller the reader moved back where
+hidden. Work that should carry on while the page is hidden but not
+outlive it, a hunt still streaming in, reads `useSlotGone()` instead: a
+signal that fires when the page leaves the kept set (dropped by the
+budget, or not kept when it is left), never on a hide, because the
+cleanups a hide runs are the last ones React runs for that page. The
+slot itself puts every scroller the reader moved back where
 it was, because Chromium kept a plain div's position through the hide
 but dropped the games list's; the measurement is in `lib/keep-alive`.
 
