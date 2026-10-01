@@ -69,7 +69,7 @@ python scripts/ml/harvest_pdfs.py <book.pdf> data/ml/<slug>-pages
 ```json
 {
   "slug": "<slug>",
-  "title": "<책 제목, 폴더 이름이기도 합니다>",
+  "title": "<책 제목, 보관함의 책을 이것으로 찾습니다>",
   "pages": [5, 105],
   "solutionsAfterPage": 100,
   "maxNumber": 1001,
@@ -152,8 +152,8 @@ python scripts/ml/enrich_solution_pages.py scripts/ml/books/<slug>.json
 - **보드를 다시 읽으려면 설정의 `cache` 파일을 지우십시오.** 그러지 않으면
   측정은 캐시된 읽기를 가져다 검증만 다시 합니다. 파서를 고친 뒤라면 그것이
   원하는 동작이고, 모델을 바꾼 뒤라면 정확히 원하지 않는 동작입니다.
-- **폴더 이름은 `slug`가 아니라 `title`입니다.** 제목이 같은 설정 둘은 같은
-  책에 씁니다.
+- **책은 `slug`가 아니라 `title`로 찾습니다.** 제목이 같은 설정 둘은 같은
+  책에 씁니다. 폴더 자체의 이름은 만들어진 id입니다.
 - **엔진 캐시는 보고서 옆에** `<report>-engine-cache.json`으로 있습니다.
   포지션을 다시 탐색하려면 지우십시오.
 - **여기 있는 것은 사용자용 경로가 아닙니다.** 앱을 쓰는 사람이 해야 할 일에
