@@ -111,7 +111,11 @@ flowchart LR
   `server/tablebaseNative.ts`). Both proxies cache to disk under
   `CHESS_VAULT_DATA`; the explorer's entries expire, the tablebase's
   never do, and each tablebase endpoint gets its own subdirectory since
-  two servers need not hold the same tables. Sets COOP/COEP so the
+  two servers need not hold the same tables. It also fetches
+  Stockfish's full network once, when the engine's settings ask, into
+  `data/engine-nets/` and serves it to the engine as a same-origin file
+  (`server/engineNets.ts`): the net server sends no CORS headers, and
+  the page is cross-origin isolated. Sets COOP/COEP so the
   browser Stockfish can use threads. `CHESS_VAULT_DIR` / `CHESS_VAULT_DATA`
   override the vault/data locations; the server creates the vault
   skeleton on boot, so pointing it at an empty folder works.
