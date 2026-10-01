@@ -94,6 +94,15 @@ jobs:
       # hand, weeks late each time (scripts/check-skeletons.ts).
       - run: npm run check:skeletons
 
+      # And a fourth, which needs the browser but not the demo: it bundles
+      # its own page around the app's Select. ui/select.tsx drops Base
+      # UI's fallback report over a value still in the list by WHEN Base
+      # makes it, inside a commit, and a Base upgrade that moved the call
+      # would turn that guard off with every other check still green
+      # (scripts/check-select.ts says what it holds, and what the fallback
+      # did to the Databases hunt before the guard existed).
+      - run: npm run check:select
+
   native:
     runs-on: ubuntu-latest
     steps:
