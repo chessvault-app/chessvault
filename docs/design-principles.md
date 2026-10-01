@@ -132,13 +132,14 @@ default knobs: `--muted-foreground` 5.83:1 on `--surface-3` where it read
 5.54, `--text-subtle` 4.96 (4.72), `--good` 5.20 (4.94), `--destructive`
 4.80 (4.54), `--info` 4.88 on the `--accent` fill (4.58), `--ring` 3.67
 on the same fill (3.44). `check:contrast` passes with nothing below the
-floor. `--glass-fill` keeps the dark value of its own it was given, 72%
-against the shared 70%, because glass is tinted with `--surface-3` and a
-lighter glass hides white content less: the ink on a glass band scrolled
-over white fell from 4.75:1 to 4.44 when that rung rose, 72% took it back
-to 4.69, and the rung's fall to 33.1% now reads 4.90. 70% would read
-4.61 and would also clear the floor; the override stays because a number
-placed by measurement is not worth unplacing to save a line. That one is analytic and `check:contrast` cannot hold it, because
+floor. `--glass-fill` keeps a dark range of its own, 82% to 62% where
+light runs 80% to 60%, so its middle is the 72% it was placed at while
+glass was still tinted with `--surface-3`: a lighter glass hides white
+content less, and the ink on a glass band scrolled over white fell from
+4.75:1 to 4.44 when that rung rose, until 72% took it back to 4.69. The
+tint has since left the ladder for a dark 15% to 5% of its own (read in
+"Platform-specific design"), so no rung moving here moves the glass.
+Those readings are analytic and `check:contrast` cannot hold them, because
 the check composites a glass surface over the DOM under it and not over
 what is scrolled behind it. A ladder is not the rungs alone.
 
@@ -219,11 +220,11 @@ usage moved up a rung instead:
 | --- | --- | --- |
 | the last rung, below type | `text-micro` | 10px |
 | captions | `text-xs` | 12px |
-| a small control's label (the registry's) | `text-[0.8rem]` | 12.8px |
+| a small control's label (the registry's) | `text-[0.8rem]` | 12.8px; 14 on a phone |
 | body, list rows, panel text | `text-sm` | 14px |
-| a list row and the panel heading over it | `type-row` | 14px; 16 on a phone |
-| the tail beside a row's text (a date, a count) | `type-row-sub` | 12px; 14 on a phone |
-| titles, setting rows, an empty state's title | `text-base` | 16px |
+| a list row, a setting row, and the panel heading over them | `type-row` | 14px; 16 on a phone |
+| the tail beside a row's text (a date, a count, a setting's blurb) | `type-row-sub` | 12px; 14 on a phone |
+| titles, an empty state's title | `text-base` | 16px |
 | page titles (`PageHeader`, desktop) | `text-xl` | 20px |
 | the one display figure, and a phone's page title | `text-2xl` | 24px |
 
@@ -252,8 +253,8 @@ different size: a list row's line is 16 or 17 on both phone platforms
 and the app's rows sat one rung under each on every screen. Desktop
 conventions (macOS 13pt, Windows 14px, dense tables) are the 14 over
 12, so the rows keep it there and step up under `md`. Named in
-`index.css` rather than written as `text-sm max-md:text-base` at each
-site, for the reason the 10px rung was named.
+`styles/utilities.css` rather than written as `text-sm max-md:text-base`
+at each site, for the reason the 10px rung was named.
 
 "The ONE display figure" is load-bearing and was not true for a while:
 the puzzle dashboard spent that rung four times in a single row, on four
@@ -277,19 +278,23 @@ a comment above it; `check:repo` refuses a new one without that
 sentence. (The 11px variation text is not a literal but the bottom rung
 of the annotation-size setting, kept in `store/prefs.ts`.)
 `web/src/components/ui/` has its own, which are the registry's and not
-ours to name — with one exception, now in the table above, because a
-rung a reader meets on every page is a rung whatever directory it is
-declared in. shadcn's `sm` size sets `text-[0.8rem]` on Button, Toggle
-and the calendar's cells: 12.8px, between captions and body. It reaches
-further than the word "exception" suggests, since `size="sm"` is what a
-toolbar uses — measured on the editor's FEN panel, three text sizes on
-one screen and the middle one is this. It keeps the registry's value,
-for the reason the component section gives: what this app adds to a
-registry file is behaviour, not geometry. What changed is only that the
+ours to name, with two exceptions. The first is now in the table above,
+because a rung a reader meets on every page is a rung whatever directory
+it is declared in. shadcn's `sm` size sets `text-[0.8rem]` on Button,
+Toggle and the calendar's cells: 12.8px, between captions and body. It
+reaches further than the word "exception" suggests, since `size="sm"` is
+what a toolbar uses — measured on the editor's FEN panel, three text
+sizes on one screen and the middle one is this. It keeps the registry's
+value on a desktop, because nothing measured has asked it to move (the
+registry's drawing is where a file starts, "The component layer" says,
+and a departure is earned by a number), and under `md` it takes
+`type-row-sub` with every other row tail. What changed is only that the
 table stopped saying the ladder has six rungs where the app renders
-seven. Note that `check:repo` cannot hold this one, since the literal
-lives in the directory the check exempts — the table is the only record
-of it there is.
+seven. The second is the iPhone's alert card, whose title and message are
+the platform's own 17 and 15px (`ui/dialog.tsx`), drawn on that card
+alone. Note that `check:repo` cannot hold either, since the literals live
+in the directory the check exempts — this paragraph is the only record
+of them there is.
 
 Placeholders are what a scale change breaks. A skeleton line box must
 equal the real line-height, and line-heights do not all move together —
@@ -343,12 +348,14 @@ Three things this shape is deliberately not:
   either, read in columns rather than scanned as cards. Folding them into
   the dense rung would have made them taller at comfortable in order to
   make them shorter at compact.
-- **Not the book reader.** It is the one surface worth naming as absent,
+- **Not the book reader's bands.** It is the one surface worth naming,
   because "why is the reader not here" is the question this table invites.
-  It has no list — no `<ul>`, no `<li>`, no `<tr>` — it is a PDF canvas
-  beside an analysis board, and its `h-9` and `h-7` are toolbar bands.
-  Shrinking a control strip is not what this knob promises, and it would
-  fight the coarse-pointer hit areas besides.
+  It is a PDF canvas beside an analysis board, and its `h-9` and `h-7` are
+  toolbar bands. Shrinking a control strip is not what this knob promises,
+  and it would fight the coarse-pointer hit areas besides. Its chapter
+  list is a list, though, and reads the dense rung like every other one
+  (a spacing audit on 2026-09-16 found it standing still while the knob
+  moved everything round it).
 
 Anything derived from a rung must be derived, not restated. The move
 tree's branch elbow has to end on the middle of the first line of the row
