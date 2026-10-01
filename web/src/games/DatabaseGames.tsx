@@ -47,7 +47,7 @@ import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { EmptyState } from '@/components/empty-state';
 import { GameListShell, type GameListShape } from './GameListShell';
 import { settledBoxAsks } from './settled-box';
-import { huntKindParams, motifListPick } from './hunt-request';
+import { huntKindParams, motifListPick, type HuntKind } from './hunt-request';
 
 import type { RefDb } from '@/databases/RefDbManager';
 import { t } from '@/lib/i18n';
@@ -123,6 +123,17 @@ interface RefGame {
   opening: string | null;
   plyCount: number;
   sanPrefix: string | null;
+}
+
+/** A hunt's request as it went out. */
+interface HuntRun {
+  /** The deep-search URL: the database, the filters, the box and the
+      kind's own params. */
+  url: string;
+  /** Which kind it hunts, which says what a refusal means. */
+  kind: HuntKind;
+  /** The box as the request read it, trimmed (huntRead). */
+  box: string;
 }
 
 /**
@@ -682,32 +693,16 @@ export function DatabaseGames({
     consumeHandoff();
   }, []);
 
-  // fenOverride: the setup board hands its position and runs in one
-  // press — the setState it also does has not landed by the time this
-  // closure reads huntFen.
-  const runHunt = useCallback(async (fenOverride?: string): Promise<void> => {
-    // Resolved before any state moves: a custom pick with no spec has
-    // nothing to run (the Search button is disabled then too).
-    const own = huntKindParams({
-      kind: huntKind,
-      fen: fenOverride ?? huntFen,
-      rung,
-      presetId,
-      materialSide,
-      customSpec,
-      heldPlies,
-      motifId,
-      motifSide,
-      motifHeld,
-    });
-    if (!own) return;
+  /**
+   * Send one hunt's request and read its frames into the hunt's rows.
+   * Kept apart from runHunt, which builds the request from the controls
+   * as they stand, so that a request already built can be sent as it
+   * is. Stable: everything it touches is a setter or a ref.
+   */
+  const streamHunt = useCallback(async (run: HuntRun): Promise<void> => {
     const mine = ++huntSeq.current;
+    huntRead.current = run.box;
     setHunting(true);
-    // On a phone the hunt's controls are a sheet (see `lifted`), and a
-    // sheet left standing would cover the rows it has just asked for.
-    if (lifted) setHuntOpen(false);
-    onSelectRef.current?.(null);
-    setHuntRows([]);
     setHuntProgress(null);
     setHuntExhaustive(true);
     setHuntFailed(null);
@@ -717,20 +712,10 @@ export function DatabaseGames({
     // with.
     let got = 0;
     let exhaustive = true;
-    // The request is built, and its frames handled, outside the try: the
-    // React Compiler cannot lower a conditional inside a try or a catch
-    // yet, so the try holds the one call that can throw and nothing else,
-    // and what the failure means is read after it.
-    const params = new URLSearchParams();
-    if (curDb) params.set('db', curDb);
-    applyFilters(params);
-    // The box narrows the hunt too — the server parses the same
-    // query language and folds the terms into the scan's WHERE.
-    const boxQ = filterRef.current.query.trim();
-    huntRead.current = boxQ;
-    if (boxQ) params.set('q', boxQ);
-    // Then the kind's own, which ./hunt-request holds to every kind.
-    for (const [key, value] of own) params.set(key, value);
+    // The frames are handled outside the try: the React Compiler cannot
+    // lower a conditional inside a try or a catch yet, so the try holds
+    // the one call that can throw and nothing else, and what the failure
+    // means is read after it.
     type Frame =
       | ({ type: 'game'; ply: number } & RefGame)
       | { type: 'progress' | 'done'; scanned: number; total: number; exhaustive?: boolean };
@@ -749,12 +734,11 @@ export function DatabaseGames({
       }
     };
     const live = (): boolean => huntSeq.current === mine;
-    const url = `/api/refgames/deep-search?${params.toString()}`;
     let ended = false;
     let threw = false;
     let error: unknown = null;
     try {
-      ended = await apiStream<Frame>(url, onFrame, live);
+      ended = await apiStream<Frame>(run.url, onFrame, live);
     } catch (e) {
       threw = true;
       error = e;
@@ -765,7 +749,7 @@ export function DatabaseGames({
         // not a position; say that instead of a generic failure.
         if (huntSeq.current === mine) {
           setHunting(false);
-          setHuntFailed(huntKind === 'position' ? 'bad-fen' : 'failed');
+          setHuntFailed(run.kind === 'position' ? 'bad-fen' : 'failed');
           announce(t('The search failed.'));
         }
         return;
@@ -787,8 +771,45 @@ export function DatabaseGames({
             : t('{n}+ games found. The list stops here.', { n: got.toLocaleString() }),
       );
     }
+  }, []);
+
+  // fenOverride: the setup board hands its position and runs in one
+  // press — the setState it also does has not landed by the time this
+  // closure reads huntFen.
+  const runHunt = useCallback(async (fenOverride?: string): Promise<void> => {
+    // Resolved before any state moves: a custom pick with no spec has
+    // nothing to run (the Search button is disabled then too).
+    const own = huntKindParams({
+      kind: huntKind,
+      fen: fenOverride ?? huntFen,
+      rung,
+      presetId,
+      materialSide,
+      customSpec,
+      heldPlies,
+      motifId,
+      motifSide,
+      motifHeld,
+    });
+    if (!own) return;
+    const params = new URLSearchParams();
+    if (curDb) params.set('db', curDb);
+    applyFilters(params);
+    // The box narrows the hunt too — the server parses the same
+    // query language and folds the terms into the scan's WHERE.
+    const box = filterRef.current.query.trim();
+    if (box) params.set('q', box);
+    // Then the kind's own, which ./hunt-request holds to every kind.
+    for (const [key, value] of own) params.set(key, value);
+    // On a phone the hunt's controls are a sheet (see `lifted`), and a
+    // sheet left standing would cover the rows it has just asked for.
+    if (lifted) setHuntOpen(false);
+    onSelectRef.current?.(null);
+    setHuntRows([]);
+    return streamHunt({ url: `/api/refgames/deep-search?${params.toString()}`, kind: huntKind, box });
   }, [
     applyFilters,
+    streamHunt,
     curDb,
     huntKind,
     huntFen,
