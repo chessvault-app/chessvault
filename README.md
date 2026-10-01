@@ -169,8 +169,8 @@ is one connected body of work, and the links are what make it that.
   checklist to an Activity calendar of what each day held across the
   vault (puzzles solved, repertoire positions recalled, studies and notes
   saved, games collected, books started). Whatever leaves home is still
-  in the sidebar or the phone's More tab, so nothing can be arranged out
-  of reach. The arrangement is kept per device, not in the
+  in the sidebar, or in the phone's tab bar and its More tab, so nothing
+  can be arranged out of reach. The arrangement is kept per device, not in the
   vault: a phone's home is its navigation and a desktop's is a dashboard,
   so each is arranged on its own.
 - **Settings** — change the app password, turn on authenticator 2FA,
