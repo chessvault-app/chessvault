@@ -648,7 +648,8 @@ export function DatabaseGames({
   /** The request of the hunt in flight, until it ends or is abandoned:
       what hiding the pane cancels and showing it sends again. */
   const huntLive = useRef<HuntRun | null>(null);
-  /** The hunt the pane's hide cancelled, waiting for the show. */
+  /** The hunt the pane's hide cancelled, waiting for the show, until a
+      hunt sent since replaces it (streamHunt). */
   const huntInterrupted = useRef<HuntRun | null>(null);
   /** Cancel any hunt in flight and drop its results. The bump makes the
       read loop cancel its reader, which aborts the server's scan. Stable,
@@ -706,6 +707,13 @@ export function DatabaseGames({
   const streamHunt = useCallback(async (run: HuntRun, kept?: ReadonlySet<number>): Promise<void> => {
     const mine = ++huntSeq.current;
     huntLive.current = run;
+    // A hunt sent outranks one a hide cancelled, which the show then
+    // leaves alone. The one send that can land between the two is the
+    // box's debounce falling due while the pane is hidden (settleBox),
+    // for the box as typed. Resuming the older hunt over it cancelled
+    // it and filled the rest of its list with the older answer, under a
+    // box that answer ignored.
+    huntInterrupted.current = null;
     huntRead.current = run.box;
     setHunting(true);
     setHuntProgress(null);
