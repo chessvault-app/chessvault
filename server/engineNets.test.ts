@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
-import { createHash } from 'node:crypto';
+import { createHash, pbkdf2 } from 'node:crypto';
 import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { promisify } from 'node:util';
 import { engineNetsApi, type NetStatus } from './engineNets.ts';
 
 /** Made-up weights, named the way Stockfish names a net: after their own sha256. */
@@ -77,9 +78,18 @@ describe('engine networks api', () => {
     // endless body would otherwise write until the disk filled: the
     // checksum below only ever catches a wrong net, and only after every
     // byte has landed.
+    // The overrun comes on the first chunk, which can arrive before the
+    // .part has been opened when the threadpool is busy, as under load:
+    // a removal then is undone by the open. Holding every thread makes
+    // that the case each run, and the pause gives a late open time to
+    // land where the listing below would see it.
+    const threads = Number(process.env.UV_THREADPOOL_SIZE) || 4;
+    const held = Promise.all(Array.from({ length: threads }, () => promisify(pbkdf2)('x', 'y', 50_000, 32, 'sha512')));
     const app = build(dir, respond(Buffer.concat([BODY, Buffer.alloc(BODY.byteLength, 0x41)])));
     await app.request(`/api/engine/nets/${NAME}`, { method: 'POST' });
+    await held;
     const done = await settle(app);
+    await new Promise((r) => setTimeout(r, 50));
     expect(done.ready).toBe(false);
     expect(done.error).toContain('longer than its published size');
     expect(readdirSync(dir)).toEqual([]);

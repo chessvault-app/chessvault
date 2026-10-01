@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { backupApi, backupFilename } from './backup.ts';
 
 /**
@@ -15,17 +15,21 @@ describe('vault backup', () => {
   let vault: string;
   let out: string;
   const long = `${'a-study-with-a-very-long-title-'.repeat(4)}.pgn`; // 128 chars: past ustar's 100
+  const longKorean = `${'긴 제목의 한글 스터디 '.repeat(4)}끝.pgn`; // 57 chars, but 131 bytes
 
   beforeAll(() => {
     vault = mkdtempSync(join(tmpdir(), 'backup-vault-'));
     out = mkdtempSync(join(tmpdir(), 'backup-out-'));
     mkdirSync(join(vault, 'games', 'collection'), { recursive: true });
+    mkdirSync(join(vault, 'games', '한국 대회'), { recursive: true });
     mkdirSync(join(vault, 'studies'), { recursive: true });
     mkdirSync(join(vault, '.history.git', 'objects'), { recursive: true });
     mkdirSync(join(vault, '.data'), { recursive: true });
     writeFileSync(join(vault, 'games', 'collection', 'a.pgn'), '1. e4 e5 *\n');
+    writeFileSync(join(vault, 'games', '한국 대회', 'b.pgn'), '1. d4 *\n');
     writeFileSync(join(vault, 'studies', long), 'x'.repeat(1000));
     writeFileSync(join(vault, 'studies', '한글 스터디.pgn'), '*');
+    writeFileSync(join(vault, 'studies', longKorean), '한글');
     writeFileSync(join(vault, '.history.git', 'HEAD'), 'ref: refs/heads/main\n');
     writeFileSync(join(vault, '.data', 'index.sqlite'), 'derived');
     writeFileSync(join(vault, 'config.json'), '{"password":"secret"}');
@@ -45,11 +49,17 @@ describe('vault backup', () => {
     expect(res.headers.get('content-disposition')).toMatch(/^attachment; filename="My vault \d{4}-\d{2}-\d{2}\.tar"; filename\*=UTF-8''/);
     const bytes = Buffer.from(await res.arrayBuffer());
     expect(bytes.length % 512).toBe(0);
-    // A relative path and a cwd: GNU tar reads `C:\…` as a host name. A
-    // UTF-8 locale, or its listing escapes every byte of a Korean name.
+    // A relative path and a cwd: GNU tar reads `C:\…` as a host name.
     writeFileSync(join(out, 'v.tar'), bytes);
-    const listed = execFileSync('tar', ['-tf', 'v.tar'], { cwd: out, encoding: 'utf-8', env: { ...process.env, LC_ALL: 'C.UTF-8' } }).trim().split('\n').sort();
-    expect(listed).toEqual(
+    const x = join(out, 'x');
+    mkdirSync(x);
+    execFileSync('tar', ['-xf', '../v.tar'], { cwd: x });
+    // What the tar wrote, not what it printed: Windows' own tar prints a
+    // name in the system's code page, where a Korean one reads as noise.
+    const extracted = readdirSync(x, { recursive: true, withFileTypes: true })
+      .map((e) => `${relative(x, join(e.parentPath, e.name)).split(sep).join('/')}${e.isDirectory() ? '/' : ''}`)
+      .sort();
+    expect(extracted).toEqual(
       [
         '.history.git/',
         '.history.git/HEAD',
@@ -58,16 +68,20 @@ describe('vault backup', () => {
         'games/',
         'games/collection/',
         'games/collection/a.pgn',
+        'games/한국 대회/',
+        'games/한국 대회/b.pgn',
         'studies/',
         `studies/${long}`,
+        `studies/${longKorean}`,
         'studies/한글 스터디.pgn',
       ].sort(),
     );
-    execFileSync('tar', ['-xf', 'v.tar'], { cwd: out });
-    expect(readFileSync(join(out, 'games', 'collection', 'a.pgn'), 'utf-8')).toBe('1. e4 e5 *\n');
-    expect(readFileSync(join(out, 'studies', long), 'utf-8')).toBe('x'.repeat(1000));
-    expect(readFileSync(join(out, 'studies', '한글 스터디.pgn'), 'utf-8')).toBe('*');
-    expect(readFileSync(join(out, 'empty.md'), 'utf-8')).toBe('');
+    expect(readFileSync(join(x, 'games', 'collection', 'a.pgn'), 'utf-8')).toBe('1. e4 e5 *\n');
+    expect(readFileSync(join(x, 'games', '한국 대회', 'b.pgn'), 'utf-8')).toBe('1. d4 *\n');
+    expect(readFileSync(join(x, 'studies', long), 'utf-8')).toBe('x'.repeat(1000));
+    expect(readFileSync(join(x, 'studies', '한글 스터디.pgn'), 'utf-8')).toBe('*');
+    expect(readFileSync(join(x, 'studies', longKorean), 'utf-8')).toBe('한글');
+    expect(readFileSync(join(x, 'empty.md'), 'utf-8')).toBe('');
   });
 
   it('names the file after the vault, else its folder, and keeps the name filesystem-safe', () => {

@@ -66,6 +66,11 @@ export async function downloadNet(
   const hash = createHash('sha256');
   let bytes = 0;
   const out = createWriteStream(part);
+  // The part is opened on the threadpool, after this returns. A download
+  // that fails on its first chunk can reach the catch below before that
+  // open has run, and a part removed then is created a moment later by
+  // the open, empty, and stays. So the catch removes it once closed.
+  const closed = new Promise<void>((r) => out.once('close', () => r()));
   try {
     for await (const chunk of Readable.fromWeb(res.body as never)) {
       const buf = chunk as Buffer;
@@ -86,6 +91,7 @@ export async function downloadNet(
     renameSync(part, path);
   } catch (error) {
     out.destroy();
+    await closed;
     rmSync(part, { force: true });
     throw error;
   }
