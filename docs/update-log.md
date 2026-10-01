@@ -65,17 +65,26 @@ so far.
   desktop and takes the card's whole width on a phone, its words above
   the track, which is how the phone's own Brightness row is drawn. An
   iPhone groups them as inset lists, an Android phone as Material's
-  grouped rows.
+  grouped rows. The book PDF importer's two options, “Ask the engine
+  where the book cannot be read” and “Try harder on boards that fail”,
+  are rows of the same kind with a switch, and the position-from-an-image
+  window's “Black at the bottom” is a switch too. All three were
+  checkboxes, and in the PDF importer they sat beside the checkboxes that
+  pick which diagrams to keep, which mean something else.
 - **iPhone:** circles for selecting rows, checkmark lists for one of
   many, the compact date picker, the system font, the spoke spinner, the
   capsule slider, buttons that dim when pressed, plainer empty states, a
-  Cancel beside the quick switcher's field, and a segmented control whose
-  thumb slides (it slides on every platform where a track is drawn).
+  close circle in a sheet's top corner, a Cancel beside the quick
+  switcher's field, and a segmented control whose thumb slides (it slides
+  on every platform where a track is drawn).
 - **Android:** round header buttons and capsule text buttons that tighten
-  when pressed, the board's move controls as a floating toolbar, a
-  rounded-square action button, Material's loading indicator on the
-  larger spinners, and progress bars with a gap and a stop dot. The
-  status bar and the navigation band follow the app's theme and tint.
+  when pressed, a press that lays a light wash of the button's own ink
+  over it, as Material does, the board's move controls as a floating
+  toolbar, a rounded-square action button, Material's loading indicator
+  on the larger spinners, and progress bars with a gap and a stop dot.
+  The status bar and the navigation band follow the app's theme and
+  tint, and in the light theme they open on the page's grey rather than
+  white.
 - **Both phones:** pull down on Games, Studies, Notes, Books and Puzzle
   books to fetch the list again, and Share FEN and Share PGN under their
   Copy items wherever the system has a share sheet.
@@ -193,6 +202,30 @@ so far.
   starts with "Rename", which opens the title's own field in place.
   Nothing is added to the title row, which keeps all its width. A
   tablet, whose header has no ⋯, still renames from the shelf.
+- **A study, a game or a note can be sent to another app.** Wherever the
+  system has a share sheet, the header's ⋯ on a phone ends with “Share
+  study”, “Share game” or “Share note”, and a wider screen has the same
+  verb as a button beside the document's other tools. The Studies and
+  Notes shelves offer it in a card's menu too, without opening the
+  document. A study or a game goes as a .pgn another chess app can open,
+  with every chapter, and a note as its Markdown; a sheet that takes no
+  file gets the text. From inside a document what goes is what is on
+  screen, saved or not. An imported book and a puzzle book offer nothing,
+  since what is in them came out of a commercial PDF.
+- **On a phone, Insights' counts stay on one line.** A count of four
+  figures broke across two lines in Insights' tables on a phone and
+  doubled its row. Every figure now keeps to one line, the count columns
+  taking the room from the label column. Measured with 12,345 in every
+  count, a row was 56px tall and is 32.
+- **A board page's outline is the page it turns into.** While a board
+  page loads on a phone (the board, the explorer, a study, a game, the
+  trainers, the endgame drill), its outline still drew the pane strip as
+  it was before 0.11.4 gave the open pane a filled tab, so the strip
+  changed face as the page arrived. And an endgame drill opened on a
+  document's outline: a title bar, an Edit button and three pane tabs
+  where the drill has two, with the board 4px lower than the page puts
+  it. Both now draw what the page draws, and on a wide screen the drill's
+  outline stands its panel under the moves, where the page does.
 - **Typing in the Databases tab's search box narrows a search by
   position, material or motif, however fast you type.** A key pressed
   while such a search's results stood cleared them, showed the text
