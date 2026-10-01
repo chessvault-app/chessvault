@@ -1340,11 +1340,11 @@
                 <tbody>
                   <tr>
                     <td data-ko="탐색기 소스(Explorer source)">Explorer source</td>
-                    <td data-ko="출처 선택. 세 무리: <strong>내 보관함</strong>(Your vault) → 내 게임(My games)(보관함의 모든 기보), <strong>참고 데이터베이스</strong>(Reference databases) → 만든 데이터베이스마다 하나, <strong>온라인 (프록시 경유)</strong>(Online (via proxy)) → Lichess 데이터베이스(설정의 토큰 필요).">
+                    <td data-ko="출처 선택. 세 무리: <strong>내 보관함</strong>(Your vault) → 내 게임(My games)(보관함의 모든 기보), <strong>참고 데이터베이스</strong>(Reference databases) → 만든 데이터베이스마다 하나, <strong>온라인 (프록시 경유)</strong>(Online (via proxy)) → Lichess의 Masters와 Players 데이터베이스(설정의 토큰 필요).">
                       The source picker, in three groups: <strong>Your vault</strong> → My games
                       (every game in the vault); <strong>Reference databases</strong> — one per
                       database you built; <strong>Online (via proxy)</strong> — the Lichess
-                      database (needs the token from Settings).
+                      Masters and Players databases (they need the token from Settings).
                     </td>
                   </tr>
                   <tr>
@@ -1355,7 +1355,7 @@
                     </td>
                   </tr>
                   <tr><td data-ko="참고 데이터베이스 관리(Manage reference databases)">Manage reference databases</td><td data-ko="Databases 페이지로 갑니다.">Goes to the Databases page.</td></tr>
-                  <tr><td>Show the explorer / Hide the explorer</td><td data-ko="패널 스위치.">The panel's switch.</td></tr>
+                  <tr><td data-ko="탐색기 켜기/끄기(Explorer on/off)">Explorer on/off</td><td data-ko="패널 스위치. 툴팁이 «탐색기 보기»(Show the explorer) / «탐색기 숨기기»(Hide the explorer)를 오갑니다.">The panel's switch; its tooltip reads “Show the explorer” / “Hide the explorer”.</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1388,9 +1388,10 @@
               <strong>Clicking a row plays that move.</strong> A position that can still castle is
               in no table, so the block does not appear for one.
             </p>
-            <p data-ko="답은 Lichess의 공개 테이블베이스에서(또는 설정에서 지정한 내 서버에서) 오고 서버가 영구히 캐시하므로, 한 번 본 엔드게임은 그 뒤 오프라인에서도 나옵니다. 어느 쪽이 답했는지는 «테이블베이스» 낱말에 마우스를 올리면 나옵니다. 연결이 안 되고 캐시에도 없으면 호박색 한 줄과 «다시 시도»(Try again)가 그 자리에 나타나고, 탐색기 자신의 답은 그 아래에 그대로 남습니다. 설정 → 테이블베이스에서 통째로 끄거나 서버를 바꿀 수 있습니다.">
-              Answers come from Lichess's public tablebase — or from your own server, if you have
-              set one in Settings — and are cached by your server for good, so an ending you have
+            <p data-ko="답은 Lichess의 공개 테이블베이스에서(또는 설정에서 지정한 직접 운영하는 테이블베이스 서버나 서버에 있는 테이블 파일에서) 오고 서버가 영구히 캐시하므로, 한 번 본 엔드게임은 그 뒤 오프라인에서도 나옵니다. 어느 쪽이 답했는지는 «테이블베이스» 낱말에 마우스를 올리면 나옵니다. 연결이 안 되고 캐시에도 없으면 호박색 한 줄과 «다시 시도»(Try again)가 그 자리에 나타나고, 탐색기 자신의 답은 그 아래에 그대로 남습니다. 설정 → 테이블베이스에서 통째로 끄거나 출처를 바꿀 수 있습니다.">
+              Answers come from Lichess's public tablebase — or from a tablebase server of your
+              own, or table files on the server, if Settings names one — and are cached by your
+              server for good, so an ending you have
               looked at once is answered offline afterwards. Which one answered is on the word
               “Tablebase”, under the pointer. Out of reach and not yet cached, the block becomes
               one amber line and “Try again”, and the explorer's own answer stays below it.
@@ -1398,19 +1399,19 @@
             </p>
             <h2 data-ko="필터">The filters</h2>
             <ul>
-              <li data-ko="<strong>내 게임</strong> — Side(Any/White/Black), Result(All/Won/Drew/Lost), Time control(Bullet/Blitz/Rapid/Classical, 복수 선택), «담아 둔 것만»(Kept only)(온라인 기보 전체가 아니라 모음에 담은 게임만), Played between(기간). 실시간 카운트가 아래 줄에 표시됩니다.">
+              <li data-ko="<strong>내 게임</strong> — 진영(Side)(전체/백/흑), 결과(Result)(전체/승/무/패), 시간제(Time control)(불렛/블리츠/래피드/클래시컬, 복수 선택), «담아 둔 것만»(Kept only)(온라인 기보 전체가 아니라 모음에 담은 게임만), 대국 기간(Played between). 실시간 카운트가 아래 줄에 표시됩니다.">
                 <strong>My games</strong> — Side (Any/White/Black), Result (All/Won/Drew/Lost),
                 Time control (Bullet/Blitz/Rapid/Classical, multi-select), “Kept only” (only the
                 games in your collection, not every archived one), Played between (dates). A live
                 count sits under the controls.
               </li>
-              <li data-ko="<strong>참고 데이터베이스</strong> — Result, Strength(Any/2300+/2500+/2700+), Level, Player(진영·결과 조건과 함께), Opening or ECO, Event, Played between.">
+              <li data-ko="<strong>참고 데이터베이스</strong> — 결과(Result), 기력(Strength)(전체/2300+/2500+/2700+), 레벨(Level), 플레이어(Player)(진영·결과 조건과 함께), 오프닝 또는 ECO(Opening or ECO), 대회(Event), 대국 기간(Played between).">
                 <strong>A reference database</strong> — Result, Strength (Any/2300+/2500+/2700+),
                 Level, Player (with side and outcome conditions), Opening or ECO, Event,
                 Played between.
               </li>
-              <li data-ko="<strong>Lichess 데이터베이스</strong> — Opponent strength(레이팅 구간)만. Masters 데이터베이스에는 필터 창이 없습니다.">
-                <strong>The Lichess database</strong> — Opponent strength (the rating bands); the
+              <li data-ko="<strong>Lichess Players 데이터베이스</strong> — 상대 기력(Opponent strength)(레이팅 구간)만. Masters 데이터베이스에는 필터 창이 없습니다.">
+                <strong>The Lichess Players database</strong> — Opponent strength (the rating bands); the
                 Masters database has no filter window.
               </li>
             </ul>
