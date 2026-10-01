@@ -26,9 +26,11 @@ the 858 already-matched puzzles provide exact digit crops via the text
 layer's word boxes (`harvest`, ~2,770 samples, 99.86% 5-fold), and a
 nearest-centroid model + component segmentation reads the printed number
 above any diagram rect (`selftest`: 855/858 end-to-end). Feeding it every
-detected-but-unmatched diagram (`dump-rects` over the page renders, then
-`read`) recovered 125 of the 143 lost numbers, all sequence-consistent —
-see `data/ml/recovered-numbers.json` + `all-diagram-rects.json`
+detected-but-unmatched diagram (their page and fractional rect, dumped
+from the page renders by a one-off run of the detector that is not kept
+here, then `read <rects.json>`) recovered 125 of the 143 lost numbers,
+all sequence-consistent — see `data/ml/recovered-numbers.json` +
+`all-diagram-rects.json`
 (`pages-extra/` holds renders of the 16 pages the vault lacked). Env:
 `python -m uv venv data/ml/venv -p 3.12` + `numpy pillow pymupdf`.
 Stage 2 shipped (`figurine_glyphs.py`): validated entries align printed
