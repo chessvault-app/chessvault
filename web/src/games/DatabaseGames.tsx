@@ -8,6 +8,7 @@ import { isSymmetricMaterial, type MatchMode } from '@shared/scanMatch';
 import type { MotifSide } from '@shared/scanMotif';
 
 import { api, ApiError, apiErrorMessage, apiStream } from '@/lib/api';
+import { useSlotGone } from '@/lib/keep-alive';
 import { afterRouteSettled, navigate } from '@/lib/router';
 import { useAnalysis } from '@/store/analysis';
 
@@ -645,18 +646,36 @@ export function DatabaseGames({
       it: a settled keystroke that finds the box back to this while a
       hunt stands has nothing to re-run (settleBox). */
   const huntRead = useRef('');
-  /** The request of the hunt in flight, until it ends or is abandoned:
-      what hiding the pane cancels and showing it sends again. */
-  const huntLive = useRef<HuntRun | null>(null);
-  /** The hunt the pane's hide cancelled, waiting for the show, until a
-      hunt sent since replaces it (streamHunt). */
-  const huntInterrupted = useRef<HuntRun | null>(null);
+  /**
+   * The page this pane is kept in going (lib/keep-alive): let go of by
+   * the keep-alive's budget, or the section around it unmounting. Null
+   * outside any kept page. The pane lives under an open game, and a hunt
+   * goes on while its page is merely hidden (a game opened from its rows
+   * and read on the board), so Back lands on the answer as far as it has
+   * got rather than on a scan begun again. It stops when this fires, when
+   * a newer hunt is sent, or when the pane itself unmounts (below).
+   */
+  const slotGone = useSlotGone();
+  /** Whether the pane is on screen. Its layout effects are torn down when
+      its kept page is hidden and set up again when it is shown. */
+  const onScreen = useRef(false);
+  /** A hunt's verdict that came in while the pane was hidden, said when
+      it is shown again rather than over whatever page is up. */
+  const heldVerdict = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    onScreen.current = true;
+    const verdict = heldVerdict.current;
+    heldVerdict.current = null;
+    if (verdict) announce(verdict);
+    return () => {
+      onScreen.current = false;
+    };
+  }, []);
   /** Cancel any hunt in flight and drop its results. The bump makes the
       read loop cancel its reader, which aborts the server's scan. Stable,
       so effects can depend on it. */
   const abandonHunt = useCallback((): void => {
     huntSeq.current += 1;
-    huntLive.current = null;
     setHuntRows(null);
     setHunting(false);
     setHuntProgress(null);
@@ -695,26 +714,19 @@ export function DatabaseGames({
   /**
    * Send one hunt's request and read its frames into the hunt's rows.
    * Kept apart from runHunt, which builds the request from the controls
-   * as they stand, so that a request already built can be sent as it
-   * is. Stable: everything it touches is a setter or a ref.
+   * as they stand and does what a press does to the page. Stable:
+   * everything it touches is a setter, a ref or the page's signal.
    *
-   * `kept`: the games already on the list, which a resumed hunt leaves
-   * where they are (see the show effect below). The scan answers the
-   * same request with the same games in the same order whichever path
-   * runs it (server/refgames.ts), so the re-run sends those first and
-   * they are not added twice; the list then grows from where it stopped.
+   * It reads on while the pane is hidden: the rows land in the hidden
+   * page (React renders a hidden Activity's updates at its lowest
+   * priority), and the selection and a phone's sheet, which only a press
+   * moves, are as the reader left them.
    */
-  const streamHunt = useCallback(async (run: HuntRun, kept?: ReadonlySet<number>): Promise<void> => {
+  const streamHunt = useCallback(async (run: HuntRun): Promise<void> => {
     const mine = ++huntSeq.current;
-    huntLive.current = run;
-    // A hunt sent outranks one a hide cancelled, which the show then
-    // leaves alone. The one send that can land between the two is the
-    // box's debounce falling due while the pane is hidden (settleBox),
-    // for the box as typed. Resuming the older hunt over it cancelled
-    // it and filled the rest of its list with the older answer, under a
-    // box that answer ignored.
-    huntInterrupted.current = null;
     huntRead.current = run.box;
+    // A verdict held for the show answers a hunt this one replaces.
+    heldVerdict.current = null;
     setHunting(true);
     setHuntProgress(null);
     setHuntExhaustive(true);
@@ -735,7 +747,7 @@ export function DatabaseGames({
     const onFrame = (frame: Frame): void => {
       if (frame.type === 'game') {
         const { type: _type, ply: _ply, ...game } = frame;
-        if (!kept?.has(game.id)) setHuntRows((prev) => [...(prev ?? []), game]);
+        setHuntRows((prev) => [...(prev ?? []), game]);
         got += 1;
       } else {
         setHuntProgress({ scanned: frame.scanned, total: frame.total });
@@ -746,7 +758,17 @@ export function DatabaseGames({
         }
       }
     };
-    const live = (): boolean => huntSeq.current === mine;
+    // Still this pane's hunt: no newer one sent and the pane not unmounted
+    // (each bumps the sequence), and its kept page still there.
+    const live = (): boolean => huntSeq.current === mine && !slotGone?.aborted;
+    // The count line above is repainted, which a screen reader does not
+    // hear; the verdict of a hunt that took seconds is said once. Said
+    // now if the pane is on screen, else when it next is: a hunt that ends
+    // while the reader is on the board is not announced over the board.
+    const say = (verdict: string): void => {
+      if (onScreen.current) announce(verdict);
+      else heldVerdict.current = verdict;
+    };
     let ended = false;
     let threw = false;
     let error: unknown = null;
@@ -760,11 +782,10 @@ export function DatabaseGames({
       if (error instanceof ApiError && error.status === 400) {
         // The one refusal a user can cause from here is a FEN that is
         // not a position; say that instead of a generic failure.
-        if (huntSeq.current === mine) {
-          huntLive.current = null;
+        if (live()) {
           setHunting(false);
           setHuntFailed(run.kind === 'position' ? 'bad-fen' : 'failed');
-          announce(t('The search failed.'));
+          say(t('The search failed.'));
         }
         return;
       }
@@ -772,13 +793,10 @@ export function DatabaseGames({
     } else if (!ended) {
       return;
     }
-    if (huntSeq.current === mine) {
-      huntLive.current = null;
+    if (live()) {
       setHunting(false);
-      if (!sawDone && huntSeq.current === mine) setHuntFailed((f) => f ?? 'failed');
-      // The count line above is repainted, which a screen reader does not
-      // hear; the verdict of a hunt that took seconds is said once.
-      announce(
+      if (!sawDone) setHuntFailed((f) => f ?? 'failed');
+      say(
         !sawDone
           ? t('The search failed.')
           : exhaustive
@@ -786,49 +804,38 @@ export function DatabaseGames({
             : t('{n}+ games found. The list stops here.', { n: got.toLocaleString() }),
       );
     }
-  }, []);
+  }, [slotGone]);
 
-  // A hunt in flight goes with the pane: the bump makes the read loop
-  // cancel its reader, which aborts the server's scan. This pane is kept
-  // mounted under an open game (lib/keep-alive), and Activity runs this
-  // cleanup when it HIDES the pane as well as when it unmounts it, with
-  // nothing in here to tell the two apart. So the cleanup also keeps the
-  // cancelled hunt's request, and the show sends it again: Back from a
-  // game opened off a hunt still scanning lands on the complete answer.
-  // It used to land on the count frozen at "Searching…" over the rows
-  // found so far, with both Search buttons disabled. An unmount takes
-  // the kept request with it, and a hunt that ended before the hide left
-  // nothing in flight to keep.
+  // The pane's work goes with the pane: a hunt in flight (the bump makes
+  // the read loop cancel its reader, which aborts the server's scan) and
+  // a keystroke still settling. Only when the pane is really gone: it is
+  // kept under an open game (lib/keep-alive), where Activity runs this
+  // cleanup at the hide as well, and there the hunt reads on until
+  // slotGone fires. The pane's own element tells the two apart: a hide
+  // leaves it in the document (Activity hides with `display: none`), as
+  // StrictMode's rehearsal of an unmount does, and an unmount has taken
+  // it out by the time a passive cleanup runs. The unmounts are the
+  // Databases tab switched for another while the page stays, and the
+  // workspace, which is not kept, being left. Outside any kept page the
+  // test is the same, and an unmount the only way here.
   //
-  // Not left scanning while hidden instead: Activity runs a hidden
-  // pane's cleanups once, at the hide, so when the keep-alive budget
-  // later drops the hidden pane nothing runs at its unmount, and a scan
-  // left going under it could not be stopped.
-  //
-  // A resume is not a press, and differs from one in three ways. It
-  // sends the request the hunt sent, not the controls as they stand,
-  // which a tablet or a desktop leaves open to edit without pressing
-  // Search. It keeps the rows, under the scroll position the keep-alive
-  // has just put back. And it leaves the selection and a phone's sheet
-  // as they were: the selected row came from those rows, and is usually
-  // the game just opened, standing in the details column (a phone's
-  // cards select nothing); the sheet was shut by the press that ran the
-  // hunt, so if it is open now the reader opened it.
-  //
-  // StrictMode runs a show as effect, cleanup, effect: the first send is
-  // cancelled and kept again by the cleanup and the second sends it, with
-  // nothing rendered between, so one request stands.
-  const resumeHunt = useEffectEvent(() => {
-    const run = huntInterrupted.current;
-    huntInterrupted.current = null;
-    if (run) void streamHunt(run, new Set((huntRows ?? []).map((g) => g.id)));
+  // The element is the one last drawn on screen, kept by a layout effect
+  // on every commit, not the one there when this effect was set up. Only
+  // the main path draws it, so a pane that showed "Could not load
+  // reference games" and came back through Try again draws a new one,
+  // and the one read at setup stayed out of the document: the next hide
+  // read as an unmount and stopped the hunt for good, leaving "Searching…"
+  // over the rows found so far. Null while an early return is drawn,
+  // which reads as an unmount too, harmlessly: such a pane shows no rows.
+  const drawn = useRef<HTMLSpanElement | null>(null);
+  useLayoutEffect(() => {
+    drawn.current = topRef.current;
   });
   useEffect(() => {
-    resumeHunt();
     return () => {
-      huntInterrupted.current = huntLive.current;
-      huntLive.current = null;
+      if (drawn.current?.isConnected) return;
       huntSeq.current += 1;
+      if (debounce.current) clearTimeout(debounce.current);
     };
   }, []);
 
@@ -1029,8 +1036,14 @@ export function DatabaseGames({
     if (debounce.current) clearTimeout(debounce.current);
     // With a hunt open the box edits the HUNT, exactly as a filter
     // press does below — the stale-sequence guard abandons the scan
-    // this keystroke obsoletes.
-    debounce.current = setTimeout(() => settleBox.current(), 250);
+    // this keystroke obsoletes. It may fall due while the pane is
+    // hidden (a game opened inside the 250ms): what it sends then runs
+    // under the same page signal as any hunt. Once that page is gone it
+    // sends nothing, since nothing would be left to stop it; an unmount
+    // clears the timer outright (the effect above).
+    debounce.current = setTimeout(() => {
+      if (!slotGone?.aborted) settleBox.current();
+    }, 250);
   };
 
   // A filter press re-asks from the top, with the query still in the box

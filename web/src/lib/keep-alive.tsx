@@ -1,4 +1,15 @@
-import { Activity, ViewTransition, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  Activity,
+  ViewTransition,
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
+import { departed, firstSlots, follow, nextSlots } from './keep-alive-slots';
 import { parse, type Section } from './router';
 
 /**
@@ -39,24 +50,54 @@ import { parse, type Section } from './router';
  * contents (an open menu) inside a hidden Activity and keeps
  * `useSyncExternalStore` in step while hidden, so neither needs a hand
  * here.
+ *
+ * The other way round is what a cleanup cannot do: say that the page is
+ * gone. It runs at the hide and at an unmount alike, and React runs each
+ * cleanup once (it clears it as it calls it), so when a hidden page is
+ * later let go of, by the budget or by a page around it going, nothing in
+ * it runs at all. Work that should go on while its page is hidden and
+ * stop when the page goes reads useSlotGone, whose signal fires then and
+ * only then.
  */
 
-interface Slot<T> {
-  key: string;
-  /** What the slot was drawn with when it was last current. Frozen while
-      hidden: the hash describes only the visible page. */
-  data: T;
+/** The signal of the slot a component is drawn in, null outside any
+    KeepAlive (see useSlotGone). */
+const SlotGoneContext = createContext<AbortSignal | null>(null);
+
+/**
+ * A signal that fires when the kept page this component is drawn in is
+ * gone, never when it is merely hidden: when the list lets go of the page
+ * (the budget, or a page that is not kept leaving the screen), when the
+ * KeepAlive holding it unmounts, or when a page around it goes (a list
+ * kept inside a kept section). Null outside any KeepAlive, where an
+ * effect's cleanup is an unmount and says so itself.
+ *
+ * It is the page's, not the component's: a component that unmounts
+ * while its page stays (a tab switched inside the page) is not told by
+ * this, and has to stop its own work in its cleanup.
+ */
+export function useSlotGone(): AbortSignal | null {
+  return useContext(SlotGoneContext);
 }
 
 /**
  * The slots, as a list with the current one last and the hidden ones
- * before it in the order they were last shown, oldest first.
+ * before it in the order they were last shown, oldest first
+ * (./keep-alive-slots holds the rules).
  *
  * Derived during render rather than in an effect, in the way the React
  * docs describe for "storing information from previous renders": the
  * render that changes `current` must already contain the page that was
  * current a moment ago, or React unmounts it in that same commit and
  * there is nothing left to keep. An effect would be one commit late.
+ *
+ * Which is why a slot's controller is aborted in an effect and not here:
+ * a render can be thrown away, a commit cannot. The effect compares the
+ * list it last saw with the one committed and aborts what left, however
+ * it left, a layout effect so the abort lands in the commit that drops
+ * the page. A KeepAlive that unmounts takes every slot with it; that is
+ * caught by the slot on show (Slot, below), since an unmounting
+ * KeepAlive runs no effect of its own that could tell it from a hide.
  */
 export function KeepAlive<T>({
   current,
@@ -75,19 +116,31 @@ export function KeepAlive<T>({
   budget: number;
   render: (key: string, data: T) => ReactNode;
 }) {
-  const [slots, setSlots] = useState<Slot<T>[]>(() => [{ key: current, data }]);
-  const last = slots.at(-1)!;
-  if (last.key !== current) {
-    const hidden = slots.filter((s) => s.key !== current && (s.key !== last.key || keep(last.key, last.data)));
-    while (hidden.length > budget) hidden.shift();
-    setSlots([...hidden, { key: current, data }]);
-  } else if (last.data !== data) {
-    setSlots([...slots.slice(0, -1), { key: current, data }]);
-  }
+  const [slots, setSlots] = useState(() => firstSlots(current, data));
+  const next = nextSlots(slots, current, data, keep, budget);
+  if (next) setSlots(next);
+  /** The controllers of the list as last committed. */
+  const held = useRef<readonly AbortController[]>([]);
+  useLayoutEffect(() => {
+    const now = slots.map((s) => s.gone);
+    for (const gone of departed(held.current, now)) gone.abort();
+    held.current = now;
+  }, [slots]);
+  // A slot taken out of the document (Slot, below). One the list let go of
+  // is out of `held` already, since the effect above is a layout effect
+  // and the slot's word comes from a passive cleanup, which React runs
+  // after the layout effects of the same commit. One still in it went
+  // with the whole list, and so does every hidden slot beside it, whose
+  // own cleanups ran at their hides.
+  const outOfDocument = (gone: AbortController): void => {
+    if (held.current.includes(gone)) for (const each of held.current) each.abort();
+  };
   return slots.map((slot) => (
     // Keys hold each page to its instance as the list reorders.
     <Activity key={slot.key} mode={slot.key === current ? 'visible' : 'hidden'}>
-      <Slot>{render(slot.key, slot.key === current ? data : slot.data)}</Slot>
+      <Slot gone={slot.gone} outOfDocument={outOfDocument}>
+        {render(slot.key, slot.key === current ? data : slot.data)}
+      </Slot>
     </Activity>
   ));
 }
@@ -98,7 +151,8 @@ export function KeepAlive<T>({
  * It is what Activity hides (it sets `display` on its host children, and
  * a page's own root is not always one element), what `visibleSlot`
  * finds, and `h-full` because the pages under main size themselves
- * against it.
+ * against it. It hands the page its signal (useSlotGone), drawing no
+ * element of its own to do it.
  *
  * It also keeps the page's scroll positions across the hide, because the
  * browser does not always. Measured 2026-09-14 on the demo, phone width:
@@ -172,10 +226,39 @@ function holdAnchor({ el, anchor, offset }: SavedScroll): void {
   if (Math.abs(now - offset) >= 1) el.scrollTop += now - offset;
 }
 
-function Slot({ children }: { children: ReactNode }) {
+function Slot({
+  gone,
+  outOfDocument,
+  children,
+}: {
+  /** This slot's controller, the same one for the slot's whole life
+      (keep-alive-slots). */
+  gone: AbortController;
+  /** Told when this slot's box has left the document (KeepAlive). */
+  outOfDocument: (gone: AbortController) => void;
+  children: ReactNode;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const scrolled = useRef(new Set<Element>());
   const saved = useRef<SavedScroll[]>([]);
+  // What the page is handed (useSlotGone): this slot's own controller,
+  // and, for a list kept inside a kept page, the signal of the page
+  // around it, whose going takes this list with it while nothing in here
+  // runs. Made once, from the controller the slot keeps for its life.
+  const around = useContext(SlotGoneContext);
+  const [signal] = useState(() => follow(around, gone.signal));
+  // The one way out the list's own effect cannot see: the KeepAlive itself
+  // unmounting, its pages with it. Its slot on show runs this cleanup and
+  // finds its box out of the document, which a hide never does (Activity
+  // hides with `display: none`, and StrictMode's rehearsal of an unmount
+  // removes nothing either). A passive cleanup, because a deleted tree's
+  // passive cleanups run after its nodes have been removed.
+  useEffect(() => {
+    const box = ref.current;
+    return () => {
+      if (!box?.isConnected) outOfDocument(gone);
+    };
+  }, [gone, outOfDocument]);
   useEffect(() => {
     const root = ref.current;
     if (!root) return;
@@ -230,7 +313,7 @@ function Slot({ children }: { children: ReactNode }) {
       exit={{ 'nav-push': 'vt-page-under-out', 'nav-pop': 'vt-page-out', default: 'none' }}
     >
       <div ref={ref} data-route-slot className="h-full bg-background">
-        {children}
+        <SlotGoneContext value={signal}>{children}</SlotGoneContext>
       </div>
     </ViewTransition>
   );
