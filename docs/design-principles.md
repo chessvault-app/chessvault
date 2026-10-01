@@ -1393,8 +1393,8 @@ drawn, and what one has to prove.
   a feature test. A wrong guess costs a phone the other platform's
   chrome, not a broken page, since neither variant removes a control the
   cross-platform layout has. `localStorage` `chess-vault:platform`
-  overrides the guess; it exists for the screenshot grid and the
-  Settings debug card, not for users, and nothing else reads it.
+  overrides the guess; it exists for the screenshot grid, not for users,
+  no control in the app writes it, and nothing else reads it.
 - **iOS owns its chrome; the content is the same everywhere.** On iOS
   the chrome may follow iOS 26: the tab bar as a floating capsule inset
   from the edges over scrolling content, icons only, and getting
@@ -1410,8 +1410,9 @@ drawn, and what one has to prove.
   keeps the sheet on every phone, having no control to hang from). Its
   rows are 44px under a thumb on every platform
   (`pointer-coarse:py-2.5`, as a Select's are; they measured 32px); the back chevron and a header's icon actions in glass circles, a pressed one (a shelf's bookmark filter) or a lit one that marks itself `data-chrome-lit` (Games' More filters, lit while a filter is on, and the Databases tab's position search while a search stands with its sheet shut; with the sheet open it stays glass, as an open ⋯ does) in its own on-state fill instead of the glass, and
-  its text buttons (a shelf's Create, Import) in pills of the same
-  height, the primary one in its own fill, rather than bare on the page
+  its text buttons (a document's Save) in pills of the same height, the
+  primary one in its own fill (a shelf's Create, a bare plus on a phone,
+  is that fill as a circle), rather than bare on the page
   (one rule in `styles/shell.css` on the rows marked `data-chrome`,
   reaching the registry button by its own attributes); grouped inset lists with a chevron on every
   navigable row (the More page's groups, one card per group with a
@@ -1555,8 +1556,9 @@ drawn, and what one has to prove.
   width instead (2026-09-22). `phone-ios-revealed` and its Android
   twin scroll down and then back up, and are where a change to that
   bar shows. A glass surface owes two more numbers. Frame time while
-  scrolling under it, on the phone, Low Power Mode off, from the
-  on-device probe in the Settings debug card:
+  scrolling under it, read on the phone itself with Low Power Mode off
+  (no probe for it is part of the app; the Settings card a lag build
+  adds delays requests and records nothing):
   the bottom bar was made opaque in 2026-09 because a full-width 24px
   blur was re-blurred on every scrolled frame, and that is the reading
   a glass bar has to beat. And contrast: text over glass has no fixed
@@ -1571,11 +1573,13 @@ drawn, and what one has to prove.
   they are every platform's idiom: a QUESTION is a centred card on every
   phone and not a rising sheet (`ask` on the Dialog root takes the Dialog
   primitive instead of the Drawer; iOS draws it as iOS 26's own alert,
-  300px wide on the 4xl rung with 20px of padding all round, a started
-  17px title over a 15px message, no icon and no action band at all, and
-  its answers as 48px capsules of equal width side by side (stacked when
-  there are three, the leave question), the destructive one the same
-  quiet capsule as Cancel with the destructive ink; Android as Material's basic dialog,
+  in glass, 300px wide on the 4xl rung with 20px of padding all round, a
+  started 17px title over a 15px message, no icon and no action band at
+  all, and its answers as 48px capsules of equal width side by side
+  (stacked when there are three, the leave question): Cancel a quiet
+  wash of the ink and the answer always filled, a destructive one in a
+  solid destructive fill, since red ink on a wash over the glass measured
+  2.5 to 3.1:1 in both themes; Android as Material's basic dialog,
   312px, started text, text buttons in an end-aligned row; the scrim
   still closes it, as every small window here does, and "Dialog policy"
   carries the exception); the segmented track's raised thumb SLIDES
@@ -1595,8 +1599,8 @@ drawn, and what one has to prove.
   to a hundred and a line of empty card beside a one-word label
   (measured), which is why macOS and Windows both keep a slider in the
   control column. A switch or a menu gains nothing at either width and
-  stays in the row. It is the two glass knobs, which are only ever drawn
-  on a phone, and Sound's Volume, which moved with them rather than be
+  stays in the row. It is the two glass knobs, which are drawn only on
+  iOS, and Sound's Volume, which moved with them rather than be
   the odd slider out. The two phones then group
   in their own flavour from one place, `SettingsCard`: iOS one inset
   card per group with hairlines from the label's edge and 44px rows,
@@ -1660,8 +1664,8 @@ drawn, and what one has to prove.
   their own, and the page is one `rounded-xl` panel inset in it, so
   every page's interior is what it was and only the frame moved (this
   reopens the white sidebar of 2026-09-07). The frame is a rung UNDER
-  the page in both themes: 95% under 97% in light, and 19% under 20.5%
-  in dark since the dark ladder was lifted off the floor on 2026-09-22
+  the page in both themes: 95% under 97% in light, and 14% under 18.25%
+  in dark since the dark ladder was placed on Linear's own on 2026-09-22
   ("The colour grammar"). The rule is not about elevation, which would
   have to pick a direction and defend it: the frame steps once back
   from the READING surface, whichever end of the scale that surface
@@ -1709,8 +1713,9 @@ drawn, and what one has to prove.
   Still to be read on a device: every item above.
 - **What did not reopen.** Five tabs with Notes under More: iOS also
   stops at five. The radius ladder: iOS 26's continuous corners cannot
-  be drawn in CSS, and a glass surface takes the `2xl` rung or a true
-  pill from the ladder rather than a hand-written number. Concentricity
+  be drawn in CSS, and a glass surface takes a rung of the ladder (a
+  menu's `2xl`, the alert's `4xl`) or a true pill rather than a
+  hand-written number. Concentricity
   is the other half of what iOS 26 asks of a corner (an inner radius of
   the outer radius less the inset, `ConcentricRectangle`), and it is not
   a rung the ladder owes: it is an arithmetic between two rungs. Every
