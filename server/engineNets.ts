@@ -18,6 +18,7 @@ import { createHash } from 'node:crypto';
 import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { Hono } from 'hono';
 import { DATA } from './paths.ts';
 
@@ -72,21 +73,34 @@ export async function downloadNet(
   // the open, empty, and stays. So the catch removes it once closed.
   const closed = new Promise<void>((r) => out.once('close', () => r()));
   try {
-    for await (const chunk of Readable.fromWeb(res.body as never)) {
-      const buf = chunk as Buffer;
-      hash.update(buf);
-      bytes += buf.byteLength;
-      // The expected decoded size is known from NETS and was being used
-      // only to draw a progress bar. The upstream gzip-encodes and fetch
-      // inflates as it streams, so Content-Length bounds nothing: a
-      // compromised or MITM'd net server answering with an endless
-      // inflating body would write until the disk filled. The checksum
-      // below catches a WRONG net, but only after every byte has landed.
-      if (size && bytes > size) throw new Error(`${name} is longer than its published size`);
-      if (!out.write(buf)) await new Promise<void>((r) => out.once('drain', r));
-      onProgress({ bytes, total });
-    }
-    await new Promise<void>((r, j) => out.end((e: unknown) => (e ? j(e) : r())));
+    // The pipeline is what listens for the part's errors. With nothing
+    // listening, an open, a write or a close that failed (the folder gone,
+    // a full disk) was thrown out of the event loop and ended the server,
+    // and the loop here waited for a drain or a chunk that never came. Any
+    // of them, or a throw in the middle stage, destroys every stream, which
+    // cancels the response body's reader, and rejects. It settles once the
+    // part has closed, so a close that fails after the last byte fails the
+    // download too.
+    await pipeline(
+      Readable.fromWeb(res.body as never),
+      async function* (chunks: AsyncIterable<Buffer>) {
+        for await (const buf of chunks) {
+          hash.update(buf);
+          bytes += buf.byteLength;
+          // The expected decoded size is known from NETS and was being used
+          // only to draw a progress bar. The upstream gzip-encodes and fetch
+          // inflates as it streams, so Content-Length bounds nothing: a
+          // compromised or MITM'd net server answering with an endless
+          // inflating body would write until the disk filled. The checksum
+          // below catches a WRONG net, but only after every byte has landed.
+          if (size && bytes > size) throw new Error(`${name} is longer than its published size`);
+          yield buf;
+          // Resumed once the part has taken the chunk.
+          onProgress({ bytes, total });
+        }
+      },
+      out,
+    );
     if (!hash.digest('hex').startsWith(name.slice(3, 15))) throw new Error(`checksum mismatch for ${name}`);
     renameSync(part, path);
   } catch (error) {

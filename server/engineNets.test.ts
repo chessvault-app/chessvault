@@ -1,11 +1,52 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Hono } from 'hono';
 import { createHash, pbkdf2 } from 'node:crypto';
-import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
-import { engineNetsApi, type NetStatus } from './engineNets.ts';
+import { downloadNet, engineNetsApi, type NetStatus } from './engineNets.ts';
+
+/**
+ * Faults for the .part's writes and its close, standing in for a disk that
+ * fills mid-download and a close that reports a failed flush: neither can
+ * be made to happen to a real file on demand. A write stream opened under
+ * these tests makes the real calls until a test sets a fault.
+ */
+const faults = vi.hoisted(() => ({
+  /** Writes that have landed on disk. */
+  writes: 0,
+  /** Fail every write once this many have landed. */
+  failWritesAfter: null as number | null,
+  failClose: false,
+}));
+
+vi.mock('node:fs', async (importOriginal) => {
+  const fs = await importOriginal<typeof import('node:fs')>();
+  type Done = (error: Error | null, ...rest: unknown[]) => void;
+  const fault = (code: string, message: string): NodeJS.ErrnoException =>
+    Object.assign(new Error(`${code}: ${message}`), { code });
+  const io = {
+    open: fs.open,
+    write: (...args: unknown[]): void => {
+      const done = args.pop() as Done;
+      if (faults.failWritesAfter !== null && faults.writes >= faults.failWritesAfter) {
+        process.nextTick(done, fault('ENOSPC', 'no space left on device, write'));
+        return;
+      }
+      (fs.write as (...a: unknown[]) => void)(...args, (error: Error | null, ...rest: unknown[]) => {
+        if (!error) faults.writes++;
+        done(error, ...rest);
+      });
+    },
+    close: (fd: number, done: (error: Error | null) => void): void =>
+      fs.close(fd, (error) => done(error ?? (faults.failClose ? fault('EIO', 'i/o error, close') : null))),
+  };
+  return {
+    ...fs,
+    createWriteStream: (path: string, options?: object) => fs.createWriteStream(path, { ...options, fs: io }),
+  };
+});
 
 /** Made-up weights, named the way Stockfish names a net: after their own sha256. */
 const BODY = Buffer.from('weights, allegedly '.repeat(1000));
@@ -30,12 +71,66 @@ const settle = async (app: Hono, tries = 50): Promise<NetStatus> => {
   throw new Error('download did not settle');
 };
 
+/**
+ * A body that sends `chunks` and then hangs, as a connection that stops
+ * sending does, and records whether the download let go of it. Chunk `i`
+ * is sent once `ready(i)` resolves.
+ */
+const stalling = (
+  chunks: Uint8Array[],
+  ready: (i: number) => Promise<void> = async () => {},
+): { fetcher: typeof fetch; reader: { cancelled: boolean } } => {
+  const reader = { cancelled: false };
+  let sent = 0;
+  const fetcher: typeof fetch = async () =>
+    new Response(
+      new ReadableStream<Uint8Array>({
+        pull: async (controller): Promise<void> => {
+          const i = sent++;
+          if (i >= chunks.length) return new Promise<void>(() => {});
+          await ready(i);
+          controller.enqueue(chunks[i]!);
+        },
+        cancel: () => {
+          reader.cancelled = true;
+        },
+      }),
+    );
+  return { fetcher, reader };
+};
+
+/** `work`, failed if still running after `ms`: a download that hangs fails here, not at vitest's timeout. */
+const within = async <T>(work: Promise<T>, ms = 1000): Promise<T> => {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`still running after ${ms} ms`)), ms);
+  });
+  try {
+    return await Promise.race([work, late]);
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 describe('engine networks api', () => {
   let dir: string;
+  // An 'error' event nothing listens for is thrown from the event loop, and
+  // in the server that ends the process. Collected here, so the test it
+  // happens in fails by name.
+  let uncaught: unknown[] = [];
+  const collect = (error: unknown): void => {
+    uncaught.push(error);
+  };
   beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'engine-nets-'));
+    uncaught = [];
+    process.on('uncaughtException', collect);
+    Object.assign(faults, { writes: 0, failWritesAfter: null, failClose: false });
   });
-  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+  afterEach(() => {
+    process.off('uncaughtException', collect);
+    rmSync(dir, { recursive: true, force: true });
+  });
 
   it('lists every known network, absent at first', async () => {
     const app = build(dir);
@@ -120,5 +215,63 @@ describe('engine networks api', () => {
 
     expect((await app.request('/api/engine/nets/nn-000000000000.nnue', { method: 'POST' })).status).toBe(404);
     expect((await app.request('/api/engine/nets/../paths.ts/file')).status).toBe(404);
+  });
+
+  it('reports a networks folder removed before the first chunk, and lets the next attempt run', async () => {
+    const stalled = stalling([BODY.subarray(0, 4096)]);
+    let calls = 0;
+    const fetcher: typeof fetch = async (...args) => {
+      calls++;
+      if (calls > 1) return respond(BODY)(...args);
+      rmSync(dir, { recursive: true }); // so the .part cannot be opened
+      return stalled.fetcher(...args);
+    };
+    const app = build(dir, fetcher);
+    await app.request(`/api/engine/nets/${NAME}`, { method: 'POST' });
+    expect(await settle(app)).toMatchObject({ ready: false, downloading: null, error: expect.stringContaining('ENOENT') });
+    expect(stalled.reader.cancelled).toBe(true);
+    expect(uncaught).toEqual([]);
+
+    await app.request(`/api/engine/nets/${NAME}`, { method: 'POST' });
+    expect(await settle(app)).toMatchObject({ ready: true, error: null });
+    expect(readdirSync(dir)).toEqual([NAME]);
+  });
+
+  it('rejects a download whose .part cannot be opened, and lets go of the response', async () => {
+    // The staging script's path: downloadNet on its own, into a folder whose
+    // parent is a file.
+    writeFileSync(join(dir, 'blocker'), '');
+    const stalled = stalling([BODY.subarray(0, 4096)]);
+    await expect(within(downloadNet(NAME, join(dir, 'blocker', NAME), stalled.fetcher))).rejects.toThrow(/ENOTDIR|ENOENT/);
+    expect(stalled.reader.cancelled).toBe(true);
+    expect(readdirSync(dir)).toEqual(['blocker']);
+    expect(uncaught).toEqual([]);
+  });
+
+  it('reports a write that fails mid-download, and keeps nothing', async () => {
+    faults.failWritesAfter = 1;
+    const half = BODY.byteLength / 2;
+    // Each chunk waits for the one before it to land, or the stream hands
+    // the two to the .part as one write and the disk is full from the start.
+    const landed = async (i: number): Promise<void> => {
+      for (let t = 0; faults.writes < i && t < 200; t++) await new Promise((r) => setTimeout(r, 5));
+    };
+    const stalled = stalling([BODY.subarray(0, half), BODY.subarray(half)], landed);
+    const app = build(dir, stalled.fetcher);
+    await app.request(`/api/engine/nets/${NAME}`, { method: 'POST' });
+    expect(await settle(app)).toMatchObject({ ready: false, downloading: null, error: expect.stringContaining('ENOSPC') });
+    expect(faults.writes).toBe(1); // the first chunk had landed
+    expect(stalled.reader.cancelled).toBe(true);
+    expect(readdirSync(dir)).toEqual([]);
+    expect(uncaught).toEqual([]);
+  });
+
+  it('reports a .part whose close fails after the last byte, and keeps nothing', async () => {
+    faults.failClose = true;
+    const app = build(dir, respond(matchingBody()));
+    await app.request(`/api/engine/nets/${NAME}`, { method: 'POST' });
+    expect(await settle(app)).toMatchObject({ ready: false, downloading: null, error: expect.stringContaining('EIO') });
+    expect(readdirSync(dir)).toEqual([]);
+    expect(uncaught).toEqual([]);
   });
 });
