@@ -11,7 +11,7 @@
 # rather than a live search, so downloading it here would buy nothing.
 #
 # The second job is `check:contrast`, which `verify` does not include and
-# so nothing ran. It is the only check here that needs a browser: the
+# so nothing ran. It was the first check here to need a browser: the
 # ratios it reports depend on what text is painted ON, and the backgrounds
 # that fail are composed ones that do not exist until something has
 # composited them — which is why check-repo.ts cannot grep for them, and
