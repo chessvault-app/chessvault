@@ -1245,7 +1245,7 @@
               docks above the moves on a desktop and gets its own tab on a phone.
             </p>
             <h2 data-ko="패널 머리">The panel header</h2>
-            <p data-ko="«엔진»(Engine)이라는 제목 옆에는 엔진이 켜져 있는 동안 현재 평가(초록도 빨강도 아닌 글자색. 평가는 결과가 아니라 수치입니다)와 <code>depth</code> 값이 표시됩니다. 오른쪽에는 버튼 둘:">
+            <p data-ko="«엔진»(Engine)이라는 제목 옆에는 엔진이 켜져 있는 동안 현재 평가(초록도 빨강도 아닌 글자색. 평가는 결과가 아니라 수치입니다)와 깊이(<code>depth</code>) 값이 표시됩니다. 오른쪽에는 버튼 둘:">
               Beside the word “Engine”, while it runs, sit the current score (in the text colour, not
               green or red: an evaluation is a quantity, not an outcome) and the <code>depth</code> readout. To the right, two
               controls:
@@ -1265,11 +1265,11 @@
                   <tr><th data-ko="항목">Setting</th><th data-ko="범위">Range</th><th data-ko="뜻">Meaning</th></tr>
                 </thead>
                 <tbody>
-                  <tr><td data-ko="엔진">Engine</td><td data-ko="Stockfish 19 lite · Stockfish 19 · Stockfish 18">Stockfish 19 lite · Stockfish 19 · Stockfish 18</td><td data-ko="어느 엔진이 돌아가는지 고르는 목록입니다. Stockfish 19 lite는 모든 빌드에 실린 1 MB 신경망으로, Stockfish 19는 자체의 전체 신경망으로 돌아가며 더 강하고 불러오는 데 더 오래 걸립니다. Stockfish 18은 단일 스레드 빌드입니다. Stockfish 19를 처음 고르면 서버가 99 MB를 내려받아 보관하고(진행 막대가 보입니다), 다 받으면 선택이 적용됩니다. 그 아래 «제거»(Remove)가 서버에서 지웁니다. 데모는 Stockfish 19를 내놓지 않고, 스레드가 없는 페이지는 Stockfish 18만 내놓습니다.">A list of which engine runs. Stockfish 19 lite runs on the 1 MB network every build ships; Stockfish 19 on its own full network, stronger and slower to load; Stockfish 18 is the single-threaded build. The first pick of Stockfish 19 has the server download 99 MB and keep it (a progress bar shows it), and the pick takes effect once it has arrived; “Remove” under it deletes it from the server again. The demo does not offer Stockfish 19, and a page without threads offers only Stockfish 18.</td></tr>
+                  <tr><td data-ko="엔진">Engine</td><td data-ko="Stockfish 19 lite · Stockfish 19 · Stockfish 18">Stockfish 19 lite · Stockfish 19 · Stockfish 18</td><td data-ko="어느 엔진이 돌아가는지 고르는 목록입니다. Stockfish 19 lite는 모든 빌드에 실린 1 MB 신경망으로, Stockfish 19는 자체의 전체 신경망으로 돌아가며 더 강하고 불러오는 데 더 오래 걸립니다. Stockfish 18은 단일 스레드 빌드입니다. Stockfish 19를 처음 고르면 서버가 99 MB를 내려받아 보관하고(진행 막대가 보입니다), 다 받으면 선택이 적용됩니다. 그 아래 «제거»(Remove)가 서버에서 지우고, 내려받기에 실패하면 그 이유가 «다시 시도»(Try again) 옆에 표시됩니다. 데모는 Stockfish 19를 내놓지 않고, 스레드가 없는 페이지는 Stockfish 18만 내놓습니다.">A list of which engine runs. Stockfish 19 lite runs on the 1 MB network every build ships; Stockfish 19 on its own full network, stronger and slower to load; Stockfish 18 is the single-threaded build. The first pick of Stockfish 19 has the server download 99 MB and keep it (a progress bar shows it), and the pick takes effect once it has arrived; “Remove” under it deletes it from the server again, and a download that fails says why beside “Try again”. The demo does not offer Stockfish 19, and a page without threads offers only Stockfish 18.</td></tr>
                   <tr><td data-ko="스레드(Threads)">Threads</td><td data-ko="1 – 코어 수">1 – your cores</td><td data-ko="병렬 검색. 다중 스레드는 교차 출처 격리된 페이지(HTTPS)가 필요합니다. 그렇지 않은 곳에서는 슬라이더가 «이 환경에서는 쓸 수 없음»(unavailable in this context)으로 잠깁니다.">Parallel search. Multi-threading needs a cross-origin-isolated page (HTTPS); where that is missing the slider is locked with “unavailable in this context”.</td></tr>
                   <tr><td data-ko="라인 수(Lines)">Lines</td><td>1 – 6</td><td data-ko="동시에 보여 줄 후보 수(MultiPV).">How many candidate lines to show at once (MultiPV).</td></tr>
                   <tr><td data-ko="깊이(Depth)">Depth</td><td>10 – 40</td><td data-ko="검색을 멈추는 깊이.">Where the search stops.</td></tr>
-                  <tr><td data-ko="시간 제한(Time limit)">Time limit</td><td data-ko="0 – 60초">0 – 60 s</td><td data-ko="수당 시간 상한. 0이면 꺼짐(—).">A per-position ceiling; 0 means off (—).</td></tr>
+                  <tr><td data-ko="시간 제한(Time limit)">Time limit</td><td data-ko="0 – 60초">0 – 60 s</td><td data-ko="포지션마다의 시간 상한. 0이면 꺼짐(—).">A per-position ceiling; 0 means off (—).</td></tr>
                   <tr><td data-ko="해시(Hash)">Hash</td><td>16 – 1024 MB</td><td data-ko="치환표 크기.">The transposition table.</td></tr>
                 </tbody>
               </table>
