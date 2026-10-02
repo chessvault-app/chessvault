@@ -430,7 +430,10 @@ describe('restore from a copy', () => {
       const before = everything(target.vault);
       const res = await restorer(target.vault).restore(body);
       expect(res.status, what).toBe(400);
-      expect((await res.json()).reason, what).toBe(reason);
+      const answer = await res.json();
+      expect(answer.reason, what).toBe(reason);
+      // The restore window shows it as it comes, so it is a sentence.
+      expect(answer.error, what).toMatch(/^[A-Z].*\.$/);
       expect(everything(target.vault), what).toEqual(before);
       expect(leftovers(target.vault), what).toEqual([]);
       expect(existsSync(join(target.vault, '.restore', 'before')), what).toBe(false);
@@ -484,11 +487,90 @@ describe('restore from a copy', () => {
       });
       const res = await restore(copy);
       expect(res.status, `failing rename ${failAt}`).toBe(500);
-      expect((await res.json()).error).toBe('could not put the copy in place, so the vault is as it was');
+      expect((await res.json()).error).toBe('Could not put the copy in place, so the vault is as it was.');
       expect(everything(target.vault)).toEqual(before);
       expect(leftovers(target.vault)).toEqual([]);
       expect((await state()).pending).toBeNull();
     }
+  });
+
+  it('says so in a sentence when keeping fails, and the restore can still be undone', async () => {
+    const source = scratch('source');
+    fillSource(source.vault);
+    const copy = await download(source.vault);
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const before = everything(target.vault);
+    let failing = false;
+    const { restore, state, undo, keep } = restorer(target.vault, {
+      move: (from, to) => {
+        if (failing) throw Object.assign(new Error('the folder is in use'), { code: 'EBUSY' });
+        renameSync(from, to);
+      },
+    });
+    expect((await restore(copy)).status).toBe(200);
+    failing = true;
+    const kept = await keep();
+    expect(kept.status).toBe(500);
+    expect((await kept.json()).error).toBe('Could not keep the restored vault, so the restore can still be undone.');
+    expect((await state()).pending).not.toBeNull();
+    expect(leftovers(target.vault)).toEqual([]);
+    failing = false;
+    expect((await undo()).status).toBe(200);
+    expect(everything(target.vault)).toEqual(before);
+  });
+
+  it('says when an undo could not be put back, and touches nothing more until a restart puts it back', async () => {
+    const source = scratch('source');
+    fillSource(source.vault);
+    const copy = await download(source.vault);
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const original = everything(target.vault);
+    const before = join(target.vault, '.restore', 'before');
+    let sabotage = false;
+    let calls = 0;
+    const { restore, undo, keep } = restorer(target.vault, {
+      move: (from, to) => {
+        // The undo's eight renames out and the first one back are made;
+        // the second fails, and putting the first back fails too, since
+        // something now stands where the replaced vault's folder was.
+        if (sabotage && ++calls === 10) {
+          renameSync(before, `${before}-aside`);
+          writeFileSync(before, '');
+          throw Object.assign(new Error('the disk said no'), { code: 'EIO' });
+        }
+        renameSync(from, to);
+      },
+    });
+    expect((await restore(copy)).status).toBe(200);
+    const restored = everything(target.vault);
+    sabotage = true;
+    const stuck = await undo();
+    expect(stuck.status).toBe(500);
+    expect((await stuck.json()).error).toBe('Could not undo the restore or put everything back. Restart the server to finish putting it back.');
+    expect(existsSync(join(target.vault, '.restore', 'journal.json'))).toBe(true);
+
+    // A second undo would write its journal over this one and delete what
+    // the first had already put back; a keep or a restore would build on
+    // half of one vault. Each is refused, and the journal stands.
+    const journal = readFileSync(join(target.vault, '.restore', 'journal.json'), 'utf-8');
+    for (const res of [await undo(), await keep(), await restore(copy)]) {
+      expect(res.status).toBe(409);
+      expect((await res.json()).error).toBe('The vault is still part way through a restore. Restart the server to finish putting it back.');
+    }
+    expect(readFileSync(join(target.vault, '.restore', 'journal.json'), 'utf-8')).toBe(journal);
+
+    // What stood in the way is gone by the restart, which puts the vault
+    // back as the restore left it; the undo then goes through.
+    rmSync(before);
+    renameSync(`${before}-aside`, before);
+    recoverInterruptedRestore(target.vault);
+    expect(everything(target.vault)).toEqual(restored);
+    sabotage = false;
+    expect((await undo()).status).toBe(200);
+    expect(everything(target.vault)).toEqual(original);
+    expect(leftovers(target.vault)).toEqual([]);
   });
 
   it('leaves the vault as it was when the upload is cut off or goes quiet', async () => {
@@ -570,7 +652,7 @@ describe('restore from a copy', () => {
     // A second copy waits for the first to be kept or undone.
     const second = await restore(copy);
     expect(second.status).toBe(409);
-    expect((await second.json()).error).toBe('keep or undo the last restore first');
+    expect((await second.json()).error).toBe('Keep or undo the last restore first.');
 
     expect((await undo()).status).toBe(200);
     // Book PDFs and uploaded PGN files are in no history; they are back too.
@@ -675,6 +757,30 @@ describe('restore from a copy', () => {
     expect(existsSync(join(target.vault, 'planted.txt'))).toBe(false);
   });
 
+  it('gives a new vault the copy\'s history when the vault already holds what the copy does', async () => {
+    const source = scratch('source');
+    fillSource(source.vault);
+    const sourceBackup = await startVaultBackup(source.vault, 50);
+    put(source.vault, 'studies/Najdorf.pgn', 'second version\n');
+    await sourceBackup.commitNow();
+    await sourceBackup.stop();
+    const sourceHead = execFileSync('git', ['--git-dir', join(source.vault, '.history.git'), 'rev-parse', 'HEAD'], { encoding: 'utf-8' }).trim();
+    const copy = await download(source.vault);
+
+    // The same files, with a history of one save: nothing of the vault is
+    // missing from the copy's history, so there is nothing to carry over.
+    const target = scratch('target');
+    fillSource(target.vault);
+    put(target.vault, 'studies/Najdorf.pgn', 'second version\n');
+    const backup = await startVaultBackup(target.vault, 50);
+    backups.push(backup);
+    const { restore, state } = restorer(target.vault, { history: async () => backup });
+    expect((await state()).history).toBe('adopt');
+    expect(await (await restore(copy)).json()).toMatchObject({ ok: true, history: 'adopted' });
+    const log = execFileSync('git', ['--git-dir', join(target.vault, '.history.git'), 'log', '--format=%H'], { encoding: 'utf-8' });
+    expect(log).toContain(sourceHead);
+  });
+
   it('keeps a vault\'s own history when it has one, and leaves the copy\'s out', async () => {
     const source = scratch('source');
     fillSource(source.vault);
@@ -720,13 +826,34 @@ describe('restore from a copy', () => {
     const target = scratch('target');
     fillTarget(target.vault);
     const before = everything(target.vault);
-    const busy = await restorer(target.vault, { busy: () => 'a build is reading the files right now' }).restore(vaultWith());
+    const busy = await restorer(target.vault, { busy: () => 'A database build is reading the vault’s files.' }).restore(vaultWith());
     expect(busy.status).toBe(409);
+    expect((await busy.json()).error).toBe('A database build is reading the vault’s files.');
     const full = await restorer(target.vault, { free: async () => 1024 }).restore(vaultWith(), { 'content-length': String(vaultWith().length) });
     expect(full.status).toBe(507);
-    expect((await full.json()).error).toBe('not enough free space on the server for this copy');
+    expect((await full.json()).error).toBe('The server does not have enough free space for this copy.');
     expect(everything(target.vault)).toEqual(before);
     expect(leftovers(target.vault)).toEqual([]);
+  });
+
+  it('waits to undo while a build reads the files, since an undo moves them too', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const before = everything(target.vault);
+    let building = false;
+    const { restore, undo } = restorer(target.vault, {
+      busy: () => (building ? 'A database build is reading the vault’s files.' : null),
+    });
+    expect((await restore(vaultWith())).status).toBe(200);
+    const restored = everything(target.vault);
+    building = true;
+    const busy = await undo();
+    expect(busy.status).toBe(409);
+    expect((await busy.json()).error).toBe('A database build is reading the vault’s files.');
+    expect(everything(target.vault)).toEqual(restored);
+    building = false;
+    expect((await undo()).status).toBe(200);
+    expect(everything(target.vault)).toEqual(before);
   });
 
   it('takes a body as a stream, chunk by chunk', async () => {

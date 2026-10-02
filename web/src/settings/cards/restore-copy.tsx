@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from '@/components/ui/toast';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { api, apiErrorMessage, apiUpload } from '@/lib/api';
+import { api, ApiError, apiErrorMessage, apiUpload } from '@/lib/api';
 import { formatAgo } from '@/lib/dates';
 import { t } from '@/lib/i18n';
 import { Feedback, size, type Note } from '@/settings/cards/shared';
@@ -113,9 +113,19 @@ function RestoreDialog({
   const [progress, setProgress] = useState<number | null>(null);
   const [abort, setAbort] = useState<AbortController | null>(null);
   const [note, setNote] = useState<Note>(null);
+  /**
+   * The server refused this file for what it holds, or has no room for
+   * it. Sending it again gets the same answer, so it is not offered
+   * again, as the book importer drops a file it cannot read; Close is
+   * what is left, and the Vault card picks another. A dropped connection,
+   * a stalled upload or a busy server leaves Restore to try again.
+   */
+  const [refused, setRefused] = useState(false);
   const free = state?.free ?? null;
   const tooBig = free !== null && file.size > free;
   const placing = progress === 100;
+  /** Restored, with the page about to reload. */
+  const done = note?.kind === 'ok';
 
   const restore = async (): Promise<void> => {
     const controller = new AbortController();
@@ -134,8 +144,13 @@ function RestoreDialog({
       setProgress(null);
       if (controller.signal.aborted) return;
       setNote({ kind: 'error', text: apiErrorMessage(error) });
+      setRefused(error instanceof ApiError && (error.status === 400 || error.status === 507));
       return;
     }
+    // One state at a time: the bar and "Putting the copy in place…" give
+    // way to the line that says it is done, in the same render.
+    setAbort(null);
+    setProgress(null);
     setNote({
       kind: 'ok',
       text: result.history === 'adopted' ? t('Restored, with the copy’s history. Reloading…') : t('Restored. Reloading…'),
@@ -148,8 +163,9 @@ function RestoreDialog({
   const close = (): void => {
     // Mid-upload, closing is cancelling, and the server keeps nothing of
     // it. Once the copy is in, it is being put in place and is past
-    // stopping, so the window stays until it says how that went.
-    if (placing) return;
+    // stopping, so the window stays until it says how that went, and
+    // after a success until the reload takes it.
+    if (placing || done) return;
     abort?.abort();
     onClose();
   };
@@ -188,8 +204,10 @@ function RestoreDialog({
         )}
         <Feedback note={note} />
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={placing}>{t('Cancel')}</AlertDialogCancel>
-          <Button disabled={progress !== null || tooBig || note?.kind === 'ok'} onClick={() => void restore()}>
+          {/* Close when this file will not go: the server refused it, or
+              the page can already see it will not fit. */}
+          <AlertDialogCancel disabled={placing || done}>{refused || tooBig ? t('Close') : t('Cancel')}</AlertDialogCancel>
+          <Button disabled={progress !== null || tooBig || refused || done} onClick={() => void restore()}>
             {t('Restore ({size})', { size: size(file.size) })}
           </Button>
         </AlertDialogFooter>

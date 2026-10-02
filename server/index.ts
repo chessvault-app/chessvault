@@ -302,12 +302,13 @@ app.route(
 );
 // And the copy put back. Handed the history writer, which records the
 // vault on either side of the swap and holds its autosaves off during it;
-// refused while a database build is reading sources/, which it moves.
+// a restore and its undo are refused while a database build is reading
+// sources/, which both of them move.
 app.route(
   '/api',
   restoreApi(undefined, {
     history: () => vaultBackup,
-    busy: () => (refgamesBuildRunning() ? 'a build is reading the files right now' : null),
+    busy: () => (refgamesBuildRunning() ? 'A database build is reading the vault’s files. Try again when it finishes.' : null),
   }),
 );
 app.route('/api', settingsApi());
