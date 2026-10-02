@@ -24,7 +24,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   built from ever after, so no rebuild fetched newer puzzles, and the
   build kept a rollback journal it meant to switch off, which put its
   peak extra disk at 6.2 GB where it is 4.3 GB now, on a 5,000,000-puzzle
-  set.
+  set. A failure that was thrown rather than reported, a full disk or a
+  dropped download, now gives its own reason, where it read "Node.js"
+  and a version number. And a failed puzzle the new set no longer has
+  leaves the review pool, where review mode could offer it on every
+  visit and never find it.
 
 ## 0.12.0
 
