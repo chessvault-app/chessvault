@@ -62,6 +62,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   request still arriving after five minutes, which a copy with books in
   it, a big PGN file or a book's PDF can take from a phone; it now allows
   six hours.
+- **Wiping the vault no longer lets its next save put the password into
+  the history.** After “Wipe all data”, the new history saved
+  config.json, which holds the app's password, the authenticator secret
+  and the Lichess token, with the very next change, and sessions.json
+  with it, until the server restarted; “Download a copy” carries the
+  history. The new history leaves them out from the start. A history an
+  earlier wipe filled this way keeps those saves: the server says so
+  when it starts, and the README's paragraph on backups says how to
+  remove them.
 
 ## 0.12.0
 
