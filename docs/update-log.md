@@ -60,24 +60,28 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   The app offered the build only to a vault with no puzzle database, so
   the puzzles Lichess has added since could only be had from a terminal.
   Settings has a Puzzle database card now: how many puzzles the database
-  holds and when it was built, and Rebuild, which asks first (about
-  300 MB to download, about 5.5 GB of free disk while it builds, and a
-  small server can run out of memory) and then shows the progress the
-  first build shows. The trainer keeps the old database until the new
-  one is ready, and your attempts are kept. A failure says why, stays
-  said after a reload, and offers Try again. On the way, what a rebuild
-  beside a working database would have run into was fixed: the first
-  puzzles drawn from the new file could fail on the old file's counts, a
-  failed build left its part-built file on disk until a restart, a
-  download left by a failed build was taken for one you put there and
-  built from ever after, so no rebuild fetched newer puzzles, and the
-  build kept a rollback journal it meant to switch off, which put its
-  peak extra disk at 6.2 GB where it is 4.3 GB now, on a 5,000,000-puzzle
-  set. A failure that was thrown rather than reported, a full disk or a
-  dropped download, now gives its own reason, where it read "Node.js"
-  and a version number. And a failed puzzle the new set no longer has
-  leaves the review pool, where review mode could offer it on every
-  visit and never find it.
+  holds and when it was built, and Rebuild, which asks first. The
+  question gives about 300 MB to download, about 5.5 GB of free disk
+  while it builds, and that a small server can run out of memory; when a
+  puzzle dump is already in the database's folder, it says the build uses
+  that dump and downloads nothing. Then the card shows the progress the
+  first build shows. The trainer keeps the old database until the new one
+  is ready, and your attempts are kept. A failure says why, stays said
+  after a reload, and offers Try again. On the way, what a rebuild beside
+  a working database would have run into was fixed, most of it in the
+  first build as well: the first puzzles drawn from the new file could
+  fail on the old file's counts, a failed build left its part-built file
+  on disk until a restart, a download left by a failed build was taken
+  for one you put there and built from ever after, so no rebuild fetched
+  newer puzzles, and the build kept a rollback journal it meant to switch
+  off, which put its peak extra disk at 6.2 GB where it is 4.3 GB now, on
+  a 5,000,000-puzzle set. A failure that was thrown rather than reported,
+  a full disk or a dropped download, now gives its own reason, where it
+  read "Node.js" and a version number; and a build the system stopped, as
+  Linux does when memory runs out, says it was killed and that this is
+  how a system out of memory stops a process, where it read "exit null".
+  And a failed puzzle the new set no longer has leaves the review pool,
+  where review mode could offer it on every visit and never find it.
 - **A puzzle database build says it is building as soon as it is.** Its
   progress began as “Downloading the puzzle dump” whatever the build was
   about to do, and the build said nothing more until it had read 200,000
@@ -87,29 +91,37 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   200,000th puzzle was read. It now says “Building the database” as it
   starts reading the dump, and how many it has read every 10,000.
 - **Settings → Vault can put a downloaded copy back.** “Restore from a
-  copy”, beside “Download a copy”, uploads the file from any device, a
-  phone's file picker included, with a bar that moves as it goes, and
-  makes the vault that copy; settings and tokens stay as they are.
-  Nothing is lost doing it: the vault it replaced is kept whole until you
-  choose “Keep the restored vault” or “Undo the restore”, and the history
-  records the vault on both sides, so the documents the copy lacks are in
-  Deleted documents. A fresh install takes the copy's history; any other
-  vault keeps its own. Every copy the app has written reads back, those
-  from before 0.12.0 included, and a damaged, cut-short or hostile archive
-  is refused whole with the vault untouched.
+  copy”, beside “Download a copy”, uploads the file from any device, with
+  a bar that moves as it goes, and makes the vault that copy; settings and
+  tokens stay as they are. Nothing is lost doing it: the vault it replaced
+  is kept whole until you choose “Keep the restored vault” or “Undo the
+  restore”, and the history records the vault on both sides, so the
+  documents the copy lacks are in Deleted documents. A vault whose history
+  holds no more than its first save, as a fresh install's does, takes the
+  copy's history; any other keeps its own, with the restore recorded in
+  it. Every copy the app has written reads back, those from before 0.12.0
+  included. A damaged, cut-short or hostile archive is refused whole with
+  the vault untouched, and the window says why in a sentence and offers
+  Close rather than the same file again, as it does for a copy bigger than
+  the server's free space. Tried in a browser at a phone's size, not yet
+  through a real phone's file picker.
 - **An upload may take longer than five minutes.** The server cut off any
   request still arriving after five minutes, which a copy with books in
   it, a big PGN file or a book's PDF can take from a phone; it now allows
-  six hours.
-- **Wiping the vault no longer lets its next save put the password into
-  the history.** After “Wipe all data”, the new history saved
-  config.json, which holds the app's password, the authenticator secret
-  and the Lichess token, with the very next change, and sessions.json
-  with it, until the server restarted; “Download a copy” carries the
-  history. The new history leaves them out from the start. A history an
-  earlier wipe filled this way keeps those saves: the server says so
-  when it starts, and the README's paragraph on backups says how to
-  remove them.
+  six hours. That limit is set, not timed: no upload that long has been
+  run.
+- **Wiping the vault no longer lets its next save put the app's secrets
+  into the history.** This is a security fix. After “Wipe all data”, the
+  new history saved config.json, which holds the hash of the app's
+  password, the authenticator secret and the Lichess token, with the very
+  next change, and sessions.json with it, and went on saving them until
+  the server restarted. “Download a copy” carries the history, so every
+  copy made since has carried them too. The new history leaves them out
+  from the start: a scratch vault wiped and then given a note saved the
+  note and not config.json. A history an earlier wipe filled this way
+  keeps those saves. The server says so in its log when it starts, and
+  the README's paragraph on backups says how to remove them from a
+  terminal, and to change the password and the Lichess token after.
 
 ## 0.12.0
 
