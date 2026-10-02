@@ -54,6 +54,26 @@ type AnalysisPane = 'moves' | 'engine' | 'explorer';
  */
 let lastBoard: BoardSnapshot | null = null;
 
+/**
+ * The board the last visit left, handed over once and cleared as it goes.
+ *
+ * A function, not `const left = lastBoard; lastBoard = null` written in
+ * the entry below, because the React Compiler takes a module variable for
+ * a constant: it folded that local copy back into `lastBoard` itself, so
+ * the copy was read AFTER the clear, was always null, and no build since
+ * the compiler went on (0.11.0) ever offered the board back, while the
+ * source read correctly and the tests, which run it uncompiled, passed.
+ * A call is opaque to it, so the value leaves here before the variable
+ * is cleared. Writing the copy back inline breaks the offer again, with
+ * no error and no warning (lib/router.ts met the same fold first, and
+ * says so).
+ */
+function takeLastBoard(): BoardSnapshot | null {
+  const left = lastBoard;
+  lastBoard = null;
+  return left;
+}
+
 export function AnalysisView({ params = [] }: { params?: string[] }) {
   // Reached as Tools > Explorer (navigate('board', 'explorer')): open
   // straight to the opening explorer instead of the move list.
@@ -96,9 +116,9 @@ export function AnalysisView({ params = [] }: { params?: string[] }) {
     if (entered.current) return;
     entered.current = true;
     // Taken on both paths, and cleared as it is read: one offer per visit,
-    // or a later entry could hand back a board from two pages ago.
-    const left = lastBoard;
-    lastBoard = null;
+    // or a later entry could hand back a board from two pages ago. Through
+    // the function above, never inline: see it for why.
+    const left = takeLastBoard();
     const analysis = useAnalysis.getState();
     if (analysis.handoff) {
       useAnalysis.setState({ handoff: false });
