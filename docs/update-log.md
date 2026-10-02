@@ -18,6 +18,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   been committed. Versions the history already holds stay until it is
   rewritten. Books open as before: a missing cache is recorded on the
   next open.
+- **The Korean manual names pages, tabs and buttons the way the Korean app
+  does.** In 57 places it named them otherwise than the screen does,
+  mostly in English (Games, Databases, Moves or the Vault card, where the
+  screen says 게임, 데이터베이스, 수순 and 보관함), and the Games page's
+  own chapter was titled 기보. It also carried 84 em-dashes over from the
+  English, and each is now a colon, a full stop, a comma, parentheses, or
+  a particle or verb ending, whichever Korean puts there.
 
 ## 0.12.0
 
