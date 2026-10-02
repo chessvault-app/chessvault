@@ -89,7 +89,7 @@ export function RestoreButton({ state, reload }: { state: RestoreState | null; r
       >
         {t('Restore from a copy')}
       </FilePicker>
-      {file && state && <RestoreDialog file={file} state={state} onClose={() => setFile(null)} />}
+      {file && <RestoreDialog file={file} state={state} onClose={() => setFile(null)} />}
     </>
   );
 }
@@ -99,12 +99,22 @@ export function RestoreButton({ state, reload }: { state: RestoreState | null; r
  * of books is gigabytes, and a phone sending it for minutes with nothing
  * moving on screen is a window that looks dead.
  */
-function RestoreDialog({ file, state, onClose }: { file: File; state: RestoreState; onClose: () => void }) {
+function RestoreDialog({
+  file,
+  state,
+  onClose,
+}: {
+  file: File;
+  /** Null when the server would not say (its upload then answers for itself). */
+  state: RestoreState | null;
+  onClose: () => void;
+}) {
   /** Percent sent while uploading; 100 while the server puts the copy in place. */
   const [progress, setProgress] = useState<number | null>(null);
   const [abort, setAbort] = useState<AbortController | null>(null);
   const [note, setNote] = useState<Note>(null);
-  const tooBig = state.free !== null && file.size > state.free;
+  const free = state?.free ?? null;
+  const tooBig = free !== null && file.size > free;
   const placing = progress === 100;
 
   const restore = async (): Promise<void> => {
@@ -161,10 +171,10 @@ function RestoreDialog({ file, state, onClose }: { file: File; state: RestoreSta
             {t('The vault becomes “{name}”, apart from its settings and tokens. What it holds now is kept until you keep or undo the restore.', { name: file.name })}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <p className="text-muted-foreground text-sm">{t(HISTORY_LINE[state.history])}</p>
+        {state && <p className="text-muted-foreground text-sm">{t(HISTORY_LINE[state.history])}</p>}
         {tooBig && (
           <p className="text-destructive text-sm" role="alert">
-            {t('The server has {free} free, and this copy needs {size}.', { free: size(state.free!), size: size(file.size) })}
+            {t('The server has {free} free, and this copy needs {size}.', { free: size(free), size: size(file.size) })}
           </p>
         )}
         {progress !== null && (
