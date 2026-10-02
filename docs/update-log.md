@@ -289,6 +289,15 @@ Android phone yet, nor the share sheet on any device.
   download…” and no new attempt could start until the server restarted.
   Either way the download now ends with “Could not download” and the
   reason, beside “Try again”, and nothing half-written is kept.
+- **Coming back to the Board offers the board you left again.** From
+  0.11.0 the offer never came: a board left holding moves or a loaded
+  game was gone on the way back, with no “Started a new board” and no
+  “Restore”, which is the loss 0.10.0 had put an end to. The React
+  Compiler, which has built the app since 0.11.0, turned the page's copy
+  of the board you left back into a read of the place it had just been
+  cleared from, so the copy was always empty. The offer is back, for a
+  few seconds as before, and `check:compiler` now fails on a copy of
+  that shape anywhere in the app.
 
 ## 0.11.4
 

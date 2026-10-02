@@ -33,8 +33,25 @@
  * trees and parse PGN; a per-render one is a real cost (positionAt on
  * every engine tick was the case that started it). Wrap it in useMemo,
  * which the compiler preserves, or move the call where it belongs.
+ *
+ * AND A COPY IT FOLDS AWAY. The compiler takes any variable declared
+ * outside the component (a module `let`, a factory's) for a constant, so
+ * inside a component or hook it compiles, and inside every callback and
+ * effect in it, `const left = lastBoard` is folded back into `lastBoard`
+ * at each use: a write to the variable between the copy and the use, or
+ * a call or an await that writes it, now reaches the use, where the
+ * source plainly reads the old value. It compiles, nothing warns, the
+ * tests run the source uncompiled, and the Board's restore offer never
+ * fired in 0.11.0 to 0.11.4 because of it (lib/router.ts met it
+ * earlier, as every Back measuring as a turn to the same page). So a
+ * compiled function that copies a variable it does not own, and that
+ * something reassigns, fails the check by line. Measured forms it folds:
+ * `const x = v`, `const x = v!` and `x = v` into a local; forms it keeps:
+ * `v as T`, and anything computed (`v ?? d`, `v || w`, a destructure).
+ * Take the value through a function call (AnalysisView's takeLastBoard),
+ * or compute what you need from it before the write (the router).
  */
-import { transformSync } from '@babel/core';
+import { transformSync, traverse, type NodePath } from '@babel/core';
 import { parse } from '@babel/parser';
 import ReactCompiler from 'babel-plugin-react-compiler';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -59,7 +76,8 @@ function sources(dir: string, out: string[] = []): string[] {
 }
 
 interface Loc {
-  start: { line: number };
+  start: { line: number; index?: number };
+  end?: { line: number; index?: number };
 }
 interface CompilerEvent {
   kind: string;
@@ -164,14 +182,60 @@ function uncachedCostlyCalls(compiledCode: string): string[] {
   return found;
 }
 
+/**
+ * Copies the compiler folds back into the variable they copy (see the
+ * header), by source line.
+ *
+ * `compiledFns` is where each function the compiler took sits in the
+ * source. A copy counts when its target is a local of that function and
+ * what it copies is declared outside it and reassigned somewhere; a
+ * variable nothing reassigns is a constant, and folding it changes
+ * nothing. Read from the source rather than the output, because the copy
+ * is what has to be named and the output has already lost it.
+ */
+function foldedCopies(code: string, compiledFns: { start: number; end: number }[]): string[] {
+  if (compiledFns.length === 0) return [];
+  const ast = parse(code, { sourceType: 'module', plugins: ['jsx', 'typescript'] });
+  const found: string[] = [];
+  traverse(ast, {
+    Identifier(path) {
+      if (!path.isReferencedIdentifier()) return;
+      // `v!` folds exactly like `v`; `v as T` compiles to a cast, which
+      // the compiler keeps, so it is not unwrapped.
+      let read: NodePath = path;
+      while (read.parentPath?.isTSNonNullExpression()) read = read.parentPath;
+      const parent = read.parentPath;
+      let target: NodePath | null = null;
+      if (parent?.isVariableDeclarator() && read.key === 'init') target = parent.get('id');
+      else if (parent?.isAssignmentExpression({ operator: '=' }) && read.key === 'right') target = parent.get('left');
+      if (!target?.isIdentifier()) return;
+      const at = path.node.start ?? -1;
+      const fn = compiledFns.find((f) => at >= f.start && at < f.end);
+      if (!fn) return;
+      const inside = (pos: number | null | undefined): boolean => pos != null && pos >= fn.start && pos < fn.end;
+      const copied = path.scope.getBinding(path.node.name);
+      if (!copied || copied.constantViolations.length === 0 || inside(copied.identifier.start)) return;
+      // A store into another outside variable (the router's
+      // `arrivedByNavigate = pendingNavigate`) reads the value there and
+      // then; only a local carries the stale name forward.
+      const local = target.scope.getBinding(target.node.name);
+      if (!local || !inside(local.identifier.start)) return;
+      found.push(`line ${path.node.loc?.start.line ?? '?'}: \`${target.node.name}\` copies \`${path.node.name}\``);
+    },
+  });
+  return found;
+}
+
 let compiled = 0;
 let skipped = 0;
 const failures: string[] = [];
 const perRender: string[] = [];
+const folded: string[] = [];
 const files = sources(SRC);
 for (const file of files) {
   const events: CompilerEvent[] = [];
-  const result = transformSync(readFileSync(file, 'utf8'), {
+  const code = readFileSync(file, 'utf8');
+  const result = transformSync(code, {
     filename: file,
     babelrc: false,
     configFile: false,
@@ -191,6 +255,12 @@ for (const file of files) {
   if (result?.code && events.some((e) => e.kind === 'CompileSuccess')) {
     for (const call of uncachedCostlyCalls(result.code)) perRender.push(`${rel}: ${call}`);
   }
+  const compiledFns = events.flatMap((e) =>
+    e.kind === 'CompileSuccess' && e.fnLoc?.start.index != null && e.fnLoc.end?.index != null
+      ? [{ start: e.fnLoc.start.index, end: e.fnLoc.end.index }]
+      : [],
+  );
+  for (const copy of foldedCopies(code, compiledFns)) folded.push(`${rel} ${copy}`);
   for (const event of events) {
     const fn = event.fnLoc ? `line ${event.fnLoc.start.line}` : 'unknown line';
     if (event.kind === 'CompileSuccess') {
@@ -210,7 +280,7 @@ for (const file of files) {
 }
 
 console.log(
-  `react compiler: ${files.length} files, ${compiled} functions compiled, ${skipped} skipped by directive, ${failures.length} refused, ${perRender.length} chess-core calls left per render`,
+  `react compiler: ${files.length} files, ${compiled} functions compiled, ${skipped} skipped by directive, ${failures.length} refused, ${perRender.length} chess-core calls left per render, ${folded.length} ${folded.length === 1 ? 'copy' : 'copies'} folded`,
 );
 if (failures.length > 0) {
   console.log('\nRefused (the compiler leaves these as written; fix the shape, see docs/deferred.md and the patterns in git log):');
@@ -220,4 +290,10 @@ if (perRender.length > 0) {
   console.log('\nCalled on every render (the compiler did not cache the value; wrap it in useMemo, which it preserves):');
   for (const f of perRender) console.log(`  ${f}`);
 }
-if (failures.length > 0 || perRender.length > 0) process.exit(1);
+if (folded.length > 0) {
+  console.log(
+    '\nCopied out of a variable the compiler takes for a constant (it folds the copy back into the variable, so a write in between reaches it; take the value through a function call, see the header):',
+  );
+  for (const f of folded) console.log(`  ${f}`);
+}
+if (failures.length > 0 || perRender.length > 0 || folded.length > 0) process.exit(1);
