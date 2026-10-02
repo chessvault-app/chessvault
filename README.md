@@ -210,7 +210,9 @@ moving to a server later is copying it there.
 
 **Download the app** for Windows, macOS or Linux from
 [Releases](https://github.com/chessvault-app/chessvault/releases/latest)
-and install it. Nothing else is needed — no Node, no terminal.
+and install it. Nothing else is needed — no Node, no terminal. On a Mac
+the first launch has to be allowed once, in System Settings on macOS 15
+and later ([Installing on macOS](desktop/README.md#installing-on-macos)).
 
 On first run it asks where your vault lives. Choose **On this computer** —
 the app starts the server itself and everything stays on this device. (The

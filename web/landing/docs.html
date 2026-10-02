@@ -575,11 +575,13 @@
               is where the vault lives — the folder holding your games, studies, notes and puzzles.
             </p>
             <ul>
-              <li data-ko="<strong>이 컴퓨터에서.</strong> <a href='https://github.com/chessvault-app/chessvault/releases/latest'>Releases</a>에서 Windows, macOS, Linux 설치 프로그램을 받아 실행합니다. Node도 터미널도 필요 없고, 업데이트는 앱이 스스로 받습니다.">
+              <li data-ko="<strong>이 컴퓨터에서.</strong> <a href='https://github.com/chessvault-app/chessvault/releases/latest'>Releases</a>에서 Windows, macOS, Linux 설치 프로그램을 받아 실행합니다. Node도 터미널도 필요 없고, 업데이트는 앱이 스스로 받습니다. Mac에서는 첫 실행을 한 번 허용해야 하며, 방법은 <a href='#faq/the-app-will-not-open-on-macos'>자주 묻는 것들</a>에 있습니다.">
                 <strong>On this device.</strong> Download the installer for Windows, macOS or
                 Linux from
                 <a href="https://github.com/chessvault-app/chessvault/releases/latest">Releases</a>
-                and run it. No Node, no terminal; updates arrive through the app itself.
+                and run it. No Node, no terminal; updates arrive through the app itself. On a Mac
+                the first launch has to be allowed once:
+                <a href="#faq/the-app-will-not-open-on-macos">Common questions</a> has the steps.
               </li>
               <li data-ko="<strong>서버에서.</strong> 작은 리눅스 서버 하나가 보관함을 소유하고, 휴대폰·노트북·데스크톱이 전부 그 서버의 클라이언트가 됩니다. 설치 방법은 <a href='https://github.com/chessvault-app/chessvault#readme'>README</a>에 있습니다.">
                 <strong>On a server.</strong> One small Linux box owns the vault, and every device
@@ -3159,10 +3161,22 @@
             </p>
 
             <h2 data-ko="macOS에서 앱이 안 열려요">The app will not open on macOS</h2>
-            <p data-ko="macOS 빌드는 서명되어 있지 않습니다. 처음 한 번은 앱을 <strong>오른쪽 클릭 → 열기</strong>로 열어 주세요. 그 뒤로는 평소처럼 열립니다.">
-              The macOS build is unsigned. The first launch needs <strong>right-click →
-              Open</strong>; after that it opens normally.
+            <p data-ko="macOS 빌드는 Apple Developer ID로 서명되지 않았고 공증도 받지 않았으므로, macOS가 첫 실행을 막습니다. 한 번 허용하면 그 뒤로는 평소처럼 열립니다.">
+              The macOS build is not signed with an Apple Developer ID or notarised, so macOS
+              blocks its first launch. Allow it once and it opens normally after that.
             </p>
+            <ul>
+              <li data-ko="<strong>macOS 15 Sequoia 이상:</strong> 앱을 한 번 열어 본 뒤 <strong>시스템 설정 → 개인정보 보호 및 보안</strong>에서 <strong>보안</strong>까지 내려가 <strong>그래도 열기</strong>를 클릭하고, 암호로 확인합니다. 이 버튼은 앱을 열려고 한 뒤 약 1시간 동안 있습니다.">
+                <strong>macOS 15 Sequoia or later:</strong> open the app once, then in
+                <strong>System Settings → Privacy &amp; Security</strong> scroll to
+                <strong>Security</strong>, click <strong>Open Anyway</strong> and confirm with
+                your password. The button is there for about an hour after the attempt.
+              </li>
+              <li data-ko="<strong>그 이전 macOS:</strong> Finder에서 앱을 Control-클릭(또는 오른쪽 클릭)하고 <strong>열기</strong>를 고른 뒤 한 번 더 <strong>열기</strong>를 클릭합니다.">
+                <strong>Earlier macOS:</strong> in Finder, Control-click (or right-click) the app,
+                choose <strong>Open</strong>, then <strong>Open</strong> again.
+              </li>
+            </ul>
 
             <h2 data-ko="오프라인에서는 뭐가 되나요?">What works offline?</h2>
             <p data-ko="로컬 설치라면: 사실상 전부입니다. 엔진·글꼴·아이콘이 앱에 동봉되어 런타임에 부르는 CDN이 없습니다. 인터넷이 필요한 것은 온라인 데이터베이스(Lichess), 온라인 기보의 새 달 받아 오기, Lichess에서 가져오기, 기본 출처인 Lichess의 공개 테이블베이스(엔드게임의 정확한 결과와 엔드게임 드릴. 설정 → 테이블베이스에서 다른 출처를 고를 수 있습니다), 그리고 한 번씩 받는 퍼즐 데이터베이스와 엔진의 전체 신경망입니다. 이미 열어 본 온라인 기보 달은 캐시에서 열리고, 한 번 받은 테이블베이스의 답은 보관됩니다.">

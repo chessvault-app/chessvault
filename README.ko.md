@@ -197,7 +197,8 @@ Windows·macOS·Linux용 설치 프로그램을 받아 실행하고, 보관함�
 Windows·macOS·Linux용
 [릴리스](https://github.com/chessvault-app/chessvault/releases/latest)에서
 **앱을 내려받아** 설치하세요. Node도 터미널도, 그 밖에는 아무것도 필요
-없습니다.
+없습니다. Mac에서는 첫 실행을 한 번 허용해야 하며, macOS 15 이상에서는
+시스템 설정에서 합니다([macOS에 설치하기](desktop/README.ko.md#macos에-설치하기)).
 
 처음 실행하면 보관함이 어디 있는지 묻습니다. **On this computer**(이
 컴퓨터에서)를 고르세요. 앱이 서버를 직접 띄우고 모든 것이 이 기기에 남습니다.
