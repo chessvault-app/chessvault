@@ -52,10 +52,12 @@ export default async function afterPack(context) {
    * download that sends people to the Trash with it.
    *
    * An ad-hoc signature costs nothing and needs no account. It does not
-   * make the app trusted: the first open is still right-click → Open, or
-   * one `xattr -dr com.apple.quarantine`, both of which desktop/README.md
-   * now explains. It turns "damaged, throw it away" into "from an
-   * unidentified developer", which is a question a reader can answer.
+   * make the app trusted: the first open still has to be allowed, with
+   * Open Anyway in System Settings > Privacy & Security on macOS 15 and
+   * later or Control-click → Open before it, or one `xattr -dr
+   * com.apple.quarantine`, all of which desktop/README.md explains. It
+   * turns "damaged, throw it away" into a block the user can lift, which
+   * is a question a reader can answer.
    */
   if (context.electronPlatformName !== 'darwin') return;
   const app = join(context.appOutDir, `${context.packager.appInfo.productFilename}.app`);

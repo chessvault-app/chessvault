@@ -51,27 +51,33 @@ wallpaper.
 
 ## Installing on macOS
 
-The app is not signed with an Apple Developer ID and is not notarised, so
-macOS will not simply open it. What you see depends on what the build
-carries:
+The macOS build is ad-hoc signed (`desktop/after-pack.mjs`), but it is not
+signed with an Apple Developer ID and not notarised, so macOS blocks the
+first open. Allow it once; after that it opens normally.
 
-- **"Chess Vault is damaged and can't be opened."** No signature at all,
-  which is what `mac.identity: null` produced before 0.4.1. It is not
-  damaged; arm64 macOS refuses to load unsigned code, and Gatekeeper
-  reports that as damage. Fix it once, after dragging the app to
-  Applications:
+- **macOS 15 Sequoia and later.** Open the app and let macOS refuse it.
+  Then Apple menu → **System Settings** → **Privacy & Security**, scroll
+  to **Security**, click **Open Anyway** and confirm with your password.
+  The button is there for about an hour after the refused open
+  ([Apple's steps](https://support.apple.com/guide/mac-help/mh40616/mac)).
+  Control-click → Open no longer gets past Gatekeeper on these versions
+  ([Apple, 2024](https://developer.apple.com/news/?id=saqachfa)).
+- **macOS 14 and earlier.** In Finder, Control-click (or right-click) the
+  app, choose **Open**, then **Open** again.
 
-  ```
-  xattr -dr com.apple.quarantine "/Applications/Chess Vault.app"
-  ```
+Or, from a terminal, clear the download's quarantine flag instead, after
+dragging the app to Applications:
 
-  Right-click → Open does *not* clear this one.
+```
+xattr -dr com.apple.quarantine "/Applications/Chess Vault.app"
+```
 
-- **"…is from an unidentified developer."** The ad-hoc signature added in
-  0.4.1 (now part of `desktop/after-pack.mjs`). Right-click the app → **Open** →
-  **Open**, once. The `xattr` line above works here too.
+**"Chess Vault is damaged and can't be opened"** came from builds before
+0.4.1, which had no signature at all (`mac.identity: null` on its own). It
+is not damaged; arm64 macOS refuses to load unsigned code, and Gatekeeper
+reports that as damage. The `xattr` line is the fix for those.
 
-Neither is a warning about the download. Both are macOS saying it cannot
+None of this is a warning about the download. It is macOS saying it cannot
 tell who built the app, which is true and stays true until somebody pays
 for a Developer ID and notarisation — at which point set `mac.identity`
 and delete the ad-hoc hook.
@@ -173,12 +179,13 @@ where updates come from.
 
 What an update is checked against, and what it is not: the installer's
 sha512 has to match the one in `latest.yml`, and both arrive over HTTPS
-from GitHub. There is no code signature. The Windows build is unsigned and
-the macOS build is ad-hoc signed (`"identity": null`), so nothing on the
-machine vouches for who built the file; whoever can publish a release on
-the repository ships code to every installed app, which downloads it in
-the background and installs it on quit. That is the ordinary state of an
-unsigned open-source app, and it is why publishing is a button a person
+from GitHub. No developer certificate signs either build: the Windows
+build is unsigned, and the macOS build carries only an ad-hoc signature
+(`"identity": null` skips a Developer ID; `desktop/after-pack.mjs` adds the
+ad-hoc one), so nothing on the machine vouches for who built the file;
+whoever can publish a release on the repository ships code to every
+installed app, which downloads it in the background and installs it on
+quit. That is the ordinary state of an unsigned open-source app, and it is why publishing is a button a person
 presses rather than a step the workflow takes.
 
 ### Cutting a release
