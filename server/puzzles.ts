@@ -114,6 +114,24 @@ export function sweepUnfinishedPuzzleBuild(
 }
 
 /**
+ * What a failed build tells the user, from how its child ended.
+ *
+ * The last line the child wrote to stderr says it best when there is
+ * one. A child the system killed wrote nothing, and was shown "the build
+ * stopped unexpectedly (exit null)", which named neither the cause nor
+ * the signal. The one failure of this build on record is running out of
+ * memory on a 2 GB server (README), and on Linux the out-of-memory killer
+ * ends a process with SIGKILL, so that signal says what it is. A signal
+ * is read before stderr: a killed child's last line is whatever it was
+ * saying before, not why it stopped.
+ */
+export function buildFailure(code: number | null, signal: NodeJS.Signals | null, lastError: string): string {
+  if (signal === 'SIGKILL') return 'the build was killed (SIGKILL), which is how a system out of memory stops a process';
+  if (signal) return `the build was stopped (${signal})`;
+  return lastError || `the build stopped unexpectedly (exit ${code})`;
+}
+
+/**
  * How many counted attempts a theme needs before this vault is willing to
  * call it a weakness. Under five, one unlucky pin is a 0% record.
  */
@@ -798,10 +816,10 @@ export function puzzlesApi(
       current.running = false;
       current.error = error.message;
     });
-    child.on('close', (code) => {
+    child.on('close', (code, signal) => {
       current.running = false;
       if (code !== 0) {
-        current.error = lastError || `the build stopped unexpectedly (exit ${code})`;
+        current.error = buildFailure(code, signal, lastError);
         // Settle what it left now, as a restart would, rather than at the
         // next restart. A part-built database is gigabytes (a 5,000,000-row
         // build peaked at 2.14 GB of .building beside 2.14 GB of VACUUM

@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { zstdCompressSync } from 'node:zlib';
 import { PUZZLE_DUMP_DOWNLOAD } from './paths.ts';
-import { puzzlesApi, ratingBound, sweepUnfinishedPuzzleBuild } from './puzzles.ts';
+import { buildFailure, puzzlesApi, ratingBound, sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 
 describe('puzzles api', () => {
   let dir: string;
@@ -634,6 +634,18 @@ describe('sweepUnfinishedPuzzleBuild', () => {
   it('is a no-op with nothing to sweep', () => {
     sweepUnfinishedPuzzleBuild(dbPath);
     expect(existsSync(dbPath)).toBe(false);
+  });
+});
+
+describe('buildFailure', () => {
+  it('names a kill by its signal, before anything the child last said', () => {
+    expect(buildFailure(null, 'SIGKILL', 'indexing…')).toMatch(/killed \(SIGKILL\).*out of memory/);
+    expect(buildFailure(null, 'SIGTERM', '')).toBe('the build was stopped (SIGTERM)');
+  });
+
+  it('otherwise says what the child last wrote, or its exit code', () => {
+    expect(buildFailure(1, null, 'unexpected header: x')).toBe('unexpected header: x');
+    expect(buildFailure(3, null, '')).toBe('the build stopped unexpectedly (exit 3)');
   });
 });
 
