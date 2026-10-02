@@ -674,6 +674,39 @@ export function puzzlesApi(
   };
 
   /**
+   * The failed pool and the review schedule, less the puzzles the
+   * database being served does not hold.
+   *
+   * Both are derived from the attempt log, which outlives the file, and
+   * nothing promises that a newer Lichess set keeps every puzzle the old
+   * one had. One the log still names stayed in both after a rebuild, and
+   * review mode answered "unknown puzzle" for it on every visit: it is
+   * served first when it is the most overdue, or the only one, and no
+   * attempt can be recorded on a puzzle the database lacks, so nothing
+   * could ever take it out again. The hub said one to review and drew
+   * none. Its attempts stay in the log, and a later file that has the
+   * puzzle again puts it back. Looked up by primary key, 500 ids a query,
+   * as weakestTheme does.
+   */
+  const reviewable = (
+    db: InstanceType<typeof Database>,
+    entries: Attempt[],
+  ): { pool: string[]; queue: { id: string; due: string }[] } => {
+    const pool = failedPool(entries);
+    const queue = reviewQueue(entries);
+    const ids = [...new Set([...pool, ...queue.map((q) => q.id)])];
+    const held = new Set<string>();
+    for (let i = 0; i < ids.length; i += 500) {
+      const slice = ids.slice(i, i + 500);
+      const rows = db
+        .prepare(`SELECT id FROM puzzles WHERE id IN (${slice.map(() => '?').join(',')})`)
+        .all(...slice) as { id: string }[];
+      for (const row of rows) held.add(row.id);
+    }
+    return { pool: pool.filter((id) => held.has(id)), queue: queue.filter((q) => held.has(q.id)) };
+  };
+
+  /**
    * The state with a live skill estimate, seeding it on first need by
    * replaying every counted attempt in the history — each line carries
    * the puzzle's rating, so the whole record folds in without touching
@@ -907,9 +940,10 @@ export function puzzlesApi(
         (r) => [r.key, r.value],
       ),
     );
-    // One read of the log serves the pool and the schedule both.
+    // One read of the log serves the pool and the schedule both, each
+    // only as far as this file can serve it (see reviewable).
     const entries = historyEntries();
-    const queue = reviewQueue(entries);
+    const { pool, queue } = reviewable(db, entries);
     const now = new Date().toISOString();
     return c.json({
       ready: true as const,
@@ -918,7 +952,7 @@ export function puzzlesApi(
       // one thing to know before rebuilding it (Settings, Puzzle database).
       builtAt: meta.built_at ?? null,
       themes: themeCounts(db),
-      failed: failedPool(entries).length,
+      failed: pool.length,
       // What the ladder says: how many are due now, and when the next
       // one lands if nothing is. Both derived, like the pool.
       due: queue.filter((q) => q.due <= now).length,
@@ -952,12 +986,11 @@ export function puzzlesApi(
       // whose date has come, most overdue first. The failed pool is the
       // fallback — a puzzle failed five minutes ago is not DUE until
       // tomorrow, but someone who wants to fix it now must still be able
-      // to, which is also exactly what this mode always served.
-      const due = reviewQueue(entries)
-        .filter((q) => q.due <= now)
-        .map((q) => q.id);
+      // to, which is also exactly what this mode always served. Both only
+      // as far as this file holds them (see reviewable).
+      const { pool, queue } = reviewable(db, entries);
+      const due = queue.filter((q) => q.due <= now).map((q) => q.id);
       const dueCandidates = due.length > 1 ? due.filter((id) => id !== lastId) : due;
-      const pool = failedPool(entries);
       // The puzzle this queue last offered stands while it is still in
       // the queue (see UserState.offered); the fallback below is random,
       // and the hub's "Missed puzzle" board changed with every visit.

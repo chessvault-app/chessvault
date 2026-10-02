@@ -785,6 +785,38 @@ describe('puzzles api (rebuilding a working database)', () => {
     expect(existsSync(join(data, 'puzzles.sqlite.building'))).toBe(false);
     expect((await draw('a0')).status).toBe(200);
   }, 60_000);
+
+  it('reviews only the failed puzzles the new file still has', async () => {
+    writeFileSync(dump, dumpOf(Array.from({ length: 10 }, (_, i) => ({ id: `a${i}`, rating: 1500 }))));
+    expect((await build()).error ?? null).toBeNull();
+    // Two failed long ago, so both are due, a0 the more overdue.
+    mkdirSync(join(data, 'state'), { recursive: true });
+    writeFileSync(
+      join(data, 'state', 'history.jsonl'),
+      `${[
+        { id: 'a0', win: false, counted: true, puzzleRating: 1500, at: '2025-01-01T00:00:00.000Z' },
+        { id: 'a1', win: false, counted: true, puzzleRating: 1500, at: '2025-01-01T00:01:00.000Z' },
+      ]
+        .map((e) => JSON.stringify(e))
+        .join('\n')}\n`,
+    );
+    const meta = async (): Promise<{ failed: number; due: number }> =>
+      (await (await app.request('/api/puzzles/meta')).json()) as { failed: number; due: number };
+    expect(await meta()).toMatchObject({ failed: 2, due: 2 });
+
+    // The newer set has a1 and not a0.
+    writeFileSync(dump, dumpOf(Array.from({ length: 10 }, (_, i) => ({ id: `a${i + 1}`, rating: 1500 }))));
+    expect((await build()).error ?? null).toBeNull();
+    expect(await meta()).toMatchObject({ failed: 1, due: 1 });
+    for (let i = 0; i < 3; i++) {
+      const res = await app.request('/api/puzzles/next?mode=failed');
+      expect(res.status).toBe(200);
+      expect(((await res.json()) as { puzzle: { id: string } }).puzzle.id).toBe('a1');
+    }
+    // The log is the vault's, and keeps the attempt the file cannot serve.
+    const history = (await (await app.request('/api/puzzles/history')).json()) as { attempts: { id: string }[] };
+    expect(history.attempts.map((a) => a.id)).toEqual(['a1', 'a0']);
+  }, 60_000);
 });
 
 /**
