@@ -2335,11 +2335,14 @@
               </picture>
             </figure>
             <h2 data-ko="첫 방문: 풀 만들기">First visit: building the pool</h2>
-            <p data-ko="데이터베이스가 없으면 «아직 퍼즐 데이터베이스가 없습니다»(No puzzle database yet)와 <strong>내려받아 만들기</strong>(Download and build) 버튼이 표시됩니다. 단계가 그대로 보이고(«퍼즐 덤프를 내려받는 중»(Downloading the puzzle dump) → «데이터베이스를 만드는 중»(Building the database) → «색인하는 중»(Indexing)), «페이지를 떠나도 계속됩니다. 몇 분 걸립니다.»라고 안내하는데, 실제로 그렇습니다.">
+            <p data-ko="데이터베이스가 없으면 «아직 퍼즐 데이터베이스가 없습니다»(No puzzle database yet)와 <strong>내려받아 만들기</strong>(Download and build) 버튼이 표시됩니다. 단계가 그대로 보이고(«퍼즐 덤프를 내려받는 중»(Downloading the puzzle dump) → «데이터베이스를 만드는 중»(Building the database) → «색인하는 중»(Indexing)), «페이지를 떠나도 계속됩니다. 몇 분 걸립니다.»라고 안내하는데, 실제로 그렇습니다. 그 뒤에 Lichess가 추가한 퍼즐을 받으려면 <a href='#settings'>설정</a>의 <strong>퍼즐 데이터베이스</strong>(Puzzle database) 카드에서 <strong>다시 만들기</strong>(Rebuild)를 누릅니다. 트레이너는 새 것이 준비될 때까지 지금 것을 씁니다.">
               With no database the page shows “No puzzle database yet” and a
               <strong>Download and build</strong> button. The stages report themselves
               (“Downloading the puzzle dump” → “Building the database” → “Indexing”), and — “This
-              keeps running if you leave the page. It takes a few minutes.” — it does.
+              keeps running if you leave the page. It takes a few minutes.” — it does. For the
+              puzzles Lichess has added since, <strong>Rebuild</strong> on the
+              <strong>Puzzle database</strong> card in <a href="#settings">Settings</a> builds a
+              newer set; the trainer keeps the current one until it is ready.
             </p>
             <h2 data-ko="풀기">Solving</h2>
             <p data-ko="«백 차례»(White to move) / «흑 차례»(Black to move), 그리고 «최선의 수를 찾으세요.»(Find the best move.)가 표시됩니다. 맞으면 상대가 응수하고(«상대가 두는 중…»(Opponent is moving…)), 틀리면 «틀린 수입니다. 보드를 되돌립니다.»(Wrong move. The board rolls back.) 난이도와 테마는 끝날 때까지 숨겨져 있습니다. 패널의 버튼:">
@@ -2900,6 +2903,22 @@
                       <strong>Clear all</strong> below takes the lot. Either way the Storage used
                       figures below re-read. “Games you kept are copies and stay in your collection.” It is
                       only a cache.
+                    </td>
+                  </tr>
+                  <tr>
+                    <td data-ko="퍼즐 데이터베이스(Puzzle database)">Puzzle database</td>
+                    <td data-ko="퍼즐 트레이너가 쓰는 Lichess 퍼즐 세트입니다. <strong>Lichess 퍼즐</strong>(Lichess puzzles) 줄에 퍼즐이 몇 개인지와 «{when} 만듦»(built {when})이 나오고, 옆의 <strong>다시 만들기</strong>(Rebuild)가 최신 세트로 다시 만듭니다. 누르면 먼저 묻습니다. 약 300MB를 내려받고 만드는 동안 디스크 여유 공간이 약 5.5GB 필요하며 메모리가 작은 서버에서는 메모리가 모자랄 수 있다는 것, 그리고 새 데이터베이스가 준비될 때까지 지금 것을 계속 쓰고 시도 기록은 그대로 남는다는 것입니다. 도는 동안 카드는 첫 빌드와 같은 단계를 보여 주고, 트레이너는 그대로 쓸 수 있습니다. 실패하면 카드가 이유를 적고(새로 고쳐도 남습니다) <strong>다시 시도</strong>(Try again)를 내놓으며, 새 파일은 하나도 남지 않습니다. 데이터베이스가 아직 없으면 줄이 «아직 만들지 않음»(Not built yet)이고, 퍼즐 페이지와 같은 <strong>내려받아 만들기</strong>(Download and build)가 나옵니다. 카드는 <code>#/settings/puzzle-database</code> 주소로 열립니다. 데모에는 없습니다.">
+                      The puzzle trainer's Lichess set. The <strong>Lichess puzzles</strong> row
+                      says how many it holds and “built {when}”, and <strong>Rebuild</strong> beside
+                      it replaces it with the latest set. It asks first: about 300 MB to download,
+                      about 5.5 GB of free disk while it builds, it can run out of memory on a small
+                      server, the current database keeps working until the new one is ready, and
+                      your attempts are kept. While it runs the card shows the same stages the first
+                      build does, and the trainer stays usable. If it fails, the card says why (a
+                      reload keeps saying it) and offers <strong>Try again</strong>, and nothing of
+                      the new file is left behind. With no database yet the row reads “Not built
+                      yet” and offers the Puzzles page's own <strong>Download and build</strong>.
+                      The card answers to <code>#/settings/puzzle-database</code>. Not in the demo.
                     </td>
                   </tr>
                   <tr>
