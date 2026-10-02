@@ -833,6 +833,26 @@ describe('restore from a copy', () => {
     expect(leftovers(target.vault)).toEqual([]);
   });
 
+  it('waits to undo while a build reads the files, since an undo moves them too', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const before = everything(target.vault);
+    let building = false;
+    const { restore, undo } = restorer(target.vault, {
+      busy: () => (building ? 'A database build is reading the vault’s files.' : null),
+    });
+    expect((await restore(vaultWith())).status).toBe(200);
+    const restored = everything(target.vault);
+    building = true;
+    const busy = await undo();
+    expect(busy.status).toBe(409);
+    expect((await busy.json()).error).toBe('A database build is reading the vault’s files.');
+    expect(everything(target.vault)).toEqual(restored);
+    building = false;
+    expect((await undo()).status).toBe(200);
+    expect(everything(target.vault)).toEqual(before);
+  });
+
   it('takes a body as a stream, chunk by chunk', async () => {
     const source = scratch('source');
     fillSource(source.vault);

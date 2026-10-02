@@ -625,6 +625,9 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
     if (running) return c.json({ error: RUNNING }, 409);
     if (existsSync(journalPath(vault))) return c.json({ error: STUCK }, 409);
     if (!existsSync(beforeDir(vault))) return c.json({ error: 'There is no restore to undo.' }, 409);
+    // An undo moves sources/ as a restore does.
+    const reason = options.busy?.();
+    if (reason) return c.json({ error: reason }, 409);
     running = true;
     try {
       const backup = await history();
