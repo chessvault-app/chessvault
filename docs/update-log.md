@@ -56,6 +56,18 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   own chapter was titled 기보. It also carried 84 em-dashes over from the
   English, and each is now a colon, a full stop, a comma, parentheses, or
   a particle or verb ending, whichever Korean puts there.
+- **The advice for opening the app on a Mac is the route macOS 15
+  leaves.** The download note on the landing page, the manual's Common
+  questions and desktop/README said to right-click the app and choose Open
+  the first time. macOS 15 Sequoia took that route away from apps that are
+  not notarised, as this one is not, so on a current Mac the advice led
+  nowhere. They now say: on macOS 15 or later, open the app once, then
+  click Open Anyway in System Settings → Privacy & Security; on earlier
+  macOS, Control-click it and choose Open. The install steps in the README
+  and the manual's Getting started say a Mac has to allow the first
+  launch, and link there. The pages also stop calling the builds unsigned:
+  they say no developer certificate signs them. Written from Apple's own
+  documentation; not tried on a Mac.
 - **A puzzle database that already works can be rebuilt from Settings.**
   The app offered the build only to a vault with no puzzle database, so
   the puzzles Lichess has added since could only be had from a terminal.
