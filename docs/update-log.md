@@ -7,6 +7,30 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **After “Wipe all data”, the Games page and Home's games work at
+  once.** The wipe put the vault's folders back but not the one the
+  games collection lives in, so until the server was restarted the Games
+  page said “Vault server unreachable” and Home's recent games failed to
+  load. A wiped vault is now left in the shape a fresh start leaves it.
+- **A wrong password in the wipe window says it is wrong.** The line under
+  the password just typed read “password required to wipe”, as if none
+  had been sent, and in English on the Korean screen too. It now says
+  the password is wrong and that nothing was wiped.
+- **A count of one reads in the singular.** “Recent games · 1 games”,
+  “1 things in the last 7 days” and fifty-odd sentences like them, on
+  Home, Games, Insights, the opening map, puzzle books, the repertoire and
+  Settings, now say “1 game” and “1 thing”. The Korean screen, which has
+  no plural, reads as before.
+- **The Settings outline names Deleted documents.** The list of card
+  names beside the cards (above them on a narrower window) left out
+  Deleted documents whenever the history answered after the storage did,
+  until something else redrew the page. It now names every card on the
+  page as it is drawn.
+- **The server's start-up lines give the address it serves on.** A server
+  started on its own port, or bound to this computer only, still printed
+  a phone address on port 5173, which only the development setup uses.
+  It now prints its own port, and says so when no other device can reach
+  it.
 - **The vault's history and a downloaded copy no longer carry each
   book's open cache.** Beside every book it has opened, the server keeps
   the bytes opening it needs, recorded from the PDF. The history
