@@ -122,8 +122,8 @@ export const ko: Record<string, string> = {
   'A token ending in {last4} is configured.': '{last4}로 끝나는 토큰이 설정되어 있습니다.',
   'List this account’s studies': '이 계정의 스터디 목록 보기',
   'Add {n} as drafts': '{n}개를 초안으로 추가',
-  'Powers the online opening explorer and your Lichess puzzle history. Create one with no scopes and paste it here. It is stored in the vault and never shown again.':
-    '온라인 오프닝 탐색기와 Lichess 퍼즐 기록에 쓰입니다. 권한 없음(no scopes)으로 토큰을 만든 뒤 여기에 붙여넣으세요. 토큰은 보관함에 저장되고 다시 보여주지 않습니다.',
+  'Powers the online opening explorer. Create one with no scopes and paste it here, or give it study:read to import your private Lichess studies too. It is stored in the vault and never shown again.':
+    '온라인 오프닝 탐색기에 쓰입니다. 권한 없음(no scopes)으로 토큰을 만든 뒤 여기에 붙여넣으세요. study:read 권한을 주면 비공개 Lichess 스터디도 가져올 수 있습니다. 토큰은 보관함에 저장되고 다시 보여주지 않습니다.',
   'Type “{phrase}” to arm': '“{phrase}”를 입력하면 활성화됩니다',
   Collection: '모음',
   'Empty folder.': '빈 폴더입니다.',

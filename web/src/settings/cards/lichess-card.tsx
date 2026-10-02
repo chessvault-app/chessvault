@@ -49,9 +49,12 @@ export function LichessCard({ settings, onChanged }: { settings: Settings; onCha
     <Card icon={KeyRound} title={t('Lichess token')}>
       {/* One sentence, one string. Assembling it around the link left the
           tail in English while the head was Korean, and no translator can
-          fix a sentence that is three fragments in the source. */}
+          fix a sentence that is three fragments in the source. It names
+          the two things that read the token (server/lichess.ts,
+          readToken): the explorer proxy, and the study import, which
+          lists private studies only when the token carries study:read. */}
       <p className="text-muted-foreground text-sm">
-        {t('Powers the online opening explorer and your Lichess puzzle history. Create one with no scopes and paste it here. It is stored in the vault and never shown again.')}
+        {t('Powers the online opening explorer. Create one with no scopes and paste it here, or give it study:read to import your private Lichess studies too. It is stored in the vault and never shown again.')}
       </p>
       <a
         className="text-primary text-sm underline underline-offset-2"
