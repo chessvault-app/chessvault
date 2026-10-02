@@ -204,7 +204,9 @@ function RestoreDialog({
         )}
         <Feedback note={note} />
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={placing || done}>{refused ? t('Close') : t('Cancel')}</AlertDialogCancel>
+          {/* Close when this file will not go: the server refused it, or
+              the page can already see it will not fit. */}
+          <AlertDialogCancel disabled={placing || done}>{refused || tooBig ? t('Close') : t('Cancel')}</AlertDialogCancel>
           <Button disabled={progress !== null || tooBig || refused || done} onClick={() => void restore()}>
             {t('Restore ({size})', { size: size(file.size) })}
           </Button>
