@@ -5,7 +5,7 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.12.0
 
 Each phone takes its own platform's controls, and the desktop window is a
 frame with the page set in it, measured off Linear's. Home has an Activity
