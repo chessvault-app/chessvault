@@ -124,6 +124,8 @@ function RestoreDialog({
   const free = state?.free ?? null;
   const tooBig = free !== null && file.size > free;
   const placing = progress === 100;
+  /** Restored, with the page about to reload. */
+  const done = note?.kind === 'ok';
 
   const restore = async (): Promise<void> => {
     const controller = new AbortController();
@@ -145,6 +147,10 @@ function RestoreDialog({
       setRefused(error instanceof ApiError && (error.status === 400 || error.status === 507));
       return;
     }
+    // One state at a time: the bar and "Putting the copy in place…" give
+    // way to the line that says it is done, in the same render.
+    setAbort(null);
+    setProgress(null);
     setNote({
       kind: 'ok',
       text: result.history === 'adopted' ? t('Restored, with the copy’s history. Reloading…') : t('Restored. Reloading…'),
@@ -157,8 +163,9 @@ function RestoreDialog({
   const close = (): void => {
     // Mid-upload, closing is cancelling, and the server keeps nothing of
     // it. Once the copy is in, it is being put in place and is past
-    // stopping, so the window stays until it says how that went.
-    if (placing) return;
+    // stopping, so the window stays until it says how that went, and
+    // after a success until the reload takes it.
+    if (placing || done) return;
     abort?.abort();
     onClose();
   };
@@ -197,8 +204,8 @@ function RestoreDialog({
         )}
         <Feedback note={note} />
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={placing}>{refused ? t('Close') : t('Cancel')}</AlertDialogCancel>
-          <Button disabled={progress !== null || tooBig || refused || note?.kind === 'ok'} onClick={() => void restore()}>
+          <AlertDialogCancel disabled={placing || done}>{refused ? t('Close') : t('Cancel')}</AlertDialogCancel>
+          <Button disabled={progress !== null || tooBig || refused || done} onClick={() => void restore()}>
             {t('Restore ({size})', { size: size(file.size) })}
           </Button>
         </AlertDialogFooter>
