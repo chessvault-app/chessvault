@@ -175,8 +175,9 @@ is one connected body of work, and the links are what make it that.
   so each is arranged on its own.
 - **Settings** — change the app password, turn on authenticator 2FA,
   set your display name and platform usernames, pick a board theme and
-  piece set, manage the Lichess token, or wipe the vault — all in the
-  app, no shell needed.
+  piece set, manage the Lichess token, rebuild the puzzle database from
+  Lichess's newest set, download a copy of the vault or restore one, or
+  wipe the vault — all in the app, no shell needed.
 - **Everywhere** — responsive down to phones, installable as a PWA
   (home-screen icon, splash screens, offline shell), and a desktop app
   (Windows, macOS and Linux installers) that keeps the vault on that
@@ -757,7 +758,7 @@ covers it, including how to bootstrap that config from the book itself.
 - [Importing a book from the shell](docs/book-import-offline.md) — the
   offline route, what it costs you, and when it is worth it.
 - [Prepared databases](docs/databases.md) — the puzzle and reference-game
-  databases: built once, copied to the server, rarely touched again.
+  databases: built once, in the app, and rarely touched again.
 - [The repertoire trainer](docs/repertoire.md) — free play and drilling,
   and exactly how the drill decides hit, miss and gap.
 - [The opening map](docs/opening-map.md) — your repertoire as a tree:
