@@ -23,13 +23,20 @@ import { VAULT } from './paths.ts';
  * config holds the password hash, the 2FA secret and the Lichess token,
  * and a backup lands in a Downloads folder, on a phone, in a cloud
  * drive; a copy of the documents must not carry the credentials. The
- * card says so. Everything else under the folder goes, dotfiles aside,
- * except `.history.git`, which recovery reads and which the walk names
- * first.
+ * card says so. Also left out: each book's open.bin, a cache the server
+ * records from the book's PDF on its first open (server/pdfWarm.ts).
+ * The PDF goes, so the cache is recorded again from it, and a restored
+ * one would be recorded again regardless: it is keyed on the PDF's
+ * mtime, which the ustar header keeps to the whole second. Everything
+ * else under the folder goes, dotfiles aside, except `.history.git`,
+ * which recovery reads and which the walk names first.
  */
 
 const SKIP_FILES = new Set(['config.json', 'sessions.json']);
 const HISTORY = '.history.git';
+
+/** `books/<id>/open.bin`, by the walk's path so far and the entry's name. */
+const openCache = (rel: string[], name: string): boolean => rel.length === 2 && rel[0] === 'books' && name === 'open.bin';
 
 /** A ustar header for one entry. `name` is the archive path, `/`-joined. */
 function header(name: string, size: number, mode: number, mtime: number, type: '0' | '5' | 'x'): Buffer {
@@ -73,6 +80,7 @@ async function* entries(root: string, rel: string[]): AsyncGenerator<Buffer> {
   for (const entry of names) {
     if (rel.length === 0 && entry.name.startsWith('.') && entry.name !== HISTORY) continue;
     if (rel.length === 0 && SKIP_FILES.has(entry.name)) continue;
+    if (entry.isFile() && openCache(rel, entry.name)) continue;
     const path = [...rel, entry.name];
     const name = path.join('/');
     const full = resolve(root, ...path);
