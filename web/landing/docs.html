@@ -455,7 +455,7 @@
         <span class="spacer"></span>
         <!-- aria-label carries the language's own name; the visible label is
              the two-letter code the mono voice wants. -->
-        <div class="lang" role="group" aria-label="Language">
+        <div class="lang" role="group" aria-label="Language" data-ko-label="언어">
           <button type="button" data-lang="en" aria-pressed="true" aria-label="English">EN</button>
           <span class="sep" aria-hidden="true">/</span>
           <button type="button" data-lang="ko" aria-pressed="false" aria-label="한국어">KO</button>
@@ -471,7 +471,7 @@
     <div class="scrim" id="scrim"></div>
 
     <div class="shell">
-      <nav class="side" id="side-nav" aria-label="Documentation pages">
+      <nav class="side" id="side-nav" aria-label="Documentation pages" data-ko-label="문서 페이지">
         <form class="search" role="search" onsubmit="return false">
           <input type="search" id="manual-search" autocomplete="off" placeholder="Search the manual" aria-label="Search the manual" data-ko-label="매뉴얼 검색" data-ko-placeholder="매뉴얼 검색" />
         </form>
@@ -601,13 +601,13 @@
               <table class="controls">
                 <tbody>
                   <tr>
-                    <td>On this computer</td>
+                    <td data-ko="On this computer(이 컴퓨터에서)">On this computer</td>
                     <td data-ko="모든 것이 이 기기에서 실행되고 이 기기에 남습니다. 이어서 어느 폴더를 쓸지 묻습니다. 아래 참조.">
                       Everything runs and stays locally. It then asks which folder — below.
                     </td>
                   </tr>
                   <tr>
-                    <td>On my server</td>
+                    <td data-ko="On my server(내 서버에서)">On my server</td>
                     <td data-ko="같은 앱이 직접 호스팅하는 서버를 여는 창이 됩니다. 주소는 <code>https://</code>로 시작해야 합니다.">
                       The same app becomes a window onto a server you host. The address must start
                       with <code>https://</code>.
@@ -624,7 +624,7 @@
               <table class="controls">
                 <tbody>
                   <tr>
-                    <td>Open a folder…</td>
+                    <td data-ko="Open a folder…(폴더 열기…)">Open a folder…</td>
                     <td data-ko="아무 폴더나 보관함이 됩니다 — 이미 쓰던 보관함도 그대로 열립니다. 파생 데이터(참고 데이터베이스, 색인)도 그 폴더 안에 저장되므로, 폴더를 옮기거나 동기화하면 전부 함께 갑니다.">
                       Any folder becomes your vault, including one you already have. Derived data
                       (reference databases, indexes) lives inside it too, so moving or syncing the
@@ -632,7 +632,7 @@
                     </td>
                   </tr>
                   <tr>
-                    <td>App-managed vault</td>
+                    <td data-ko="App-managed vault(앱이 관리하는 보관함)">App-managed vault</td>
                     <td data-ko="앱이 사용자 프로필 안에 폴더를 하나 고르고 알아서 진행합니다. 나중에 옮길 수 있습니다.">
                       The app picks a folder in your user profile and gets on with it. You can move
                       it later.
@@ -714,7 +714,7 @@
               they can always be deleted and rebuilt; no database holds your work hostage.
             </p>
             <h2 data-ko="이전 버전">Earlier versions</h2>
-            <p data-ko="모든 스터디·기보·노트의 머리에는 시계 버튼(<strong>이전 버전</strong>(Earlier versions))이 있습니다(휴대폰에서는 제목 줄의 ⋯ 뒤에 다른 도구와 함께 있습니다). 저장할 때마다 판본이 자동으로 보관되며, 시점을 골라 들여다보고 <strong>이 버전으로 복원</strong>(Restore this version)으로 복원합니다. 복원해도 지금 버전은 함께 보존됩니다 — 언제든 돌아올 수 있습니다. 판본 보관이 꺼진 보관함(예: git이 없는 서버)에서는 «This vault is not keeping a history, so there is nothing earlier to show»라고 말해 줍니다.">
+            <p data-ko="모든 스터디·기보·노트의 머리에는 시계 버튼(<strong>이전 버전</strong>(Earlier versions))이 있습니다(휴대폰에서는 제목 줄의 ⋯ 뒤에 다른 도구와 함께 있습니다). 저장할 때마다 판본이 자동으로 보관되며, 시점을 골라 들여다보고 <strong>이 버전으로 복원</strong>(Restore this version)으로 복원합니다. 복원해도 지금 버전은 함께 보존됩니다 — 언제든 돌아올 수 있습니다. 판본 보관이 꺼진 보관함(예: git이 없는 서버)에서는 «이 보관함은 기록을 남기지 않으므로 보여줄 이전 버전이 없습니다»(This vault is not keeping a history, so there is nothing earlier to show)라고 말해 줍니다.">
               Every study, game and note carries a clock button in its header —
               <strong>Earlier versions</strong> (on a phone it sits with the other tools behind the
               title row's ⋯). Each save is kept automatically; pick a time to
