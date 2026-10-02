@@ -1933,21 +1933,27 @@ export const ko: Record<string, string> = {
   "need file": "파일이 필요합니다",
   "name must be a plain .pgn filename": "이름은 평범한 .pgn 파일명이어야 합니다",
   "upload failed": "업로드에 실패했습니다",
-  "that file is not a copy of a vault": "그 파일은 보관함 사본이 아닙니다",
-  "the copy is damaged": "사본이 손상되었습니다",
-  "the copy is cut short": "사본이 중간에 끊겼습니다",
-  "the copy holds a file name that could land outside the vault": "사본에 보관함 밖에 놓일 수 있는 파일 이름이 있습니다",
-  "the copy holds something other than files and folders": "사본에 파일과 폴더가 아닌 것이 있습니다",
-  "not enough free space on the server for this copy": "서버에 이 사본을 둘 빈 공간이 부족합니다",
-  "a restore is already running": "이미 복원이 진행 중입니다",
-  "keep or undo the last restore first": "먼저 지난 복원을 유지하거나 되돌리세요",
-  "the upload stopped": "업로드가 멈췄습니다",
-  "could not put the copy in place, so the vault is as it was": "사본을 제자리에 넣지 못했으므로 보관함은 그대로입니다",
-  "could not put the copy in place, and could not put everything back: restart the server to finish putting it back":
-    "사본을 제자리에 넣지 못했고 모두 되돌려 놓지도 못했습니다. 서버를 다시 시작하면 마저 되돌립니다",
-  "there is no restore to undo": "되돌릴 복원이 없습니다",
-  "there is no restore to keep": "유지할 복원이 없습니다",
-  "could not undo the restore, so the vault is as it was": "복원을 되돌리지 못했으므로 보관함은 그대로입니다",
+  // Restoring a copy (server/restore.ts): sentences, since the restore
+  // window shows them under its own question. The server's "That file is
+  // not a copy of a vault." is the page's own sentence, entered with the
+  // Settings strings below.
+  "This copy is damaged.": "이 사본은 손상되었습니다.",
+  "This copy is cut short.": "이 사본은 중간에 끊겼습니다.",
+  "This copy holds a file name that could land outside the vault.": "이 사본에는 보관함 밖에 놓일 수 있는 파일 이름이 있습니다.",
+  "This copy holds something other than files and folders.": "이 사본에는 파일과 폴더가 아닌 것이 있습니다.",
+  "The server does not have enough free space for this copy.": "서버에 이 사본을 둘 빈 공간이 부족합니다.",
+  "A restore is already running.": "이미 복원이 진행 중입니다.",
+  "Keep or undo the last restore first.": "먼저 지난 복원을 유지하거나 되돌리세요.",
+  "A database build is reading the vault’s files. Try again when it finishes.":
+    "데이터베이스 빌드가 보관함의 파일을 읽고 있습니다. 빌드가 끝나면 다시 시도하세요.",
+  "The upload stopped.": "업로드가 멈췄습니다.",
+  "The upload failed.": "업로드에 실패했습니다.",
+  "Could not put the copy in place, so the vault is as it was.": "사본을 제자리에 넣지 못했으므로 보관함은 그대로입니다.",
+  "Could not put the copy in place or put everything back. Restart the server to finish putting it back.":
+    "사본을 제자리에 넣지 못했고 모두 되돌려 놓지도 못했습니다. 서버를 다시 시작하면 마저 되돌립니다.",
+  "There is no restore to undo.": "되돌릴 복원이 없습니다.",
+  "There is no restore to keep.": "유지할 복원이 없습니다.",
+  "Could not undo the restore, so the vault is as it was.": "복원을 되돌리지 못했으므로 보관함은 그대로입니다.",
 
   // --- puzzle themes and panel labels --------------------------------------
   "New study": "새 스터디",

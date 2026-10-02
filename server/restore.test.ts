@@ -430,7 +430,10 @@ describe('restore from a copy', () => {
       const before = everything(target.vault);
       const res = await restorer(target.vault).restore(body);
       expect(res.status, what).toBe(400);
-      expect((await res.json()).reason, what).toBe(reason);
+      const answer = await res.json();
+      expect(answer.reason, what).toBe(reason);
+      // The restore window shows it as it comes, so it is a sentence.
+      expect(answer.error, what).toMatch(/^[A-Z].*\.$/);
       expect(everything(target.vault), what).toEqual(before);
       expect(leftovers(target.vault), what).toEqual([]);
       expect(existsSync(join(target.vault, '.restore', 'before')), what).toBe(false);
@@ -481,7 +484,7 @@ describe('restore from a copy', () => {
       });
       const res = await restore(copy);
       expect(res.status, `failing rename ${failAt}`).toBe(500);
-      expect((await res.json()).error).toBe('could not put the copy in place, so the vault is as it was');
+      expect((await res.json()).error).toBe('Could not put the copy in place, so the vault is as it was.');
       expect(everything(target.vault)).toEqual(before);
       expect(leftovers(target.vault)).toEqual([]);
       expect((await state()).pending).toBeNull();
@@ -567,7 +570,7 @@ describe('restore from a copy', () => {
     // A second copy waits for the first to be kept or undone.
     const second = await restore(copy);
     expect(second.status).toBe(409);
-    expect((await second.json()).error).toBe('keep or undo the last restore first');
+    expect((await second.json()).error).toBe('Keep or undo the last restore first.');
 
     expect((await undo()).status).toBe(200);
     // Book PDFs and uploaded PGN files are in no history; they are back too.
@@ -717,11 +720,12 @@ describe('restore from a copy', () => {
     const target = scratch('target');
     fillTarget(target.vault);
     const before = everything(target.vault);
-    const busy = await restorer(target.vault, { busy: () => 'a build is reading the files right now' }).restore(vaultWith());
+    const busy = await restorer(target.vault, { busy: () => 'A database build is reading the vault’s files.' }).restore(vaultWith());
     expect(busy.status).toBe(409);
+    expect((await busy.json()).error).toBe('A database build is reading the vault’s files.');
     const full = await restorer(target.vault, { free: async () => 1024 }).restore(vaultWith(), { 'content-length': String(vaultWith().length) });
     expect(full.status).toBe(507);
-    expect((await full.json()).error).toBe('not enough free space on the server for this copy');
+    expect((await full.json()).error).toBe('The server does not have enough free space for this copy.');
     expect(everything(target.vault)).toEqual(before);
     expect(leftovers(target.vault)).toEqual([]);
   });

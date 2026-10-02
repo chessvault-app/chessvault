@@ -322,22 +322,28 @@ async function commitTo(gitDir: string, vault: string, message: string): Promise
 }
 
 /** The reply for a copy that will not restore, and why, in the words
-    the app shows (the dictionary has each one). */
+    the app shows (the dictionary has each one). Every reply here is a
+    sentence, because the restore window shows it as it comes, under its
+    own question. The first is word for word what the page says when it
+    can tell a file is no tar before sending it. */
 const FAULTS: Record<TarFault, string> = {
-  'not-tar': 'that file is not a copy of a vault',
-  checksum: 'the copy is damaged',
-  malformed: 'the copy is damaged',
-  truncated: 'the copy is cut short',
-  'unsafe-path': 'the copy holds a file name that could land outside the vault',
-  'unsupported-entry': 'the copy holds something other than files and folders',
+  'not-tar': 'That file is not a copy of a vault.',
+  checksum: 'This copy is damaged.',
+  malformed: 'This copy is damaged.',
+  truncated: 'This copy is cut short.',
+  'unsafe-path': 'This copy holds a file name that could land outside the vault.',
+  'unsupported-entry': 'This copy holds something other than files and folders.',
 };
 
-const NO_SPACE = 'not enough free space on the server for this copy';
+const NO_SPACE = 'The server does not have enough free space for this copy.';
+
+const RUNNING = 'A restore is already running.';
 
 export interface RestoreOptions {
   /** The running history writer, or null where there is none. */
   history?: () => Promise<VaultBackup | null>;
-  /** Why the vault cannot be replaced right now, or null. */
+  /** Why the vault cannot be replaced right now, as the sentence the
+      restore window shows, or null. */
   busy?: () => string | null;
   /** Free bytes where the vault is, or null when the system will not say. */
   free?: () => Promise<number | null>;
@@ -406,11 +412,11 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
   });
 
   api.post('/storage/restore', async (c) => {
-    if (running) return c.json({ error: 'a restore is already running' }, 409);
+    if (running) return c.json({ error: RUNNING }, 409);
     // Taken before the first await, so two uploads cannot both get past it.
     running = true;
     try {
-      if (existsSync(beforeDir(vault))) return c.json({ error: 'keep or undo the last restore first' }, 409);
+      if (existsSync(beforeDir(vault))) return c.json({ error: 'Keep or undo the last restore first.' }, 409);
       const reason = options.busy?.();
       if (reason) return c.json({ error: reason }, 409);
       const body = c.req.raw.body;
@@ -444,7 +450,7 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
 
     const fail = async (error: unknown): Promise<Reply> => {
       await rm(work.dir, { recursive: true, force: true }).catch(() => undefined);
-      if (error instanceof Stalled) return reply({ error: 'the upload stopped' }, 408);
+      if (error instanceof Stalled) return reply({ error: 'The upload stopped.' }, 408);
       // The rest of the upload is read and dropped, so the reply reaches a
       // browser that is still sending; one that is not gets nothing either way.
       try {
@@ -460,7 +466,7 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
       }
       if ((error as NodeJS.ErrnoException).code === 'ENOSPC') return reply({ error: NO_SPACE }, 507);
       console.error(`[restore] the upload failed: ${(error as Error).message}`);
-      return reply({ error: 'upload failed' }, 500);
+      return reply({ error: 'The upload failed.' }, 500);
     };
 
     try {
@@ -589,8 +595,8 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
       return reply(
         {
           error: stuck
-            ? 'could not put the copy in place, and could not put everything back: restart the server to finish putting it back'
-            : 'could not put the copy in place, so the vault is as it was',
+            ? 'Could not put the copy in place or put everything back. Restart the server to finish putting it back.'
+            : 'Could not put the copy in place, so the vault is as it was.',
         },
         500,
       );
@@ -605,8 +611,8 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
    * restore is committed first, so it is in their history.
    */
   api.post('/storage/restore/undo', async (c) => {
-    if (running) return c.json({ error: 'a restore is already running' }, 409);
-    if (!existsSync(beforeDir(vault))) return c.json({ error: 'there is no restore to undo' }, 409);
+    if (running) return c.json({ error: RUNNING }, 409);
+    if (!existsSync(beforeDir(vault))) return c.json({ error: 'There is no restore to undo.' }, 409);
     running = true;
     try {
       const backup = await history();
@@ -634,7 +640,7 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
       } catch (error) {
         console.error(`[restore] could not undo the restore: ${(error as Error).message}`);
         if (!existsSync(journalPath(vault))) await rm(work.dir, { recursive: true, force: true }).catch(() => undefined);
-        return c.json({ error: 'could not undo the restore, so the vault is as it was' }, 500);
+        return c.json({ error: 'Could not undo the restore, so the vault is as it was.' }, 500);
       }
       await rm(work.dir, { recursive: true, force: true }).catch(() => undefined);
       return c.json({ ok: true });
@@ -645,8 +651,8 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
 
   /** Keep the restored vault: what it replaced is deleted, for good. */
   api.post('/storage/restore/keep', async (c) => {
-    if (running) return c.json({ error: 'a restore is already running' }, 409);
-    if (!existsSync(beforeDir(vault))) return c.json({ error: 'there is no restore to keep' }, 409);
+    if (running) return c.json({ error: RUNNING }, 409);
+    if (!existsSync(beforeDir(vault))) return c.json({ error: 'There is no restore to keep.' }, 409);
     running = true;
     try {
       const freed = (await walk(beforeDir(vault))).bytes;
