@@ -65,12 +65,16 @@ describe('vault backup', () => {
     writeFileSync(join(dir, 'books', 'b0123456789abcdef', 'book.pdf'), '%PDF-1.4 x'.repeat(100));
     writeFileSync(join(dir, 'books', 'b0123456789abcdef', 'book.pdf.part'), '%PDF-1.4');
     writeFileSync(join(dir, 'books', 'b0123456789abcdef', 'book.json'), '{"title":"x"}\n');
+    // And its open cache (server/pdfWarm.ts), made from that PDF and made
+    // again whenever the PDF changes: no version of it is worth keeping.
+    writeFileSync(join(dir, 'books', 'b0123456789abcdef', 'open.bin'), 'warm'.repeat(100));
     backup = await startVaultBackup(dir, 50);
     const files = tracked(dir);
     expect(files).toContain('games.json');
     expect(files).not.toContain('big.pgn');
     expect(files).toContain('books/b0123456789abcdef/book.json');
     expect(files).not.toContain('book.pdf');
+    expect(files).not.toContain('open.bin');
 
     // Second start reuses the repo instead of re-initialising.
     await backup.stop();
@@ -85,19 +89,23 @@ describe('vault backup', () => {
     mkdirSync(book, { recursive: true });
     writeFileSync(join(book, 'book.json'), '{"title":"x"}\n');
     writeFileSync(join(book, 'book.pdf'), '%PDF-1.4 x'.repeat(100));
+    writeFileSync(join(book, 'open.bin'), 'warm'.repeat(100));
     backup = await startVaultBackup(dir, 50);
     // What a version without the excludes committed, by force now that
     // they are there.
     const gitDir = join(dir, '.history.git');
-    await git(gitDir, dir, ['add', '-f', 'books/b0123456789abcdef/book.pdf']);
+    await git(gitDir, dir, ['add', '-f', 'books/b0123456789abcdef/book.pdf', 'books/b0123456789abcdef/open.bin']);
     await git(gitDir, dir, ['commit', '-q', '-m', 'older version']);
     expect(tracked(dir)).toContain('books/b0123456789abcdef/book.pdf');
+    expect(tracked(dir)).toContain('books/b0123456789abcdef/open.bin');
     await backup.stop();
 
     backup = await startVaultBackup(dir, 50);
     expect(tracked(dir)).not.toContain('book.pdf');
+    expect(tracked(dir)).not.toContain('open.bin');
     expect(tracked(dir)).toContain('books/b0123456789abcdef/book.json');
     expect(existsSync(join(book, 'book.pdf'))).toBe(true);
+    expect(existsSync(join(book, 'open.bin'))).toBe(true);
   });
 
   /**
