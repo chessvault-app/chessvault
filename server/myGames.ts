@@ -19,6 +19,7 @@ import {
 } from './myGamesAnalysis.ts';
 import { resolve } from 'node:path';
 import { DATA, DATA_MYGAMES, DATA_MYGAMES_ANALYSIS, VAULT_GAMES } from './paths.ts';
+import { onVaultReplaced } from './vaultEvents.ts';
 
 /**
  * Your own games, explorable at any position, under any filter.
@@ -254,6 +255,26 @@ class MyGamesIndex {
    * deliberate: files also arrive by git pull, by rsync, by hand.
    */
   private static readonly SCAN_INTERVAL_MS = 2000;
+
+  /**
+   * Reindex every file on the next sync, after a restore put the vault's
+   * games back under the running server (server/vaultEvents.ts).
+   *
+   * The files table matches a file on its mtime and size, both of which a
+   * restored file can share with the one it replaced. Marking every row
+   * stale, rather than emptying the table, keeps the rows of a file the
+   * restore took away: the sync forgets those by finding them gone.
+   */
+  forgetFiles(): void {
+    this.pending = [];
+    this.lastScan = 0;
+    try {
+      this.open()?.exec('UPDATE files SET mtime_ms = -1');
+    } catch {
+      // A database that will not take the write is rebuilt by hand
+      // (the reindex route); the mtimes still catch nearly every file.
+    }
+  }
 
   private open(): InstanceType<typeof Database> | null {
     if (this.db) return this.db;
@@ -1348,6 +1369,7 @@ export function myGamesApi(
   analysisPath: string = DATA_MYGAMES_ANALYSIS,
 ): Hono {
   const index = new MyGamesIndex(gamesDir, dbPath, new AnalysisStore(analysisPath));
+  onVaultReplaced(() => index.forgetFiles());
   const api = new Hono();
 
   api.get('/mygames', (c) => {

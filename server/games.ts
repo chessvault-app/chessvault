@@ -18,6 +18,7 @@ import { pathUser, userSideOf } from '../shared/gameIndex.ts';
 import { commentText } from '../shared/pgn.ts';
 import { openingsIndex, type Opening } from './openings.ts';
 import { VAULT_CONFIG, VAULT_GAMES } from './paths.ts';
+import { onVaultReplaced } from './vaultEvents.ts';
 
 /**
  * The Games section is a curated COLLECTION: one PGN file per kept game in
@@ -237,6 +238,15 @@ function parseGames(path: string): Game<PgnNodeData>[] {
   touchLru(gamesCache, path, GAMES_CACHE_MAX, { mtimeMs, games });
   return games;
 }
+
+// A restore puts back files at the same paths with the copy's own mtimes,
+// which the three caches above could mistake for the files they remember
+// (server/vaultEvents.ts).
+onVaultReplaced(() => {
+  listCache.clear();
+  collectionCache.clear();
+  gamesCache.clear();
+});
 
 /** Resolve a client-supplied relative file safely inside the games dir. */
 function safeResolve(dir: string, rel: string): string | null {

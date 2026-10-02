@@ -15,6 +15,7 @@ import {
 import { blankCommands, commentSpans } from '../shared/pgn.ts';
 import { readAliases, splitAliasList, splitFrontMatter } from '../shared/frontMatter.ts';
 import { validId } from '../shared/vaultNames.ts';
+import { onVaultReplaced } from './vaultEvents.ts';
 
 /**
  * What points at a document.
@@ -322,6 +323,11 @@ export function linksApi(notesDir: string, studiesDir: string, gamesDir: string)
   const dirs = LINK_SECTIONS.map((section) => SOURCE[section]);
 
   let cached: { sig: string; scan: Scan } | null = null;
+  // The signature is names, mtimes and sizes, which a restore can put
+  // back unchanged over different bytes (server/vaultEvents.ts).
+  onVaultReplaced(() => {
+    cached = null;
+  });
 
   function build(): Scan {
     const index = Object.fromEntries(

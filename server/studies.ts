@@ -15,6 +15,7 @@ import {
 } from 'node:fs';
 import { resolve, sep } from 'node:path';
 import { VAULT_STUDIES } from './paths.ts';
+import { onVaultReplaced } from './vaultEvents.ts';
 import { readAliases, splitAliasList, splitFrontMatter } from '../shared/frontMatter.ts';
 import { validId } from '../shared/vaultNames.ts';
 import { chessFencePgn } from '../shared/chessFence.ts';
@@ -387,6 +388,13 @@ export function studiesApi(
     previewCache.set(path, { mtimeMs, preview });
     return preview;
   };
+  // A restore puts back files at the same paths with the copy's own
+  // mtimes, which the two caches above could mistake for the files they
+  // remember (server/vaultEvents.ts).
+  onVaultReplaced(() => {
+    chapterCache.clear();
+    previewCache.clear();
+  });
 
   /**
    * Which documents are bookmarked, as plain JSON beside them.
