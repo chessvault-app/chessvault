@@ -33,9 +33,11 @@ export function ExistingChoice({
   return (
     <div className="border-card-ring bg-muted flex flex-col gap-2 rounded-lg border p-3">
       <p className="text-foreground text-sm font-medium">
-        {t('This book already holds {n} puzzles. What should the import do with them?', {
-          n: existing,
-        })}
+        {existing === 1
+          ? t('This book already holds 1 puzzle. What should the import do with it?')
+          : t('This book already holds {n} puzzles. What should the import do with them?', {
+              n: existing,
+            })}
       </p>
       <RadioGroup value={mode} onValueChange={(v) => onMode(v as ImportMode)}>
         {(

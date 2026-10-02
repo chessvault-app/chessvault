@@ -12,7 +12,7 @@ import { FilterRow, SideSelect, type SideFilter } from '@/games/GameFilters';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
-import { INSIGHTS_COPY } from './copy';
+import { centipawnsLost, INSIGHTS_COPY } from './copy';
 const exact = new Intl.NumberFormat('en');
 import { DATE_RANGES, DATE_RANGE_LABEL, type DateRange } from '@/insights/dateRange';
 import type { MyGamesFilters } from '@/store/explorer';
@@ -391,7 +391,7 @@ export function InsightsSkeleton({ shape }: { shape: Shape }) {
                     total: figureDigits(shape.games),
                     d: shape.depth || '00',
                   })}
-                  {`, ${t('{n} centipawns lost per move', { n: shape.acpl || '00' })}`}.{' '}
+                  {`, ${centipawnsLost(shape.acpl || '00')}`}.{' '}
                   <Button
                     variant="link"
                     size="sm"

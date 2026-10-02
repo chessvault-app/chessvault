@@ -941,9 +941,9 @@ export function ArchiveBrowser({
           // on disk, saying so.
           label:
             total !== null
-              ? `${t('Any date')} · ${t('{n} games', { n: total.toLocaleString() })}`
+              ? `${t('Any date')} · ${total === 1 ? t('1 game') : t('{n} games', { n: total.toLocaleString() })}`
               : cachedGames > 0
-                ? `${t('Any date')} · ${t('{n} games cached', { n: cachedGames })}`
+                ? `${t('Any date')} · ${cachedGames === 1 ? t('1 game cached') : t('{n} games cached', { n: cachedGames })}`
                 : t('Any date'),
           short: t('Any date'),
         },
@@ -951,7 +951,7 @@ export function ArchiveBrowser({
           value: m.month,
           label: `${m.month}${
             m.cached
-              ? ` · ${t('{n} games', { n: m.games ?? 0 })}`
+              ? ` · ${m.games === 1 ? t('1 game') : t('{n} games', { n: m.games ?? 0 })}`
               : offline
                 ? ` · ${t('needs internet')}`
                 : ''
@@ -1146,19 +1146,19 @@ export function ArchiveBrowser({
   // instead (see the toolbar below), so the band only exists while
   // SELECTING: the mode's controls earn a row of their own for exactly
   // as long as the mode is on.
+  // Two counts, each in the number its noun takes, so they are two
+  // phrases rather than one sentence per pairing; an archive of one month
+  // has no months to count.
+  const gamesTally =
+    visibleMonthGames.length === 1 ? t('1 game') : t('{n} games', { n: visibleMonthGames.length });
   const tallyText =
-    month === ALL_MONTHS
-      ? cursor >= months.length
-        ? t('{n} games · all {total} months', {
-            n: visibleMonthGames.length,
-            total: months.length,
-          })
-        : t('{n} games · {at} of {total} months', {
-            n: visibleMonthGames.length,
-            at: cursor,
-            total: months.length,
-          })
-      : t('{n} games', { n: visibleMonthGames.length });
+    month === ALL_MONTHS && months.length > 1
+      ? `${gamesTally} · ${
+          cursor >= months.length
+            ? t('all {total} months', { total: months.length })
+            : t('{at} of {total} months', { at: cursor, total: months.length })
+        }`
+      : gamesTally;
   // The card menu's way into a selection, where the button is not drawn.
   // A plain function: the React Compiler memoises it, and refuses the
   // component outright if a useCallback here names fewer deps than it infers.

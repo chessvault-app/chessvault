@@ -10,6 +10,7 @@ import { usePinnedBand } from '@/hooks/use-pinned-band';
 import { api, apiErrorMessage } from '@/lib/api';
 import { JumpColumn, useJumpTargets } from '@/components/jump-list';
 import { up } from '@/lib/router';
+import { scrollParent } from '@/lib/scroll';
 import { t } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
 import { type Settings, type StorageReport } from '@/settings/cards/shared';
@@ -198,12 +199,7 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
   return (
     <PageShell width="narrow" className="relative">
         <PageHeader title={t('Settings')} back={() => up('home')} />
-        {/* Read again when the storage answer lands. Every card that
-            waits on a fetch has to be a dep here, or the row is missing
-            its name until a reload: the demo's Vault card used to be
-            withheld entirely and went unnamed, and a card that draws a
-            placeholder first can still change its title when it settles. */}
-        <JumpList dep={storage ?? settings} />
+        <JumpList />
 
         {/* Appearance is the only card that works without a server: it
             writes to this device, not to a vault. The rest change a vault or
@@ -347,22 +343,46 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
  * top; that row wrapped to two lines at every desktop width because it
  * lived inside the 42rem column, which is what the column fixes.
  *
- * `dep` is what to read the page again after. A card that waits on a
- * fetch is not in the DOM when the settings land, so every such answer
- * has to be one, or the list is missing a name until a reload.
+ * The page is read again whenever what is in it changes, not when some
+ * named answer lands. It used to take a `dep` (the storage answer, or the
+ * settings) and every card that waits on a fetch of its own had to be
+ * one, or the list missed its name until a reload; Deleted documents,
+ * which waits on the history, was not, and was missing whenever the
+ * history answered after the storage did. A card that is drawn, goes,
+ * or settles from its placeholder under a new title is a change to the
+ * page's tree, so watching the tree names every card by construction.
  */
-function JumpList({ dep }: { dep: unknown }) {
+function JumpList() {
   const [cards, setCards] = useState<{ el: HTMLElement; title: string }[]>([]);
   // 60px on one line, 84px once the names wrap to two, and either way the
   // page scrolls a Shift+Tab clear of it (hooks/use-pinned-band).
   const pin = usePinnedBand('top');
   useEffect(() => {
-    const found = [...document.querySelectorAll<HTMLElement>('[data-settings-card]')].map((el) => ({
-      el,
-      title: el.querySelector('h2')?.firstChild?.textContent?.trim() || el.querySelector('h2')?.textContent?.trim() || '',
-    }));
-    setCards(found.filter((c) => c.title));
-  }, [dep]);
+    const read = (): void => {
+      const found = [...document.querySelectorAll<HTMLElement>('[data-settings-card]')]
+        .map((el) => ({
+          el,
+          title: el.querySelector('h2')?.firstChild?.textContent?.trim() || el.querySelector('h2')?.textContent?.trim() || '',
+        }))
+        .filter((c) => c.title);
+      // The same list keeps its identity: this list's own buttons are in
+      // the tree it watches, and the current-card observer is keyed on it.
+      setCards((prev) =>
+        prev.length === found.length && prev.every((c, i) => c.el === found[i]!.el && c.title === found[i]!.title)
+          ? prev
+          : found,
+      );
+    };
+    read();
+    // The page's scroller holds every card, the ones still on the wire
+    // included, and nothing else on screen.
+    const first = document.querySelector<HTMLElement>('[data-settings-card]');
+    const page = first ? scrollParent(first) : null;
+    if (!page) return;
+    const watch = new MutationObserver(read);
+    watch.observe(page, { childList: true, subtree: true, characterData: true });
+    return () => watch.disconnect();
+  }, []);
   // Which card is current, and the jump to one (components/jump-list).
   const { current, jump } = useJumpTargets(cards);
   if (cards.length < 4) return null;

@@ -793,7 +793,7 @@ function DbRow({
               with, and a 128px box held "40 games" a long way from the
               size beside it. */}
           <span className="text-muted-foreground shrink-0 tabular-nums md:w-32 md:text-right">
-            {t('{n} games', { n: d.games.toLocaleString() })}
+            {d.games === 1 ? t('1 game') : t('{n} games', { n: d.games.toLocaleString() })}
           </span>
           <span className="text-muted-foreground shrink-0 tabular-nums md:w-16 md:text-right">
             {fmtBytes(d.bytes)}
@@ -1279,11 +1279,13 @@ function BuildWindow({
     >
       <DialogContent title="Build a database" icon={Database}>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          {count > 0
+          {count > 1
             ? t('Indexing {n} files into one searchable database of whole games.', {
                 n: count,
               })
-            : t('No PGN files are ticked. Pick them on the PGN files tab first.')}
+            : count === 1
+              ? t('Indexing 1 file into a searchable database of whole games.')
+              : t('No PGN files are ticked. Pick them on the PGN files tab first.')}
         </p>
         {count > 0 && (
           <ul className="divide-border max-h-40 divide-y overflow-y-auto rounded-md border type-row">

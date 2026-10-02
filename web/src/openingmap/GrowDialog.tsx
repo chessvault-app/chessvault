@@ -217,7 +217,11 @@ export function GrowDialog({
         ) : (
           <>
             <p className="text-foreground text-sm font-medium">
-              {t('{n} moves to chart, ending in {k} lines', { n: lines.length, k: tips.length })}
+              {lines.length === 1
+                ? t('1 move to chart, ending in 1 line')
+                : tips.length === 1
+                  ? t('{n} moves to chart, ending in 1 line', { n: lines.length })
+                  : t('{n} moves to chart, ending in {k} lines', { n: lines.length, k: tips.length })}
             </p>
             <div className="flex max-h-40 flex-col gap-0.5 overflow-y-auto">
               {tips.slice(0, 8).map((l) => (

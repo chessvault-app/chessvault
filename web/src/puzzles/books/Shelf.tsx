@@ -370,7 +370,7 @@ function BookCard({
       onToggleMark={onToggleMark}
       meta={
         <>
-          {t('{n} puzzles', { n: book.puzzles })}
+          {book.puzzles === 1 ? t('1 puzzle') : t('{n} puzzles', { n: book.puzzles })}
           {/* The schedule's ask, beside the size — the one number
               on this card that wants something done today. */}
           {(book.due ?? 0) > 0 && (

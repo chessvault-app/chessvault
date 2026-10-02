@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 
 /**
  * What the engine pass found in each of the owner's games.
@@ -127,6 +127,24 @@ export function recordFits(
   return record.site === null && game.plies !== null && record.plies === game.plies;
 }
 
+/** The stores holding their file open, for releaseAnalysisFile. */
+const openStores = new Set<AnalysisStore>();
+
+/**
+ * Close every store holding `path` open, so the file can be deleted: the
+ * wipe calls this before it removes the engine pass's findings (see
+ * SettingsDeps.derived in server/settings.ts). A store opens its file at
+ * the first read and keeps it, so once Insights had been visited the wipe
+ * was deleting a file under an open handle. Windows refused (EPERM), and
+ * the wipe answered 500 with the vault already emptied and its history
+ * repo not yet made again; elsewhere the delete went through and the
+ * store went on reading the deleted file's records until a restart. A
+ * released store opens the path afresh on its next read or write.
+ */
+export function releaseAnalysisFile(path: string): void {
+  for (const store of openStores) store.release(path);
+}
+
 export class AnalysisStore {
   private db: InstanceType<typeof Database> | null = null;
   private broken = false;
@@ -146,6 +164,7 @@ export class AnalysisStore {
       db.pragma('journal_mode = WAL');
       db.exec(SCHEMA);
       this.db = db;
+      openStores.add(this);
       return db;
     } catch {
       this.broken = true;
@@ -204,9 +223,19 @@ export class AnalysisStore {
     this.open()?.prepare('DELETE FROM analysis').run();
   }
 
+  /** Let go of the file if it is `path` (releaseAnalysisFile). A file
+      that would not open gets another try, since what is there next is a
+      new file. */
+  release(path: string): void {
+    if (resolve(this.dbPath) !== resolve(path)) return;
+    this.close();
+    this.broken = false;
+  }
+
   close(): void {
     this.db?.close();
     this.db = null;
+    openStores.delete(this);
   }
 }
 

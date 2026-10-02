@@ -339,7 +339,11 @@ export function PdfImport({
   // line below (role="alert"), so only the finish is said here.
   useEffect(() => {
     if (mine && job.status === 'done') {
-      announce(t('Import finished. {n} diagrams found.', { n: job.found.length }));
+      announce(
+        job.found.length === 1
+          ? t('Import finished. 1 diagram found.')
+          : t('Import finished. {n} diagrams found.', { n: job.found.length }),
+      );
     }
   }, [mine, job.status, job.found.length]);
 
@@ -433,11 +437,16 @@ export function PdfImport({
           {!mine && saved && (
             <div className="border-primary/40 bg-muted flex flex-col gap-2 rounded-lg border p-3">
               <p className="text-foreground text-sm font-medium">
-                {t('This book was being read when it stopped: {page} of {pages} pages, {n} diagrams so far.', {
-                  page: saved.page,
-                  pages: saved.pages,
-                  n: saved.diagrams,
-                })}
+                {saved.diagrams === 1
+                  ? t('This book was being read when it stopped: {page} of {pages} pages, 1 diagram so far.', {
+                      page: saved.page,
+                      pages: saved.pages,
+                    })
+                  : t('This book was being read when it stopped: {page} of {pages} pages, {n} diagrams so far.', {
+                      page: saved.page,
+                      pages: saved.pages,
+                      n: saved.diagrams,
+                    })}
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button
@@ -501,11 +510,13 @@ export function PdfImport({
               <p className="text-muted-foreground flex min-w-0 flex-1 items-center gap-2 text-sm">
                 <Spinner className="size-4 shrink-0" />
                 <span className="truncate">
-                  {t('page {page}/{pages}, {n} diagrams so far', {
-                    page: job.page,
-                    pages: job.pages || '…',
-                    n: found.length,
-                  })}
+                  {found.length === 1
+                    ? t('page {page}/{pages}, 1 diagram so far', { page: job.page, pages: job.pages || '…' })
+                    : t('page {page}/{pages}, {n} diagrams so far', {
+                        page: job.page,
+                        pages: job.pages || '…',
+                        n: found.length,
+                      })}
                 </span>
               </p>
               {/* Stopping is safe: the page just finished is on disk, so this
@@ -554,7 +565,9 @@ export function PdfImport({
               )}
             >
               <p className="text-foreground text-base font-medium">
-                {t('{n} puzzles imported with their solutions', { n: solve.solved })}
+                {solve.solved === 1
+                  ? t('1 puzzle imported with its solution')
+                  : t('{n} puzzles imported with their solutions', { n: solve.solved })}
               </p>
               <p className="text-muted-foreground pt-1">
                 {solve.confident
@@ -565,9 +578,17 @@ export function PdfImport({
                 {solve.repaired > 0 &&
                   ` ${t('{n} had a square misread, found by the book’s own solution.', { n: solve.repaired })}`}
                 {solve.unresolved > 0 &&
-                  ` ${t('{n} numbered diagrams had no solution we could read.', { n: solve.unresolved })}`}
+                  ` ${
+                    solve.unresolved === 1
+                      ? t('1 numbered diagram had no solution we could read.')
+                      : t('{n} numbered diagrams had no solution we could read.', { n: solve.unresolved })
+                  }`}
                 {solve.saveFailed > 0 &&
-                  ` ${t('{n} solved puzzles could not be saved. They are kept below as drafts.', { n: solve.saveFailed })}`}
+                  ` ${
+                    solve.saveFailed === 1
+                      ? t('1 solved puzzle could not be saved. It is kept below as a draft.')
+                      : t('{n} solved puzzles could not be saved. They are kept below as drafts.', { n: solve.saveFailed })
+                  }`}
               </p>
               {solve.engine && solve.engine.corroborated + solve.engine.only + solve.engine.unverified > 0 && (
                 <p className="text-muted-foreground pt-1">
@@ -615,9 +636,11 @@ export function PdfImport({
           {found.length > 0 && (
             <>
               <p className="text-muted-foreground text-sm">
-                {t('{n} diagrams found. Untick any false positives, then add the rest as drafts.', {
-                  n: found.length,
-                })}
+                {found.length === 1
+                  ? t('1 diagram found. Untick it if it is a false positive, or add it as a draft.')
+                  : t('{n} diagrams found. Untick any false positives, then add the rest as drafts.', {
+                      n: found.length,
+                    })}
                 {found.every((f) => f.fen === null) &&
                   ` ${t('Positions are unread for now: confirming the first draft teaches this book’s font.')}`}
               </p>
@@ -826,7 +849,7 @@ export function PdfImport({
                 onClick={() => void save()}
               >
                 {saving && <Spinner className="mr-1 glyph" />}
-                {t('Add {n} as drafts', { n: selectedCount })}
+                {selectedCount === 1 ? t('Add 1 as a draft') : t('Add {n} as drafts', { n: selectedCount })}
               </Button>
             )}
           </div>

@@ -3,8 +3,9 @@ import { writeAtomic } from './atomic.ts';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
-import { APP_VERSION, DATA_MYGAMES_ANALYSIS, LOOPBACK_ONLY, VAULT, VAULT_CONFIG } from './paths.ts';
+import { APP_VERSION, DATA_MYGAMES_ANALYSIS, LOOPBACK_ONLY, VAULT, VAULT_CONFIG, VAULT_SKELETON } from './paths.ts';
 import { revokeAllSessions } from './auth.ts';
+import { releaseAnalysisFile } from './myGamesAnalysis.ts';
 import { hashPassword, verifyPassword } from './password.ts';
 import { normaliseTraining } from '../shared/training.ts';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp.ts';
@@ -438,9 +439,16 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     // On a gated vault, re-enter the password: this both blocks a stolen
     // session or CSRF drive-by from destroying data, and is a deliberate
     // friction on an irreversible action. Ungated (local) vaults skip it.
+    // Two refusals, because the dialog shows this sentence as it is: one
+    // line for both read "password required" under a password just typed,
+    // as if the field had not been sent.
     const gate = readConfig().appPassword?.trim();
     if (gate && !(await verifyPassword(body.password ?? '', gate))) {
-      return c.json({ error: 'password required to wipe' }, 403);
+      const given = typeof body.password === 'string' && body.password !== '';
+      return c.json(
+        { error: given ? 'That password is wrong. Nothing was wiped.' : 'Enter your app password to wipe the vault.' },
+        403,
+      );
     }
     // Everything in the vault goes — games, studies, notes, puzzles, books,
     // sources, the fine-grained history repo — except config.json, which
@@ -450,12 +458,16 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
       if (entry === 'config.json' || entry === 'sessions.json' || entry === '.gitkeep') continue;
       rmSync(resolve(vaultDir, entry), { recursive: true, force: true });
     }
-    for (const d of ['studies', 'notes', 'games', 'sources']) {
+    // Back to the shape startup leaves, from the list startup reads: the
+    // routes were built against it and do not make their folders again.
+    for (const d of VAULT_SKELETON) {
       mkdirSync(resolve(vaultDir, d), { recursive: true });
     }
     // See SettingsDeps.derived. A file (or its sqlite sidecars) that is
-    // not there is nothing to remove.
+    // not there is nothing to remove. One the engine pass's store holds
+    // open is let go of first (releaseAnalysisFile says what that cost).
     for (const file of derived) {
+      releaseAnalysisFile(file);
       for (const suffix of ['', '-wal', '-shm']) rmSync(`${file}${suffix}`, { force: true });
     }
     // Fresh history repo so the autosave layer keeps working (and carries

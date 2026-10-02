@@ -27,6 +27,22 @@ export const VAULT_CONFIG = resolve(VAULT, 'config.json');
 export const VAULT_SESSIONS = resolve(VAULT, 'sessions.json');
 
 /**
+ * The folders a vault has from the moment the server opens it, relative to
+ * the vault and parents first.
+ *
+ * Every listing route reads its folder without asking whether it is
+ * there, because startup made it. So anything that empties a vault
+ * while the server runs has to leave it in this shape again, and it was
+ * three lists: startup's (server/index.ts), the wipe's (server/settings.ts)
+ * and the restore's (server/restore.ts). `games/collection` was made by
+ * the games routes when they were built at startup, so it was on none of
+ * them, and after "Wipe all data" the Games page and Home's game panels
+ * answered 500 (ENOENT on the folder) until the server was restarted.
+ * One list, read by all three.
+ */
+export const VAULT_SKELETON = ['studies', 'notes', 'games', 'games/collection', 'sources'] as const;
+
+/**
  * Which interfaces the server answers on, and whether that means the
  * only client that can reach it is this machine.
  *

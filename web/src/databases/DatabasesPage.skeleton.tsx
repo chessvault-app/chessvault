@@ -83,7 +83,7 @@ export function MountNote({
       {ready ? (
         <>
           <p className="text-foreground font-medium">
-            {t('{n} games', { n: games.toLocaleString() })}
+            {games === 1 ? t('1 game') : t('{n} games', { n: games.toLocaleString() })}
           </p>
           <p className="text-muted-foreground leading-relaxed">
             {t(

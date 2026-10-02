@@ -331,7 +331,7 @@ function figureText(figure: TileFigure): string {
     case 'today':
       return t('{n} today', { n: figure.n });
     case 'moves':
-      return t('{n} moves', { n: figure.n });
+      return figure.n === 1 ? t('1 move') : t('{n} moves', { n: figure.n });
     default:
       return compact.format(figure.n);
   }
@@ -622,7 +622,7 @@ function RecentGamesCard({
             its noun: a bare "30" beside a list of three read as a badge
             count. */}
         <span className="text-muted-foreground type-row-sub">
-          <Figures text={t('{n} games', { n: compact.format(total) })} />
+          <Figures text={total === 1 ? t('1 game') : t('{n} games', { n: compact.format(total) })} />
         </span>
       </PanelHead>
       {games.map((g) => (
@@ -757,19 +757,7 @@ function ActivityCard({
             // a reader is not made to walk 182 squares to hear that a
             // fortnight was quiet. What a single day holds is on that
             // day's own tip.
-            aria-label={
-              grid === null
-                ? undefined
-                : grid.total > 0
-                  ? t('What you did each day over the last {w} weeks: {n} things on {d} days.', {
-                      w: weeks,
-                      n: grid.total,
-                      d: grid.days,
-                    }) + partialNote(grid, day)
-                  : t('What you did each day over the last {w} weeks: nothing yet.', {
-                      w: weeks,
-                    }) + partialNote(grid, day)
-            }
+            aria-label={grid === null ? undefined : activitySummary(grid, weeks) + partialNote(grid, day)}
             className={cn('flex w-max', ACTIVITY_GAP)}
           >
             {frame.weeks.map((week) => (
@@ -798,9 +786,11 @@ function ActivityCard({
           <p className="text-muted-foreground mt-2 type-row-sub">
             {grid.total === 0
               ? t('Nothing recorded yet. A square fills in for each day you do something.')
-              : grid.last7 > 0
+              : grid.last7 > 1
                 ? t('{n} things in the last 7 days', { n: grid.last7 })
-                : t('Nothing in the last 7 days')}
+                : grid.last7 === 1
+                  ? t('1 thing in the last 7 days')
+                  : t('Nothing in the last 7 days')}
           </p>
         )}
       </div>
@@ -859,6 +849,24 @@ function ActivitySquare({
 }
 
 /**
+ * The picture's alternative text: how much, on how many days, in the
+ * number each noun takes. One sentence per shape rather than a noun
+ * handed in, for the reason KIND_WORDS gives.
+ */
+function activitySummary(grid: ActivityGrid, weeks: number): string {
+  if (grid.total === 0) return t('What you did each day over the last {w} weeks: nothing yet.', { w: weeks });
+  if (grid.total === 1) return t('What you did each day over the last {w} weeks: 1 thing on 1 day.', { w: weeks });
+  if (grid.days === 1) {
+    return t('What you did each day over the last {w} weeks: {n} things on 1 day.', { w: weeks, n: grid.total });
+  }
+  return t('What you did each day over the last {w} weeks: {n} things on {d} days.', {
+    w: weeks,
+    n: grid.total,
+    d: grid.days,
+  });
+}
+
+/**
  * The picture's alternative text gains the caveat the days carry on
  * their tips, since a reader who cannot hover one has nowhere else to
  * meet it. Empty, and so free, once the window is all inside the log.
@@ -898,12 +906,12 @@ function breakdown(day: ActivityGrid['weeks'][number][number]): string {
  * translated at all.
  */
 const KIND_WORDS: Record<ActivityKind, (n: number) => string> = {
-  puzzle: (n) => t('{n} puzzles', { n }),
-  drill: (n) => t('{n} drills', { n }),
-  study: (n) => t('{n} studies', { n }),
-  note: (n) => t('{n} notes', { n }),
-  game: (n) => t('{n} games', { n }),
-  book: (n) => t('{n} books', { n }),
+  puzzle: (n) => (n === 1 ? t('1 puzzle') : t('{n} puzzles', { n })),
+  drill: (n) => (n === 1 ? t('1 drill') : t('{n} drills', { n })),
+  study: (n) => (n === 1 ? t('1 study') : t('{n} studies', { n })),
+  note: (n) => (n === 1 ? t('1 note') : t('{n} notes', { n })),
+  game: (n) => (n === 1 ? t('1 game') : t('{n} games', { n })),
+  book: (n) => (n === 1 ? t('1 book') : t('{n} books', { n })),
 };
 
 /** How many recent games the phone draws under Continue: enough to hold
@@ -2060,11 +2068,13 @@ export function HomePage() {
                   <ListRow divided onClick={() => navigate('repertoire')} className="type-row">
                     <Layers className="text-muted-foreground glyph shrink-0" />
                     <span className="text-foreground min-w-0 flex-1 truncate font-medium">
-                      {data.repertoire.due > 0
+                      {data.repertoire.due > 1
                         ? t('{n} repertoire positions due', { n: data.repertoire.due })
-                        : t('Repertoire: the next position comes back {when}', {
-                            when: formatUntil(data.repertoire.nextDue!),
-                          })}
+                        : data.repertoire.due === 1
+                          ? t('1 repertoire position due')
+                          : t('Repertoire: the next position comes back {when}', {
+                              when: formatUntil(data.repertoire.nextDue!),
+                            })}
                     </span>
                     <ChevronRight className={ROW_CHEVRON} />
                   </ListRow>

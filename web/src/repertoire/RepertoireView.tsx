@@ -1308,7 +1308,9 @@ export function RepertoireView() {
           <span className="text-muted-foreground text-sm font-medium">{t('From the opening map')}</span>
           <p className="text-foreground text-sm">{mapDrill.label}</p>
           <p className="text-muted-foreground text-sm">
-            {t('{n} chapters across the tagged studies', { n: mapDrill.entries.length })}
+            {mapDrill.entries.length === 1
+              ? t('1 chapter across the tagged studies')
+              : t('{n} chapters across the tagged studies', { n: mapDrill.entries.length })}
           </p>
           <Button
             variant="ghost"
@@ -1417,9 +1419,13 @@ export function RepertoireView() {
               number means on the puzzles page. */}
           <p className="text-muted-foreground min-w-0 flex-1 text-sm leading-relaxed">
             {summary.due > 0
-              ? t('{n} positions due for review', { n: summary.due })
+              ? summary.due === 1
+                ? t('1 position due for review')
+                : t('{n} positions due for review', { n: summary.due })
               : summary.review.length > 0
-                ? t('{n} positions to review', { n: summary.review.length })
+                ? summary.review.length === 1
+                  ? t('1 position to review')
+                  : t('{n} positions to review', { n: summary.review.length })
                 : summary.scheduled > 0 && summary.nextDue !== null
                   ? t('Nothing due. The next position comes back {when}', {
                       when: formatUntil(summary.nextDue),
@@ -1428,7 +1434,10 @@ export function RepertoireView() {
             {(summary.due > 0 || summary.review.length > 0 || summary.scheduled > 0) &&
               summary.gaps > 0 &&
               ' · '}
-            {summary.gaps > 0 && t('{n} replies with no answer yet', { n: summary.gaps })}
+            {summary.gaps > 0 &&
+              (summary.gaps === 1
+                ? t('1 reply with no answer yet')
+                : t('{n} replies with no answer yet', { n: summary.gaps }))}
             {summary.review.length === 0 &&
               summary.scheduled === 0 &&
               summary.gaps === 0 &&

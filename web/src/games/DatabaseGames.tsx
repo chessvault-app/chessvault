@@ -589,7 +589,7 @@ export function DatabaseGames({
         );
         return body.names.map((n) => ({
           v: n.name,
-          desc: t('{n} games', { n: n.games.toLocaleString() }),
+          desc: n.games === 1 ? t('1 game') : t('{n} games', { n: n.games.toLocaleString() }),
         }));
       } catch {
         return [];
@@ -800,7 +800,9 @@ export function DatabaseGames({
         !sawDone
           ? t('The search failed.')
           : exhaustive
-            ? t('{n} games found', { n: got.toLocaleString() })
+            ? got === 1
+              ? t('1 game found')
+              : t('{n} games found', { n: got.toLocaleString() })
             : t('{n}+ games found. The list stops here.', { n: got.toLocaleString() }),
       );
     }
@@ -1324,7 +1326,9 @@ export function DatabaseGames({
       : huntFailed
         ? t('The search failed.')
         : huntExhaustive
-          ? t('{n} games found', { n: (huntRows?.length ?? 0).toLocaleString() })
+          ? huntRows?.length === 1
+            ? t('1 game found')
+            : t('{n} games found', { n: (huntRows?.length ?? 0).toLocaleString() })
           : t('{n}+ games found. The list stops here.', {
               n: (huntRows?.length ?? 0).toLocaleString(),
             })
@@ -1332,7 +1336,9 @@ export function DatabaseGames({
       ? t('Searching…')
       : capped
         ? t('{n}+ games', { n: total.toLocaleString() })
-        : t('{n} games', { n: total.toLocaleString() });
+        : total === 1
+          ? t('1 game')
+          : t('{n} games', { n: total.toLocaleString() });
 
   // The database picker (only when there is a choice) and the manager,
   // shown wherever the count is — absent entirely on a single-database

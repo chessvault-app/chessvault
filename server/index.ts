@@ -11,6 +11,7 @@ import { Readable } from 'node:stream';
 import { resolve } from 'node:path';
 import { authApi, isGated, migratePlaintextPassword, requireAuth } from './auth.ts';
 import { booksApi } from './books.ts';
+import { bootBanner } from './bootBanner.ts';
 import { recordActivity } from './activity.ts';
 import { crossSiteGuard, isRawBodyPath } from './crossSite.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
@@ -27,7 +28,7 @@ import { proberFor, tablebaseApi } from './tablebase.ts';
 import { startVaultBackup } from './vaultBackup.ts';
 import { vaultHistoryApi } from './vaultHistory.ts';
 import { seedWelcomeDocs } from './welcome.ts';
-import { ALLOWED_HOSTS, APP_VERSION, BIND, DATA, LOOPBACK_ONLY, REPO_ROOT, VAULT_CONFIG, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
+import { ALLOWED_HOSTS, APP_VERSION, BIND, DATA, LOOPBACK_ONLY, REPO_ROOT, VAULT, VAULT_CONFIG, VAULT_SKELETON, UPDATES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -76,8 +77,9 @@ setDefaultAutoSelectFamilyAttemptTimeout(2_000);
 recoverInterruptedRestore();
 
 // Opening an empty folder as a vault must Just Work: create the skeleton
-// up front so every listing endpoint finds its directory.
-for (const d of [VAULT_STUDIES, VAULT_NOTES, VAULT_GAMES, VAULT_SOURCES, DATA]) {
+// up front so every listing endpoint finds its directory. The wipe and the
+// restore put back the same list (server/paths.ts).
+for (const d of [...VAULT_SKELETON.map((name) => resolve(VAULT, name)), DATA]) {
   mkdirSync(d, { recursive: true });
 }
 
@@ -476,12 +478,10 @@ if (existsSync(dist)) {
 const REQUEST_TIMEOUT_MS = 6 * 60 * 60 * 1000;
 
 serve({ fetch: app.fetch, port: PORT, hostname: BIND, serverOptions: { requestTimeout: REQUEST_TIMEOUT_MS } }, (info) => {
-  console.log(`  chess-vault server  http://127.0.0.1:${info.port}`);
-  console.log(`  cross-origin isolation: on (Stockfish threads enabled)`);
-  // Phones on the same network reach the app through Vite's LAN address.
-  const lan = Object.values(networkInterfaces())
-    .flat()
-    .find((iface) => iface && iface.family === 'IPv4' && !iface.internal);
-  if (lan) console.log(`  on your phone:      http://${lan.address}:5173`);
+  // The address this server holds (server/bootBanner.ts). `dev:server` is
+  // the npm script `npm run dev` starts beside Vite, the one case where a
+  // phone opens Vite's port rather than this one.
+  const dev = process.env.npm_lifecycle_event === 'dev:server';
+  for (const line of bootBanner(info, { dev, interfaces: networkInterfaces() })) console.log(line);
 });
 

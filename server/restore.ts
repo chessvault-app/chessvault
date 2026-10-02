@@ -5,7 +5,7 @@ import { mkdir, open, rm, statfs, utimes, type FileHandle } from 'node:fs/promis
 import { dirname, join, relative, resolve } from 'node:path';
 import { Hono } from 'hono';
 import { readJson, renameRetrying, writeJson } from './atomic.ts';
-import { VAULT } from './paths.ts';
+import { VAULT, VAULT_SKELETON } from './paths.ts';
 import { walk } from './storage.ts';
 import { readTar, TarError, type TarFault } from './tarRead.ts';
 import { prepareHistoryRepo, type VaultBackup } from './vaultBackup.ts';
@@ -109,9 +109,6 @@ const keptInPlace = (name: string): boolean => name.startsWith('.') || CREDENTIA
 /** What a vault's top level holds, any one of which makes an archive a
     copy of one rather than some other tar. */
 const VAULT_ROOTS = new Set(['studies', 'notes', 'games', 'books', 'puzzlebooks', 'puzzles', 'repertoire', 'sources', 'activity.jsonl', HISTORY_DIR_NAME]);
-
-/** The folders server/index.ts creates at startup and every route expects. */
-const SKELETON = ['studies', 'notes', 'games', 'sources'];
 
 /** What of a copy's history is taken: the objects and what points at them. */
 const HISTORY_PARTS = new Set(['objects', 'refs', 'packed-refs', 'HEAD', 'shallow']);
@@ -514,7 +511,9 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
     // Checked before anything moves: a tar of something else is refused
     // here rather than swapped in as an empty vault.
     if (![...roots].some((root) => VAULT_ROOTS.has(root))) return fail(new TarError('not-tar', 'no vault folder in it'));
-    for (const name of SKELETON) {
+    // The folders startup makes and every route expects, parents first,
+    // so a copy that lacks one does not 500 its page until a restart.
+    for (const name of VAULT_SKELETON) {
       const path = join(copy, name);
       const stat = lstatSync(path, { throwIfNoEntry: false });
       if (stat && !stat.isDirectory()) return fail(new TarError('malformed', `${name} is not a folder`));

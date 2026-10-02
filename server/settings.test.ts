@@ -3,8 +3,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
+import { gamesApi } from './games.ts';
+import { AnalysisStore } from './myGamesAnalysis.ts';
 import { hashPassword, isHashedPassword, verifyPassword } from './password.ts';
+import { VAULT_SKELETON } from './paths.ts';
 import { settingsApi } from './settings.ts';
+import { studiesApi } from './studies.ts';
 import { totpAt } from './totp.ts';
 import { git } from './vaultGit.ts';
 
@@ -369,9 +373,14 @@ describe('wipe', () => {
     // wrong phrase
     expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe' })).status).toBe(400);
     expect(existsSync(join(vault, 'studies', 'a.pgn'))).toBe(true);
-    // right phrase, missing/wrong password (gate is on)
-    expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything' })).status).toBe(403);
-    expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything', password: 'nope' })).status).toBe(403);
+    // right phrase, missing/wrong password (gate is on), each refusal
+    // saying which, since the dialog shows it as it is
+    const missing = await json('POST', '/api/settings/wipe', { confirm: 'wipe everything' });
+    expect(missing.status).toBe(403);
+    expect((await missing.json()).error).toBe('Enter your app password to wipe the vault.');
+    const wrong = await json('POST', '/api/settings/wipe', { confirm: 'wipe everything', password: 'nope' });
+    expect(wrong.status).toBe(403);
+    expect((await wrong.json()).error).toBe('That password is wrong. Nothing was wiped.');
     expect(existsSync(join(vault, 'studies', 'a.pgn'))).toBe(true);
 
     // The engine pass's findings sit outside the vault and go with it.
@@ -417,6 +426,70 @@ describe('wipe', () => {
     expect(existsSync(join(vault, 'studies', 'a.pgn'))).toBe(false);
     expect(existsSync(join(vault, 'sessions.json'))).toBe(true);
     expect(existsSync(join(vault, 'config.json'))).toBe(true);
+  });
+
+  it('leaves the vault in the shape startup does, so the games routes keep answering', async () => {
+    // Mounted the way mountVault mounts them, over this test's vault: both
+    // read games/collection, which they made when they were built, and a
+    // wipe that did not put it back had them answer 500 until a restart.
+    const games = join(vault, 'games');
+    app.route('/api', gamesApi(games, join(vault, 'config.json')));
+    app.route('/api', studiesApi(join(games, 'collection'), 'games/docs', '.pgn'));
+    writeFileSync(join(games, 'collection', 'a.pgn'), '[White "A"]\n[Black "B"]\n[Result "*"]\n\n1. e4 *\n');
+    expect((await (await json('GET', '/api/games')).json()).total).toBe(1);
+
+    expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything', password: 'hunter22' })).status).toBe(200);
+    const list = await json('GET', '/api/games');
+    expect(list.status).toBe(200);
+    expect(await list.json()).toEqual({ total: 0, games: [] });
+    const docs = await json('GET', '/api/games/docs');
+    expect(docs.status).toBe(200);
+    for (const d of VAULT_SKELETON) expect(existsSync(join(vault, d))).toBe(true);
+  });
+
+  it('lets go of the engine pass’s open file before deleting it, so the wipe finishes and its records go', async () => {
+    // The store keeps its file open from its first read, as it does once
+    // Insights has been visited. Deleting it under that handle answered
+    // 500 on Windows (EPERM) with the vault already emptied, and elsewhere
+    // left the store reading the deleted file's records until a restart.
+    const data = mkdtempSync(join(tmpdir(), 'vault-derived-'));
+    const file = join(data, 'analysis.sqlite');
+    const store = new AnalysisStore(file);
+    try {
+      store.put({
+        file: 'collection/a.pgn',
+        index: 0,
+        side: 'white',
+        site: null,
+        plies: 10,
+        depth: 12,
+        accuracy: 90,
+        acpl: 20,
+        moves: 5,
+        inaccuracies: 0,
+        mistakes: 0,
+        blunders: 0,
+        brilliancies: 0,
+        bookMoves: 2,
+        perMove: [],
+      });
+      expect(store.all().size).toBe(1);
+      const wiper = new Hono();
+      wiper.route(
+        '/api',
+        settingsApi({ configPath: join(vault, 'config.json'), vaultDir: vault, sameMachine: true, derived: [file] }),
+      );
+      const res = await wiper.request('/api/settings/wipe', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ confirm: 'wipe everything', password: 'hunter22' }),
+      });
+      expect(res.status).toBe(200);
+      expect(store.all().size).toBe(0);
+    } finally {
+      store.close();
+      rmSync(data, { recursive: true, force: true });
+    }
   });
 
   it('skips the password check on an ungated vault', async () => {

@@ -128,7 +128,7 @@ export function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
                 <div className="flex min-w-0 flex-1 items-baseline gap-2">
                   <p className="min-w-0 flex-1 truncate type-row">{p.user}</p>
                   <p className="text-muted-foreground shrink-0 type-row-sub">
-                    {PROVIDER_NAME[p.provider] ?? p.provider} · {t('{n} months', { n: p.months })} ·{' '}
+                    {PROVIDER_NAME[p.provider] ?? p.provider} · {p.months === 1 ? t('1 month') : t('{n} months', { n: p.months })} ·{' '}
                     {size(p.bytes)}
                   </p>
                 </div>

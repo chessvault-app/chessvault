@@ -825,7 +825,11 @@ function ChapterRow({
           {childCount > 0 ? (
             <TitleTip
               title={
-                isFolded ? t('Unfold {n} sub-chapters', { n: childCount }) : t('Fold sub-chapters')
+                isFolded
+                  ? childCount === 1
+                    ? t('Unfold 1 sub-chapter')
+                    : t('Unfold {n} sub-chapters', { n: childCount })
+                  : t('Fold sub-chapters')
               }
             >
               <span

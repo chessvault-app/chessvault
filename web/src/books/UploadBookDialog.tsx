@@ -196,7 +196,7 @@ export function UploadBookDialog({
               </TitleTip>
               <p className="text-muted-foreground text-sm">
                 {looked
-                  ? `${t('{n} pages', { n: looked.pages })} · ${fileSize(file.size)}`
+                  ? `${looked.pages === 1 ? t('1 page') : t('{n} pages', { n: looked.pages })} · ${fileSize(file.size)}`
                   : t('Opening…')}
               </p>
               {progress !== null && (

@@ -394,7 +394,13 @@ function EngineSettings() {
         min={1}
         max={maxThreads}
         disabled={!threadsAvailable}
-        hint={threadsAvailable ? t('of {n} cores', { n: maxThreads }) : t('unavailable in this context')}
+        hint={
+          threadsAvailable
+            ? maxThreads === 1
+              ? t('of 1 core')
+              : t('of {n} cores', { n: maxThreads })
+            : t('unavailable in this context')
+        }
         onChange={(v) => setOption({ threads: v })}
       />
       <Slider

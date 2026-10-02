@@ -653,8 +653,12 @@ export function DashboardPage() {
               history === null || history.length === 0
                 ? t('Puzzles')
                 : resultFilter === 'review'
-                  ? t('{n} puzzles to review', { n: puzzles.length })
-                  : t('{n} puzzles', { n: puzzles.length })
+                  ? puzzles.length === 1
+                    ? t('1 puzzle to review')
+                    : t('{n} puzzles to review', { n: puzzles.length })
+                  : puzzles.length === 1
+                    ? t('1 puzzle')
+                    : t('{n} puzzles', { n: puzzles.length })
             }
           />
           {/*
@@ -853,6 +857,19 @@ export function DashboardPage() {
   );
 }
 
+/** The wipe's question, each count in the number its noun takes. A
+    review pool is fed by failed attempts, so one attempt has at most one
+    puzzle waiting and a pool of several has several attempts behind it. */
+function wipeQuestion(attempts: number, review: number): string {
+  if (review > 1) return t('Wipe {a} attempts and the {r} puzzles waiting for review?', { a: attempts, r: review });
+  if (review === 1) {
+    return attempts === 1
+      ? t('Wipe 1 attempt and the puzzle waiting for review?')
+      : t('Wipe {a} attempts and the puzzle waiting for review?', { a: attempts });
+  }
+  return attempts === 1 ? t('Wipe 1 attempt?') : t('Wipe {a} attempts?', { a: attempts });
+}
+
 /** Wipes counters + history — including the review pool — behind an
     anchored confirm, so it stays deliberate without a browser dialog.
 
@@ -878,11 +895,7 @@ function ResetButton({
       triggerTone="quiet"
       label={t('Wipe history')}
       triggerTitle="Wipe attempts, history and the review pool"
-      question={
-        review > 0
-          ? t('Wipe {a} attempts and the {r} puzzles waiting for review?', { a: attempts, r: review })
-          : t('Wipe {a} attempts?', { a: attempts })
-      }
+      question={wipeQuestion(attempts, review)}
       confirmLabel={t('Wipe everything')}
       onConfirm={() => {
         // Refresh either way: the reload shows what the wipe really did.
