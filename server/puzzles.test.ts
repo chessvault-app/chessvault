@@ -724,6 +724,23 @@ describe('puzzles api (rebuilding a working database)', () => {
     const history = (await (await app.request('/api/puzzles/history')).json()) as { attempts: { id: string }[] };
     expect(history.attempts.map((a) => a.id)).toContain(first.id);
   }, 60_000);
+
+  it('keeps serving the old database when a rebuild fails, and leaves nothing of the new one', async () => {
+    writeFileSync(dump, dumpOf(Array.from({ length: 10 }, (_, i) => ({ id: `a${i}`, rating: 1500 }))));
+    expect((await build()).error ?? null).toBeNull();
+    expect((await draw('')).id).toMatch(/^a/);
+
+    // A dump the builder refuses after it has created its temp database:
+    // the header is read from the stream, by which time the file exists.
+    writeFileSync(dump, zstdCompressSync('not,a,puzzle,dump\n'));
+    const failed = await build();
+    expect(failed.error).toMatch(/unexpected header/);
+    expect(existsSync(join(data, 'puzzles.sqlite.building'))).toBe(false);
+
+    const meta = (await (await app.request('/api/puzzles/meta')).json()) as { ready: boolean; puzzles: number };
+    expect(meta).toMatchObject({ ready: true, puzzles: 10 });
+    expect((await draw('a0')).status).toBe(200);
+  }, 60_000);
 });
 
 /**

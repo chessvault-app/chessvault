@@ -74,24 +74,37 @@ function isFinishedPuzzleBuild(path: string): boolean {
  * a build deletes only a dump it downloaded, because one the user put there
  * is theirs, and this cannot tell the two apart. It also saves the next
  * build the download.
+ *
+ * The server's own build calls this too, the moment its child fails (see
+ * startBuild): that is the other moment the child is known to be dead.
+ * Says what it did, so that caller can tell a finished database that
+ * landed after all from one that never will.
  */
-export function sweepUnfinishedPuzzleBuild(dbPath: string = DATA_PUZZLES): void {
+export function sweepUnfinishedPuzzleBuild(
+  dbPath: string = DATA_PUZZLES,
+): 'none' | 'swapped' | 'kept' | 'discarded' {
   rmSync(resolve(dirname(dbPath), 'lichess_db_puzzle.csv.zst.part'), { force: true });
 
   const building = `${dbPath}.building`;
-  if (!existsSync(building)) return;
+  if (!existsSync(building)) return 'none';
   if (isFinishedPuzzleBuild(building)) {
     try {
       renameRetrying(building, dbPath);
       console.log('puzzles: swapped in the database an interrupted build had finished');
+      return 'swapped';
     } catch (error) {
       // Leave it: it is a whole database, and the next start tries again.
       console.warn(`puzzles: could not swap in the built database (${(error as Error).message})`);
+      return 'kept';
     }
-    return;
   }
   rmSync(building, { force: true });
+  // Builds before the journal was really off (scripts/build-puzzles.ts)
+  // kept one beside the file, as big as the file at the end, and a
+  // killed one left it behind.
+  rmSync(`${building}-journal`, { force: true });
   console.log('puzzles: discarded a part-built database — the build that wrote it never finished');
+  return 'discarded';
 }
 
 /**
@@ -783,6 +796,17 @@ export function puzzlesApi(
       current.running = false;
       if (code !== 0) {
         current.error = lastError || `the build stopped unexpectedly (exit ${code})`;
+        // Settle what it left now, as a restart would, rather than at the
+        // next restart. A part-built database is gigabytes (a 5,000,000-row
+        // build peaked at 2.14 GB of .building beside 2.14 GB of VACUUM
+        // temp, which SQLite deletes itself when the process goes), and a
+        // build beside a working database is the one that needs the most
+        // room: left until a restart, a full disk stayed full under an
+        // error that offered a retry. A database that did get to the end
+        // (the child failed after it) lands instead, which is a build that
+        // worked. Let go of the old file first, for that rename on Windows.
+        forgetDatabase();
+        if (sweepUnfinishedPuzzleBuild(dbPath) === 'swapped') current.error = null;
         return;
       }
       // Windows: our own read handle blocks the child's rename-over, so it
