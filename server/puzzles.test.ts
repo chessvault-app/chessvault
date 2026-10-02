@@ -769,6 +769,22 @@ describe('puzzles api (rebuilding a working database)', () => {
     expect(meta).toMatchObject({ ready: true, puzzles: 10 });
     expect((await draw('a0')).status).toBe(200);
   }, 60_000);
+
+  it('says why a build that threw half way failed, not which Node.js ran it', async () => {
+    writeFileSync(dump, dumpOf(Array.from({ length: 10 }, (_, i) => ({ id: `a${i}`, rating: 1500 }))));
+    expect((await build()).error ?? null).toBeNull();
+
+    // One id twice: the second insert throws from inside the stream, past
+    // the header, where a full disk's write throws too.
+    writeFileSync(
+      dump,
+      dumpOf([...Array.from({ length: 10 }, (_, i) => ({ id: `b${i}`, rating: 1500 })), { id: 'b0', rating: 1500 }]),
+    );
+    const failed = await build();
+    expect(failed.error).toBe('UNIQUE constraint failed: puzzles.id');
+    expect(existsSync(join(data, 'puzzles.sqlite.building'))).toBe(false);
+    expect((await draw('a0')).status).toBe(200);
+  }, 60_000);
 });
 
 /**

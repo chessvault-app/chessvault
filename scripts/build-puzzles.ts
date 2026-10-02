@@ -49,6 +49,27 @@ const args = process.argv.slice(2);
 const JSON_PROGRESS = args.includes('--progress-json');
 const positional = args.find((a) => !a.startsWith('--'));
 
+/**
+ * A failure, as the app is told it: one line on stderr, the error's own.
+ *
+ * The server shows the last line the child wrote to stderr (buildFailure
+ * in server/puzzles.ts), and Node's report of an uncaught error ends on
+ * its version banner. So every failure that was thrown rather than
+ * printed, a full disk, a dropped download or a dump that stops decoding
+ * half way, reached the Puzzles page and Settings as "Node.js v24.19.0",
+ * under a Try again. Only for the app's runs: from a terminal the stack
+ * is worth more than the line. The cause goes along when there is one,
+ * since fetch's own message ("fetch failed") names nothing. Exit waits on
+ * the write, which a pipe may not have flushed yet.
+ */
+if (JSON_PROGRESS) {
+  process.on('uncaughtException', (error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    const cause = error instanceof Error && error.cause instanceof Error ? `: ${error.cause.message}` : '';
+    process.stderr.write(`${message}${cause}\n`, () => process.exit(1));
+  });
+}
+
 const report = (event: Event): void => {
   if (JSON_PROGRESS) {
     console.log(JSON.stringify(event));
