@@ -343,6 +343,12 @@ const NO_SPACE = 'The server does not have enough free space for this copy.';
 
 const RUNNING = 'A restore is already running.';
 
+/** A swap that failed and could not be put back leaves its journal for
+    the next start, and the vault half one and half the other until then.
+    Nothing may build on that: a second swap would write its own journal
+    over this one, and an undo would delete what the first had put back. */
+const STUCK = 'The vault is still part way through a restore. Restart the server to finish putting it back.';
+
 export interface RestoreOptions {
   /** The running history writer, or null where there is none. */
   history?: () => Promise<VaultBackup | null>;
@@ -417,6 +423,7 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
 
   api.post('/storage/restore', async (c) => {
     if (running) return c.json({ error: RUNNING }, 409);
+    if (existsSync(journalPath(vault))) return c.json({ error: STUCK }, 409);
     // Taken before the first await, so two uploads cannot both get past it.
     running = true;
     try {
@@ -616,6 +623,7 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
    */
   api.post('/storage/restore/undo', async (c) => {
     if (running) return c.json({ error: RUNNING }, 409);
+    if (existsSync(journalPath(vault))) return c.json({ error: STUCK }, 409);
     if (!existsSync(beforeDir(vault))) return c.json({ error: 'There is no restore to undo.' }, 409);
     running = true;
     try {
@@ -643,8 +651,16 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
         await (backup ? backup.exclusive((commit) => putBack(commit)) : putBack(null));
       } catch (error) {
         console.error(`[restore] could not undo the restore: ${(error as Error).message}`);
-        if (!existsSync(journalPath(vault))) await rm(work.dir, { recursive: true, force: true }).catch(() => undefined);
-        return c.json({ error: 'Could not undo the restore, so the vault is as it was.' }, 500);
+        const stuck = existsSync(journalPath(vault));
+        if (!stuck) await rm(work.dir, { recursive: true, force: true }).catch(() => undefined);
+        return c.json(
+          {
+            error: stuck
+              ? 'Could not undo the restore or put everything back. Restart the server to finish putting it back.'
+              : 'Could not undo the restore, so the vault is as it was.',
+          },
+          500,
+        );
       }
       await rm(work.dir, { recursive: true, force: true }).catch(() => undefined);
       return c.json({ ok: true });
@@ -656,6 +672,7 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
   /** Keep the restored vault: what it replaced is deleted, for good. */
   api.post('/storage/restore/keep', async (c) => {
     if (running) return c.json({ error: RUNNING }, 409);
+    if (existsSync(journalPath(vault))) return c.json({ error: STUCK }, 409);
     if (!existsSync(beforeDir(vault))) return c.json({ error: 'There is no restore to keep.' }, 409);
     running = true;
     try {

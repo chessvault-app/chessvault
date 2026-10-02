@@ -1954,6 +1954,10 @@ export const ko: Record<string, string> = {
   "There is no restore to undo.": "되돌릴 복원이 없습니다.",
   "There is no restore to keep.": "유지할 복원이 없습니다.",
   "Could not undo the restore, so the vault is as it was.": "복원을 되돌리지 못했으므로 보관함은 그대로입니다.",
+  "Could not undo the restore or put everything back. Restart the server to finish putting it back.":
+    "복원을 되돌리지 못했고 모두 되돌려 놓지도 못했습니다. 서버를 다시 시작하면 마저 되돌립니다.",
+  "The vault is still part way through a restore. Restart the server to finish putting it back.":
+    "보관함이 아직 복원 도중에 멈춰 있습니다. 서버를 다시 시작하면 마저 되돌립니다.",
   "Could not keep the restored vault, so the restore can still be undone.":
     "복원한 보관함을 유지하지 못했으므로 복원은 아직 되돌릴 수 있습니다.",
 

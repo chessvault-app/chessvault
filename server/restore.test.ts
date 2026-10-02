@@ -517,6 +517,59 @@ describe('restore from a copy', () => {
     expect(everything(target.vault)).toEqual(before);
   });
 
+  it('says when an undo could not be put back, and touches nothing more until a restart puts it back', async () => {
+    const source = scratch('source');
+    fillSource(source.vault);
+    const copy = await download(source.vault);
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const original = everything(target.vault);
+    const before = join(target.vault, '.restore', 'before');
+    let sabotage = false;
+    let calls = 0;
+    const { restore, undo, keep } = restorer(target.vault, {
+      move: (from, to) => {
+        // The undo's eight renames out and the first one back are made;
+        // the second fails, and putting the first back fails too, since
+        // something now stands where the replaced vault's folder was.
+        if (sabotage && ++calls === 10) {
+          renameSync(before, `${before}-aside`);
+          writeFileSync(before, '');
+          throw Object.assign(new Error('the disk said no'), { code: 'EIO' });
+        }
+        renameSync(from, to);
+      },
+    });
+    expect((await restore(copy)).status).toBe(200);
+    const restored = everything(target.vault);
+    sabotage = true;
+    const stuck = await undo();
+    expect(stuck.status).toBe(500);
+    expect((await stuck.json()).error).toBe('Could not undo the restore or put everything back. Restart the server to finish putting it back.');
+    expect(existsSync(join(target.vault, '.restore', 'journal.json'))).toBe(true);
+
+    // A second undo would write its journal over this one and delete what
+    // the first had already put back; a keep or a restore would build on
+    // half of one vault. Each is refused, and the journal stands.
+    const journal = readFileSync(join(target.vault, '.restore', 'journal.json'), 'utf-8');
+    for (const res of [await undo(), await keep(), await restore(copy)]) {
+      expect(res.status).toBe(409);
+      expect((await res.json()).error).toBe('The vault is still part way through a restore. Restart the server to finish putting it back.');
+    }
+    expect(readFileSync(join(target.vault, '.restore', 'journal.json'), 'utf-8')).toBe(journal);
+
+    // What stood in the way is gone by the restart, which puts the vault
+    // back as the restore left it; the undo then goes through.
+    rmSync(before);
+    renameSync(`${before}-aside`, before);
+    recoverInterruptedRestore(target.vault);
+    expect(everything(target.vault)).toEqual(restored);
+    sabotage = false;
+    expect((await undo()).status).toBe(200);
+    expect(everything(target.vault)).toEqual(original);
+    expect(leftovers(target.vault)).toEqual([]);
+  });
+
   it('leaves the vault as it was when the upload is cut off or goes quiet', async () => {
     const source = scratch('source');
     fillSource(source.vault);
