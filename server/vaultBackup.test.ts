@@ -108,6 +108,24 @@ describe('vault backup', () => {
     expect(existsSync(join(book, 'open.bin'))).toBe(true);
   });
 
+  it('untracks the history repo\'s own folder a wipe let the autosave commit', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'vault-backup-'));
+    writeFileSync(join(dir, 'games.json'), '{"a":1}\n');
+    backup = await startVaultBackup(dir, 50);
+    // What the autosave committed after a wipe that re-made the repo with
+    // no exclude list: the repo's own files, by force now that the
+    // exclude is there.
+    const gitDir = join(dir, '.history.git');
+    await git(gitDir, dir, ['add', '-f', '.history.git']);
+    await git(gitDir, dir, ['commit', '-q', '-m', 'after a wipe']);
+    expect(tracked(dir)).toContain('.history.git/HEAD');
+    await backup.stop();
+
+    backup = await startVaultBackup(dir, 50);
+    expect(tracked(dir)).not.toContain('.history.git/');
+    expect(tracked(dir)).toContain('games.json');
+  });
+
   /**
    * A vault is a folder the user picks, and it can arrive with a
    * `.history.git` already in it. Adopting one means git reads ITS config
