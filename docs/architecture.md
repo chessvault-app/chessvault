@@ -39,7 +39,10 @@ vault/
                       map.json       (the opening map, one tree per colour)
   sources/            reference PGN dumps (input to refgames index)
   .welcomed           marker: the welcome study and note were seeded once, so deleting them sticks
-  .history.git        auto-commit history repo (fine-grained undo; excludes config.json and sessions.json)
+  .history.git        auto-commit history repo (fine-grained undo; excludes config.json,
+                      sessions.json, sources/, .restore/, and *.part and *.swp files)
+  .restore/           a restore from a copy at work (server/restore.ts): the upload being
+                      unpacked, and the vault it replaced until that is kept or undone
 ```
 
 Everything a person would grieve losing is a file another tool can read.
@@ -119,7 +122,10 @@ flowchart LR
   the page is cross-origin isolated. Sets COOP/COEP so the
   browser Stockfish can use threads. `CHESS_VAULT_DIR` / `CHESS_VAULT_DATA`
   override the vault/data locations; the server creates the vault
-  skeleton on boot, so pointing it at an empty folder works.
+  skeleton on boot, so pointing it at an empty folder works. The skeleton
+  is one list (`VAULT_SKELETON`, `server/paths.ts`), and the wipe and a
+  restore leave the vault in that shape too, since no route makes its
+  own folder again.
 - **Web app** (`web/`, React + Vite + Tailwind v4 + shadcn/ui + zustand,
   with the React Compiler memoising every component it will take;
   `web/vite.compiler.ts` wires it and, under `CHESS_COMPILER_LOG=1`,
@@ -279,6 +285,12 @@ end marker. The swap is a list of renames journalled in
 `.restore/journal.json`: a failure part way puts back the ones made, and a
 server killed part way puts them back at its next start
 (`recoverInterruptedRestore`, before anything else touches the vault).
+Where putting them back fails too, the journal is left for that next
+start, and a restore, an undo and a keep are all refused until then: a
+second swap would write its journal over this one, and an undo would
+delete what the first had put back. A restore and its undo are also
+refused while a reference database job runs (`refgamesBuildRunning`),
+since a build reads `sources/`, which both of them move.
 Nothing is deleted: the vault's folders move into `.restore/before/`
 until the user keeps the restore (which deletes them) or undoes it (which
 moves them back), because book PDFs and `sources/` are in no history and
