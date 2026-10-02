@@ -30,7 +30,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { Decompress } from 'fzstd';
 import Database from 'better-sqlite3';
-import { DATA, DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD } from '../server/paths.ts';
+import { DATA, DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD, PUZZLE_DUMP_PLACED } from '../server/paths.ts';
 import { PUZZLE_COUNT_TABLES } from './lib/db-tuning.ts';
 import { resolve } from 'node:path';
 
@@ -88,7 +88,7 @@ const report = (event: Event): void => {
 };
 
 /** A dump somebody put in the data directory, which a build uses and keeps. */
-const placed = resolve(DATA, 'lichess_db_puzzle.csv.zst');
+const placed = resolve(DATA, PUZZLE_DUMP_PLACED);
 const fetched = !positional && !existsSync(placed);
 const source = positional
   ? resolve(process.cwd(), positional)

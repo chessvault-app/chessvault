@@ -77,8 +77,13 @@ export const ALLOWED_HOSTS = (process.env.CHESS_ALLOWED_HOSTS ?? '')
 export const DATA = fromEnv('CHESS_VAULT_DATA') ?? resolve(REPO_ROOT, 'data');
 export const DATA_PUZZLES = resolve(DATA, 'puzzles.sqlite');
 /**
+ * The name of a Lichess puzzle dump somebody put beside DATA_PUZZLES. A
+ * build uses it rather than downloading, and keeps it: it is theirs.
+ */
+export const PUZZLE_DUMP_PLACED = 'lichess_db_puzzle.csv.zst';
+/**
  * The name a puzzle build gives the Lichess dump it downloads itself,
- * beside DATA_PUZZLES. Not `lichess_db_puzzle.csv.zst`, which is the name
+ * beside DATA_PUZZLES. Not PUZZLE_DUMP_PLACED, which is the name
  * of a dump somebody put there and a build uses and keeps: a download
  * under that name, left by a build that died after fetching it, was
  * taken for theirs, kept for good and built from on every later build,

@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { renameRetrying, writeAtomic } from './atomic.ts';
-import { DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD, REPO_ROOT, VAULT } from './paths.ts';
+import { DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD, PUZZLE_DUMP_PLACED, REPO_ROOT, VAULT } from './paths.ts';
 import { reviewDueAt, type ReviewAttempt } from '../shared/review.ts';
 
 /**
@@ -71,7 +71,7 @@ function isFinishedPuzzleBuild(path: string): boolean {
  * it is a build that finished in the instant before the server died, which
  * is a whole database that only missed its rename and is renamed in instead.
  *
- * A dump somebody PUT there (`lichess_db_puzzle.csv.zst`) is left alone:
+ * A dump somebody PUT there (PUZZLE_DUMP_PLACED) is left alone:
  * it is theirs, and a build uses it rather than downloading. That name
  * used to be the download's as well, so a download a dead build left
  * could not be told from it and stayed for good; the download has a name
@@ -87,7 +87,7 @@ export function sweepUnfinishedPuzzleBuild(
   dbPath: string = DATA_PUZZLES,
 ): 'none' | 'swapped' | 'kept' | 'discarded' {
   const data = dirname(dbPath);
-  rmSync(resolve(data, 'lichess_db_puzzle.csv.zst.part'), { force: true });
+  rmSync(resolve(data, `${PUZZLE_DUMP_PLACED}.part`), { force: true });
   rmSync(resolve(data, `${PUZZLE_DUMP_DOWNLOAD}.part`), { force: true });
   rmSync(resolve(data, PUZZLE_DUMP_DOWNLOAD), { force: true });
 
