@@ -189,12 +189,14 @@ Android phone yet, nor the share sheet on any device.
   window material on, a light app's dark symbols on the chooser's dark
   page, where the buttons all but vanished. The chooser sets its own
   colours now.
-- **Korean reaches three places it had missed.** The engine's Threads
+- **Korean reaches four places it had missed.** The engine's Threads
   setting reads "6 / 8코어" on an eight-core machine and its time limit
   "10 초", where both were
-  left in English. And the website and the manual draw the Korean in
-  their monospaced labels and code in Pretendard, like the rest of the
-  page, instead of the system's Korean fixed-width face.
+  left in English, and Customise home's note points to the 더보기 tab
+  by the name the tab bar gives it, where it had said "More". And the
+  website and the manual draw the Korean in their monospaced labels and
+  code in Pretendard, like the rest of the page, instead of the system's
+  Korean fixed-width face.
 - **Small tags round alike at every Corners setting.** A shortcut key,
   a puzzle theme, a game's result and inline code in a note now share
   one small corner. It follows the Corners setting down to Square like
@@ -289,6 +291,17 @@ Android phone yet, nor the share sheet on any device.
   download…” and no new attempt could start until the server restarted.
   Either way the download now ends with “Could not download” and the
   reason, beside “Try again”, and nothing half-written is kept.
+- **Settings says what the Lichess token is for.** Its card said the
+  token powered the online opening explorer and your Lichess puzzle
+  history, and nothing in the app reads a puzzle history from Lichess.
+  It now says the token powers the explorer, and that a token given
+  study:read also lets you import your private Lichess studies. Public
+  studies import without a token, as they always have.
+- **A bookmarked book is marked in the accent, like every other
+  bookmark.** The strip down a kept book's card on the Books and Puzzle
+  books shelves was amber, which means caution everywhere else in the
+  app. Every other bookmark moved to the accent in 0.8.0 and 0.9.3, and
+  this one was missed.
 
 ## 0.11.4
 
