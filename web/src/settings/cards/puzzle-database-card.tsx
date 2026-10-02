@@ -111,14 +111,28 @@ export function PuzzleDatabaseCard() {
               {t('Download and build')}
             </Button>
           ) : (
+            // What the build will do. A dump somebody put beside the
+            // database is built from instead of the latest set, and nothing
+            // is downloaded, where the question said 300 MB all the same.
+            // The disk is the measured peak of a full rebuild (docs/
+            // databases.md): the new file and VACUUM's temp at 2.62 GB
+            // each, 5.24 GB, and the 304 MB download on top makes 5.5.
             <ConfirmDialog
               icon={RefreshCw}
               tone="default"
               label="Rebuild"
-              triggerTitle="Rebuild the puzzle database from the latest Lichess puzzles"
+              triggerTitle={
+                status?.dumpInPlace
+                  ? 'Rebuild the puzzle database from the puzzle dump in its folder'
+                  : 'Rebuild the puzzle database from the latest Lichess puzzles'
+              }
               triggerClassName="shrink-0"
               disabled={db === null || starting || running}
-              question="Rebuild the puzzle database from the latest Lichess puzzles? It downloads about 300 MB and needs about 5.5 GB of free disk while it builds, and can run out of memory on a small server. The current one keeps working until the new one is ready, and your attempts are kept."
+              question={
+                status?.dumpInPlace
+                  ? 'Rebuild the puzzle database from the puzzle dump already in its folder? It downloads nothing and needs over 5 GB of free disk while it builds, and can run out of memory on a small server. The current one keeps working until the new one is ready, and your attempts are kept.'
+                  : 'Rebuild the puzzle database from the latest Lichess puzzles? It downloads about 300 MB and needs about 5.5 GB of free disk while it builds, and can run out of memory on a small server. The current one keeps working until the new one is ready, and your attempts are kept.'
+              }
               confirmLabel="Rebuild"
               onConfirm={() => void start()}
             />

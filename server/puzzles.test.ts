@@ -714,6 +714,17 @@ describe('puzzles api (rebuilding a working database)', () => {
     return { status: res.status, id: body.puzzle?.id };
   };
 
+  it('says whether the next build would download, for the Rebuild question', async () => {
+    const dumpInPlace = async (): Promise<unknown> =>
+      ((await (await app.request('/api/puzzles/build')).json()) as { dumpInPlace?: unknown }).dumpInPlace;
+    expect(await dumpInPlace()).toBe(false);
+    writeFileSync(dump, dumpOf([{ id: 'a0', rating: 1500 }]));
+    expect(await dumpInPlace()).toBe(true);
+    // And still after a build from it, which keeps it.
+    expect((await build()).error ?? null).toBeNull();
+    expect(await dumpInPlace()).toBe(true);
+  }, 60_000);
+
   it('says it is building, never downloading, while it builds from a dump in place', async () => {
     writeFileSync(dump, dumpOf(Array.from({ length: 300 }, (_, i) => ({ id: `a${i}`, rating: 1500 }))));
     expect((await app.request('/api/puzzles/build', { method: 'POST' })).status).toBe(200);

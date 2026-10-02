@@ -905,16 +905,21 @@ export function puzzlesApi(
   };
 
   api.get('/puzzles/build', (c) =>
-    c.json(
-      build
+    c.json({
+      ...(build
         ? {
             running: build.running,
             seconds: (Date.now() - build.startedAt) / 1000,
             error: build.error,
             ...build.progress,
           }
-        : { running: false },
-    ),
+        : { running: false }),
+      // What the next build would do, for Settings' Rebuild question:
+      // with a dump in place it downloads nothing, and the question said
+      // "It downloads about 300 MB" all the same. Read on every poll, so
+      // a dump put there while the page is open is answered for too.
+      dumpInPlace: dumpInPlace(),
+    }),
   );
 
   api.post('/puzzles/build', (c) => {
