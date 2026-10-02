@@ -398,6 +398,13 @@ that copy too, with no shell: Settings → Vault → “Download a copy” saves
 every document and the history as one tar file, leaving out the
 credentials in `config.json` and `sessions.json`, and each book's
 `open.bin`, a cache the server records again from the book's PDF.
+“Restore from a copy” beside it puts such a file back from any client, a phone included: the
+server unpacks the upload as it arrives, refuses a damaged or hostile
+archive whole, leaves the credentials as they are, records the vault on
+both sides of the restore in the history, and keeps the vault it replaced
+until you keep or undo the restore. A vault whose history holds no more
+than its first save (a fresh install) takes the copy's history; any other
+keeps its own.
 
 That history leaves `config.json` and `sessions.json` out, and has since
 0.4.x; a vault older than that may still carry them in early commits,

@@ -13,6 +13,7 @@ import { resolve } from 'node:path';
 import { readJson, renameRetrying, writeAtomic, writeJson } from './atomic.ts';
 import { isLibraryBookId, libraryBookHasPdf, newBookId } from './bookIds.ts';
 import { VAULT } from './paths.ts';
+import { onVaultReplaced } from './vaultEvents.ts';
 import { validId } from '../shared/vaultNames.ts';
 import { cycleAttempt, reviewDueAt, type CycleWindow } from '../shared/review.ts';
 
@@ -343,6 +344,13 @@ export function puzzleBooksApi(
     string,
     { puzzlesMs: number; progressMs: number; cyclesMs: number; tally: Tally }
   >();
+  // A restore puts a book's files back with the copy's own mtimes, which
+  // the two caches above could mistake for the files they remember
+  // (server/vaultEvents.ts).
+  onVaultReplaced(() => {
+    idsCache.clear();
+    tallyCache.clear();
+  });
   const bookTally = (slug: string): Tally => {
     const puzzlesMs = mtimeOf(puzzlesPath(slug));
     const progressMs = mtimeOf(progressPath(slug));

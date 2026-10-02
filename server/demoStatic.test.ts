@@ -52,6 +52,10 @@ const DELIBERATELY_ABSENT: Record<string, string> = {
   backupApi:
     'a tar of the vault folder, offered from the Vault card; the demo vault is ' +
     'the seed in this tab, and its card has no download button',
+  restoreApi:
+    'puts a downloaded copy back into the vault folder, moving folders on disk ' +
+    'and committing to the history repo; the demo has neither, and its Vault ' +
+    'card has no restore button',
   lichessExplorerApi: 'proxying the explorer needs the deployment\'s Lichess token',
   tablebaseApi:
     'the tablebase needs no token and would work here, and is still left out: ' +

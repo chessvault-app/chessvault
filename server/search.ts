@@ -4,6 +4,7 @@ import { dirname, resolve, sep } from 'node:path';
 import { commentSpans, commentText } from '../shared/pgn.ts';
 import { markdownToText } from '../shared/markdownText.ts';
 import { readJson, writeJson } from './atomic.ts';
+import { onVaultReplaced } from './vaultEvents.ts';
 
 /**
  * Full-text search over the vault, for the quick switcher.
@@ -374,6 +375,13 @@ const STORED_VERSION = 1;
  */
 export function searchIndex(sources: SearchSources, file: string) {
   let entries: Map<string, SearchEntry> | null = null;
+  // After a restore every document is read again rather than matched on
+  // mtime and size, which the restored files can share with the ones
+  // remembered here and in the stored index (server/vaultEvents.ts). An
+  // empty map, not null, so the stored file is not loaded back.
+  onVaultReplaced(() => {
+    entries = new Map();
+  });
 
   const keyOf = (section: SearchSection, id: string): string => `${section}:${id}`;
 

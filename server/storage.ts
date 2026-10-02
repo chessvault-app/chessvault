@@ -19,7 +19,9 @@ export interface StorageArea {
   files: number;
 }
 
-async function walk(path: string): Promise<{ bytes: number; files: number }> {
+/** What a folder holds, in bytes and files. Also how the restore says
+    what the vault it replaced still takes (server/restore.ts). */
+export async function walk(path: string): Promise<{ bytes: number; files: number }> {
   let bytes = 0;
   let files = 0;
   let entries: import('node:fs').Dirent[];

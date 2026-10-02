@@ -47,6 +47,21 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   and a version number. And a failed puzzle the new set no longer has
   leaves the review pool, where review mode could offer it on every
   visit and never find it.
+- **Settings → Vault can put a downloaded copy back.** “Restore from a
+  copy”, beside “Download a copy”, uploads the file from any device, a
+  phone's file picker included, with a bar that moves as it goes, and
+  makes the vault that copy; settings and tokens stay as they are.
+  Nothing is lost doing it: the vault it replaced is kept whole until you
+  choose “Keep the restored vault” or “Undo the restore”, and the history
+  records the vault on both sides, so the documents the copy lacks are in
+  Deleted documents. A fresh install takes the copy's history; any other
+  vault keeps its own. Every copy the app has written reads back, those
+  from before 0.12.0 included, and a damaged, cut-short or hostile archive
+  is refused whole with the vault untouched.
+- **An upload may take longer than five minutes.** The server cut off any
+  request still arriving after five minutes, which a copy with books in
+  it, a big PGN file or a book's PDF can take from a phone; it now allows
+  six hours.
 
 ## 0.12.0
 

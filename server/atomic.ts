@@ -32,8 +32,13 @@ export function writeAtomic(path: string, data: string, options?: WriteFileOptio
  * test flake). Retried a handful of times with a short synchronous pause;
  * anything still failing after that, or failing with any other code, is a
  * real error and is thrown. POSIX never takes the retry path.
+ *
+ * `tries` is how many attempts before giving up, five by default (50ms of
+ * pauses in all). A restore moving a folder of files it wrote a moment ago
+ * asks for more (server/restore.ts): a scanner that has just been handed
+ * a thousand new files holds them for longer than five pauses.
  */
-export function renameRetrying(from: string, to: string): void {
+export function renameRetrying(from: string, to: string, tries = 5): void {
   for (let attempt = 0; ; attempt += 1) {
     try {
       renameSync(from, to);
@@ -41,10 +46,10 @@ export function renameRetrying(from: string, to: string): void {
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code;
       const transient = code === 'EPERM' || code === 'EACCES' || code === 'EBUSY';
-      if (!transient || attempt >= 4) throw error;
+      if (!transient || attempt >= tries - 1) throw error;
       // Synchronous on purpose: every caller is synchronous, and the
       // pause is 5–25ms a handful of times in a path that runs rarely.
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5 * (attempt + 1));
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, Math.min(5 * (attempt + 1), 100));
     }
   }
 }

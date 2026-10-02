@@ -715,6 +715,19 @@
               desktop app opened it with “Open a folder…”; otherwise they sit beside it. Either way
               they can always be deleted and rebuilt; no database holds your work hostage.
             </p>
+            <p data-ko="그 옆의 <strong>사본에서 복원</strong>(Restore from a copy)이 그런 파일을 되돌려 놓습니다. 파일을 고르면(휴대폰의 파일 선택기도 됩니다) «이 사본에서 복원할까요?»(Restore from this copy?)라고 물은 뒤 올리고, 보관함은 그 사본이 됩니다. 설정과 토큰은 그대로 남습니다. 그 과정에서 잃는 것은 없습니다. 보관함에 있던 것은 통째로 옆에 비켜 두었다가, <strong>복원한 보관함 유지</strong>(Keep the restored vault)를 고르면 삭제하고 <strong>복원 되돌리기</strong>(Undo the restore)를 고르면 되돌려 놓으며, 그때까지 카드가 그것이 차지하는 용량을 알려 줍니다. 변경 기록이 복원 앞뒤의 보관함을 남기므로, 사본에 없는 문서는 설정 → 삭제된 문서에도 나타납니다. 아직 자체 기록이 없는 보관함(막 설치한 앱)은 사본의 기록을 가져오고, 그 밖의 보관함은 자기 기록을 유지합니다. 서버에는 사본만큼의 빈 공간이 필요하고, 손상되었거나 중간에 끊겼거나 보관함 밖의 경로를 담은 사본은 통째로 거절됩니다.">
+              <strong>Restore from a copy</strong>, beside it, puts such a file back. Pick it (a
+              phone's file picker works too), answer “Restore from this copy?”, and the upload
+              makes the vault that copy; settings and tokens stay as they are. Nothing is lost on
+              the way: what the vault held is set aside whole, until <strong>Keep the restored
+              vault</strong> deletes it or <strong>Undo the restore</strong> puts it back, and until
+              then the card says what it still takes. The change history records the vault on both
+              sides of the restore, so the documents the copy lacks are in Settings → Deleted
+              documents too. A vault with no history of its own yet (a fresh install) takes the
+              copy's history; any other keeps its own. The server needs as much free space as the
+              copy, and a copy that is damaged, cut short or names a path outside the vault is
+              refused whole.
+            </p>
             <h2 data-ko="이전 버전">Earlier versions</h2>
             <p data-ko="모든 스터디·기보·노트의 머리에는 시계 버튼(<strong>이전 버전</strong>(Earlier versions))이 있습니다(휴대폰에서는 제목 줄의 ⋯ 뒤에 다른 도구와 함께 있습니다). 저장할 때마다 판본이 자동으로 보관되며, 시점을 골라 들여다보고 <strong>이 버전으로 복원</strong>(Restore this version)으로 복원합니다. 복원해도 지금 버전은 함께 보존되므로 언제든 돌아올 수 있습니다. 판본 보관이 꺼진 보관함(예: git이 없는 서버)에서는 «이 보관함은 기록을 남기지 않으므로 보여줄 이전 버전이 없습니다»(This vault is not keeping a history, so there is nothing earlier to show)라고 말해 줍니다.">
               Every study, game and note carries a clock button in its header —
@@ -729,6 +742,11 @@
               <li data-ko="<strong>설정 → 삭제된 문서</strong>(Deleted documents)가 완전히 사라진 스터디·노트·기보를 <strong>되살리기</strong>(Bring this back)로 되살립니다.">
                 <strong>Settings → Deleted documents</strong> restores studies, notes and games
                 that are gone entirely — <strong>Bring this back</strong>.
+              </li>
+              <li data-ko="<strong>설정 → 보관함 → 사본에서 복원</strong>(Restore from a copy)이 내려받아 둔 사본으로 보관함 전체를 되돌리고, 그 전의 보관함은 복원을 유지하거나 되돌릴 때까지 보관합니다.">
+                <strong>Settings → Vault → Restore from a copy</strong> puts the whole vault back
+                from a downloaded copy, and keeps the vault it replaced until you keep or undo the
+                restore.
               </li>
               <li data-ko="<strong>설정 → 보관함 내 데이터 초기화</strong>(Danger zone)가 보관함 전체를 비웁니다. 확인 문구를 직접 입력한 뒤, 비밀번호가 설정되어 있으면 그것까지 다시 물은 다음에야 진행됩니다. 되돌릴 수 없으니 먼저 사본을 내려받으세요.">
                 <strong>Settings → Danger zone</strong> wipes the whole vault. It makes you type an
@@ -2824,7 +2842,7 @@
                   </tr>
                   <tr>
                     <td data-ko="보관함(Vault)">Vault</td>
-                    <td data-ko="<strong>보관함 이름</strong>(Vault name)(«사이드바 아래와 창 제목에 이 보관함의 이름을 보여 줍니다. 이 보관함을 여는 모든 기기에 같은 이름이 보입니다.»)과 <strong>이름 저장</strong>(Save name). 비워 두면 폴더 이름이 그 자리에 옵니다. 이름은 보관함 자체의 config.json에 있으므로, 같은 폴더를 여는 휴대폰과 데스크톱이 같은 이름을 봅니다. 그 아래에 폴더로서의 보관함이 있습니다: 경로, 용량, 그리고 안에 든 것마다 한 줄씩과 파일 수. 버튼에 크기가 적힌 <strong>사본 내려받기</strong>(Download a copy)는 모든 문서와 변경 기록을 tar 파일 하나로 내려받습니다(«설정과 토큰은 서버에 남습니다.»(Settings and tokens stay on the server.)). 파일 이름은 보관함 이름과 날짜입니다. <strong>경로 복사</strong>(Copy the path), 데스크톱 앱에서는 <strong>파일 관리자에서 보기</strong>(Show in the file manager).">
+                    <td data-ko="<strong>보관함 이름</strong>(Vault name)(«사이드바 아래와 창 제목에 이 보관함의 이름을 보여 줍니다. 이 보관함을 여는 모든 기기에 같은 이름이 보입니다.»)과 <strong>이름 저장</strong>(Save name). 비워 두면 폴더 이름이 그 자리에 옵니다. 이름은 보관함 자체의 config.json에 있으므로, 같은 폴더를 여는 휴대폰과 데스크톱이 같은 이름을 봅니다. 그 아래에 폴더로서의 보관함이 있습니다: 경로, 용량, 그리고 안에 든 것마다 한 줄씩과 파일 수. 버튼에 크기가 적힌 <strong>사본 내려받기</strong>(Download a copy)는 모든 문서와 변경 기록을 tar 파일 하나로 내려받습니다(«설정과 토큰은 서버에 남습니다.»(Settings and tokens stay on the server.)). 파일 이름은 보관함 이름과 날짜입니다. <strong>사본에서 복원</strong>(Restore from a copy)은 그런 파일을 골라 올리며, 먼저 «이 사본에서 복원할까요?»(Restore from this copy?)라고 묻고 그 버튼에 올릴 크기를 적습니다. 기록이 어떻게 되는지도 한 문장으로 말해 줍니다. 올리는 동안 진행 막대가 움직이고, 끝나면 페이지가 다시 불러와집니다. 복원이 기다리는 동안 카드는 «{when} 사본에서 복원했습니다. 복원 전의 보관함이 아직 서버에서 {size}를 차지합니다.»라고 말하고, <strong>복원한 보관함 유지</strong>(Keep the restored vault)와 <strong>복원 되돌리기</strong>(Undo the restore)를 보여 줍니다. 둘 중 하나를 고를 때까지 다른 사본은 복원할 수 없습니다. <strong>경로 복사</strong>(Copy the path), 데스크톱 앱에서는 <strong>파일 관리자에서 보기</strong>(Show in the file manager).">
                       <strong>Vault name</strong> — “Names this vault at the foot of the sidebar and
                       in the window title. Every device that opens it sees the same name.” — and
                       <strong>Save name</strong>. Left blank, the folder's name stands in. The name
@@ -2833,7 +2851,14 @@
                       weighs, and one row per thing in it with how many files that is.
                       <strong>Download a copy</strong>, its size on the button, fetches every document and the change
                       history as one tar file, named after the vault and the day; “Settings and
-                      tokens stay on the server.” <strong>Copy the path</strong>, and in the
+                      tokens stay on the server.” <strong>Restore from a copy</strong> uploads one of
+                      those files after asking “Restore from this copy?”, with the upload's size on
+                      its button and a sentence on what happens to the history; a bar moves while it
+                      goes up, and the page reloads when it is in. While the restore waits, the card
+                      says “Restored from a copy {when}. The vault as it was before still takes
+                      {size} on the server.” with <strong>Keep the restored vault</strong> and
+                      <strong>Undo the restore</strong>; no other copy can be restored until one of
+                      them is chosen. <strong>Copy the path</strong>, and in the
                       desktop app <strong>Show in the file manager</strong>.
                     </td>
                   </tr>
@@ -3209,10 +3234,10 @@
             </p>
 
             <h2 data-ko="내 데이터는 어디에 있나요?">Where is my data?</h2>
-            <p data-ko="전부 보관함 폴더 안에, 평범한 파일로 있습니다. 설정의 보관함 카드가 정확한 경로를 보여 주고, 그 카드의 “사본 내려받기”(Download a copy)가 백업입니다. 그 폴더를 복사해도 됩니다. <a href='#vault'>보관함</a> 참조.">
+            <p data-ko="전부 보관함 폴더 안에, 평범한 파일로 있습니다. 설정의 보관함 카드가 정확한 경로를 보여 주고, 그 카드의 “사본 내려받기”(Download a copy)가 백업입니다. 그 폴더를 복사해도 됩니다. 내려받은 사본은 그 카드의 “사본에서 복원”(Restore from a copy)이 되돌려 놓습니다. <a href='#vault'>보관함</a> 참조.">
               All of it in the vault folder, as plain files. The Vault card in Settings shows the
-              exact path, and its “Download a copy” is a backup; so is copying that folder — see
-              <a href="#vault">The vault</a>.
+              exact path, and its “Download a copy” is a backup; so is copying that folder. Its
+              “Restore from a copy” puts a downloaded one back — see <a href="#vault">The vault</a>.
             </p>
 
             <h2 data-ko="여러 기기에서 쓰려면?">More than one device?</h2>

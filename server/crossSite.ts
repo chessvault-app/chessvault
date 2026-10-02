@@ -123,7 +123,9 @@ function hostVouchedFor(name: string, allowed: readonly string[]): boolean {
 
 /**
  * Non-JSON by design: the routes that stream a file's raw bytes to disk —
- * the PGN source upload and the book library's PDF upload and replace.
+ * the PGN source upload, the book library's PDF upload and replace, and
+ * the vault copy put back by "Restore from a copy" (server/restore.ts),
+ * which can be gigabytes and is unpacked as it arrives.
  *
  * One predicate, exported, because two middlewares have to agree on this
  * list: this guard's content-type check, and the API-wide body cap in
@@ -132,7 +134,7 @@ function hostVouchedFor(name: string, allowed: readonly string[]): boolean {
  */
 const LIBRARY_PDF = /^\/api\/books\/b[0-9a-f]{16}\/pdf$/;
 export function isRawBodyPath(method: string, path: string): boolean {
-  if (method === 'POST') return path === '/api/sources' || path === '/api/books';
+  if (method === 'POST') return path === '/api/sources' || path === '/api/books' || path === '/api/storage/restore';
   if (method === 'PUT') return LIBRARY_PDF.test(path);
   return false;
 }

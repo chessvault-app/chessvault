@@ -17,7 +17,8 @@ import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
 import { mountVault } from './mountVault.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
 import { sweepUnfinishedPuzzleBuild } from './puzzles.ts';
-import { migrateLegacyRefgames, seedBundledRefgames, sweepUnfinishedBuilds } from './refgames.ts';
+import { migrateLegacyRefgames, refgamesBuildRunning, seedBundledRefgames, sweepUnfinishedBuilds } from './refgames.ts';
+import { recoverInterruptedRestore, restoreApi } from './restore.ts';
 import { settingsApi } from './settings.ts';
 import { storageApi } from './storage.ts';
 import { engineNetsApi } from './engineNets.ts';
@@ -67,6 +68,12 @@ setDefaultAutoSelectFamilyAttemptTimeout(2_000);
  * unauthenticated vault on that network.
  */
 
+
+// Before anything reads the vault or creates a folder in it: a restore the
+// server was killed in the middle of is put back (see server/restore.ts),
+// and a skeleton folder made first would stand where one of its renames
+// has to go back to.
+recoverInterruptedRestore();
 
 // Opening an empty folder as a vault must Just Work: create the skeleton
 // up front so every listing endpoint finds its directory.
@@ -291,6 +298,16 @@ app.route(
     }
   }),
 );
+// And the copy put back. Handed the history writer, which records the
+// vault on either side of the swap and holds its autosaves off during it;
+// refused while a database build is reading sources/, which it moves.
+app.route(
+  '/api',
+  restoreApi(undefined, {
+    history: () => vaultBackup,
+    busy: () => (refgamesBuildRunning() ? 'a build is reading the files right now' : null),
+  }),
+);
 app.route('/api', settingsApi());
 app.route('/api', lichessStudiesApi());
 
@@ -443,7 +460,22 @@ if (existsSync(dist)) {
   app.get('*', serveStatic({ path: './dist/index.html' }));
 }
 
-serve({ fetch: app.fetch, port: PORT, hostname: BIND }, (info) => {
+/**
+ * How long one request may take to arrive, whole.
+ *
+ * Node's default is five minutes, and it cuts a request at that mark
+ * even while its bytes are still coming: a 408, mid-upload (measured on a
+ * scaled-down server: an upload sending 20 kB/s without a pause was cut
+ * at its limit). Five minutes is a 1.5 GB copy of the vault at 5 MB/s,
+ * which is a phone on good Wi-Fi, and the vault copy put back by "Restore
+ * from a copy", the PGN uploads and the book PDFs are all files of that
+ * size. Six hours is about 20 GB at 1 MB/s (arithmetic, not measured).
+ * The restore gives up on an upload that goes quiet for two minutes on
+ * its own (server/restore.ts); headers still have Node's sixty seconds.
+ */
+const REQUEST_TIMEOUT_MS = 6 * 60 * 60 * 1000;
+
+serve({ fetch: app.fetch, port: PORT, hostname: BIND, serverOptions: { requestTimeout: REQUEST_TIMEOUT_MS } }, (info) => {
   console.log(`  chess-vault server  http://127.0.0.1:${info.port}`);
   console.log(`  cross-origin isolation: on (Stockfish threads enabled)`);
   // Phones on the same network reach the app through Vite's LAN address.
