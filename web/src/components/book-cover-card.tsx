@@ -76,9 +76,12 @@ export function BookCoverCard({
           // The whole indicator that a book is kept. A strip over the
           // card, not a border on it: the bookmarks arrive in a request
           // of their own, and a border moved the marked cards' contents
-          // 2px right when it landed (components/shelf-card).
+          // 2px right when it landed (components/shelf-card). In the
+          // accent, as a shelf card's and a game row's: it was amber,
+          // which means caution everywhere else in the app, and the other
+          // two left amber for that reason (components/shelf-card).
           marked &&
-            "before:bg-warn before:absolute before:inset-y-0 before:left-0 before:z-10 before:w-0.5 before:content-['']",
+            "before:bg-primary before:absolute before:inset-y-0 before:left-0 before:z-10 before:w-0.5 before:content-['']",
         )}
       >
         <SwipeTrack dx={swipe.dx} bookmarked={marked} />

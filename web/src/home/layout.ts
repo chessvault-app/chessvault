@@ -150,7 +150,10 @@ export const HOME_CARDS: readonly HomeCard[] = [
   {
     id: 'activity',
     label: 'Activity',
-    blurb: 'Everything you did each day over the last six months.',
+    // The card draws 26 to 52 weeks, as many as its panel has room for
+    // (activity.ts, `weeksForWidth`), so the blurb names the range and
+    // the card's own label says the number.
+    blurb: 'Everything you did each day, half a year to a year back, as room allows.',
     phone: true,
     desktop: true,
   },
