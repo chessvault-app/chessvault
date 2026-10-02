@@ -52,6 +52,8 @@ an upload that runs past five minutes, and anything on a Mac.
   keeps those saves. The server says so in its log when it starts, and
   the README's paragraph on backups says how to remove them from a
   terminal, and to change the password and the Lichess token after.
+  Such a history had also begun saving its own folder with every change;
+  from the next start it stops.
 - **A puzzle database that already works can be rebuilt from Settings.**
   The app offered the build only to a vault with no puzzle database, so
   the puzzles Lichess has added since could only be had from a terminal.
