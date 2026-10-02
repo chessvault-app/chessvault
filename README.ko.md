@@ -161,8 +161,9 @@ Windows·macOS·Linux용 설치 프로그램을 받아 실행하고, 보관함�
   보관함이 아니라 기기마다 저장됩니다. 휴대폰의 홈은 내비게이션이고
   데스크톱의 홈은 대시보드라서, 각자 따로 구성합니다.
 - **설정** — 앱 비밀번호 변경, 인증 앱 2단계 인증 켜기, 표시 이름과 플랫폼
-  사용자명 설정, 보드 테마와 기물 세트 선택, Lichess 토큰 관리, 보관함
-  전부 지우기까지 전부 앱 안에서 할 수 있고, 셸은 필요 없습니다.
+  사용자명 설정, 보드 테마와 기물 세트 선택, Lichess 토큰 관리, Lichess의
+  최신 세트로 퍼즐 데이터베이스 다시 만들기, 보관함 사본 내려받기와 사본에서
+  복원, 보관함 전부 지우기까지 전부 앱 안에서 할 수 있고, 셸은 필요 없습니다.
 - **어디서나** — 휴대폰 화면까지 맞춰지는 반응형 레이아웃, PWA 설치(홈 화면
   아이콘, 스플래시 화면, 오프라인 셸), 그리고 데스크톱 앱(Windows·macOS·Linux
   설치 프로그램)을 지원합니다. 데스크톱 앱은 기본적으로 그 기기에 보관함을
@@ -229,8 +230,11 @@ npm start                      # http://127.0.0.1:8787
 ```
 
 소스에서 실행할 때 보관함은 `CHESS_VAULT_DIR`로 달리 지정하지 않는 한
-저장소의 `vault/`입니다. 이 기기 밖으로 열려 있는 것이 없으므로 비밀번호는
-필요 없습니다.
+저장소의 `vault/`입니다. 이 컴퓨터에서는 비밀번호가 필요 없지만, `npm start`는
+모든 네트워크 인터페이스에서 응답하므로 같은 네트워크의 누구든 서버가 시작할
+때 출력하는 휴대폰 주소로 열 수 있습니다. 이 컴퓨터로만 한정하려면 데스크톱
+앱처럼 `CHESS_BIND=127.0.0.1`을 설정하고, 아니면 설정에서 앱 비밀번호를
+정하세요.
 
 ### B · 서버에서
 
@@ -388,17 +392,30 @@ SSH는 공개 인터넷에 두지 마세요. `deploy.sh`가 네트워크에 바�
 보관함은 자기 히스토리를 유지합니다.
 
 그 히스토리는 `config.json`과 `sessions.json`을 빼놓고, 0.4.x부터 그래
-왔습니다. 그보다 오래된 보관함은 초기 커밋에 아직 둘을 담고 있을 수 있고,
-그러면 그동안의 비밀번호 해시와 인증 앱 비밀키와 Lichess 토큰이 백업마다
-따라갑니다. 서버가 그런 커밋을 찾으면 시작할 때 알립니다. 지우려면 서버를
-멈춘 뒤:
+왔습니다. 그래도 둘을 담고 있을 수 있는 보관함이 두 가지 있습니다. 그보다
+오래된 보관함은 초기 커밋에, 0.12.1 이전에 «모든 데이터 지우기»로 지운
+보관함은 지운 뒤 새 히스토리가 자기 폴더와 함께 커밋한 데에 담고 있습니다.
+그러면 그동안의 비밀번호 해시와 인증 앱 비밀키와 Lichess 토큰이 백업마다,
+내려받은 사본마다 따라갑니다. 서버가 그런 커밋을 찾으면 시작할 때 알립니다.
+지우려면 서버를 멈추고, `h`가 보관함 폴더 안의 `.history.git`을 가리키게 해서
+다음을 실행하세요:
 
 ```bash
-git --git-dir=vault/.history.git --work-tree=vault filter-branch --index-filter 'git rm --cached --ignore-unmatch config.json sessions.json' -- --all
+h=vault/.history.git
+git --git-dir=$h config core.bare true    # filter-branch가 작업 트리 없이 돌도록
+git --git-dir=$h filter-branch --index-filter 'git rm -r -q --cached --ignore-unmatch config.json sessions.json .history.git' -- --all
+git --git-dir=$h for-each-ref --format='delete %(refname)' refs/original | git --git-dir=$h update-ref --stdin
+git --git-dir=$h read-tree HEAD
+git --git-dir=$h reflog expire --expire=now --all
+git --git-dir=$h gc --prune=now
+git --git-dir=$h config core.bare false
 ```
 
-그다음 비밀번호와 Lichess 토큰을 바꾸세요. 이미 다른 기계로 내려받은
-사본은 옛 값을 그대로 갖고 있습니다.
+다시 쓰기만으로는 지워지지 않습니다. filter-branch는 옛 커밋을
+`refs/original` 아래에 남겨 두고, reflog와 인덱스도 옛 파일을 가리키므로, 그
+뒤의 네 줄이 그것들을 치우고 더는 아무것도 가리키지 않는 것을 지웁니다.
+그다음 비밀번호와 Lichess 토큰을 바꾸세요. 이미 다른 기계로 내려받은 사본은
+옛 값을 그대로 갖고 있습니다.
 
 첫 번째 겹은 git 없이 앱 안에서 바로 쓸 수 있습니다. 모든 스터디와 게임과
 노트의 머리글에 있는 시계 아이콘(휴대폰에서는 ⋯ 메뉴의 «이전 버전»)이
@@ -708,7 +725,7 @@ PDF를 가져오는 것은 앱이 하는 일이고(퍼즐 → 퍼즐 책 → 새
 - [셸에서 책 가져오기](docs/book-import-offline.ko.md) — 오프라인 경로, 그
   대가, 그리고 언제 그럴 만한지.
 - [준비된 데이터베이스](docs/databases.ko.md) — 퍼즐과 참고 게임
-  데이터베이스: 한 번 만들어 서버로 복사하고, 이후엔 거의 손대지 않습니다.
+  데이터베이스: 앱 안에서 한 번 만들고, 이후엔 거의 손대지 않습니다.
 - [레퍼토리 트레이너](docs/repertoire.ko.md) — 스파링과 드릴, 그리고 드릴이
   히트·미스·갭을 판정하는 정확한 방식.
 - [오프닝 맵](docs/opening-map.ko.md) — 레퍼토리를 트리로: 직접 배치한 수,

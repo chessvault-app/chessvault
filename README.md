@@ -175,8 +175,9 @@ is one connected body of work, and the links are what make it that.
   so each is arranged on its own.
 - **Settings** — change the app password, turn on authenticator 2FA,
   set your display name and platform usernames, pick a board theme and
-  piece set, manage the Lichess token, or wipe the vault — all in the
-  app, no shell needed.
+  piece set, manage the Lichess token, rebuild the puzzle database from
+  Lichess's newest set, download a copy of the vault or restore one, or
+  wipe the vault — all in the app, no shell needed.
 - **Everywhere** — responsive down to phones, installable as a PWA
   (home-screen icon, splash screens, offline shell), and a desktop app
   (Windows, macOS and Linux installers) that keeps the vault on that
@@ -244,8 +245,11 @@ npm start                      # http://127.0.0.1:8787
 ```
 
 From source the vault is `vault/` in the repo unless `CHESS_VAULT_DIR`
-says otherwise. No password is needed — nothing is listening beyond your
-device.
+says otherwise. No password is needed on this computer, but `npm start`
+answers on every network interface, so anyone on your network can open
+it at the phone address its start-up lines print. Set
+`CHESS_BIND=127.0.0.1` to keep it to this computer, as the desktop app
+does, or set an app password in Settings.
 
 ### B · On a server
 
@@ -407,17 +411,30 @@ than its first save (a fresh install) takes the copy's history; any other
 keeps its own.
 
 That history leaves `config.json` and `sessions.json` out, and has since
-0.4.x; a vault older than that may still carry them in early commits,
-which means every password hash, authenticator secret and Lichess token
-they ever held goes along with each backup. The server says so at boot
-when it finds any. To purge them, with the server stopped:
+0.4.x. Two kinds of vault may still carry them: one older than that, in
+its early commits, and one wiped with “Wipe all data” before 0.12.1, whose
+new history committed them after the wipe, along with its own folder.
+Then every password hash, authenticator secret and Lichess token they
+ever held goes along with each backup and each downloaded copy. The
+server says so at boot when it finds any. To purge them, stop the server
+and run this, with `h` naming the `.history.git` in your vault folder:
 
 ```bash
-git --git-dir=vault/.history.git --work-tree=vault filter-branch --index-filter 'git rm --cached --ignore-unmatch config.json sessions.json' -- --all
+h=vault/.history.git
+git --git-dir=$h config core.bare true    # so filter-branch needs no work tree
+git --git-dir=$h filter-branch --index-filter 'git rm -r -q --cached --ignore-unmatch config.json sessions.json .history.git' -- --all
+git --git-dir=$h for-each-ref --format='delete %(refname)' refs/original | git --git-dir=$h update-ref --stdin
+git --git-dir=$h read-tree HEAD
+git --git-dir=$h reflog expire --expire=now --all
+git --git-dir=$h gc --prune=now
+git --git-dir=$h config core.bare false
 ```
 
-then rotate the password and the Lichess token, since copies already
-pulled off-box keep the old values.
+The rewrite alone is not the purge: filter-branch keeps the old commits
+under `refs/original`, and the reflog and the index still point at the
+old files, so the four lines after it drop those and delete what nothing
+reaches any more. Then rotate the password and the Lichess token, since
+copies already pulled off-box keep the old values.
 
 That first layer is reachable from the app, not only from git. Every
 study, game and note has a clock in its header (on a phone, Earlier
@@ -744,7 +761,7 @@ covers it, including how to bootstrap that config from the book itself.
 - [Importing a book from the shell](docs/book-import-offline.md) — the
   offline route, what it costs you, and when it is worth it.
 - [Prepared databases](docs/databases.md) — the puzzle and reference-game
-  databases: built once, copied to the server, rarely touched again.
+  databases: built once, in the app, and rarely touched again.
 - [The repertoire trainer](docs/repertoire.md) — free play and drilling,
   and exactly how the drill decides hit, miss and gap.
 - [The opening map](docs/opening-map.md) — your repertoire as a tree:
