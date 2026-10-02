@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { renameRetrying, writeAtomic } from './atomic.ts';
-import { DATA_PUZZLES, REPO_ROOT, VAULT } from './paths.ts';
+import { DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD, REPO_ROOT, VAULT } from './paths.ts';
 import { reviewDueAt, type ReviewAttempt } from '../shared/review.ts';
 
 /**
@@ -65,33 +65,70 @@ function isFinishedPuzzleBuild(path: string): boolean {
  * can delete them: 2.6 GB and 304 MB respectively, invisible.
  *
  * Startup is the one moment when they are known to be dead, since no build
- * can be running yet. The `.part` always goes — a download is never resumed,
- * the builder re-fetches from zero. The `.building` file goes unless it is
- * a build that finished in the instant before the server died, which is a
- * whole database that only missed its rename and is renamed in instead.
+ * can be running yet. The download always goes, whole or `.part`: a
+ * download is never resumed or reused, the builder re-fetches from zero
+ * so that a rebuild gets the newest set. The `.building` file goes unless
+ * it is a build that finished in the instant before the server died, which
+ * is a whole database that only missed its rename and is renamed in instead.
  *
- * The dump ITSELF (`lichess_db_puzzle.csv.zst`) is deliberately left alone:
- * a build deletes only a dump it downloaded, because one the user put there
- * is theirs, and this cannot tell the two apart. It also saves the next
- * build the download.
+ * A dump somebody PUT there (`lichess_db_puzzle.csv.zst`) is left alone:
+ * it is theirs, and a build uses it rather than downloading. That name
+ * used to be the download's as well, so a download a dead build left
+ * could not be told from it and stayed for good; the download has a name
+ * of its own now (PUZZLE_DUMP_DOWNLOAD). Only the `.part` older versions
+ * wrote beside the shared name is still swept by that name.
+ *
+ * The server's own build calls this too, the moment its child fails (see
+ * startBuild): that is the other moment the child is known to be dead.
+ * Says what it did, so that caller can tell a finished database that
+ * landed after all from one that never will.
  */
-export function sweepUnfinishedPuzzleBuild(dbPath: string = DATA_PUZZLES): void {
-  rmSync(resolve(dirname(dbPath), 'lichess_db_puzzle.csv.zst.part'), { force: true });
+export function sweepUnfinishedPuzzleBuild(
+  dbPath: string = DATA_PUZZLES,
+): 'none' | 'swapped' | 'kept' | 'discarded' {
+  const data = dirname(dbPath);
+  rmSync(resolve(data, 'lichess_db_puzzle.csv.zst.part'), { force: true });
+  rmSync(resolve(data, `${PUZZLE_DUMP_DOWNLOAD}.part`), { force: true });
+  rmSync(resolve(data, PUZZLE_DUMP_DOWNLOAD), { force: true });
 
   const building = `${dbPath}.building`;
-  if (!existsSync(building)) return;
+  if (!existsSync(building)) return 'none';
   if (isFinishedPuzzleBuild(building)) {
     try {
       renameRetrying(building, dbPath);
       console.log('puzzles: swapped in the database an interrupted build had finished');
+      return 'swapped';
     } catch (error) {
       // Leave it: it is a whole database, and the next start tries again.
       console.warn(`puzzles: could not swap in the built database (${(error as Error).message})`);
+      return 'kept';
     }
-    return;
   }
   rmSync(building, { force: true });
+  // Builds before the journal was really off (scripts/build-puzzles.ts)
+  // kept one beside the file, as big as the file at the end, and a
+  // killed one left it behind.
+  rmSync(`${building}-journal`, { force: true });
   console.log('puzzles: discarded a part-built database — the build that wrote it never finished');
+  return 'discarded';
+}
+
+/**
+ * What a failed build tells the user, from how its child ended.
+ *
+ * The last line the child wrote to stderr says it best when there is
+ * one. A child the system killed wrote nothing, and was shown "the build
+ * stopped unexpectedly (exit null)", which named neither the cause nor
+ * the signal. The one failure of this build on record is running out of
+ * memory on a 2 GB server (README), and on Linux the out-of-memory killer
+ * ends a process with SIGKILL, so that signal says what it is. A signal
+ * is read before stderr: a killed child's last line is whatever it was
+ * saying before, not why it stopped.
+ */
+export function buildFailure(code: number | null, signal: NodeJS.Signals | null, lastError: string): string {
+  if (signal === 'SIGKILL') return 'the build was killed (SIGKILL), which is how a system out of memory stops a process';
+  if (signal) return `the build was stopped (${signal})`;
+  return lastError || `the build stopped unexpectedly (exit ${code})`;
 }
 
 /**
@@ -218,10 +255,11 @@ const skillStep = (skill: number, folded: number, puzzleRating: number, win: boo
 /**
  * COUNT(*) over the rating index walks every matching row — measured at
  * ~158 ms across the full 6.1M-puzzle table, paid on EVERY "next puzzle".
- * The database is opened read-only and is never rewritten in-process (a
- * rebuild renames a fresh file over it and needs a restart, see the handle
- * comment below), so the count for a given filter cannot change: cache it
- * for the process lifetime, exactly like themesCache.
+ * The database is opened read-only and is never rewritten in-process, so
+ * the count for a given filter cannot change while one file is being
+ * served: cache it, exactly like themesCache. A rebuild renames a fresh
+ * file over the same path, and the swap empties this and bucketCache
+ * (see forgetDatabase), since the keys are the path and the path stays.
  */
 const countCache = new Map<string, number>();
 
@@ -636,6 +674,39 @@ export function puzzlesApi(
   };
 
   /**
+   * The failed pool and the review schedule, less the puzzles the
+   * database being served does not hold.
+   *
+   * Both are derived from the attempt log, which outlives the file, and
+   * nothing promises that a newer Lichess set keeps every puzzle the old
+   * one had. One the log still names stayed in both after a rebuild, and
+   * review mode answered "unknown puzzle" for it on every visit: it is
+   * served first when it is the most overdue, or the only one, and no
+   * attempt can be recorded on a puzzle the database lacks, so nothing
+   * could ever take it out again. The hub said one to review and drew
+   * none. Its attempts stay in the log, and a later file that has the
+   * puzzle again puts it back. Looked up by primary key, 500 ids a query,
+   * as weakestTheme does.
+   */
+  const reviewable = (
+    db: InstanceType<typeof Database>,
+    entries: Attempt[],
+  ): { pool: string[]; queue: { id: string; due: string }[] } => {
+    const pool = failedPool(entries);
+    const queue = reviewQueue(entries);
+    const ids = [...new Set([...pool, ...queue.map((q) => q.id)])];
+    const held = new Set<string>();
+    for (let i = 0; i < ids.length; i += 500) {
+      const slice = ids.slice(i, i + 500);
+      const rows = db
+        .prepare(`SELECT id FROM puzzles WHERE id IN (${slice.map(() => '?').join(',')})`)
+        .all(...slice) as { id: string }[];
+      for (const row of rows) held.add(row.id);
+    }
+    return { pool: pool.filter((id) => held.has(id)), queue: queue.filter((q) => held.has(q.id)) };
+  };
+
+  /**
    * The state with a live skill estimate, seeding it on first need by
    * replaying every counted attempt in the history — each line carries
    * the puzzle's rating, so the whole record folds in without touching
@@ -661,8 +732,8 @@ export function puzzlesApi(
     return seeded;
   };
 
-  // Lazily opened read-only handle for the process lifetime. A rebuild
-  // renames a fresh file over it; restart the server to pick that up.
+  // Lazily opened read-only handle, kept until a rebuild swaps a fresh
+  // file in (see forgetDatabase); the next request then opens that one.
   let handle: InstanceType<typeof Database> | null = null;
   const puzzleDb = (): InstanceType<typeof Database> | null => {
     if (handle) return handle;
@@ -675,6 +746,30 @@ export function puzzlesApi(
   const closeDb = (): void => {
     handle?.close();
     handle = null;
+  };
+
+  /**
+   * Let go of everything read from the file at dbPath: the handle, and
+   * the three caches built from it.
+   *
+   * The handle alone was not enough. The theme list and the per-filter
+   * counts are cached for as long as one file is served, and the count
+   * caches are keyed by the PATH, which a rebuild keeps. So the new file
+   * was drawn from with the old file's counts: an offset into a rating
+   * the new set holds fewer puzzles at landed past its end and the draw
+   * threw. Measured on a rebuild from 6.1 M puzzles to 5 M with a draw
+   * every 100 ms throughout, 7 of the 40 draws after the swap answered
+   * 500, and every one before it answered.
+   *
+   * Both count caches are emptied whole rather than by key: a filter's
+   * count is one query to work out again, and the only process that
+   * serves more than one file is a test run.
+   */
+  const forgetDatabase = (): void => {
+    closeDb();
+    themesCache = null;
+    countCache.clear();
+    bucketCache.clear();
   };
 
   const api = new Hono();
@@ -754,24 +849,36 @@ export function puzzlesApi(
       current.running = false;
       current.error = error.message;
     });
-    child.on('close', (code) => {
+    child.on('close', (code, signal) => {
       current.running = false;
       if (code !== 0) {
-        current.error = lastError || `the build stopped unexpectedly (exit ${code})`;
+        current.error = buildFailure(code, signal, lastError);
+        // Settle what it left now, as a restart would, rather than at the
+        // next restart. A part-built database is gigabytes (a 5,000,000-row
+        // build peaked at 2.14 GB of .building beside 2.14 GB of VACUUM
+        // temp, which SQLite deletes itself when the process goes), and a
+        // build beside a working database is the one that needs the most
+        // room: left until a restart, a full disk stayed full under an
+        // error that offered a retry. A database that did get to the end
+        // (the child failed after it) lands instead, which is a build that
+        // worked. Let go of the old file first, for that rename on Windows.
+        forgetDatabase();
+        if (sweepUnfinishedPuzzleBuild(dbPath) === 'swapped') current.error = null;
         return;
       }
       // Windows: our own read handle blocks the child's rename-over, so it
       // leaves the fresh file beside the target and we swap it in here.
-      closeDb();
+      //
+      // Let go before the rename, not after. The handle is kept between
+      // requests, so a rebuild left it serving the file that had just
+      // been replaced (on POSIX the child's own rename has already gone
+      // through by now), and on Windows an open file cannot be renamed
+      // over at all, which turned the swap itself into the error below.
+      // Nothing can reopen it in between: this and the rename are one
+      // synchronous turn, and every route reads the file synchronously.
+      forgetDatabase();
       const building = `${dbPath}.building`;
       if (existsSync(building)) {
-        // Before the rename, not after. The handle is opened once and kept
-        // for the life of the process, so a rebuild left it serving the
-        // file that had just been replaced — and on Windows an open file
-        // cannot be renamed over at all, which turned the swap itself into
-        // the error below. Closed here, reopened by the next request that
-        // wants it, which is what the line after this always claimed.
-        closeDb();
         try {
           renameRetrying(building, dbPath);
         } catch (error) {
@@ -780,7 +887,6 @@ export function puzzlesApi(
         }
       }
       // The next request opens the new file; nothing has to be restarted.
-      themesCache = null;
     });
   };
 
@@ -803,8 +909,8 @@ export function puzzlesApi(
     return c.json({ running: true });
   });
 
-  // Theme counts never change while the process lives (a rebuild replaces
-  // the file and the server restarts), so compute once and keep. Newer
+  // Theme counts never change while one file is served (a rebuild's swap
+  // empties this, see forgetDatabase), so compute once and keep. Newer
   // databases carry a precomputed theme_counts table; older ones pay one
   // ~1 s GROUP BY on first request instead of on every request.
   let themesCache: { theme: string; count: number }[] | null = null;
@@ -834,15 +940,19 @@ export function puzzlesApi(
         (r) => [r.key, r.value],
       ),
     );
-    // One read of the log serves the pool and the schedule both.
+    // One read of the log serves the pool and the schedule both, each
+    // only as far as this file can serve it (see reviewable).
     const entries = historyEntries();
-    const queue = reviewQueue(entries);
+    const { pool, queue } = reviewable(db, entries);
     const now = new Date().toISOString();
     return c.json({
       ready: true as const,
       puzzles: Number(meta.puzzles ?? 0),
+      // When this file was built, which is how old its puzzles are: the
+      // one thing to know before rebuilding it (Settings, Puzzle database).
+      builtAt: meta.built_at ?? null,
       themes: themeCounts(db),
-      failed: failedPool(entries).length,
+      failed: pool.length,
       // What the ladder says: how many are due now, and when the next
       // one lands if nothing is. Both derived, like the pool.
       due: queue.filter((q) => q.due <= now).length,
@@ -876,12 +986,11 @@ export function puzzlesApi(
       // whose date has come, most overdue first. The failed pool is the
       // fallback — a puzzle failed five minutes ago is not DUE until
       // tomorrow, but someone who wants to fix it now must still be able
-      // to, which is also exactly what this mode always served.
-      const due = reviewQueue(entries)
-        .filter((q) => q.due <= now)
-        .map((q) => q.id);
+      // to, which is also exactly what this mode always served. Both only
+      // as far as this file holds them (see reviewable).
+      const { pool, queue } = reviewable(db, entries);
+      const due = queue.filter((q) => q.due <= now).map((q) => q.id);
       const dueCandidates = due.length > 1 ? due.filter((id) => id !== lastId) : due;
-      const pool = failedPool(entries);
       // The puzzle this queue last offered stands while it is still in
       // the queue (see UserState.offered); the fallback below is random,
       // and the hub's "Missed puzzle" board changed with every visit.

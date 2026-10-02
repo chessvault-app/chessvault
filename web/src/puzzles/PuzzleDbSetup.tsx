@@ -22,7 +22,7 @@ import { Skeleton } from '@/components/skeletons';
  * in progress, rather than assuming it started here.
  */
 
-interface BuildStatus {
+export interface BuildStatus {
   running: boolean;
   phase?: 'downloading' | 'building' | 'indexing' | 'done';
   bytes?: number;
@@ -41,7 +41,7 @@ const mb = (bytes: number): string => (bytes / 1e6).toFixed(0);
  * the day one was edited.
  */
 const SETUP_TITLE = 'No puzzle database yet';
-const SETUP_BLURB =
+export const SETUP_BLURB =
   'The trainer runs on the Lichess puzzle database, 6.1 million puzzles, free to use. The app fetches and builds it: about 300 MB to download, around 2.5 GB once built.';
 
 /**
@@ -85,7 +85,20 @@ export function PuzzleDbSetupPlaceholder() {
   );
 }
 
-export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
+/**
+ * The server's build, followed: its status read once a second for as
+ * long as the caller is on screen, and the way to start one.
+ *
+ * `onReady` is called once when a build this has watched running ends
+ * without an error; `failed` is set when one ends with one, or when the
+ * start itself is refused.
+ */
+export function usePuzzleBuild(onReady: () => void): {
+  status: BuildStatus | null;
+  starting: boolean;
+  failed: string | null;
+  start: () => Promise<void>;
+} {
   const [status, setStatus] = useState<BuildStatus | null>(null);
   const [starting, setStarting] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
@@ -106,7 +119,14 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
       if (next.error) setFailed(next.error);
       else onReady();
     }
-    if (next.running) wasRunning.current = true;
+    if (next.running) {
+      wasRunning.current = true;
+      // A refused start ("a build is already running") is answered by the
+      // build it lost to, and must not outlive that build: Settings keeps
+      // this card on screen after a build ends, where the setup screen
+      // was always replaced by the trainer.
+      setFailed(null);
+    }
     return next.running;
   }, [onReady]);
 
@@ -130,14 +150,78 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
     setStarting(false);
   };
 
-  const running = status?.running === true;
+  return { status, starting, failed, start };
+}
+
+/**
+ * A running build, as the setup screen draws it: the phase, a bar, what
+ * has been done so far, and that leaving the page does not stop it. For
+ * a status whose build is running; the caller decides when that is.
+ */
+export function PuzzleBuildProgress({ status }: { status: BuildStatus | null }) {
   const phase = status?.phase;
   // Only the download knows its size. The rest reports what it has done so
   // far, which is honest — a bar that invents a total is worse than a count.
   const fraction =
-    running && phase === 'downloading' && status?.total
-      ? Math.min(1, (status.bytes ?? 0) / status.total)
-      : null;
+    phase === 'downloading' && status?.total ? Math.min(1, (status.bytes ?? 0) / status.total) : null;
+
+  return (
+    <>
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        {phase === 'downloading'
+          ? t('Downloading the puzzle dump')
+          : phase === 'indexing'
+            ? t('Indexing')
+            : t('Building the database')}
+      </p>
+
+      <span className="bg-muted/50 flex h-2 w-full overflow-hidden rounded-full">
+        <span
+          // Marks the sweep as motion that CARRIES the status, so
+          // index.css's reduced-motion block slows it instead of
+          // crushing it to a flicker with everything decorative.
+          data-motion={fraction === null ? 'status' : undefined}
+          className={cn(
+            // The Progress primitive's own fill clock (ui/progress,
+            // `transition-all`): a tracked value glides between
+            // reports rather than stepping.
+            'bg-primary h-full transition-all',
+            // Nothing to measure against: a segment that sweeps the
+            // track says "working" without claiming a percentage. A
+            // part-filled static bar would be read as one.
+            fraction === null && 'w-1/4 animate-[sweep_1.6s_cubic-bezier(0.4,0,0.2,1)_infinite]',
+          )}
+          style={fraction === null ? undefined : { width: `${100 * fraction}%` }}
+        />
+      </span>
+
+      {/* Figures and words on one line, so the figures alone take
+          the mono role (components/figures.tsx), as the vault
+          tree's sizes do. As one mono paragraph the words went too,
+          and in Korean they are hangul, which JetBrains Mono cannot
+          draw. */}
+      <p className="text-muted-foreground text-xs">
+        <Figures
+          text={
+            phase === 'downloading'
+              ? `${mb(status?.bytes ?? 0)} / ${status?.total ? mb(status.total) : '?'} MB`
+              : phase === 'indexing'
+                ? t('Almost done')
+                : t('{rows} puzzles read', { rows: (status?.rows ?? 0).toLocaleString() })
+          }
+        />
+      </p>
+
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        {t('This keeps running if you leave the page. It takes a few minutes.')}
+      </p>
+    </>
+  );
+}
+
+export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
+  const { status, starting, failed, start } = usePuzzleBuild(onReady);
+  const running = status?.running === true;
 
   return (
     <div className="optical-center h-full overflow-y-auto p-6">
@@ -145,56 +229,7 @@ export function PuzzleDbSetup({ onReady }: { onReady: () => void }) {
         <p className="text-foreground text-base font-medium">{t(SETUP_TITLE)}</p>
 
         {running ? (
-          <>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              {phase === 'downloading'
-                ? t('Downloading the puzzle dump')
-                : phase === 'indexing'
-                  ? t('Indexing')
-                  : t('Building the database')}
-            </p>
-
-            <span className="bg-muted/50 flex h-2 w-full overflow-hidden rounded-full">
-              <span
-                // Marks the sweep as motion that CARRIES the status, so
-                // index.css's reduced-motion block slows it instead of
-                // crushing it to a flicker with everything decorative.
-                data-motion={fraction === null ? 'status' : undefined}
-                className={cn(
-                  // The Progress primitive's own fill clock (ui/progress,
-                  // `transition-all`): a tracked value glides between
-                  // reports rather than stepping.
-                  'bg-primary h-full transition-all',
-                  // Nothing to measure against: a segment that sweeps the
-                  // track says "working" without claiming a percentage. A
-                  // part-filled static bar would be read as one.
-                  fraction === null && 'w-1/4 animate-[sweep_1.6s_cubic-bezier(0.4,0,0.2,1)_infinite]',
-                )}
-                style={fraction === null ? undefined : { width: `${100 * fraction}%` }}
-              />
-            </span>
-
-            {/* Figures and words on one line, so the figures alone take
-                the mono role (components/figures.tsx), as the vault
-                tree's sizes do. As one mono paragraph the words went too,
-                and in Korean they are hangul, which JetBrains Mono cannot
-                draw. */}
-            <p className="text-muted-foreground text-xs">
-              <Figures
-                text={
-                  phase === 'downloading'
-                    ? `${mb(status?.bytes ?? 0)} / ${status?.total ? mb(status.total) : '?'} MB`
-                    : phase === 'indexing'
-                      ? t('Almost done')
-                      : t('{rows} puzzles read', { rows: (status?.rows ?? 0).toLocaleString() })
-                }
-              />
-            </p>
-
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              {t('This keeps running if you leave the page. It takes a few minutes.')}
-            </p>
-          </>
+          <PuzzleBuildProgress status={status} />
         ) : (
           <>
             <p className="text-muted-foreground text-sm leading-relaxed">{t(SETUP_BLURB)}</p>

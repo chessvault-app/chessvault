@@ -317,7 +317,7 @@ export const PROFILE_NOTE = 'Usernames pre-fill the archive browser on the Games
  * and the same nine in English take two.
  */
 const JUMP_NAMES_DEMO = ['Vault', 'Documents', 'Appearance', 'Storage used', 'Deleted documents', 'Sound', 'Home screen', 'This is a demo', 'Version'];
-const JUMP_NAMES_SERVER = ['Profile', 'Vault', 'Documents', 'Security', 'Lichess token', 'Tablebase', 'Browsed games', 'Appearance', 'Storage used', 'Deleted documents', 'Sound', 'Home screen', 'Danger zone', 'Version'];
+const JUMP_NAMES_SERVER = ['Profile', 'Vault', 'Documents', 'Security', 'Lichess token', 'Tablebase', 'Browsed games', 'Puzzle database', 'Appearance', 'Storage used', 'Deleted documents', 'Sound', 'Home screen', 'Danger zone', 'Version'];
 
 /**
  * The vault rows this device saw listed last visit, so a placeholder

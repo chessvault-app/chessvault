@@ -12,7 +12,9 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { puzzlesApi, ratingBound, sweepUnfinishedPuzzleBuild } from './puzzles.ts';
+import { zstdCompressSync } from 'node:zlib';
+import { PUZZLE_DUMP_DOWNLOAD } from './paths.ts';
+import { buildFailure, puzzlesApi, ratingBound, sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 
 describe('puzzles api', () => {
   let dir: string;
@@ -618,10 +620,203 @@ describe('sweepUnfinishedPuzzleBuild', () => {
     expect(existsSync(dump)).toBe(true);
   });
 
+  it('drops a whole download too: a build re-fetches rather than reuse one', () => {
+    const ours = join(data, PUZZLE_DUMP_DOWNLOAD);
+    writeFileSync(`${ours}.part`, 'interrupted');
+    writeFileSync(ours, 'downloaded by a build that then died');
+    writeFileSync(join(data, 'lichess_db_puzzle.csv.zst'), 'the user put this here');
+    sweepUnfinishedPuzzleBuild(dbPath);
+    expect(existsSync(`${ours}.part`)).toBe(false);
+    expect(existsSync(ours)).toBe(false);
+    expect(existsSync(join(data, 'lichess_db_puzzle.csv.zst'))).toBe(true);
+  });
+
   it('is a no-op with nothing to sweep', () => {
     sweepUnfinishedPuzzleBuild(dbPath);
     expect(existsSync(dbPath)).toBe(false);
   });
+});
+
+describe('buildFailure', () => {
+  it('names a kill by its signal, before anything the child last said', () => {
+    expect(buildFailure(null, 'SIGKILL', 'indexing…')).toMatch(/killed \(SIGKILL\).*out of memory/);
+    expect(buildFailure(null, 'SIGTERM', '')).toBe('the build was stopped (SIGTERM)');
+  });
+
+  it('otherwise says what the child last wrote, or its exit code', () => {
+    expect(buildFailure(1, null, 'unexpected header: x')).toBe('unexpected header: x');
+    expect(buildFailure(3, null, '')).toBe('the build stopped unexpectedly (exit 3)');
+  });
+});
+
+/**
+ * A dump in the Lichess layout, zstd-compressed as the real one is: the
+ * real builder reads it, so these tests run the same child process the
+ * app's button does, on a few hundred rows instead of 6.1 million.
+ */
+const dumpOf = (rows: { id: string; rating: number }[]): Buffer =>
+  zstdCompressSync(
+    `${[
+      'PuzzleId,FEN,Moves,Rating,RatingDeviation,Popularity,NbPlays,Themes,GameUrl,OpeningTags',
+      ...rows.map((r) => `${r.id},8/8/8/8/8/8/8/K6k w - - 0 1,a1a2 h1h2,${r.rating},80,90,10,short,,`),
+    ].join('\n')}\n`,
+  );
+
+/**
+ * Replacing a database the server is already serving: the build runs
+ * beside it, and whatever the old file answered must be forgotten when
+ * the new one lands.
+ */
+describe('puzzles api (rebuilding a working database)', () => {
+  let data: string;
+  let dump: string;
+  let app: Hono;
+  let puzzles: ReturnType<typeof puzzlesApi>;
+  const savedData = process.env.CHESS_VAULT_DATA;
+
+  beforeEach(() => {
+    data = mkdtempSync(join(tmpdir(), 'puzzles-rebuild-'));
+    // A dump already in the data directory is the one the builder uses,
+    // so no test downloads anything. The builder is a child process that
+    // finds that directory the way the server does, from the environment.
+    dump = join(data, 'lichess_db_puzzle.csv.zst');
+    process.env.CHESS_VAULT_DATA = data;
+    puzzles = puzzlesApi(join(data, 'puzzles.sqlite'), join(data, 'state'));
+    app = new Hono().route('/api', puzzles);
+  });
+
+  afterEach(() => {
+    puzzles.closeDb();
+    if (savedData === undefined) delete process.env.CHESS_VAULT_DATA;
+    else process.env.CHESS_VAULT_DATA = savedData;
+    rmSync(data, { recursive: true, force: true });
+  });
+
+  /** Start a build and wait for it to end, returning its last status. */
+  const build = async (): Promise<{ running: boolean; error?: string | null }> => {
+    expect((await app.request('/api/puzzles/build', { method: 'POST' })).status).toBe(200);
+    for (;;) {
+      const status = (await (await app.request('/api/puzzles/build')).json()) as {
+        running: boolean;
+        error?: string | null;
+      };
+      if (!status.running) return status;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+  };
+
+  /** A fresh draw: asking past the standing offer makes it go through the counts. */
+  const draw = async (skip: string): Promise<{ status: number; id?: string }> => {
+    const res = await app.request(`/api/puzzles/next?skip=${skip}`);
+    if (res.status !== 200) return { status: res.status };
+    const body = (await res.json()) as { puzzle?: { id: string } };
+    return { status: res.status, id: body.puzzle?.id };
+  };
+
+  it('draws from the new file straight after the swap, never from the old counts', async () => {
+    // 300 puzzles at one rating: past SMALL_POOL, so a draw resolves its
+    // offset through the per-rating counts, which are cached per file.
+    writeFileSync(dump, dumpOf(Array.from({ length: 300 }, (_, i) => ({ id: `a${i}`, rating: 1500 }))));
+    expect((await build()).error ?? null).toBeNull();
+    const first = await draw('');
+    expect(first.id).toMatch(/^a/);
+    await app.request('/api/puzzles/attempt', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: first.id, win: false }),
+    });
+
+    // The newer set keeps one puzzle at the rating the old counts said
+    // held 300, so an offset from those counts lands past its end.
+    writeFileSync(
+      dump,
+      dumpOf([
+        { id: 'b0', rating: 1500 },
+        ...Array.from({ length: 299 }, (_, i) => ({ id: `b${i + 1}`, rating: 1600 })),
+      ]),
+    );
+    expect((await build()).error ?? null).toBeNull();
+    // What Settings shows of it: how many, and when they were built.
+    const meta = (await (await app.request('/api/puzzles/meta')).json()) as { puzzles: number; builtAt: string | null };
+    expect(meta.puzzles).toBe(300);
+    expect(Date.parse(meta.builtAt ?? '')).toBeGreaterThan(Date.now() - 60_000);
+
+    let last = first.id!;
+    for (let i = 0; i < 20; i++) {
+      const next = await draw(last);
+      expect(next.status).toBe(200);
+      expect(next.id).toMatch(/^b/);
+      last = next.id!;
+    }
+    // Attempts are the vault's, keyed by id, and outlive the file.
+    const history = (await (await app.request('/api/puzzles/history')).json()) as { attempts: { id: string }[] };
+    expect(history.attempts.map((a) => a.id)).toContain(first.id);
+  }, 60_000);
+
+  it('keeps serving the old database when a rebuild fails, and leaves nothing of the new one', async () => {
+    writeFileSync(dump, dumpOf(Array.from({ length: 10 }, (_, i) => ({ id: `a${i}`, rating: 1500 }))));
+    expect((await build()).error ?? null).toBeNull();
+    expect((await draw('')).id).toMatch(/^a/);
+
+    // A dump the builder refuses after it has created its temp database:
+    // the header is read from the stream, by which time the file exists.
+    writeFileSync(dump, zstdCompressSync('not,a,puzzle,dump\n'));
+    const failed = await build();
+    expect(failed.error).toMatch(/unexpected header/);
+    expect(existsSync(join(data, 'puzzles.sqlite.building'))).toBe(false);
+
+    const meta = (await (await app.request('/api/puzzles/meta')).json()) as { ready: boolean; puzzles: number };
+    expect(meta).toMatchObject({ ready: true, puzzles: 10 });
+    expect((await draw('a0')).status).toBe(200);
+  }, 60_000);
+
+  it('says why a build that threw half way failed, not which Node.js ran it', async () => {
+    writeFileSync(dump, dumpOf(Array.from({ length: 10 }, (_, i) => ({ id: `a${i}`, rating: 1500 }))));
+    expect((await build()).error ?? null).toBeNull();
+
+    // One id twice: the second insert throws from inside the stream, past
+    // the header, where a full disk's write throws too.
+    writeFileSync(
+      dump,
+      dumpOf([...Array.from({ length: 10 }, (_, i) => ({ id: `b${i}`, rating: 1500 })), { id: 'b0', rating: 1500 }]),
+    );
+    const failed = await build();
+    expect(failed.error).toBe('UNIQUE constraint failed: puzzles.id');
+    expect(existsSync(join(data, 'puzzles.sqlite.building'))).toBe(false);
+    expect((await draw('a0')).status).toBe(200);
+  }, 60_000);
+
+  it('reviews only the failed puzzles the new file still has', async () => {
+    writeFileSync(dump, dumpOf(Array.from({ length: 10 }, (_, i) => ({ id: `a${i}`, rating: 1500 }))));
+    expect((await build()).error ?? null).toBeNull();
+    // Two failed long ago, so both are due, a0 the more overdue.
+    mkdirSync(join(data, 'state'), { recursive: true });
+    writeFileSync(
+      join(data, 'state', 'history.jsonl'),
+      `${[
+        { id: 'a0', win: false, counted: true, puzzleRating: 1500, at: '2025-01-01T00:00:00.000Z' },
+        { id: 'a1', win: false, counted: true, puzzleRating: 1500, at: '2025-01-01T00:01:00.000Z' },
+      ]
+        .map((e) => JSON.stringify(e))
+        .join('\n')}\n`,
+    );
+    const meta = async (): Promise<{ failed: number; due: number }> =>
+      (await (await app.request('/api/puzzles/meta')).json()) as { failed: number; due: number };
+    expect(await meta()).toMatchObject({ failed: 2, due: 2 });
+
+    // The newer set has a1 and not a0.
+    writeFileSync(dump, dumpOf(Array.from({ length: 10 }, (_, i) => ({ id: `a${i + 1}`, rating: 1500 }))));
+    expect((await build()).error ?? null).toBeNull();
+    expect(await meta()).toMatchObject({ failed: 1, due: 1 });
+    for (let i = 0; i < 3; i++) {
+      const res = await app.request('/api/puzzles/next?mode=failed');
+      expect(res.status).toBe(200);
+      expect(((await res.json()) as { puzzle: { id: string } }).puzzle.id).toBe('a1');
+    }
+    // The log is the vault's, and keeps the attempt the file cannot serve.
+    const history = (await (await app.request('/api/puzzles/history')).json()) as { attempts: { id: string }[] };
+    expect(history.attempts.map((a) => a.id)).toEqual(['a1', 'a0']);
+  }, 60_000);
 });
 
 /**

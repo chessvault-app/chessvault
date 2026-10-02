@@ -506,7 +506,9 @@ database and it offers to fetch one: the CC0 Lichess dump (~304 MB, 6.1 M
 puzzles) downloads with a progress bar and becomes a 2.6 GB database — 115 s
 of building here, after the download. Nothing to install, nothing to type,
 and it keeps going if you leave the page. `npm run build:puzzles` does the
-same thing from a terminal if you prefer one.
+same thing from a terminal if you prefer one. A newer set later is
+Settings → **Puzzle database** → **Rebuild**, which builds beside the
+working database and swaps it in when it is ready.
 
 **Reference games build in the app too, and they are plural.** The
 desktop starts seeded — the installer's starter set is one
@@ -531,18 +533,21 @@ A deleted database is gone for good, like the bundled starter.
 
 Running **on a server**: the puzzle build streams a 304 MB compressed dump
 into a 2.6 GB database, and it will OOM on a small instance — it did on a
-2 GB one here. Press the button on a machine with the memory, or build on
-your workstation and `scp` the file into the server's data directory
-(`CHESS_VAULT_DATA`, default `data/` beside the app). That is a question
-about the machine, not about servers.
+2 GB one here. The build process alone peaked at 724 MB on a full set
+(measured on Windows), beside the server itself. A rebuild from Settings
+is the same build, and needs about 5.5 GB of free disk on top of the old
+database, which stays in place until the new one is ready. Press the
+button on a machine with the memory, or build on your workstation and
+`scp` the file into the server's data directory (`CHESS_VAULT_DATA`,
+default `data/` beside the app). That is a question about the machine,
+not about servers.
 
 Every later deploy keeps their indexes current on its own, so rebuild only
 for a newer dump or more games.
 
-[docs/databases.md](docs/databases.md) covers rebuilding them, and the
-one wrinkle that still wants a terminal: replacing a puzzle database
-that already works, since that build's offer appears only when there is
-none.
+[docs/databases.md](docs/databases.md) covers rebuilding them. A puzzle
+database that already works is replaced from Settings → **Puzzle
+database**; the trainer keeps using the old one until the new one is in.
 
 ## It never calls anyone but your own server
 

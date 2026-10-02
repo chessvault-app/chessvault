@@ -10,7 +10,9 @@
  * desktop user has no shell to curl it with, and the server spawns this
  * same file to answer the app's "build the puzzle database" button. What it
  * downloads itself, it deletes afterwards; a dump that was already on disk
- * is left alone, because it is somebody's file and not ours.
+ * is left alone, because it is somebody's file and not ours. The two have
+ * different names, so that what is ours can be told apart afterwards: see
+ * PUZZLE_DUMP_DOWNLOAD.
  *
  * Output lands at data/puzzles.sqlite via a temp file + rename, so a running
  * server keeps serving the old database until the build completes.
@@ -28,7 +30,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { Decompress } from 'fzstd';
 import Database from 'better-sqlite3';
-import { DATA, DATA_PUZZLES } from '../server/paths.ts';
+import { DATA, DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD } from '../server/paths.ts';
 import { PUZZLE_COUNT_TABLES } from './lib/db-tuning.ts';
 import { resolve } from 'node:path';
 
@@ -47,6 +49,27 @@ const args = process.argv.slice(2);
 const JSON_PROGRESS = args.includes('--progress-json');
 const positional = args.find((a) => !a.startsWith('--'));
 
+/**
+ * A failure, as the app is told it: one line on stderr, the error's own.
+ *
+ * The server shows the last line the child wrote to stderr (buildFailure
+ * in server/puzzles.ts), and Node's report of an uncaught error ends on
+ * its version banner. So every failure that was thrown rather than
+ * printed, a full disk, a dropped download or a dump that stops decoding
+ * half way, reached the Puzzles page and Settings as "Node.js v24.19.0",
+ * under a Try again. Only for the app's runs: from a terminal the stack
+ * is worth more than the line. The cause goes along when there is one,
+ * since fetch's own message ("fetch failed") names nothing. Exit waits on
+ * the write, which a pipe may not have flushed yet.
+ */
+if (JSON_PROGRESS) {
+  process.on('uncaughtException', (error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error);
+    const cause = error instanceof Error && error.cause instanceof Error ? `: ${error.cause.message}` : '';
+    process.stderr.write(`${message}${cause}\n`, () => process.exit(1));
+  });
+}
+
 const report = (event: Event): void => {
   if (JSON_PROGRESS) {
     console.log(JSON.stringify(event));
@@ -64,7 +87,14 @@ const report = (event: Event): void => {
   }
 };
 
-const source = positional ? resolve(process.cwd(), positional) : resolve(DATA, 'lichess_db_puzzle.csv.zst');
+/** A dump somebody put in the data directory, which a build uses and keeps. */
+const placed = resolve(DATA, 'lichess_db_puzzle.csv.zst');
+const fetched = !positional && !existsSync(placed);
+const source = positional
+  ? resolve(process.cwd(), positional)
+  : fetched
+    ? resolve(DATA, PUZZLE_DUMP_DOWNLOAD)
+    : placed;
 
 /**
  * Fetch the dump beside its target and rename it into place, so an
@@ -103,19 +133,32 @@ async function downloadDump(to: string): Promise<void> {
   renameSync(part, to);
 }
 
-const fetched = !existsSync(source);
-if (fetched) {
-  if (positional) {
-    console.error(`source not found: ${source}`);
-    process.exit(1);
-  }
-  await downloadDump(source);
+if (positional && !existsSync(source)) {
+  console.error(`source not found: ${source}`);
+  process.exit(1);
 }
+// Always afresh, even over a download an earlier run left: a build is
+// asked for to get the newest puzzles, and a leftover could be months old.
+if (fetched) await downloadDump(source);
 
 const tmp = `${DATA_PUZZLES}.building`;
 rmSync(tmp, { force: true });
 const db = new Database(tmp);
+/**
+ * No rollback journal: the file is a temp file nobody reads until it is
+ * renamed in, and a build that dies is started again from nothing.
+ *
+ * This line used to be the bare pragma, and it did nothing. better-sqlite3
+ * opens every connection in SQLite's defensive mode, which refuses
+ * `journal_mode = OFF` without an error and answers `delete`, so the
+ * build kept a journal the whole way through. Measured on a 5,000,000-row
+ * dump, that journal stood at 2.15 GB beside a 2.15 GB `.building` file
+ * at the build's peak. Defensive mode is lifted for the one pragma and
+ * put back; the mode it sets lasts the connection, VACUUM included.
+ */
+db.unsafeMode(true);
 db.pragma('journal_mode = OFF');
+db.unsafeMode(false);
 db.pragma('synchronous = OFF');
 db.pragma('cache_size = -262144');
 

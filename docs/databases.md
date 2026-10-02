@@ -7,7 +7,7 @@ than growing with your vault the way everything else does:
 
 | File | What reads it | Size | Built by |
 | --- | --- | --- | --- |
-| `data/puzzles.sqlite` | the puzzle trainer | ~2.6 GB | the app, on the Puzzles page |
+| `data/puzzles.sqlite` | the puzzle trainer | ~2.6 GB | the app, on the Puzzles page the first time and from Settings → Puzzle database after |
 | `data/refgames/*.sqlite` | the Databases browser on the Games page, the local explorer, the repertoire trainer, the opening map and Insights' database comparison | ~1 GB per Elite month with every index in place (measured under "Scale and hardware" below) | the app, on the Databases page (or `npm run build:refgames`); the desktop installer seeds a 25 MB starter set |
 
 Everything else — books, studies, notes, imported puzzle books — is made
@@ -63,16 +63,25 @@ themselves do not change on their own.
 There are exactly two reasons to rebuild:
 
 **A newer puzzle set.** Lichess publishes an updated dump periodically.
-`npm run build:puzzles` takes it: the dump is downloaded if it is not
-already in `data/`, and the database is written to a temp file and renamed,
-so a running server keeps serving the old one until it finishes. A dump the
-script downloaded itself is deleted afterwards; one you put there is left
-alone.
+In the app it is Settings → **Puzzle database** → **Rebuild**. The row
+beside the button says how many puzzles the database holds and when it
+was built, and the button asks first, with what the rebuild costs: about
+300 MB to download, about 5.5 GB of free disk while it builds, and on a
+small server it can run out of memory (the README's note on servers has
+the number). The 5.5 GB is measured: rebuilding a full 6,100,960-puzzle
+set peaked with the new file and SQLite's VACUUM temp at 2.62 GB each,
+beside the old database and the download. The new database is written to
+a temp file and renamed over the old one, so the trainer keeps serving
+the old one until then and picks the new one up with no restart. The card
+shows the same progress the first build does; a failure leaves nothing of
+the new file behind, says why on the card, survives a reload and offers
+**Try again**.
 
-There is no button for this yet — the app's build offer appears only when
-there is no database at all, so replacing a working one still means the
-command (or deleting the file first). That is a missing UI, not a
-deliberate limit.
+`npm run build:puzzles` does the same from a terminal. A dump you put in
+`data/` as `lichess_db_puzzle.csv.zst` is built from and left alone;
+without one the dump is downloaded under a name of its own, which is
+deleted when the build ends, or by the server's next start if the build
+did not end cleanly.
 
 Attempt history lives in the vault and is keyed by puzzle id, so it
 survives a rebuild.
