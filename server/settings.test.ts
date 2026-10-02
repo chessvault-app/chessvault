@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
 import { gamesApi } from './games.ts';
+import { AnalysisStore } from './myGamesAnalysis.ts';
 import { hashPassword, isHashedPassword, verifyPassword } from './password.ts';
 import { VAULT_SKELETON } from './paths.ts';
 import { settingsApi } from './settings.ts';
@@ -444,6 +445,51 @@ describe('wipe', () => {
     const docs = await json('GET', '/api/games/docs');
     expect(docs.status).toBe(200);
     for (const d of VAULT_SKELETON) expect(existsSync(join(vault, d))).toBe(true);
+  });
+
+  it('lets go of the engine pass’s open file before deleting it, so the wipe finishes and its records go', async () => {
+    // The store keeps its file open from its first read, as it does once
+    // Insights has been visited. Deleting it under that handle answered
+    // 500 on Windows (EPERM) with the vault already emptied, and elsewhere
+    // left the store reading the deleted file's records until a restart.
+    const data = mkdtempSync(join(tmpdir(), 'vault-derived-'));
+    const file = join(data, 'analysis.sqlite');
+    const store = new AnalysisStore(file);
+    try {
+      store.put({
+        file: 'collection/a.pgn',
+        index: 0,
+        side: 'white',
+        site: null,
+        plies: 10,
+        depth: 12,
+        accuracy: 90,
+        acpl: 20,
+        moves: 5,
+        inaccuracies: 0,
+        mistakes: 0,
+        blunders: 0,
+        brilliancies: 0,
+        bookMoves: 2,
+        perMove: [],
+      });
+      expect(store.all().size).toBe(1);
+      const wiper = new Hono();
+      wiper.route(
+        '/api',
+        settingsApi({ configPath: join(vault, 'config.json'), vaultDir: vault, sameMachine: true, derived: [file] }),
+      );
+      const res = await wiper.request('/api/settings/wipe', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ confirm: 'wipe everything', password: 'hunter22' }),
+      });
+      expect(res.status).toBe(200);
+      expect(store.all().size).toBe(0);
+    } finally {
+      store.close();
+      rmSync(data, { recursive: true, force: true });
+    }
   });
 
   it('skips the password check on an ungated vault', async () => {

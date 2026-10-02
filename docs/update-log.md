@@ -12,6 +12,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   games collection lives in, so until the server was restarted the Games
   page said “Vault server unreachable” and Home's recent games failed to
   load. A wiped vault is now left in the shape a fresh start leaves it.
+- **“Wipe all data” finishes after Insights has been opened.** Insights
+  holds the engine pass's findings open, and the wipe deleted that file
+  under it. Windows refused, so the wipe stopped with an error after the
+  vault was already empty and before its change history was made again;
+  elsewhere Insights went on reading the deleted findings until the
+  server was restarted. The wipe now closes the file before deleting it.
 - **A wrong password in the wipe window says it is wrong.** The line under
   the password just typed read “password required to wipe”, as if none
   had been sent, and in English on the Korean screen too. It now says

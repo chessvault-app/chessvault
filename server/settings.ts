@@ -5,6 +5,7 @@ import { resolve } from 'node:path';
 import { Hono } from 'hono';
 import { APP_VERSION, DATA_MYGAMES_ANALYSIS, LOOPBACK_ONLY, VAULT, VAULT_CONFIG, VAULT_SKELETON } from './paths.ts';
 import { revokeAllSessions } from './auth.ts';
+import { releaseAnalysisFile } from './myGamesAnalysis.ts';
 import { hashPassword, verifyPassword } from './password.ts';
 import { normaliseTraining } from '../shared/training.ts';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp.ts';
@@ -463,8 +464,10 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
       mkdirSync(resolve(vaultDir, d), { recursive: true });
     }
     // See SettingsDeps.derived. A file (or its sqlite sidecars) that is
-    // not there is nothing to remove.
+    // not there is nothing to remove. One the engine pass's store holds
+    // open is let go of first (releaseAnalysisFile says what that cost).
     for (const file of derived) {
+      releaseAnalysisFile(file);
       for (const suffix of ['', '-wal', '-shm']) rmSync(`${file}${suffix}`, { force: true });
     }
     // Fresh history repo so the autosave layer keeps working (and carries
