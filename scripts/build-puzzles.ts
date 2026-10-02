@@ -115,7 +115,21 @@ if (fetched) {
 const tmp = `${DATA_PUZZLES}.building`;
 rmSync(tmp, { force: true });
 const db = new Database(tmp);
+/**
+ * No rollback journal: the file is a temp file nobody reads until it is
+ * renamed in, and a build that dies is started again from nothing.
+ *
+ * This line used to be the bare pragma, and it did nothing. better-sqlite3
+ * opens every connection in SQLite's defensive mode, which refuses
+ * `journal_mode = OFF` without an error and answers `delete`, so the
+ * build kept a journal the whole way through. Measured on a 5,000,000-row
+ * dump, that journal stood at 2.15 GB beside a 2.15 GB `.building` file
+ * at the build's peak. Defensive mode is lifted for the one pragma and
+ * put back; the mode it sets lasts the connection, VACUUM included.
+ */
+db.unsafeMode(true);
 db.pragma('journal_mode = OFF');
+db.unsafeMode(false);
 db.pragma('synchronous = OFF');
 db.pragma('cache_size = -262144');
 
