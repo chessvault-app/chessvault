@@ -30,7 +30,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { Decompress } from 'fzstd';
 import Database from 'better-sqlite3';
-import { DATA, DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD } from '../server/paths.ts';
+import { DATA, DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD, PUZZLE_DUMP_PLACED } from '../server/paths.ts';
 import { PUZZLE_COUNT_TABLES } from './lib/db-tuning.ts';
 import { resolve } from 'node:path';
 
@@ -79,7 +79,7 @@ const report = (event: Event): void => {
     const mb = (n: number): string => (n / 1e6).toFixed(0);
     console.log(`  downloaded ${mb(event.bytes)} / ${event.total ? mb(event.total) : '?'} MB`);
   } else if (event.phase === 'building') {
-    console.log(`  ${event.rows.toLocaleString()} puzzles…`);
+    console.log(event.rows === 0 ? 'building…' : `  ${event.rows.toLocaleString()} puzzles…`);
   } else if (event.phase === 'indexing') {
     console.log('indexing…');
   } else {
@@ -88,7 +88,7 @@ const report = (event: Event): void => {
 };
 
 /** A dump somebody put in the data directory, which a build uses and keeps. */
-const placed = resolve(DATA, 'lichess_db_puzzle.csv.zst');
+const placed = resolve(DATA, PUZZLE_DUMP_PLACED);
 const fetched = !positional && !existsSync(placed);
 const source = positional
   ? resolve(process.cwd(), positional)
@@ -194,6 +194,22 @@ let themeRows = 0;
 let header = true;
 const started = Date.now();
 
+/**
+ * How many rows go by between two counts.
+ *
+ * The app's bar used to hear of the build only every 200,000 rows, at
+ * each COMMIT. Until the first of those it went on saying what the
+ * server or the download had said last: "Downloading the puzzle dump",
+ * 0 MB of nothing when a dump was in place, and a full bar after a real
+ * download. The first 200,000 rows took 1.9 s on a fast desktop and take
+ * longer on a small server, and a dump that holds fewer never said
+ * "building" at all. So the start is reported as zero rows (below), and the app is
+ * told a count every 10,000: 610 short lines over the 6.1 M-row set, for
+ * a bar the app reads once a second. A terminal keeps the old cadence,
+ * where every count is a line someone has to scroll past.
+ */
+const REPORT_EVERY = JSON_PROGRESS ? 10_000 : 200_000;
+
 const takeLine = (line: string): void => {
   if (header) {
     header = false;
@@ -230,10 +246,8 @@ const takeLine = (line: string): void => {
   }
 
   rows++;
-  if (rows % 200_000 === 0) {
-    db.exec('COMMIT; BEGIN');
-    report({ phase: 'building', rows });
-  }
+  if (rows % 200_000 === 0) db.exec('COMMIT; BEGIN');
+  if (rows % REPORT_EVERY === 0) report({ phase: 'building', rows });
 };
 
 /**
@@ -262,6 +276,9 @@ const decompress = new Decompress((chunk) => {
   for (const part of parts) takeLine(part.endsWith('\r') ? part.slice(0, -1) : part);
 });
 
+// Whatever came before (a download, or nothing) is over: say so now,
+// not at the first count.
+report({ phase: 'building', rows: 0 });
 db.exec('BEGIN');
 for await (const chunk of createReadStream(source)) decompress.push(chunk as Uint8Array);
 decompress.push(new Uint8Array(0), true);

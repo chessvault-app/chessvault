@@ -81,7 +81,9 @@ the new file behind, says why on the card, survives a reload and offers
 `data/` as `lichess_db_puzzle.csv.zst` is built from and left alone;
 without one the dump is downloaded under a name of its own, which is
 deleted when the build ends, or by the server's next start if the build
-did not end cleanly.
+did not end cleanly. The app's build uses a dump in place the same way,
+and Rebuild's question then says it is building from that dump and
+downloads nothing.
 
 Attempt history lives in the vault and is keyed by puzzle id, so it
 survives a rebuild.

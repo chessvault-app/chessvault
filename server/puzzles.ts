@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { renameRetrying, writeAtomic } from './atomic.ts';
-import { DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD, REPO_ROOT, VAULT } from './paths.ts';
+import { DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD, PUZZLE_DUMP_PLACED, REPO_ROOT, VAULT } from './paths.ts';
 import { reviewDueAt, type ReviewAttempt } from '../shared/review.ts';
 
 /**
@@ -71,7 +71,7 @@ function isFinishedPuzzleBuild(path: string): boolean {
  * it is a build that finished in the instant before the server died, which
  * is a whole database that only missed its rename and is renamed in instead.
  *
- * A dump somebody PUT there (`lichess_db_puzzle.csv.zst`) is left alone:
+ * A dump somebody PUT there (PUZZLE_DUMP_PLACED) is left alone:
  * it is theirs, and a build uses it rather than downloading. That name
  * used to be the download's as well, so a download a dead build left
  * could not be told from it and stayed for good; the download has a name
@@ -87,7 +87,7 @@ export function sweepUnfinishedPuzzleBuild(
   dbPath: string = DATA_PUZZLES,
 ): 'none' | 'swapped' | 'kept' | 'discarded' {
   const data = dirname(dbPath);
-  rmSync(resolve(data, 'lichess_db_puzzle.csv.zst.part'), { force: true });
+  rmSync(resolve(data, `${PUZZLE_DUMP_PLACED}.part`), { force: true });
   rmSync(resolve(data, `${PUZZLE_DUMP_DOWNLOAD}.part`), { force: true });
   rmSync(resolve(data, PUZZLE_DUMP_DOWNLOAD), { force: true });
 
@@ -803,11 +803,25 @@ export function puzzlesApi(
     error: string | null;
   } | null = null;
 
+  /**
+   * Whether a dump somebody put beside the database is there, which a
+   * build uses instead of downloading (scripts/build-puzzles.ts, the same
+   * name in the same directory).
+   */
+  const dumpInPlace = (): boolean => existsSync(resolve(dirname(dbPath), PUZZLE_DUMP_PLACED));
+
   const startBuild = (): void => {
     const current = {
       startedAt: Date.now(),
       running: true,
-      progress: { phase: 'downloading', bytes: 0, total: 0 } as BuildProgress,
+      // What is shown until the child's first line, once Node has started
+      // it (120 ms on a fast desktop, from source). It was always the
+      // download, so a build from a dump in place read "Downloading the
+      // puzzle dump, 0 / ? MB" with nothing being downloaded, and a
+      // 500-row one said that until it was indexing.
+      progress: (dumpInPlace()
+        ? { phase: 'building', rows: 0 }
+        : { phase: 'downloading', bytes: 0, total: 0 }) as BuildProgress,
       error: null as string | null,
     };
     build = current;
@@ -891,16 +905,21 @@ export function puzzlesApi(
   };
 
   api.get('/puzzles/build', (c) =>
-    c.json(
-      build
+    c.json({
+      ...(build
         ? {
             running: build.running,
             seconds: (Date.now() - build.startedAt) / 1000,
             error: build.error,
             ...build.progress,
           }
-        : { running: false },
-    ),
+        : { running: false }),
+      // What the next build would do, for Settings' Rebuild question:
+      // with a dump in place it downloads nothing, and the question said
+      // "It downloads about 300 MB" all the same. Read on every poll, so
+      // a dump put there while the page is open is answered for too.
+      dumpInPlace: dumpInPlace(),
+    }),
   );
 
   api.post('/puzzles/build', (c) => {

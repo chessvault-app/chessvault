@@ -914,6 +914,9 @@ export const ko: Record<string, string> = {
   'Rebuild the puzzle database from the latest Lichess puzzles': '최신 Lichess 퍼즐로 퍼즐 데이터베이스 다시 만들기',
   'Rebuild the puzzle database from the latest Lichess puzzles? It downloads about 300 MB and needs about 5.5 GB of free disk while it builds, and can run out of memory on a small server. The current one keeps working until the new one is ready, and your attempts are kept.':
     '최신 Lichess 퍼즐로 퍼즐 데이터베이스를 다시 만들까요? 약 300MB를 내려받고 만드는 동안 디스크 여유 공간이 약 5.5GB 필요하며, 메모리가 작은 서버에서는 메모리가 모자랄 수 있습니다. 새 데이터베이스가 준비될 때까지 지금 것을 계속 쓰고, 시도 기록은 그대로 남습니다.',
+  'Rebuild the puzzle database from the puzzle dump in its folder': '데이터베이스 폴더에 있는 퍼즐 덤프로 퍼즐 데이터베이스 다시 만들기',
+  'Rebuild the puzzle database from the puzzle dump already in its folder? It downloads nothing and needs over 5 GB of free disk while it builds, and can run out of memory on a small server. The current one keeps working until the new one is ready, and your attempts are kept.':
+    '데이터베이스 폴더에 이미 있는 퍼즐 덤프로 퍼즐 데이터베이스를 다시 만들까요? 아무것도 내려받지 않고, 만드는 동안 디스크 여유 공간이 5GB 넘게 필요하며, 메모리가 작은 서버에서는 메모리가 모자랄 수 있습니다. 새 데이터베이스가 준비될 때까지 지금 것을 계속 쓰고, 시도 기록은 그대로 남습니다.',
   Theme: '테마',
   Played: '플레이 횟수',
   'Finding a puzzle…': '퍼즐을 찾는 중…',

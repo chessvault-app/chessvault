@@ -31,6 +31,9 @@ export interface BuildStatus {
   puzzles?: number;
   seconds?: number;
   error?: string | null;
+  /** A dump is in place beside the database, which the next build uses
+      instead of downloading. */
+  dumpInPlace?: boolean;
 }
 
 const mb = (bytes: number): string => (bytes / 1e6).toFixed(0);
