@@ -98,7 +98,7 @@ export function VaultTree({
       <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3">
         <VaultPath path={path} />
         <span className="text-muted-foreground text-sm whitespace-nowrap">
-          <Figures text={`${size(bytes)} · ${t('{n} files', { n: files })}`} />
+          <Figures text={`${size(bytes)} · ${files === 1 ? t('1 file') : t('{n} files', { n: files })}`} />
         </span>
       </div>
       <ul>

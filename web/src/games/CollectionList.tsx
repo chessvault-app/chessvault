@@ -29,7 +29,7 @@ import { EmptyState } from '@/components/empty-state';
 import { Field } from '@/components/ui/field';
 import { searchRowClass } from '@/components/text-fields';
 import { collectionWasNonEmpty } from './collection';
-import { MergedTally, SelectReserve, Tally } from './GamesView.skeleton';
+import { gamesTally, MergedTally, SelectReserve, Tally } from './GamesView.skeleton';
 
 import { t } from '@/lib/i18n';
 import {
@@ -735,7 +735,7 @@ export function CollectionList({
    */
   // The wait's bar is the outline's own (GamesView.skeleton, Tally), so
   // the two waits draw one reservation.
-  const tally = loaded ? t('{n} games', { n: visible.length.toLocaleString() }) : <Tally />;
+  const tally = loaded ? gamesTally(visible.length) : <Tally />;
 
   const rowCheckbox = (game: GameSummary): ReactNode => (
     <SelectRowCheckbox

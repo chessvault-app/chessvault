@@ -53,3 +53,8 @@ export const INSIGHTS_COPY = {
     desc: () => t('Results by how many moves the game ran.'),
   },
 } as const;
+
+/** The mean loss beside the accuracy line, in the number its noun takes.
+    The outline lays it out invisibly too, so it is stated here once. */
+export const centipawnsLost = (n: number | string): string =>
+  n === 1 ? t('1 centipawn lost per move') : t('{n} centipawns lost per move', { n });

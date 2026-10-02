@@ -416,7 +416,9 @@ function BookCard({
     book.lastPage && book.pages
       ? t('Page {page} of {pages}', { page: book.lastPage, pages: book.pages })
       : book.pages
-        ? t('{n} pages', { n: book.pages })
+        ? book.pages === 1
+          ? t('1 page')
+          : t('{n} pages', { n: book.pages })
         : null;
 
   return (

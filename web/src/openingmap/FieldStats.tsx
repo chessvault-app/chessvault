@@ -177,11 +177,13 @@ export function FieldStats({
           title={
             gaps
               ? t('Games whose reply your map charts or a linked study prepares.')
-              : t('{n} games in the field here', { n: exact.format(games) })
+              : games === 1
+                ? t('1 game in the field here')
+                : t('{n} games in the field here', { n: exact.format(games) })
           }
         >
           <span>
-            {t('{n} games', { n: compact.format(games) })}
+            {games === 1 ? t('1 game') : t('{n} games', { n: compact.format(games) })}
             {gaps ? ` · ${t('{pct}% met', { pct: Math.round(gaps.metShare * 100) })}` : ''}
           </span>
         </TitleTip>
@@ -276,7 +278,7 @@ export function FieldStats({
             pushing every bar an inch to the right. */}
         {rows.length > SHOWN && (
           <p className="text-muted-foreground col-span-3 px-2 pt-1 text-sm">
-            {t('and {n} rarer moves', { n: rows.length - SHOWN })}
+            {rows.length - SHOWN === 1 ? t('and 1 rarer move') : t('and {n} rarer moves', { n: rows.length - SHOWN })}
           </p>
         )}
         {gaps && gaps.gaps.length === 0 && (

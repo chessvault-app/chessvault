@@ -170,8 +170,10 @@ function GameDetailsContent({
     detail.push(node);
   };
   if (summary.date && summary.date !== '????.??.??') push(summary.date);
-  if (summary.plyCount > 0)
-    push(t('{n} moves', { n: String(moveCount(summary.plyCount)) }));
+  if (summary.plyCount > 0) {
+    const moves = moveCount(summary.plyCount);
+    push(moves === 1 ? t('1 move') : t('{n} moves', { n: String(moves) }));
+  }
   const tc = formatTimeControl(summary.timeControl);
   if (tc) push(tc);
 

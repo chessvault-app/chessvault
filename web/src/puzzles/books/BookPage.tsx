@@ -750,7 +750,7 @@ function CyclesPanel({
               <ChevronRight
                 className={cn('glyph transition-transform duration-(--pane-turn) ease-(--pane-turn-ease)', showPast && 'rotate-90')}
               />
-              {t('{n} past cycles', { n: finished.length })}
+              {finished.length === 1 ? t('1 past cycle') : t('{n} past cycles', { n: finished.length })}
             </button>
             {showPast && (
               // The hairline marks where the live pass ends and the
@@ -834,12 +834,16 @@ function ScanPanel({
       </p>
       <p className="text-muted-foreground mt-1 text-sm">
         {phase === 'reading'
-          ? t('{found} diagrams read', { found })
-          : t('page {page} of {pages} · {found} diagrams', {
-              page,
-              pages: pages || '…',
-              found,
-            })}
+          ? found === 1
+            ? t('1 diagram read')
+            : t('{found} diagrams read', { found })
+          : found === 1
+            ? t('page {page} of {pages} · 1 diagram', { page, pages: pages || '…' })
+            : t('page {page} of {pages} · {found} diagrams', {
+                page,
+                pages: pages || '…',
+                found,
+              })}
       </p>
       <div className="bg-border mx-auto mt-3 h-1 max-w-xs overflow-hidden rounded-full">
         {/* Scaled from the left rather than a width transition: the

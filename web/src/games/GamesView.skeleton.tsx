@@ -269,6 +269,11 @@ export function CollectionPaneOutline({
   );
 }
 
+/** The collection's count, as the list writes it and as this outline
+    reserves it: stated once, so the bar is the width of the words. */
+export const gamesTally = (n: number): string =>
+  n === 1 ? t('1 game') : t('{n} games', { n: n.toLocaleString() });
+
 /**
  * The tally's bar, at the width of the words that are coming.
  *
@@ -284,7 +289,7 @@ export function Tally() {
   if (last === null) return <Skeleton className="h-2.5 w-16" />;
   return (
     <span className="relative inline-block">
-      <span className="invisible">{t('{n} games', { n: last.toLocaleString() })}</span>
+      <span className="invisible">{gamesTally(last)}</span>
       <Skeleton className="absolute inset-x-0 top-1/2 h-2.5 -translate-y-1/2" />
     </span>
   );

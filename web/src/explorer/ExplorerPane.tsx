@@ -1063,7 +1063,9 @@ function MyGamesFilterBar({ onCancel, onDone }: { onCancel: () => void; onDone: 
                   n: exact.format(stats.matching),
                   total: exact.format(stats.games),
                 })
-              : t('{n} games indexed', { n: exact.format(stats.games) })}
+              : stats.games === 1
+                ? t('1 game indexed')
+                : t('{n} games indexed', { n: exact.format(stats.games) })}
           </span>
         )}
         {hasMyFilters(filters) && (
@@ -1148,7 +1150,7 @@ function MoveRow({
           {move.san}
         </button>
       </td>
-      <TitleTip title={t('{n} games', { n: exact.format(move.total) })}>
+      <TitleTip title={move.total === 1 ? t('1 game') : t('{n} games', { n: exact.format(move.total) })}>
         {/* whitespace-nowrap: a count with a decimal ("425.6K") is wider
             than the column at the phone's row size, and it broke into two
             lines, the row with it (lanph3re, 2026-09-18). The column grows
@@ -1267,7 +1269,9 @@ function DeepSearch({ db, fen }: { db: string; fen: string }) {
         !sawDone
           ? t('The search failed.')
           : exhaustive
-            ? t('{n} games found', { n: got.toLocaleString() })
+            ? got === 1
+              ? t('1 game found')
+              : t('{n} games found', { n: got.toLocaleString() })
             : t('{n}+ games found. The list stops here.', { n: got.toLocaleString() }),
       );
     }

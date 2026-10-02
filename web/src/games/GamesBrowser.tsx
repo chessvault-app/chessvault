@@ -273,7 +273,7 @@ export function GamesBrowser({
     return [...counted]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 50)
-      .map(([name, n]) => ({ v: name, desc: t('{n} games', { n: String(n) }) }));
+      .map(([name, n]) => ({ v: name, desc: n === 1 ? t('1 game') : t('{n} games', { n: String(n) }) }));
   };
   const [importing, setImporting] = useState(false);
   // The host's handles are filled from a layout effect, not during
@@ -978,7 +978,7 @@ function ImportGamePanel({ onDone, onCancel }: { onDone: () => void; onCancel: (
           answer.unreadable ? t('{n} could not be read', { n: String(answer.unreadable) }) : '',
         ].filter(Boolean);
         toast.add({
-          title: t('Added {n} games', { n: String(answer.imported ?? 0) }),
+          title: answer.imported === 1 ? t('Added 1 game') : t('Added {n} games', { n: String(answer.imported ?? 0) }),
           description: skipped.length > 0 ? skipped.join(', ') : undefined,
           timeout: 6000,
         });

@@ -1001,6 +1001,18 @@ async function makeLineStudy(path: string[], wanted: string): Promise<string> {
   throw new ApiError(409, t('a study with that name exists'));
 }
 
+/** How far the studies prepare this node, each count in the number its
+    noun takes: one sentence per pairing, since Korean orders the two
+    differently and a noun slotted in cannot be translated. */
+function preparedText(plies: number, lines: number): string {
+  if (plies === 1) {
+    return lines === 1 ? t('Prepared 1 ply deep, 1 line') : t('Prepared 1 ply deep, {lines} lines', { lines });
+  }
+  return lines === 1
+    ? t('Prepared {plies} plies deep, 1 line', { plies })
+    : t('Prepared {plies} plies deep, {lines} lines', { plies, lines });
+}
+
 function NodePanel({
   map,
   resolved,
@@ -1132,10 +1144,7 @@ function NodePanel({
           {lineName && !isRoot && <p className="text-muted-foreground truncate text-sm">{lineName}</p>}
           {coverage?.covered && (
             <p className="text-muted-foreground text-sm">
-              {t('Prepared {plies} plies deep, {lines} lines', {
-                plies: coverage.preparedPlies,
-                lines: coverage.lineCount,
-              })}
+              {preparedText(coverage.preparedPlies, coverage.lineCount)}
             </p>
           )}
           {node.depth !== undefined && coverage && (
@@ -1159,7 +1168,9 @@ function NodePanel({
           )}
           {(coverage?.gapCount ?? 0) > 0 && (
             <p className="text-destructive text-sm">
-              {t('{n} drill gaps, the studies lack an answer', { n: coverage!.gapCount })}
+              {coverage!.gapCount === 1
+                ? t('1 drill gap, the studies lack an answer')
+                : t('{n} drill gaps, the studies lack an answer', { n: coverage!.gapCount })}
             </p>
           )}
           {facts.fen === null && !isRoot && (
@@ -1334,7 +1345,7 @@ function NodePanel({
       {deviations.length > 0 && (
         <Field
           label="Games that left here"
-          hint={t('{n} games', { n: deviations.length })}
+          hint={deviations.length === 1 ? t('1 game') : t('{n} games', { n: deviations.length })}
         >
           <div className="flex flex-col gap-1">
             {deviations.slice(0, 4).map((d) => {

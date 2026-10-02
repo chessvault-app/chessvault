@@ -9,7 +9,7 @@ import type { Ending } from '@shared/gameIndex';
 import { api } from '@/lib/api';
 import { routePlaceholderShown } from '@/lib/lazyRoute';
 import { t, useLang } from '@/lib/i18n';
-import { INSIGHTS_COPY } from './copy';
+import { centipawnsLost, INSIGHTS_COPY } from './copy';
 import { navigate } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { EmptyState } from '@/components/empty-state';
@@ -219,7 +219,9 @@ export function InsightsPage() {
     } else if (wasStatus.current === 'running') {
       saidCount.current = -1;
       if (job.status === 'paused') announce(t('Analysis paused.'));
-      else if (job.status === 'done') announce(t('All {n} games analysed.', { n: exact.format(job.analysed) }));
+      else if (job.status === 'done') {
+        announce(job.analysed === 1 ? t('1 game analysed.') : t('All {n} games analysed.', { n: exact.format(job.analysed) }));
+      }
     }
     wasStatus.current = job.status;
   }, [job.status, job.analysed, job.total]);
@@ -307,7 +309,7 @@ export function InsightsPage() {
         subtitle={
           report !== null ? (
             <span className="tabular-nums">
-              {t('{n} games', { n: exact.format(report.games) })}
+              {report.games === 1 ? t('1 game') : t('{n} games', { n: exact.format(report.games) })}
               {/* The pass's end, where the count already is: the strip
                   leaves when the last game lands, and this is what says
                   it did. */}
@@ -457,8 +459,7 @@ function Tables({ report }: { report: Report }) {
                   total: exact.format(report.games),
                   d: report.analysis.depth ?? PASS_DEPTH,
                 })}
-                {meanOf(report.analysis.acpl) !== null &&
-                  `, ${t('{n} centipawns lost per move', { n: Math.round(meanOf(report.analysis.acpl)!) })}`}
+                {meanOf(report.analysis.acpl) !== null && `, ${centipawnsLost(Math.round(meanOf(report.analysis.acpl)!))}`}
                 . <StartOver />
               </span>
             </p>
@@ -863,7 +864,12 @@ function Donut({ shares, ink, total }: { shares: { ending: Ending; games: number
   }
   return (
     <div className="relative mx-auto size-28">
-      <svg viewBox="0 0 40 40" className={cn('size-full -rotate-90', ink)} role="img" aria-label={t('{n} games', { n: exact.format(total) })}>
+      <svg
+        viewBox="0 0 40 40"
+        className={cn('size-full -rotate-90', ink)}
+        role="img"
+        aria-label={total === 1 ? t('1 game') : t('{n} games', { n: exact.format(total) })}
+      >
         {shares.map((s, at) => {
           const start = starts[at]!;
           // A slice thinner than the gap is drawn whole; one that is
@@ -995,9 +1001,11 @@ function PassStrip() {
     return (
       <div className="border-warn/40 bg-warn/10 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-md border px-3 py-2 text-sm">
         <span className="min-w-0 flex-1">
-          {t('{n} newer games are not analysed yet: their results count, their accuracy does not.', {
-            n: exact.format(owed),
-          })}
+          {owed === 1
+            ? t('1 newer game is not analysed yet: its result counts, its accuracy does not.')
+            : t('{n} newer games are not analysed yet: their results count, their accuracy does not.', {
+                n: exact.format(owed),
+              })}
         </span>
         <Button variant="outline" size="sm" onClick={() => void job.start()}>
           {t('Analyse new games')}
@@ -1024,9 +1032,11 @@ function PassStrip() {
           <span>
             {t('Paused')}
             {'. '}
-            {t('{n} games are not analysed yet: their results count, their accuracy does not.', {
-              n: exact.format(owed),
-            })}
+            {owed === 1
+              ? t('1 game is not analysed yet: its result counts, its accuracy does not.')
+              : t('{n} games are not analysed yet: their results count, their accuracy does not.', {
+                  n: exact.format(owed),
+                })}
           </span>
         )}
         {failed && job.error && (
@@ -1052,7 +1062,11 @@ function StartOver() {
   }
   return (
     <span className="flex flex-wrap items-center gap-2">
-      <span>{t('Forget {n} analysed games and start again?', { n: exact.format(job.analysed) })}</span>
+      <span>
+        {job.analysed === 1
+          ? t('Forget 1 analysed game and start again?')
+          : t('Forget {n} analysed games and start again?', { n: exact.format(job.analysed) })}
+      </span>
       <Button
         variant="destructive"
         size="sm"
