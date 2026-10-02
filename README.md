@@ -245,8 +245,11 @@ npm start                      # http://127.0.0.1:8787
 ```
 
 From source the vault is `vault/` in the repo unless `CHESS_VAULT_DIR`
-says otherwise. No password is needed — nothing is listening beyond your
-device.
+says otherwise. No password is needed on this computer, but `npm start`
+answers on every network interface, so anyone on your network can open
+it at the phone address its start-up lines print. Set
+`CHESS_BIND=127.0.0.1` to keep it to this computer, as the desktop app
+does, or set an app password in Settings.
 
 ### B · On a server
 
