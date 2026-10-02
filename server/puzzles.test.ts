@@ -13,6 +13,7 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { zstdCompressSync } from 'node:zlib';
+import { PUZZLE_DUMP_DOWNLOAD } from './paths.ts';
 import { puzzlesApi, ratingBound, sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 
 describe('puzzles api', () => {
@@ -617,6 +618,17 @@ describe('sweepUnfinishedPuzzleBuild', () => {
     sweepUnfinishedPuzzleBuild(dbPath);
     expect(existsSync(`${dump}.part`)).toBe(false);
     expect(existsSync(dump)).toBe(true);
+  });
+
+  it('drops a whole download too: a build re-fetches rather than reuse one', () => {
+    const ours = join(data, PUZZLE_DUMP_DOWNLOAD);
+    writeFileSync(`${ours}.part`, 'interrupted');
+    writeFileSync(ours, 'downloaded by a build that then died');
+    writeFileSync(join(data, 'lichess_db_puzzle.csv.zst'), 'the user put this here');
+    sweepUnfinishedPuzzleBuild(dbPath);
+    expect(existsSync(`${ours}.part`)).toBe(false);
+    expect(existsSync(ours)).toBe(false);
+    expect(existsSync(join(data, 'lichess_db_puzzle.csv.zst'))).toBe(true);
   });
 
   it('is a no-op with nothing to sweep', () => {

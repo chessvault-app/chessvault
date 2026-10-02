@@ -4,7 +4,7 @@ import { spawn } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { renameRetrying, writeAtomic } from './atomic.ts';
-import { DATA_PUZZLES, REPO_ROOT, VAULT } from './paths.ts';
+import { DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD, REPO_ROOT, VAULT } from './paths.ts';
 import { reviewDueAt, type ReviewAttempt } from '../shared/review.ts';
 
 /**
@@ -65,15 +65,18 @@ function isFinishedPuzzleBuild(path: string): boolean {
  * can delete them: 2.6 GB and 304 MB respectively, invisible.
  *
  * Startup is the one moment when they are known to be dead, since no build
- * can be running yet. The `.part` always goes — a download is never resumed,
- * the builder re-fetches from zero. The `.building` file goes unless it is
- * a build that finished in the instant before the server died, which is a
- * whole database that only missed its rename and is renamed in instead.
+ * can be running yet. The download always goes, whole or `.part`: a
+ * download is never resumed or reused, the builder re-fetches from zero
+ * so that a rebuild gets the newest set. The `.building` file goes unless
+ * it is a build that finished in the instant before the server died, which
+ * is a whole database that only missed its rename and is renamed in instead.
  *
- * The dump ITSELF (`lichess_db_puzzle.csv.zst`) is deliberately left alone:
- * a build deletes only a dump it downloaded, because one the user put there
- * is theirs, and this cannot tell the two apart. It also saves the next
- * build the download.
+ * A dump somebody PUT there (`lichess_db_puzzle.csv.zst`) is left alone:
+ * it is theirs, and a build uses it rather than downloading. That name
+ * used to be the download's as well, so a download a dead build left
+ * could not be told from it and stayed for good; the download has a name
+ * of its own now (PUZZLE_DUMP_DOWNLOAD). Only the `.part` older versions
+ * wrote beside the shared name is still swept by that name.
  *
  * The server's own build calls this too, the moment its child fails (see
  * startBuild): that is the other moment the child is known to be dead.
@@ -83,7 +86,10 @@ function isFinishedPuzzleBuild(path: string): boolean {
 export function sweepUnfinishedPuzzleBuild(
   dbPath: string = DATA_PUZZLES,
 ): 'none' | 'swapped' | 'kept' | 'discarded' {
-  rmSync(resolve(dirname(dbPath), 'lichess_db_puzzle.csv.zst.part'), { force: true });
+  const data = dirname(dbPath);
+  rmSync(resolve(data, 'lichess_db_puzzle.csv.zst.part'), { force: true });
+  rmSync(resolve(data, `${PUZZLE_DUMP_DOWNLOAD}.part`), { force: true });
+  rmSync(resolve(data, PUZZLE_DUMP_DOWNLOAD), { force: true });
 
   const building = `${dbPath}.building`;
   if (!existsSync(building)) return 'none';

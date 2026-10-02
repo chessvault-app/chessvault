@@ -76,6 +76,16 @@ export const ALLOWED_HOSTS = (process.env.CHESS_ALLOWED_HOSTS ?? '')
 /** Derived, rebuildable artefacts. Safe to delete at any time. */
 export const DATA = fromEnv('CHESS_VAULT_DATA') ?? resolve(REPO_ROOT, 'data');
 export const DATA_PUZZLES = resolve(DATA, 'puzzles.sqlite');
+/**
+ * The name a puzzle build gives the Lichess dump it downloads itself,
+ * beside DATA_PUZZLES. Not `lichess_db_puzzle.csv.zst`, which is the name
+ * of a dump somebody put there and a build uses and keeps: a download
+ * under that name, left by a build that died after fetching it, was
+ * taken for theirs, kept for good and built from on every later build,
+ * so no rebuild ever fetched newer puzzles again. Under its own name,
+ * whatever is found is the app's, and server/puzzles.ts sweeps it.
+ */
+export const PUZZLE_DUMP_DOWNLOAD = 'lichess_db_puzzle.download.csv.zst';
 export const DATA_OPENINGS = resolve(DATA, 'openings.json');
 /** The live index over the vault's own games (see server/myGames.ts). */
 export const DATA_MYGAMES = resolve(DATA, 'mygames.sqlite');

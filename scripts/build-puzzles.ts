@@ -10,7 +10,9 @@
  * desktop user has no shell to curl it with, and the server spawns this
  * same file to answer the app's "build the puzzle database" button. What it
  * downloads itself, it deletes afterwards; a dump that was already on disk
- * is left alone, because it is somebody's file and not ours.
+ * is left alone, because it is somebody's file and not ours. The two have
+ * different names, so that what is ours can be told apart afterwards: see
+ * PUZZLE_DUMP_DOWNLOAD.
  *
  * Output lands at data/puzzles.sqlite via a temp file + rename, so a running
  * server keeps serving the old database until the build completes.
@@ -28,7 +30,7 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { Decompress } from 'fzstd';
 import Database from 'better-sqlite3';
-import { DATA, DATA_PUZZLES } from '../server/paths.ts';
+import { DATA, DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD } from '../server/paths.ts';
 import { PUZZLE_COUNT_TABLES } from './lib/db-tuning.ts';
 import { resolve } from 'node:path';
 
@@ -64,7 +66,14 @@ const report = (event: Event): void => {
   }
 };
 
-const source = positional ? resolve(process.cwd(), positional) : resolve(DATA, 'lichess_db_puzzle.csv.zst');
+/** A dump somebody put in the data directory, which a build uses and keeps. */
+const placed = resolve(DATA, 'lichess_db_puzzle.csv.zst');
+const fetched = !positional && !existsSync(placed);
+const source = positional
+  ? resolve(process.cwd(), positional)
+  : fetched
+    ? resolve(DATA, PUZZLE_DUMP_DOWNLOAD)
+    : placed;
 
 /**
  * Fetch the dump beside its target and rename it into place, so an
@@ -103,14 +112,13 @@ async function downloadDump(to: string): Promise<void> {
   renameSync(part, to);
 }
 
-const fetched = !existsSync(source);
-if (fetched) {
-  if (positional) {
-    console.error(`source not found: ${source}`);
-    process.exit(1);
-  }
-  await downloadDump(source);
+if (positional && !existsSync(source)) {
+  console.error(`source not found: ${source}`);
+  process.exit(1);
 }
+// Always afresh, even over a download an earlier run left: a build is
+// asked for to get the newest puzzles, and a leftover could be months old.
+if (fetched) await downloadDump(source);
 
 const tmp = `${DATA_PUZZLES}.building`;
 rmSync(tmp, { force: true });
