@@ -117,7 +117,7 @@ export async function prepareHistoryRepo(gitDir: string, dir: string): Promise<v
   const commits = leaked.split('\n').filter(Boolean).length;
   if (commits > 0) {
     console.warn(
-      `[vault-backup] ${commits} commit(s) in ${HISTORY_DIR_NAME} still carry config.json or sessions.json from an older version. They hold past secrets; see "Backups" in README.md for how to purge them.`,
+      `[vault-backup] ${commits} commit(s) in ${HISTORY_DIR_NAME} still carry config.json or sessions.json, from an older version or an earlier wipe. They hold past secrets; the paragraph on backups in README.md says how to purge them.`,
     );
   }
 }
