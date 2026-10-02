@@ -133,9 +133,11 @@ export function repertoireApi(stateDir: string = resolve(VAULT, 'repertoire')): 
   const schedule = (keep: (e: DrillEntry) => boolean) => {
     const latest = new Map<string, DrillEntry>();
     const recalls = new Map<string, ReviewAttempt[]>();
-    /** The last entry carrying evidence — the path back to the position
-        and what the study plays there. A hit is recorded bare, so the
-        newest MISS is what a re-drill has to be rebuilt from. */
+    /** The newest MISS for each position — the path back to it, what the
+        study plays there and what was played instead. A hit carries the
+        same three (RepertoireView posts path, expected and played with
+        every hit), so a re-drill is rebuilt from the newest miss where
+        there is one and from the latest entry where there is not. */
     const evidence = new Map<string, DrillEntry>();
     for (const e of entries()) {
       if (!keep(e)) continue;

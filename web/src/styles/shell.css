@@ -179,11 +179,14 @@
   :root[data-platform='ios'] [data-chrome] button[data-slot='button'][data-size='icon-sm'][data-active][data-chrome-lit] {
     @apply size-10 shrink-0 rounded-full px-0 shadow-md active:opacity-70;
   }
-  /* Text buttons in the chrome are pills of the same height: the shelves'
-     Create and Import (a primary pill, its own fill) and any secondary or
-     outline button beside them (a glass pill). A rounded rectangle with a
-     word in it beside glass circles read as two vocabularies on one row
-     (lanph3re, 2026-09-18); iOS 26 draws its bar buttons as capsules.
+  /* Text buttons in the chrome are pills of the same height: a primary
+     one keeps its own fill, and a secondary or outline one is a glass
+     pill. A rounded rectangle with a word in it beside glass circles read
+     as two vocabularies on one row (lanph3re, 2026-09-18); iOS 26 draws
+     its bar buttons as capsules. The shelves' Create and Import are not
+     among them: under md they are their plus alone and carry
+     data-chrome-circle (components/fab, CreateControl, and Games' Import
+     a game), so they take the primary circle above.
      A pressed pill keeps its fill, as a pressed circle does, and so does
      a lit one that marks itself `data-chrome-lit` (none is drawn today). */
   :root[data-platform='ios'] [data-chrome]:not([data-chrome='bar']) button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']):not([data-variant='default']):not([aria-pressed='true']):not([data-active][data-chrome-lit]) {
@@ -413,12 +416,13 @@
   :root[data-platform='android'] [data-chrome] button[data-chrome-circle] {
     @apply size-10 shrink-0 rounded-[1.25rem] px-0;
   }
-  /* Text buttons in the chrome are capsules of the same height: a
-     shelf's Create and Import. The primary one keeps its fill; an
-     outline-faced neighbour takes the tonal one, because an outlined
-     capsule beside a filled one is the M3 pair for a dialog's two
-     answers, not for a bar's actions. Ghost-faced text stays bare, as
-     on iOS. */
+  /* Text buttons in the chrome are capsules of the same height. A
+     primary one keeps its fill; an outline-faced one takes the tonal
+     fill, because an outlined capsule beside a filled one is the M3 pair
+     for a dialog's two answers, not for a bar's actions. Ghost-faced
+     text stays bare, as on iOS. A shelf's Create and Import are not
+     among them: under md they are their plus alone and carry
+     data-chrome-circle, so they take the 40px circle above. */
   :root[data-platform='android'] [data-chrome] button[data-slot='button'][data-size='sm']:not([data-chrome-circle]):not([data-variant='ghost']) {
     @apply h-10 shrink-0 rounded-[1.25rem] px-4;
   }

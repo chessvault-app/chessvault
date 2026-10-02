@@ -115,27 +115,28 @@ function usePanelFocus(node: HTMLElement | null, takeFocus: number, onClose: () 
 }
 
 /**
- * The canvas page family — the third of the three named in `components/layout.ts`.
+ * The canvas page family — the third of the four named in `components/layout.ts`.
  *
- * A canvas page is one surface that fills the viewport edge to edge, with
- * every piece of chrome floating ON it rather than framing it. The surface
- * IS the page: a header row and a side column would each be carving space
- * out of the only thing the page exists to show, and on the map that space
- * is the difference between seeing a repertoire and seeing part of one.
+ * A canvas page is one surface that fills the viewport edge to edge below
+ * the page's heading, with the rest of its chrome floating ON it rather
+ * than framing it. The surface IS the page: a side column would be carving
+ * space out of the only thing the page exists to show, and on the map that
+ * space is the difference between seeing a repertoire and seeing part of
+ * one.
  *
  * This is why the width tiers cannot describe it. `PageWidth` answers "how
  * long should a line of this content be", which is a question a scrolling
  * column has and a canvas does not — a canvas wants the whole viewport at
- * every size. So the family is a shell of its own rather than a fourth
+ * every size. So the family is a shell of its own rather than one more
  * width, and it is a shell rather than a page's private markup so that the
- * second canvas page inherits the corner title, the floating panel and the
+ * second canvas page inherits the heading, the floating panel and the
  * overlay instead of re-deriving them.
  *
- * The title sits small and quiet in a corner, not at `PageHeader`'s
- * `text-xl`: a heading that competes with the canvas is a heading in the
- * way. The back chevron is still phone-only and still `md:hidden`, because
- * where a page is reached through More is a fact about the page, not about
- * which family it belongs to.
+ * The heading is `PageHeader`, the one every page draws, in the flow above
+ * the surface: the note where it is rendered says why it stopped being a
+ * smaller title in the corner. Its back chevron is phone-only, PageHeader's
+ * `md:hidden`, because where a page is reached through More is a fact about
+ * the page, not about which family it belongs to.
  */
 export function CanvasShell({
   title,

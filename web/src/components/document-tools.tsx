@@ -40,7 +40,7 @@ export interface TitleRename {
  * Linked mentions drops its button when the document has none, and the
  * menu drops the verb on the same count, so a phone never offers a press
  * that opens nothing. Share is dropped the same way where the browser has
- * no sheet, which is every desktop one.
+ * no sheet, which is wherever `navigator.share` is missing (CAN_SHARE).
  *
  * The phone's menu also leads with Rename, which has no button on a
  * desktop. The title renames in place on a double-click, and nothing on

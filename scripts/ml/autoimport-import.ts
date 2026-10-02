@@ -1,4 +1,5 @@
-// Import the 1001 book's puzzles into the vault.
+// Import a book's puzzles into the vault: whichever book the --book
+// config names (scripts/ml/books/*.json).
 //
 // Tier one is this file's own: book-parsed, where the position, the side
 // and the solution were all verified by replaying the book's printed line
@@ -14,9 +15,10 @@
 // CNN's read prefilled. Every imported puzzle carries evidence images: its
 // aligned board crop AND the full source page.
 //
-// Inputs: data/ml/autoimport-report.json (+ read cache), the --emit dir of
-// board/page grays from autoimport-measure, and Node-spawned Stockfish.
-// Usage: npx tsx scripts/ml/autoimport-import.ts <emit_dir>
+// Inputs: the config's `report` (data/ml/*-report.json, + read cache), the
+// --emit dir of board/page grays from autoimport-measure, and Node-spawned
+// Stockfish.
+// Usage: npx tsx scripts/ml/autoimport-import.ts <emit_dir> --book <config.json>
 import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';

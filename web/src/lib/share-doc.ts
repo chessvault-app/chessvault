@@ -20,8 +20,9 @@ import { fitSegment, sanitizeSegment } from '@shared/vaultNames';
  * Whether this browser has a share sheet at all, asked once as the chunk
  * loads. `navigator.share` does not appear later in a session, and the
  * question is behaviour rather than which chrome the phone draws, so it
- * is a feature test and not `data-platform` (lib/share.ts says why). A
- * desktop browser and the Electron shell answer no and offer no Share.
+ * is a feature test and not `data-platform` (lib/share.ts says why).
+ * Share is offered wherever `navigator.share` exists, on a desktop as on
+ * a phone, and nowhere else.
  */
 export const CAN_SHARE = canShare();
 

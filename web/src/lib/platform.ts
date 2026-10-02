@@ -25,9 +25,9 @@
  *            a desktop with a touchscreen is a desktop.
  *
  * `chess-vault:platform` in localStorage overrides the guess. It exists
- * for the screenshot grid, which walks a `phone-ios` state in Chromium,
- * and for the Settings debug card; nothing else reads it and no user
- * setting writes it.
+ * for the screenshot grid, which walks a `phone-ios` state in Chromium
+ * (scripts/shot-grid.ts writes it before load); nothing else reads it
+ * and no control in the app writes it.
  */
 export type Platform = 'ios' | 'android' | 'desktop';
 

@@ -248,7 +248,7 @@ device.
 ### B · On a server
 
 One box owns the vault; every device is a client. Needs **Node 22.12 or
-newer** (24 is what CI and the reference deployment run) and a git
+newer** (24 is what CI runs) and a git
 checkout somewhere durable:
 
 ```bash
@@ -346,8 +346,8 @@ One port serves the built app and the HTTP API together. Then:
 
    A [Tailscale](https://tailscale.com) tailnet is the other way — it
    gives the machine an HTTPS name without exposing it to the internet at
-   all, which is what the reference deployment uses: `tailscale serve --bg
-   8787` and the tailnet name answers over HTTPS with no proxy of your own.
+   all: `tailscale serve --bg 8787` and the tailnet name answers over
+   HTTPS with no proxy of your own.
 2. **Turn on the lock screen.** Set an app password in Settings (or
    `appPassword` in `vault/config.json`), and add authenticator 2FA
    while you are there. Anything reachable from the internet needs this.
@@ -382,9 +382,11 @@ under it), ships the commit and the built `dist/`, runs `npm ci`, refreshes
 database indexes, restarts the service and asserts it came back. It never
 touches the vault.
 
-Keep SSH off the public internet. The reference deployment runs on a
-[Tailscale](https://tailscale.com) tailnet with port 22 closed at the
-firewall, and `deploy.sh` reaches it over the tailnet.
+Keep SSH off the public internet. `deploy.sh` needs nothing from the
+network but `ssh` and `scp` to `CHESS_VAULT_HOST`, so any private route to
+port 22 serves (a VPN such as a tailnet, a bastion, a firewall rule that
+admits only your own address): name the box by the address that route
+gives it.
 
 Backups are layered: the server auto-commits every vault change to
 `vault/.history.git` (fine-grained undo), your host's snapshots guard

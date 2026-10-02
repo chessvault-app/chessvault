@@ -179,30 +179,28 @@
      Read boxShadow and --tw-ring-shadow together to find the next one:
      the two disagreeing IS the bug. */
   --panel-shadow: 0 0 #0000;
-  /* The glass surface's fill and blur are tokens.css's numbers, and its
-     edge follows the foreground, which is white here. Its tint is the
-     third surface rung, 33.1% on a 22.25% card: glass in dark is LIFTED
-     off the ground, not smoked into it (tokens.css, --glass-tint, says why).
-     A lighter glass darkens white content less, so the lift is paid for
+  /* The glass surface's blur is tokens.css's number, and its edge follows
+     the foreground, which is white here. Its tint and its two fills are
+     this theme's own, below.
+
+     The fills were placed while the tint was the third surface rung,
+     33.1% on a 22.25% card, LIFTED off the ground rather than smoked
+     into it; the --glass-l block below says why it went dark instead. A
+     lighter glass darkens white content less, so the lift was paid for
      in the fills: foreground ink at the text surfaces' fill has to read
      4.5:1 over white, which is the worst backdrop a glass band can be
      scrolled over, and the capsule's active icon on its pill has to
      clear 3:1 there. The capsule wanted 70% for that (2.76:1 at the old
-     65%); it was 65% on the card's colour, where 60% read 2.97:1.
-
-     --glass-fill is 72% in dark, where tokens.css sets 70% for both
-     themes, and the ladder is why. That 70% was placed against a 32%
-     tint and measured 4.75:1 over white; the first 2026-09-22 ladder
-     took the tint to 34.6% with --surface-3, a lighter glass hides white
-     content less, and the same ink fell to 4.44, so the fill went to
-     72% and read 4.69. The re-read the same day took --surface-3 back
-     down to 33.1%, and 72% now reads 4.90. The override stays: 70%
-     would read 4.61, which clears the floor, but a number placed by
-     measurement is not worth unplacing for the sake of one fewer line,
-     and the margin is the one thing a composited surface has least of. Analytic, ink over
-     the composited fill: check:contrast composites a glass surface over
-     the DOM under it rather than over what is scrolled behind it, so
-     this is the one number in the file that check cannot hold. */
+     65%); it was 65% on the card's colour, where 60% read 2.97:1. The
+     text surfaces took 72% where the light theme has 70%: that 70% was
+     placed against a 32% tint and measured 4.75:1 over white, the first
+     2026-09-22 ladder's 34.6% tint took the same ink to 4.44, 72% read
+     4.69, and on the re-read's 33.1% it read 4.90. Both middles stand
+     (the knob's ranges below are centred on them), and the readings at
+     the darker tint are the --glass-l block's. Analytic, ink over the
+     composited fill: check:contrast composites a glass surface over the
+     DOM under it rather than over what is scrolled behind it, so these
+     are the numbers in the file that check cannot hold. */
   /* The knob's own lightness in dark, and the one place this theme stops
      following tokens.css: 15% at the lightest, 5% at the darkest, 10% in
      the middle. The tint used to be `--surface-3`, a LIFT off the ground
@@ -285,8 +283,9 @@
      and on this rung it now has the most margin it has ever had. So this one did not move, and neither did --warn or
      --info; --destructive below is the one of the four that did. */
   --good: oklch(72% 0.16 152);
-  /* What none of these four clear in dark is --accent (39.4%), the hover
-     and selection fill: text-subtle would need 76.6, within half a point
+  /* What none of these four clear in dark is --accent (39.4% when these
+     were read, 38% since the same day's re-read), the hover and
+     selection fill: text-subtle would need 76.6, within half a point
      of muted-foreground above it, and this red would need 85.3, to
      reach 4.5 on it, and the fill itself cannot come down to meet them,
      since at 35.5% it is 1.04:1 from --surface-3 and a pressed control
@@ -480,9 +479,10 @@
   /* The pressed/selected fill, a further step up in the dark: the
      surface-3 rung on a card read as one grey on another in the crops —
      the eye is less sensitive a step apart down here than it is in the
-     light, where surface-3 (92.8%) on white is plain. 39.4%, derived
+     light, where surface-3 (92.8%) on white is plain. 38%, derived
      with the rest of the ladder on 2026-09-22 and keeping the 1.216:1
-     over --surface-3 it was placed at; it was 37% over a 32% rung. */
+     over --surface-3 (33.1%) it was placed at; it was 37% over a 32%
+     rung, and 39.4% over the first pass's 34.6%. */
   --accent: oklch(calc(38% + (28% - 38%) * var(--ui-contrast)) calc(0.02 * var(--ui-tint)) var(--ui-hue));
   /* 34.4%, and it exists because --accent serves two grounds that are no
      longer the same distance down.

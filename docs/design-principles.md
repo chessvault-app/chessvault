@@ -464,7 +464,7 @@ picker 32px → 28px.
   through it on every drag; it also meant the surface could swallow a
   press meant for the header, which took a pointer-events dance to
   arrange around. Chrome that belongs to the SURFACE floats; chrome that
-  names the PAGE does not. A canvas still cannot be a fourth width: a
+  names the PAGE does not. A canvas still cannot be one more width: a
   width answers how long a line of text should be, and a canvas wants
   every pixel it is given at any size.
 - **One page title**: `PageHeader` — one name, two rungs. On a desktop
