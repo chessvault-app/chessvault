@@ -5,7 +5,7 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.12.1
 
 Settings → Vault can put a downloaded copy of the vault back, keeping the
 vault it replaced until the restore is kept or undone, and Settings can
