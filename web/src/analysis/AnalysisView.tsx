@@ -60,13 +60,13 @@ let lastBoard: BoardSnapshot | null = null;
  * A function, not `const left = lastBoard; lastBoard = null` written in
  * the entry below, because the React Compiler takes a module variable for
  * a constant: it folded that local copy back into `lastBoard` itself, so
- * the copy was read AFTER the clear, was always null, and no build since
- * the compiler went on (0.11.0) ever offered the board back, while the
- * source read correctly and the tests, which run it uncompiled, passed.
- * A call is opaque to it, so the value leaves here before the variable
- * is cleared. Writing the copy back inline breaks the offer again, with
- * no error and no warning (lib/router.ts met the same fold first, and
- * says so).
+ * the copy was read AFTER the clear, was always null, and from 0.11.0,
+ * the first release the compiler built, to 0.11.4 the board was never
+ * offered back, while the source read correctly and the tests, which run
+ * it uncompiled, passed. A call is opaque to it, so the value leaves here
+ * before the variable is cleared. Writing the copy back inline breaks
+ * the offer again, with nothing but check:compiler to say so
+ * (lib/router.ts met the same fold first).
  */
 function takeLastBoard(): BoardSnapshot | null {
   const left = lastBoard;
