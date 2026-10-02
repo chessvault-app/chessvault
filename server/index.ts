@@ -27,7 +27,7 @@ import { proberFor, tablebaseApi } from './tablebase.ts';
 import { startVaultBackup } from './vaultBackup.ts';
 import { vaultHistoryApi } from './vaultHistory.ts';
 import { seedWelcomeDocs } from './welcome.ts';
-import { ALLOWED_HOSTS, APP_VERSION, BIND, DATA, LOOPBACK_ONLY, REPO_ROOT, VAULT_CONFIG, VAULT_GAMES, VAULT_NOTES, VAULT_SOURCES, VAULT_STUDIES, UPDATES } from './paths.ts';
+import { ALLOWED_HOSTS, APP_VERSION, BIND, DATA, LOOPBACK_ONLY, REPO_ROOT, VAULT, VAULT_CONFIG, VAULT_SKELETON, UPDATES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -76,8 +76,9 @@ setDefaultAutoSelectFamilyAttemptTimeout(2_000);
 recoverInterruptedRestore();
 
 // Opening an empty folder as a vault must Just Work: create the skeleton
-// up front so every listing endpoint finds its directory.
-for (const d of [VAULT_STUDIES, VAULT_NOTES, VAULT_GAMES, VAULT_SOURCES, DATA]) {
+// up front so every listing endpoint finds its directory. The wipe and the
+// restore put back the same list (server/paths.ts).
+for (const d of [...VAULT_SKELETON.map((name) => resolve(VAULT, name)), DATA]) {
   mkdirSync(d, { recursive: true });
 }
 

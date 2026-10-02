@@ -457,6 +457,9 @@ describe('restore from a copy', () => {
     expect(readdirSync(target.vault).sort()).toEqual(
       ['.restore', '.welcomed', 'config.json', 'games', 'notes', 'sessions.json', 'sources', 'studies'].sort(),
     );
+    // A copy with no games folder gets the one the games routes read,
+    // not just its parent.
+    expect(existsSync(join(target.vault, 'games', 'collection'))).toBe(true);
     expect(existsSync(join(target.vault, '.restore', 'before', 'evil.pgn'))).toBe(false);
     expect(read(target.vault, 'studies/fine.pgn')).toBe('1. e4 *\n');
   });

@@ -3,8 +3,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Hono } from 'hono';
+import { gamesApi } from './games.ts';
 import { hashPassword, isHashedPassword, verifyPassword } from './password.ts';
+import { VAULT_SKELETON } from './paths.ts';
 import { settingsApi } from './settings.ts';
+import { studiesApi } from './studies.ts';
 import { totpAt } from './totp.ts';
 import { git } from './vaultGit.ts';
 
@@ -417,6 +420,25 @@ describe('wipe', () => {
     expect(existsSync(join(vault, 'studies', 'a.pgn'))).toBe(false);
     expect(existsSync(join(vault, 'sessions.json'))).toBe(true);
     expect(existsSync(join(vault, 'config.json'))).toBe(true);
+  });
+
+  it('leaves the vault in the shape startup does, so the games routes keep answering', async () => {
+    // Mounted the way mountVault mounts them, over this test's vault: both
+    // read games/collection, which they made when they were built, and a
+    // wipe that did not put it back had them answer 500 until a restart.
+    const games = join(vault, 'games');
+    app.route('/api', gamesApi(games, join(vault, 'config.json')));
+    app.route('/api', studiesApi(join(games, 'collection'), 'games/docs', '.pgn'));
+    writeFileSync(join(games, 'collection', 'a.pgn'), '[White "A"]\n[Black "B"]\n[Result "*"]\n\n1. e4 *\n');
+    expect((await (await json('GET', '/api/games')).json()).total).toBe(1);
+
+    expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything', password: 'hunter22' })).status).toBe(200);
+    const list = await json('GET', '/api/games');
+    expect(list.status).toBe(200);
+    expect(await list.json()).toEqual({ total: 0, games: [] });
+    const docs = await json('GET', '/api/games/docs');
+    expect(docs.status).toBe(200);
+    for (const d of VAULT_SKELETON) expect(existsSync(join(vault, d))).toBe(true);
   });
 
   it('skips the password check on an ungated vault', async () => {

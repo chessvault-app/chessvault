@@ -3,7 +3,7 @@ import { writeAtomic } from './atomic.ts';
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Hono } from 'hono';
-import { APP_VERSION, DATA_MYGAMES_ANALYSIS, LOOPBACK_ONLY, VAULT, VAULT_CONFIG } from './paths.ts';
+import { APP_VERSION, DATA_MYGAMES_ANALYSIS, LOOPBACK_ONLY, VAULT, VAULT_CONFIG, VAULT_SKELETON } from './paths.ts';
 import { revokeAllSessions } from './auth.ts';
 import { hashPassword, verifyPassword } from './password.ts';
 import { normaliseTraining } from '../shared/training.ts';
@@ -450,7 +450,9 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
       if (entry === 'config.json' || entry === 'sessions.json' || entry === '.gitkeep') continue;
       rmSync(resolve(vaultDir, entry), { recursive: true, force: true });
     }
-    for (const d of ['studies', 'notes', 'games', 'sources']) {
+    // Back to the shape startup leaves, from the list startup reads: the
+    // routes were built against it and do not make their folders again.
+    for (const d of VAULT_SKELETON) {
       mkdirSync(resolve(vaultDir, d), { recursive: true });
     }
     // See SettingsDeps.derived. A file (or its sqlite sidecars) that is
