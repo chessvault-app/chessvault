@@ -25,6 +25,7 @@ import { SecurityCard } from '@/settings/cards/security-card';
 import { LichessCard } from '@/settings/cards/lichess-card';
 import { RecoveryCard } from '@/settings/cards/recovery-card';
 import { BrowsedGamesCard } from '@/settings/cards/browsed-games-card';
+import { PuzzleDatabaseCard } from '@/settings/cards/puzzle-database-card';
 import { StorageCard } from '@/settings/cards/storage-card';
 import { DangerCard } from '@/settings/cards/danger-card';
 
@@ -275,6 +276,11 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
                 a card apart. It was reachable before this too, by
                 Clear all; a button per row is what made it ordinary. */}
             <BrowsedGamesCard onCleared={() => setStorageStamp((n) => n + 1)} />
+            {/* The third thing the app fetched for this vault, after the
+                tablebase's answers and the browsed months, and the one
+                that is refetched rather than cleared. Not in the demo:
+                its database is a fixed slice the page cannot rebuild. */}
+            <PuzzleDatabaseCard />
             <AppearanceCard />
             <StorageCard storage={storage} />
             <RecoveryCard />

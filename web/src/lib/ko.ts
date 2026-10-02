@@ -903,6 +903,17 @@ export const ko: Record<string, string> = {
     '페이지를 떠나도 계속됩니다. 몇 분 걸립니다.',
   'No puzzle database yet. Build it from the Puzzles page.':
     '아직 퍼즐 데이터베이스가 없습니다. 퍼즐 페이지에서 만들 수 있습니다.',
+  // --- Settings, the puzzle database ---------------------------------------
+  'Puzzle database': '퍼즐 데이터베이스',
+  'The Lichess puzzles the trainer draws from. Rebuild it to get the ones added since.':
+    '트레이너가 문제를 내는 Lichess 퍼즐입니다. 다시 만들면 그 뒤에 추가된 퍼즐까지 받습니다.',
+  'Lichess puzzles': 'Lichess 퍼즐',
+  'Not built yet': '아직 만들지 않음',
+  'built {when}': '{when} 만듦',
+  Rebuild: '다시 만들기',
+  'Rebuild the puzzle database from the latest Lichess puzzles': '최신 Lichess 퍼즐로 퍼즐 데이터베이스 다시 만들기',
+  'Rebuild the puzzle database from the latest Lichess puzzles? It downloads about 300 MB and needs about 5.5 GB of free disk while it builds, and can run out of memory on a small server. The current one keeps working until the new one is ready, and your attempts are kept.':
+    '최신 Lichess 퍼즐로 퍼즐 데이터베이스를 다시 만들까요? 약 300MB를 내려받고 만드는 동안 디스크 여유 공간이 약 5.5GB 필요하며, 메모리가 작은 서버에서는 메모리가 모자랄 수 있습니다. 새 데이터베이스가 준비될 때까지 지금 것을 계속 쓰고, 시도 기록은 그대로 남습니다.',
   Theme: '테마',
   Played: '플레이 횟수',
   'Finding a puzzle…': '퍼즐을 찾는 중…',
@@ -1874,6 +1885,7 @@ export const ko: Record<string, string> = {
   "a book needs a title": "책에는 제목이 필요합니다",
   "a book with that name exists": "같은 이름의 책이 이미 있습니다",
   "a build is already running": "이미 빌드가 진행 중입니다",
+  "the build was killed (SIGKILL), which is how a system out of memory stops a process": "빌드가 강제로 종료되었습니다(SIGKILL). 메모리가 바닥난 시스템이 프로세스를 멈추는 방식입니다",
   "a folder with that name exists": "같은 이름의 폴더가 이미 있습니다",
   "a file with that name is already here": "같은 이름의 파일이 이미 있습니다",
   "a study with that name exists": "같은 이름의 스터디가 이미 있습니다",

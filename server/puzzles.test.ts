@@ -736,6 +736,10 @@ describe('puzzles api (rebuilding a working database)', () => {
       ]),
     );
     expect((await build()).error ?? null).toBeNull();
+    // What Settings shows of it: how many, and when they were built.
+    const meta = (await (await app.request('/api/puzzles/meta')).json()) as { puzzles: number; builtAt: string | null };
+    expect(meta.puzzles).toBe(300);
+    expect(Date.parse(meta.builtAt ?? '')).toBeGreaterThan(Date.now() - 60_000);
 
     let last = first.id!;
     for (let i = 0; i < 20; i++) {

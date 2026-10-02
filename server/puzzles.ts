@@ -914,6 +914,9 @@ export function puzzlesApi(
     return c.json({
       ready: true as const,
       puzzles: Number(meta.puzzles ?? 0),
+      // When this file was built, which is how old its puzzles are: the
+      // one thing to know before rebuilding it (Settings, Puzzle database).
+      builtAt: meta.built_at ?? null,
       themes: themeCounts(db),
       failed: failedPool(entries).length,
       // What the ladder says: how many are due now, and when the next

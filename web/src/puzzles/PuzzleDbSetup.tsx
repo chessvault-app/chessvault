@@ -41,7 +41,7 @@ const mb = (bytes: number): string => (bytes / 1e6).toFixed(0);
  * the day one was edited.
  */
 const SETUP_TITLE = 'No puzzle database yet';
-const SETUP_BLURB =
+export const SETUP_BLURB =
   'The trainer runs on the Lichess puzzle database, 6.1 million puzzles, free to use. The app fetches and builds it: about 300 MB to download, around 2.5 GB once built.';
 
 /**
@@ -119,7 +119,14 @@ export function usePuzzleBuild(onReady: () => void): {
       if (next.error) setFailed(next.error);
       else onReady();
     }
-    if (next.running) wasRunning.current = true;
+    if (next.running) {
+      wasRunning.current = true;
+      // A refused start ("a build is already running") is answered by the
+      // build it lost to, and must not outlive that build: Settings keeps
+      // this card on screen after a build ends, where the setup screen
+      // was always replaced by the trainer.
+      setFailed(null);
+    }
     return next.running;
   }, [onReady]);
 
