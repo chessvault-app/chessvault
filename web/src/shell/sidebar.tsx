@@ -113,7 +113,7 @@ const NAV_ROW =
 /**
  * A row's label. It stays in the tree folded, so the fold's width change
  * (Sidebar's nav) wipes it rather than popping it, but it also fades over
- * the same 150ms: the rail is 68px and the label starts 55px in, so a
+ * the same 150ms: the rail is 48px and the label starts 37px in, so a
  * clipped label would still show its first letter beside the icon.
  */
 const navLabel = (folded: boolean): string =>
@@ -136,7 +136,7 @@ const navLabel = (folded: boolean): string =>
  * and two search boxes on one screen. The shape says "you can search"
  * and the keycaps say how, which is all it is for.
  *
- * Folded, the rail has 68px and no room for a word: the glyph alone, on
+ * Folded, the rail has 48px and no room for a word: the glyph alone, on
  * the rows' own geometry (NAV_ROW), with the tip every folded row takes.
  */
 function SearchEntry({ folded }: { folded: boolean }) {
@@ -251,7 +251,7 @@ export function Sidebar({ active, params }: { active: Section; params: string[] 
   const tipSide = 'right';
   // The fold switch sits beside the logo, where the desktop shell's band
   // puts it: at the end of the brand row unfolded, and on the first row
-  // of the icon column folded, since the 68px rail has no room for two
+  // of the icon column folded, since the 48px rail has no room for two
   // glyphs on one line. That does drop the rows under it by one row on a
   // fold; the switch used to be a row of its own in both states so that
   // nothing moved, but it then read as a section beneath the mark rather

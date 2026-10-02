@@ -45,8 +45,8 @@ import { MORE_SECTIONS, NAV, openSection } from '@/shell/shared';
     re-blurred on every scrolled frame; the capsule is 335px of a 375px
     row, blurs at half the radius, and its fill hides most of what the
     blur would show, which is the bargain the phone has to confirm: the
-    on-device probe in the Settings debug card A/Bs it against the
-    opaque capsule (data-glass="off"), and if frames go, the fill goes
+    Glass knob at its bottom stop (Settings > Appearance) A/Bs it against
+    the opaque capsule (data-glass="off"), and if frames go, the fill goes
     back to 100%. The class after `bg-card`, so the utility's fill wins
     where the gates pass and the card's fill stays where they do not. */
 const OVERLAY = cn(
@@ -145,9 +145,10 @@ export function MobileBottom({ active }: { active: Section }) {
 /**
  * The phone's tab bar: Home, three collections and More. Five tabs is
  * where the platform guidance stops and the count lichess ships. The
- * current tab wears the pill the sidebar's current row wears, a muted
- * fill with a primary/30 inset ring behind the icon, so the two
- * navigations speak one vocabulary, and its label goes semibold with it.
+ * current tab wears the pill the sidebar's current row wears, bg-nav-pill,
+ * the tonal 12% of primary over the card (styles/utilities.css) behind
+ * the icon, so the two navigations speak one vocabulary, and its label
+ * goes semibold with it.
  *
  * The pill is 32px tall around a 24px glyph, Material 3's pair, up from
  * 28 and 18 when the iOS capsule's glyphs grew and the docked bar read

@@ -131,17 +131,17 @@
 }
 
 /* A surface over content: --glass-tint at --glass-fill over a blur of
-   what is under it, with a line of light along the top edge and the
+   what is under it, with a hairline edge all the way round and the
    panel shadow below. The one recipe for every translucent surface the
    platform chrome draws ("Platform-specific design" in
    docs/design-principles.md); nothing composes its own. Drawn only where
    the browser can blur, not when the reader has asked for reduced
    transparency, and only while the root does not carry data-glass="off",
-   which the Settings debug card sets for the A/B on the phone
-   (lib/platform.ts reads it back at launch). Under any of the three the
-   element keeps whatever opaque fill it declared, so the capsule falls
-   back to the card. -webkit-backdrop-filter beside the unprefixed one:
-   iOS 26 takes either, older Safari only the prefixed.
+   which the Glass knob's bottom stop in Settings > Appearance sets
+   (store/prefs.ts, applyGlass, also before the first render). Under any
+   of the three the element keeps whatever opaque fill it declared, so
+   the capsule falls back to the card. -webkit-backdrop-filter beside the
+   unprefixed one: iOS 26 takes either, older Safari only the prefixed.
 
    The reduced-transparency gate is written as an override that takes
    the glass AWAY under `reduce`, not as a condition that grants it under

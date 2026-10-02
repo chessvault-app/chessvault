@@ -71,11 +71,12 @@ export function CreateControl({ actions, label = 'Create' }: { actions: FabActio
 }
 
 /**
- * The round button in the corner, phones only. One caller: the opening
- * map, whose verbs act on a canvas that pans under the finger, so a
- * header would be out of reach the moment the map is in use. A canvas
- * is where a floating control belongs; a shelf is not (see
- * CreateControl).
+ * The round button in the corner, under md and never on iOS. One caller:
+ * the opening map, which draws it `ios:hidden md:hidden` (an iPhone
+ * takes the same menu as a circle on the title row), and whose verbs act
+ * on a canvas that pans under the finger, so a header would be out of
+ * reach the moment the map is in use. A canvas is where a floating
+ * control belongs; a shelf is not (see CreateControl).
  *
  * One action fires on tap. Several open the action sheet, the same one a
  * row's ⋯ opens, titled with the disc's own label. They fanned upwards as

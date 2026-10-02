@@ -2,10 +2,10 @@
  * A page belongs to one of four families. The family is a statement
  * about what the page IS; the width tiers inside `PageShell` are a
  * statement about content, and only the first family has them — which is
- * why a canvas page could not be expressed as a fourth width and had to
+ * why a canvas page could not be expressed as one more width and had to
  * become a shell of its own.
  *
- * 1. **Scrolling column** — `components/page-shell`, on one of three named widths.
+ * 1. **Scrolling column** — `components/page-shell`, on one of four named widths.
  *    Games, studies, notes, shelves, dashboards, settings.
  * 2. **Board** — the constants below: fits the viewport instead of
  *    scrolling, board beside a side column at `wide`. Analysis, study and

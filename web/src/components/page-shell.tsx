@@ -8,12 +8,12 @@ import { usePullRefresh } from '@/hooks/use-pull-refresh';
 const NO_REFRESH = (): void => {};
 
 /**
- * How wide a scrolling page's column is allowed to get. Three named
+ * How wide a scrolling page's column is allowed to get. Four named
  * widths instead of one per page: a width is a statement about the kind
  * of content, not about the page, so pages of the same kind must agree.
  *
  * A width is NOT how a page picks its layout — it is how the scrolling
- * family, one of the three in `components/layout.ts`, varies inside itself. Board
+ * family, one of the four in `components/layout.ts`, varies inside itself. Board
  * and canvas pages have no width to choose.
  *
  * - `xwide`: a data table beside a details column — the one layout that

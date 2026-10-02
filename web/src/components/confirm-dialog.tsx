@@ -25,9 +25,10 @@ import { t } from '@/lib/i18n';
  * It used to be an anchored popover — position-fixed off the trigger's
  * measured rect, portalled to the body, dismissed by an outside
  * mousedown, a touchstart, Escape, a scroll, a resize, or the pointer
- * leaving it for 350ms. All of that to reproduce, badly, what Sheet
- * already is: a centred card on a desktop, a bottom sheet on a phone,
- * with the drag, the scrim and the Escape every other window here has.
+ * leaving it for 350ms. All of that to reproduce, badly, what the app's
+ * Dialog already is: a centred card, on a desktop and (as the platform's
+ * alert, ui/alert-dialog's `ask`) on a phone, with the scrim and the
+ * Escape every other window here has.
  * It also meant the one question in the app that should be hardest to
  * dismiss by accident was the easiest — a stray scroll took it away.
  *
