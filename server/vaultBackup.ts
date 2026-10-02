@@ -39,6 +39,65 @@ export interface VaultBackup {
 }
 
 /**
+ * Bring a history repo's own settings up to what this version expects.
+ *
+ * A function of its own because two repos need it: the vault's, on every
+ * startup, and one taken over from a copy being restored
+ * (server/restore.ts), which was made by whatever version wrote the copy.
+ *
+ * Repo-side excludes (never a file in the vault): the history repo must
+ * not swallow its own git-dir (`.history.git` is not a magic name like
+ * `.git`, so `add -A` would track it), the giant source PGN dumps are
+ * rebuild inputs, the unsaved-changes swap files are a live buffer rather
+ * than a version of anything (a history of every keystroke somebody had
+ * not committed is exactly what this repo is not for), and — critically —
+ * config.json holds the app password, TOTP secret and Lichess token,
+ * which must never enter a repo that scripts/backup-vault.sh pulls
+ * off-box (git would retain every past value). sessions.json sits under
+ * the same rule: live session hashes are secrets-adjacent, and it churns
+ * on every login, which is not a version of anything.
+ */
+export async function prepareHistoryRepo(gitDir: string, dir: string): Promise<void> {
+  writeFileSync(
+    resolve(gitDir, 'info', 'exclude'),
+    `${HISTORY_DIR_NAME}/\nsources/\nbooks/*/book.pdf\n*.part\nconfig.json\nsessions.json\n*.swp\n`,
+  );
+  // Untrack them if an earlier version committed either; --ignore-unmatch
+  // makes this a no-op once clean. Leaves the working files intact. The
+  // helper passes --literal-pathspecs, so the pdf pattern is spelled as
+  // git's own glob form rather than left to the shell-style default.
+  await git(gitDir, dir, [
+    'rm',
+    '--cached',
+    '--quiet',
+    '--ignore-unmatch',
+    'config.json',
+    'sessions.json',
+    ':(glob)books/*/book.pdf',
+  ]).catch(() => undefined);
+  // Untracking stops here; it does not reach into commits already made.
+  // A history that carries an old config.json carries every password
+  // hash, authenticator secret and Lichess token it ever held, and
+  // scripts/backup-vault.sh copies the whole repo off-box. Said once,
+  // loudly, at boot: rewriting history is the owner's call, not this
+  // server's.
+  const leaked = await git(gitDir, dir, [
+    'log',
+    '--all',
+    '--format=%H',
+    '--',
+    'config.json',
+    'sessions.json',
+  ]).catch(() => '');
+  const commits = leaked.split('\n').filter(Boolean).length;
+  if (commits > 0) {
+    console.warn(
+      `[vault-backup] ${commits} commit(s) in ${HISTORY_DIR_NAME} still carry config.json or sessions.json from an older version. They hold past secrets; see "Backups" in README.md for how to purge them.`,
+    );
+  }
+}
+
+/**
  * Start watching `dir` and auto-committing its changes. Returns handles
  * for shutdown and tests; resolves after the repo exists and the current
  * state is committed, so the safety net has no startup gap.
@@ -74,57 +133,8 @@ export async function startVaultBackup(
   }
 
   // Run on EVERY startup, not just first init, so a repo created before a
-  // given exclude existed is repaired on the next boot. Repo-side excludes
-  // (never a file in the vault): the history repo must not swallow its own
-  // git-dir (`.history.git` is not a magic name like `.git`, so `add -A`
-  // would track it), the giant source PGN dumps are rebuild inputs, the
-  // unsaved-changes swap files are a live buffer rather than a version of
-  // anything (a history of every keystroke somebody had not committed is
-  // exactly what this repo is not for), and — critically — config.json
-  // holds the app password, TOTP secret and Lichess token, which must
-  // never enter a repo that scripts/backup-vault.sh pulls off-box (git
-  // would retain every past value). sessions.json sits under the same
-  // rule: live session hashes are secrets-adjacent, and it churns on
-  // every login, which is not a version of anything.
-  if (existsSync(gitDir)) {
-    writeFileSync(
-      resolve(gitDir, 'info', 'exclude'),
-      `${HISTORY_DIR_NAME}/\nsources/\nbooks/*/book.pdf\n*.part\nconfig.json\nsessions.json\n*.swp\n`,
-    );
-    // Untrack them if an earlier version committed either; --ignore-unmatch
-    // makes this a no-op once clean. Leaves the working files intact. The
-    // helper passes --literal-pathspecs, so the pdf pattern is spelled as
-    // git's own glob form rather than left to the shell-style default.
-    await git(gitDir, dir, [
-      'rm',
-      '--cached',
-      '--quiet',
-      '--ignore-unmatch',
-      'config.json',
-      'sessions.json',
-      ':(glob)books/*/book.pdf',
-    ]).catch(() => undefined);
-    // Untracking stops here; it does not reach into commits already made.
-    // A history that carries an old config.json carries every password
-    // hash, authenticator secret and Lichess token it ever held, and
-    // scripts/backup-vault.sh copies the whole repo off-box. Said once,
-    // loudly, at boot: rewriting history is the owner's call, not this
-    // server's.
-    const leaked = await git(gitDir, dir, [
-      'log',
-      '--all',
-      '--format=%H',
-      '--',
-      'config.json',
-      'sessions.json',
-    ]).catch(() => '');
-    const commits = leaked.split('\n').filter(Boolean).length;
-    if (commits > 0) {
-      console.warn(
-        `[vault-backup] ${commits} commit(s) in ${HISTORY_DIR_NAME} still carry config.json or sessions.json from an older version. They hold past secrets; see "Backups" in README.md for how to purge them.`,
-      );
-    }
-  }
+  // given exclude existed is repaired on the next boot.
+  if (existsSync(gitDir)) await prepareHistoryRepo(gitDir, dir);
 
   let timer: ReturnType<typeof setTimeout> | null = null;
   let running: Promise<void> = Promise.resolve();
