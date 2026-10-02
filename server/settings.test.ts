@@ -6,6 +6,7 @@ import { Hono } from 'hono';
 import { hashPassword, isHashedPassword, verifyPassword } from './password.ts';
 import { settingsApi } from './settings.ts';
 import { totpAt } from './totp.ts';
+import { git } from './vaultGit.ts';
 
 let vault: string;
 let app: Hono;
@@ -382,6 +383,25 @@ describe('wipe', () => {
     expect(existsSync(join(vault, 'puzzlebooks'))).toBe(false);
     expect(existsSync(join(vault, 'studies'))).toBe(true); // skeleton back
     expect(config().appPassword).toBe('hunter22');
+  });
+
+  it('gives the fresh history repo its excludes, so the next autosave cannot commit the credentials', async () => {
+    writeFileSync(join(vault, 'sessions.json'), JSON.stringify([{ hash: 'c'.repeat(64), createdAt: Date.now() }]));
+    mkdirSync(join(vault, 'studies'), { recursive: true });
+    writeFileSync(join(vault, 'studies', 'a.pgn'), '*');
+    expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything', password: 'hunter22' })).status).toBe(200);
+
+    // Stage the wiped vault the way the autosave does (vaultBackup's
+    // `add -A`, through the same helper and flags), then read the index.
+    const gitDir = join(vault, '.history.git');
+    expect(existsSync(gitDir)).toBe(true);
+    writeFileSync(join(vault, 'studies', 'b.pgn'), '*');
+    await git(gitDir, vault, ['add', '-A']);
+    const staged = (await git(gitDir, vault, ['ls-files'])).split('\n').filter(Boolean);
+    expect(staged).toContain('studies/b.pgn');
+    expect(staged).not.toContain('config.json');
+    expect(staged).not.toContain('sessions.json');
+    expect(staged.some((path) => path.startsWith('.history.git'))).toBe(false);
   });
 
   it('checks the gate in its hashed form, and keeps the wiper signed in', async () => {

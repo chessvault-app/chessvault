@@ -10,6 +10,7 @@ import { normaliseTraining } from '../shared/training.ts';
 import { generateTotpSecret, otpauthUrl, verifyTotp } from './totp.ts';
 import { DEFAULT_TABLEBASE, normaliseTablebaseUrl, readTablebaseConfig } from './tablebase.ts';
 import { nativeTablebase } from './tablebaseNative.ts';
+import { prepareHistoryRepo } from './vaultBackup.ts';
 
 /**
  * Settings live in vault/config.json — the one vault file that is
@@ -465,6 +466,12 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
         execFile('git', ['init', '--quiet', '--bare', gitDir], () => done());
       });
     }
+    // And its settings, now, not at the next boot: a bare init carries an
+    // empty exclude list, so the autosave's next `add -A` committed
+    // config.json (the password hash, the 2FA secret, the Lichess token),
+    // sessions.json and the repo's own folder until the server restarted,
+    // and "Download a copy" packs the history.
+    if (existsSync(gitDir)) await prepareHistoryRepo(gitDir, vaultDir).catch(() => undefined);
     return c.json({ ok: true });
   });
 
