@@ -7,67 +7,51 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
-- **After “Wipe all data”, the Games page and Home's games work at
-  once.** The wipe put the vault's folders back but not the one the
-  games collection lives in, so until the server was restarted the Games
-  page said “Vault server unreachable” and Home's recent games failed to
-  load. A wiped vault is now left in the shape a fresh start leaves it.
-- **“Wipe all data” finishes after Insights has been opened.** Insights
-  holds the engine pass's findings open, and the wipe deleted that file
-  under it. Windows refused, so the wipe stopped with an error after the
-  vault was already empty and before its change history was made again;
-  elsewhere Insights went on reading the deleted findings until the
-  server was restarted. The wipe now closes the file before deleting it.
-- **A wrong password in the wipe window says it is wrong.** The line under
-  the password just typed read “password required to wipe”, as if none
-  had been sent, and in English on the Korean screen too. It now says
-  the password is wrong and that nothing was wiped.
-- **A count of one reads in the singular.** “Recent games · 1 games”,
-  “1 things in the last 7 days” and fifty-odd sentences like them, on
-  Home, Games, Insights, the opening map, puzzle books, the repertoire and
-  Settings, now say “1 game” and “1 thing”. The Korean screen has no
-  plural; only a few of its sentences about a single item change, where
-  their words were written for several.
-- **The Settings outline names Deleted documents.** The list of card
-  names beside the cards (above them on a narrower window) left out
-  Deleted documents whenever the history answered after the storage did,
-  until something else redrew the page. It now names every card on the
-  page as it is drawn.
-- **The server's start-up lines give the address it serves on.** A server
-  started on its own port, or bound to this computer only, still printed
-  a phone address on port 5173, which only the development setup uses.
-  It now prints its own port, and says so when no other device can reach
-  it.
-- **The vault's history and a downloaded copy no longer carry each
-  book's open cache.** Beside every book it has opened, the server keeps
-  the bytes opening it needs, recorded from the PDF. The history
-  committed that file, again each time a book's PDF was replaced, and
-  “Download a copy” packed it in, though neither could use it: the
-  history holds no PDFs, and a restored copy records the cache again
-  anyway. Both now leave it out, which for a 448-page scan is 611 KB off
-  every copy and about 195 KB off the history each time it would have
-  been committed. Versions the history already holds stay until it is
-  rewritten. Books open as before: a missing cache is recorded on the
-  next open.
-- **The Korean manual names pages, tabs and buttons the way the Korean app
-  does.** In 57 places it named them otherwise than the screen does,
-  mostly in English (Games, Databases, Moves or the Vault card, where the
-  screen says 게임, 데이터베이스, 수순 and 보관함), and the Games page's
-  own chapter was titled 기보. It also carried 84 em-dashes over from the
-  English, and each is now a colon, a full stop, a comma, parentheses, or
-  a particle or verb ending, whichever Korean puts there.
-- **The advice for opening the app on a Mac is the route macOS 15
-  leaves.** The download note on the landing page, the manual's Common
-  questions and desktop/README said to right-click the app and choose Open
-  the first time. macOS 15 Sequoia took that route away from apps that are
-  not notarised, as this one is not, so on a current Mac the advice led
-  nowhere. They now say: on macOS 15 or later, open the app once, then
-  click Open Anyway in System Settings → Privacy & Security; on earlier
-  macOS, Control-click it and choose Open. The install steps in the README
-  and the manual's Getting started say a Mac has to allow the first
-  launch, and link there. The pages also stop calling the builds unsigned:
-  they say no developer certificate signs them. Written from Apple's own
-  documentation; not tried on a Mac.
+Settings → Vault can put a downloaded copy of the vault back, keeping the
+vault it replaced until the restore is kept or undone, and Settings can
+rebuild a working puzzle database for the puzzles Lichess has added since.
+This release is also a security fix: until now, the first save after “Wipe
+all data” put config.json, which holds the app's password hash, the
+authenticator secret and the Lichess token, into the vault's history, and
+so into every copy downloaded after it; a server whose history holds such
+a save says so in its log when it starts. The history and a downloaded
+copy leave each book's open cache out, the Korean manual names the screen
+as the Korean app does, and the advice for opening the app on a Mac is the
+one macOS 15 needs. Not yet read on a device: a real phone's file picker,
+an upload that runs past five minutes, and anything on a Mac.
+
+- **Settings → Vault can put a downloaded copy back.** “Restore from a
+  copy”, beside “Download a copy”, uploads the file from any device, with
+  a bar that moves as it goes, and makes the vault that copy; settings and
+  tokens stay as they are. Nothing is lost doing it: the vault it replaced
+  is kept whole until you choose “Keep the restored vault” or “Undo the
+  restore”, and the history records the vault on both sides, so the
+  documents the copy lacks are in Deleted documents. A vault whose history
+  holds no more than its first save, as a fresh install's does, takes the
+  copy's history; any other keeps its own, with the restore recorded in
+  it. Every copy the app has written reads back, those from before 0.12.0
+  included. A damaged, cut-short or hostile archive is refused whole with
+  the vault untouched, and the window says why in a sentence and offers
+  Close rather than the same file again, as it does for a copy bigger than
+  the server's free space. Tried in a browser at a phone's size, not yet
+  through a real phone's file picker.
+- **An upload may take longer than five minutes.** The server cut off any
+  request still arriving after five minutes, which a copy with books in
+  it, a big PGN file or a book's PDF can take from a phone; it now allows
+  six hours. That limit is set, not timed: no upload that long has been
+  run.
+- **Wiping the vault no longer lets its next save put the app's secrets
+  into the history.** This is a security fix. After “Wipe all data”, the
+  new history saved config.json, which holds the hash of the app's
+  password, the authenticator secret and the Lichess token, with the very
+  next change, and sessions.json with it, and went on saving them until
+  the server restarted. “Download a copy” carries the history, so every
+  copy made since has carried them too. The new history leaves them out
+  from the start: a scratch vault wiped and then given a note saved the
+  note and not config.json. A history an earlier wipe filled this way
+  keeps those saves. The server says so in its log when it starts, and
+  the README's paragraph on backups says how to remove them from a
+  terminal, and to change the password and the Lichess token after.
 - **A puzzle database that already works can be rebuilt from Settings.**
   The app offered the build only to a vault with no puzzle database, so
   the puzzles Lichess has added since could only be had from a terminal.
@@ -102,38 +86,67 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   download the bar stood full under that label; either way until the
   200,000th puzzle was read. It now says “Building the database” as it
   starts reading the dump, and how many it has read every 10,000.
-- **Settings → Vault can put a downloaded copy back.** “Restore from a
-  copy”, beside “Download a copy”, uploads the file from any device, with
-  a bar that moves as it goes, and makes the vault that copy; settings and
-  tokens stay as they are. Nothing is lost doing it: the vault it replaced
-  is kept whole until you choose “Keep the restored vault” or “Undo the
-  restore”, and the history records the vault on both sides, so the
-  documents the copy lacks are in Deleted documents. A vault whose history
-  holds no more than its first save, as a fresh install's does, takes the
-  copy's history; any other keeps its own, with the restore recorded in
-  it. Every copy the app has written reads back, those from before 0.12.0
-  included. A damaged, cut-short or hostile archive is refused whole with
-  the vault untouched, and the window says why in a sentence and offers
-  Close rather than the same file again, as it does for a copy bigger than
-  the server's free space. Tried in a browser at a phone's size, not yet
-  through a real phone's file picker.
-- **An upload may take longer than five minutes.** The server cut off any
-  request still arriving after five minutes, which a copy with books in
-  it, a big PGN file or a book's PDF can take from a phone; it now allows
-  six hours. That limit is set, not timed: no upload that long has been
-  run.
-- **Wiping the vault no longer lets its next save put the app's secrets
-  into the history.** This is a security fix. After “Wipe all data”, the
-  new history saved config.json, which holds the hash of the app's
-  password, the authenticator secret and the Lichess token, with the very
-  next change, and sessions.json with it, and went on saving them until
-  the server restarted. “Download a copy” carries the history, so every
-  copy made since has carried them too. The new history leaves them out
-  from the start: a scratch vault wiped and then given a note saved the
-  note and not config.json. A history an earlier wipe filled this way
-  keeps those saves. The server says so in its log when it starts, and
-  the README's paragraph on backups says how to remove them from a
-  terminal, and to change the password and the Lichess token after.
+- **The vault's history and a downloaded copy no longer carry each
+  book's open cache.** Beside every book it has opened, the server keeps
+  the bytes opening it needs, recorded from the PDF. The history
+  committed that file, again each time a book's PDF was replaced, and
+  “Download a copy” packed it in, though neither could use it: the
+  history holds no PDFs, and a restored copy records the cache again
+  anyway. Both now leave it out, which for a 448-page scan is 611 KB off
+  every copy and about 195 KB off the history each time it would have
+  been committed. Versions the history already holds stay until it is
+  rewritten. Books open as before: a missing cache is recorded on the
+  next open.
+- **The Korean manual names pages, tabs and buttons the way the Korean app
+  does.** In 57 places it named them otherwise than the screen does,
+  mostly in English (Games, Databases, Moves or the Vault card, where the
+  screen says 게임, 데이터베이스, 수순 and 보관함), and the Games page's
+  own chapter was titled 기보. It also carried 84 em-dashes over from the
+  English, and each is now a colon, a full stop, a comma, parentheses, or
+  a particle or verb ending, whichever Korean puts there.
+- **The advice for opening the app on a Mac is the route macOS 15
+  leaves.** The download note on the landing page, the manual's Common
+  questions and desktop/README said to right-click the app and choose Open
+  the first time. macOS 15 Sequoia took that route away from apps that are
+  not notarised, as this one is not, so on a current Mac the advice led
+  nowhere. They now say: on macOS 15 or later, open the app once, then
+  click Open Anyway in System Settings → Privacy & Security; on earlier
+  macOS, Control-click it and choose Open. The install steps in the README
+  and the manual's Getting started say a Mac has to allow the first
+  launch, and link there. The pages also stop calling the builds unsigned:
+  they say no developer certificate signs them. Written from Apple's own
+  documentation; not tried on a Mac.
+- **After “Wipe all data”, the Games page and Home's games work at
+  once.** The wipe put the vault's folders back but not the one the
+  games collection lives in, so until the server was restarted the Games
+  page said “Vault server unreachable” and Home's recent games failed to
+  load. A wiped vault is now left in the shape a fresh start leaves it.
+- **“Wipe all data” finishes after Insights has been opened.** Insights
+  holds the engine pass's findings open, and the wipe deleted that file
+  under it. Windows refused, so the wipe stopped with an error after the
+  vault was already empty and before its change history was made again;
+  elsewhere Insights went on reading the deleted findings until the
+  server was restarted. The wipe now closes the file before deleting it.
+- **A wrong password in the wipe window says it is wrong.** The line under
+  the password just typed read “password required to wipe”, as if none
+  had been sent, and in English on the Korean screen too. It now says
+  the password is wrong and that nothing was wiped.
+- **A count of one reads in the singular.** “Recent games · 1 games”,
+  “1 things in the last 7 days” and fifty-odd sentences like them, on
+  Home, Games, Insights, the opening map, puzzle books, the repertoire and
+  Settings, now say “1 game” and “1 thing”. The Korean screen has no
+  plural; only a few of its sentences about a single item change, where
+  their words were written for several.
+- **The Settings outline names Deleted documents.** The list of card
+  names beside the cards (above them on a narrower window) left out
+  Deleted documents whenever the history answered after the storage did,
+  until something else redrew the page. It now names every card on the
+  page as it is drawn.
+- **The server's start-up lines give the address it serves on.** A server
+  started on its own port, or bound to this computer only, still printed
+  a phone address on port 5173, which only the development setup uses.
+  It now prints its own port, and says so when no other device can reach
+  it.
 
 ## 0.12.0
 
