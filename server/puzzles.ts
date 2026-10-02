@@ -803,11 +803,25 @@ export function puzzlesApi(
     error: string | null;
   } | null = null;
 
+  /**
+   * Whether a dump somebody put beside the database is there, which a
+   * build uses instead of downloading (scripts/build-puzzles.ts, the same
+   * name in the same directory).
+   */
+  const dumpInPlace = (): boolean => existsSync(resolve(dirname(dbPath), PUZZLE_DUMP_PLACED));
+
   const startBuild = (): void => {
     const current = {
       startedAt: Date.now(),
       running: true,
-      progress: { phase: 'downloading', bytes: 0, total: 0 } as BuildProgress,
+      // What is shown until the child's first line, once Node has started
+      // it (120 ms on a fast desktop, from source). It was always the
+      // download, so a build from a dump in place read "Downloading the
+      // puzzle dump, 0 / ? MB" with nothing being downloaded, and a
+      // 500-row one said that until it was indexing.
+      progress: (dumpInPlace()
+        ? { phase: 'building', rows: 0 }
+        : { phase: 'downloading', bytes: 0, total: 0 }) as BuildProgress,
       error: null as string | null,
     };
     build = current;

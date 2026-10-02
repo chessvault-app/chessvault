@@ -10,10 +10,11 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
+import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { zstdCompressSync } from 'node:zlib';
-import { PUZZLE_DUMP_DOWNLOAD } from './paths.ts';
+import { PUZZLE_DUMP_DOWNLOAD, REPO_ROOT } from './paths.ts';
 import { buildFailure, puzzlesApi, ratingBound, sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 
 describe('puzzles api', () => {
@@ -712,6 +713,48 @@ describe('puzzles api (rebuilding a working database)', () => {
     const body = (await res.json()) as { puzzle?: { id: string } };
     return { status: res.status, id: body.puzzle?.id };
   };
+
+  it('says it is building, never downloading, while it builds from a dump in place', async () => {
+    writeFileSync(dump, dumpOf(Array.from({ length: 300 }, (_, i) => ({ id: `a${i}`, rating: 1500 }))));
+    expect((await app.request('/api/puzzles/build', { method: 'POST' })).status).toBe(200);
+    // The first answer is the server's own, before the child has said a
+    // word, and it was the download's.
+    const phases: string[] = [];
+    for (;;) {
+      const status = (await (await app.request('/api/puzzles/build')).json()) as { running: boolean; phase: string };
+      if (!status.running) break;
+      phases.push(status.phase);
+      await new Promise((r) => setTimeout(r, 10));
+    }
+    expect(phases[0]).toBe('building');
+    expect(phases).not.toContain('downloading');
+  }, 60_000);
+
+  it('has the builder say it is building as it starts, and count every 10,000 rows', async () => {
+    writeFileSync(dump, dumpOf(Array.from({ length: 25_000 }, (_, i) => ({ id: `a${i}`, rating: 1000 + (i % 1000) }))));
+    // The builder alone, as the server spawns it, so every line is seen
+    // rather than the last one a poll happens to catch.
+    const events = await new Promise<{ phase: string; rows?: number; puzzles?: number }[]>((done, fail) => {
+      const child = spawn(process.execPath, ['--import', 'tsx', 'scripts/build-puzzles.ts', '--progress-json'], {
+        cwd: REPO_ROOT,
+        stdio: ['ignore', 'pipe', 'inherit'],
+      });
+      let out = '';
+      child.stdout.on('data', (chunk: Buffer) => (out += chunk.toString()));
+      child.on('error', fail);
+      child.on('close', () =>
+        done(
+          out
+            .split('\n')
+            .filter((line) => line.startsWith('{'))
+            .map((line) => JSON.parse(line) as { phase: string; rows?: number; puzzles?: number }),
+        ),
+      );
+    });
+    expect(events[0]).toEqual({ phase: 'building', rows: 0 });
+    expect(events.filter((e) => e.phase === 'building').map((e) => e.rows)).toEqual([0, 10_000, 20_000]);
+    expect(events.at(-1)).toMatchObject({ phase: 'done', puzzles: 25_000 });
+  }, 60_000);
 
   it('draws from the new file straight after the swap, never from the old counts', async () => {
     // 300 puzzles at one rating: past SMALL_POOL, so a draw resolves its
