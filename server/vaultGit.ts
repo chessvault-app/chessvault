@@ -22,6 +22,14 @@ import { resolve } from 'node:path';
  */
 export const HISTORY_DIR_NAME = '.history.git';
 
+/**
+ * Where a restore from a copy works (server/restore.ts): the copy being
+ * unpacked, and the vault it replaced until that is kept or undone. Named
+ * here because the history must never take it in, and the history's
+ * exclude list and its watcher both read it from this file.
+ */
+export const RESTORE_DIR_NAME = '.restore';
+
 /** The history git-dir for a given vault directory. */
 export function historyGitDir(vaultDir: string): string {
   return resolve(vaultDir, HISTORY_DIR_NAME);

@@ -17,7 +17,8 @@ import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
 import { mountVault } from './mountVault.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
 import { sweepUnfinishedPuzzleBuild } from './puzzles.ts';
-import { migrateLegacyRefgames, seedBundledRefgames, sweepUnfinishedBuilds } from './refgames.ts';
+import { migrateLegacyRefgames, refgamesBuildRunning, seedBundledRefgames, sweepUnfinishedBuilds } from './refgames.ts';
+import { recoverInterruptedRestore, restoreApi } from './restore.ts';
 import { settingsApi } from './settings.ts';
 import { storageApi } from './storage.ts';
 import { engineNetsApi } from './engineNets.ts';
@@ -67,6 +68,12 @@ setDefaultAutoSelectFamilyAttemptTimeout(2_000);
  * unauthenticated vault on that network.
  */
 
+
+// Before anything reads the vault or creates a folder in it: a restore the
+// server was killed in the middle of is put back (see server/restore.ts),
+// and a skeleton folder made first would stand where one of its renames
+// has to go back to.
+recoverInterruptedRestore();
 
 // Opening an empty folder as a vault must Just Work: create the skeleton
 // up front so every listing endpoint finds its directory.
@@ -289,6 +296,16 @@ app.route(
     } catch {
       return null;
     }
+  }),
+);
+// And the copy put back. Handed the history writer, which records the
+// vault on either side of the swap and holds its autosaves off during it;
+// refused while a database build is reading sources/, which it moves.
+app.route(
+  '/api',
+  restoreApi(undefined, {
+    history: () => vaultBackup,
+    busy: () => (refgamesBuildRunning() ? 'a build is reading the files right now' : null),
   }),
 );
 app.route('/api', settingsApi());

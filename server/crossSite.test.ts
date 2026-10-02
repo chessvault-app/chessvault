@@ -115,6 +115,35 @@ describe('crossSiteGuard', () => {
     ).toBe(403);
   });
 
+  it('leaves the streaming restore alone, and only its upload', async () => {
+    const app = makeApp();
+    app.post('/api/storage/restore', (c) => c.json({ ok: true }));
+    app.post('/api/storage/restore/undo', (c) => c.json({ ok: true }));
+    const tar = { 'content-type': 'application/x-tar' };
+    expect((await app.request('/api/storage/restore', { method: 'POST', headers: tar, body: 'x' })).status).toBe(200);
+    // Its two verbs are JSON routes like any other.
+    expect((await app.request('/api/storage/restore/undo', { method: 'POST', headers: tar, body: 'x' })).status).toBe(415);
+    // Checks 1 and 2b still cover it.
+    expect(
+      (
+        await app.request('/api/storage/restore', {
+          method: 'POST',
+          headers: { ...tar, 'sec-fetch-site': 'cross-site' },
+          body: 'x',
+        })
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await app.request('/api/storage/restore', {
+          method: 'POST',
+          headers: { ...tar, host: 'vault.tail1234.ts.net:8787', origin: 'https://attacker.example' },
+          body: 'x',
+        })
+      ).status,
+    ).toBe(403);
+  });
+
   it('refuses a state change from another origin, whatever the body looks like', async () => {
     const app = makeApp();
     const host = 'vault.tail1234.ts.net:8787';
