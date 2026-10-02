@@ -1894,6 +1894,8 @@ export const ko: Record<string, string> = {
   "folder is not empty, move or delete its studies first": "폴더가 비어 있지 않습니다. 안의 스터디를 옮기거나 삭제하세요",
   "folder is not empty, move or remove its books first": "폴더가 비어 있지 않습니다. 안의 책을 옮기거나 제거하세요",
   "confirmation phrase mismatch": "확인 문구가 일치하지 않습니다",
+  "That password is wrong. Nothing was wiped.": "비밀번호가 틀렸습니다. 아무것도 지우지 않았습니다.",
+  "Enter your app password to wipe the vault.": "보관함을 지우려면 앱 비밀번호를 입력하세요.",
   "cover too large": "표지가 너무 큽니다",
   "current password is wrong": "현재 비밀번호가 틀렸습니다",
   "empty upload": "빈 파일입니다",

@@ -438,9 +438,16 @@ export function settingsApi(deps: SettingsDeps = {}): Hono {
     // On a gated vault, re-enter the password: this both blocks a stolen
     // session or CSRF drive-by from destroying data, and is a deliberate
     // friction on an irreversible action. Ungated (local) vaults skip it.
+    // Two refusals, because the dialog shows this sentence as it is: one
+    // line for both read "password required" under a password just typed,
+    // as if the field had not been sent.
     const gate = readConfig().appPassword?.trim();
     if (gate && !(await verifyPassword(body.password ?? '', gate))) {
-      return c.json({ error: 'password required to wipe' }, 403);
+      const given = typeof body.password === 'string' && body.password !== '';
+      return c.json(
+        { error: given ? 'That password is wrong. Nothing was wiped.' : 'Enter your app password to wipe the vault.' },
+        403,
+      );
     }
     // Everything in the vault goes — games, studies, notes, puzzles, books,
     // sources, the fine-grained history repo — except config.json, which

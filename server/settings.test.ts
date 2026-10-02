@@ -372,9 +372,14 @@ describe('wipe', () => {
     // wrong phrase
     expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe' })).status).toBe(400);
     expect(existsSync(join(vault, 'studies', 'a.pgn'))).toBe(true);
-    // right phrase, missing/wrong password (gate is on)
-    expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything' })).status).toBe(403);
-    expect((await json('POST', '/api/settings/wipe', { confirm: 'wipe everything', password: 'nope' })).status).toBe(403);
+    // right phrase, missing/wrong password (gate is on), each refusal
+    // saying which, since the dialog shows it as it is
+    const missing = await json('POST', '/api/settings/wipe', { confirm: 'wipe everything' });
+    expect(missing.status).toBe(403);
+    expect((await missing.json()).error).toBe('Enter your app password to wipe the vault.');
+    const wrong = await json('POST', '/api/settings/wipe', { confirm: 'wipe everything', password: 'nope' });
+    expect(wrong.status).toBe(403);
+    expect((await wrong.json()).error).toBe('That password is wrong. Nothing was wiped.');
     expect(existsSync(join(vault, 'studies', 'a.pgn'))).toBe(true);
 
     // The engine pass's findings sit outside the vault and go with it.
