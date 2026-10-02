@@ -394,7 +394,8 @@ against instance loss, and `scripts/backup-vault.sh` pulls the whole vault
 — history included — to any machine for an off-cloud copy. The app makes
 that copy too, with no shell: Settings → Vault → “Download a copy” saves
 every document and the history as one tar file, leaving out the
-credentials in `config.json` and `sessions.json`.
+credentials in `config.json` and `sessions.json`, and each book's
+`open.bin`, a cache the server records again from the book's PDF.
 
 That history leaves `config.json` and `sessions.json` out, and has since
 0.4.x; a vault older than that may still carry them in early commits,

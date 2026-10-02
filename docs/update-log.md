@@ -5,6 +5,20 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **The vault's history and a downloaded copy no longer carry each
+  book's open cache.** Beside every book it has opened, the server keeps
+  the bytes opening it needs, recorded from the PDF. The history
+  committed that file, again each time a book's PDF was replaced, and
+  “Download a copy” packed it in, though neither could use it: the
+  history holds no PDFs, and a restored copy records the cache again
+  anyway. Both now leave it out, which for a 448-page scan is 611 KB off
+  every copy and about 195 KB off the history each time it would have
+  been committed. Versions the history already holds stay until it is
+  rewritten. Books open as before: a missing cache is recorded on the
+  next open.
+
 ## 0.12.0
 
 Each phone takes its own platform's controls, and the desktop window is a

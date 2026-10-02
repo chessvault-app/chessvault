@@ -1,9 +1,10 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { startVaultBackup, type VaultBackup } from './vaultBackup.ts';
+import { git } from './vaultGit.ts';
 
 const log = (dir: string): string[] =>
   execFileSync('git', ['--git-dir', join(dir, '.history.git'), 'log', '--format=%s'], {
@@ -12,6 +13,11 @@ const log = (dir: string): string[] =>
     .trim()
     .split('\n')
     .filter(Boolean);
+
+const tracked = (dir: string): string =>
+  execFileSync('git', ['--git-dir', join(dir, '.history.git'), 'ls-tree', '-r', '--name-only', 'HEAD'], {
+    encoding: 'utf-8',
+  });
 
 describe('vault backup', () => {
   let dir: string;
@@ -59,22 +65,47 @@ describe('vault backup', () => {
     writeFileSync(join(dir, 'books', 'b0123456789abcdef', 'book.pdf'), '%PDF-1.4 x'.repeat(100));
     writeFileSync(join(dir, 'books', 'b0123456789abcdef', 'book.pdf.part'), '%PDF-1.4');
     writeFileSync(join(dir, 'books', 'b0123456789abcdef', 'book.json'), '{"title":"x"}\n');
+    // And its open cache (server/pdfWarm.ts), made from that PDF and made
+    // again whenever the PDF changes: no version of it is worth keeping.
+    writeFileSync(join(dir, 'books', 'b0123456789abcdef', 'open.bin'), 'warm'.repeat(100));
     backup = await startVaultBackup(dir, 50);
-    const files = execFileSync(
-      'git',
-      ['--git-dir', join(dir, '.history.git'), 'ls-tree', '-r', '--name-only', 'HEAD'],
-      { encoding: 'utf-8' },
-    );
+    const files = tracked(dir);
     expect(files).toContain('games.json');
     expect(files).not.toContain('big.pgn');
     expect(files).toContain('books/b0123456789abcdef/book.json');
     expect(files).not.toContain('book.pdf');
+    expect(files).not.toContain('open.bin');
 
     // Second start reuses the repo instead of re-initialising.
     await backup.stop();
     writeFileSync(join(dir, 'games.json'), '{"a":1}\n');
     backup = await startVaultBackup(dir, 50);
     expect(log(dir)).toHaveLength(2);
+  });
+
+  it('untracks the per-book files an older version committed, and keeps them on disk', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'vault-backup-'));
+    const book = join(dir, 'books', 'b0123456789abcdef');
+    mkdirSync(book, { recursive: true });
+    writeFileSync(join(book, 'book.json'), '{"title":"x"}\n');
+    writeFileSync(join(book, 'book.pdf'), '%PDF-1.4 x'.repeat(100));
+    writeFileSync(join(book, 'open.bin'), 'warm'.repeat(100));
+    backup = await startVaultBackup(dir, 50);
+    // What a version without the excludes committed, by force now that
+    // they are there.
+    const gitDir = join(dir, '.history.git');
+    await git(gitDir, dir, ['add', '-f', 'books/b0123456789abcdef/book.pdf', 'books/b0123456789abcdef/open.bin']);
+    await git(gitDir, dir, ['commit', '-q', '-m', 'older version']);
+    expect(tracked(dir)).toContain('books/b0123456789abcdef/book.pdf');
+    expect(tracked(dir)).toContain('books/b0123456789abcdef/open.bin');
+    await backup.stop();
+
+    backup = await startVaultBackup(dir, 50);
+    expect(tracked(dir)).not.toContain('book.pdf');
+    expect(tracked(dir)).not.toContain('open.bin');
+    expect(tracked(dir)).toContain('books/b0123456789abcdef/book.json');
+    expect(existsSync(join(book, 'book.pdf'))).toBe(true);
+    expect(existsSync(join(book, 'open.bin'))).toBe(true);
   });
 
   /**

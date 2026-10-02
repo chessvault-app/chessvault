@@ -16,6 +16,7 @@ describe('vault backup', () => {
   let out: string;
   const long = `${'a-study-with-a-very-long-title-'.repeat(4)}.pgn`; // 128 chars: past ustar's 100
   const longKorean = `${'긴 제목의 한글 스터디 '.repeat(4)}끝.pgn`; // 57 chars, but 131 bytes
+  const PDF = Buffer.concat([Buffer.from('%PDF-1.4\n'), Buffer.alloc(4000, 0xff), Buffer.from('\n%%EOF\n')]);
 
   beforeAll(() => {
     vault = mkdtempSync(join(tmpdir(), 'backup-vault-'));
@@ -35,6 +36,12 @@ describe('vault backup', () => {
     writeFileSync(join(vault, 'config.json'), '{"password":"secret"}');
     writeFileSync(join(vault, 'sessions.json'), '[]');
     writeFileSync(join(vault, 'empty.md'), '');
+    // A library book: the PDF is the user's own and goes; the open cache
+    // beside it (server/pdfWarm.ts) is made again from it, and stays.
+    mkdirSync(join(vault, 'books', 'b0123456789abcdef'), { recursive: true });
+    writeFileSync(join(vault, 'books', 'b0123456789abcdef', 'book.pdf'), PDF);
+    writeFileSync(join(vault, 'books', 'b0123456789abcdef', 'book.json'), '{"title":"x"}\n');
+    writeFileSync(join(vault, 'books', 'b0123456789abcdef', 'open.bin'), 'warm'.repeat(100));
   });
   afterAll(() => {
     rmSync(vault, { recursive: true, force: true });
@@ -64,6 +71,10 @@ describe('vault backup', () => {
         '.history.git/',
         '.history.git/HEAD',
         '.history.git/objects/',
+        'books/',
+        'books/b0123456789abcdef/',
+        'books/b0123456789abcdef/book.json',
+        'books/b0123456789abcdef/book.pdf',
         'empty.md',
         'games/',
         'games/collection/',
@@ -82,6 +93,7 @@ describe('vault backup', () => {
     expect(readFileSync(join(x, 'studies', '한글 스터디.pgn'), 'utf-8')).toBe('*');
     expect(readFileSync(join(x, 'studies', longKorean), 'utf-8')).toBe('한글');
     expect(readFileSync(join(x, 'empty.md'), 'utf-8')).toBe('');
+    expect(readFileSync(join(x, 'books', 'b0123456789abcdef', 'book.pdf')).equals(PDF)).toBe(true);
   });
 
   it('names the file after the vault, else its folder, and keeps the name filesystem-safe', () => {

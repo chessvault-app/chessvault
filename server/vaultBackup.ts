@@ -80,7 +80,11 @@ export async function startVaultBackup(
   // would track it), the giant source PGN dumps are rebuild inputs, the
   // unsaved-changes swap files are a live buffer rather than a version of
   // anything (a history of every keystroke somebody had not committed is
-  // exactly what this repo is not for), and — critically — config.json
+  // exactly what this repo is not for), each book's open.bin is a cache
+  // the server records from that book's PDF and records again when the
+  // PDF changes (server/pdfWarm.ts), worth nothing beside a PDF this repo
+  // does not hold (611 KB for a 448-page scan, and a new copy each time
+  // the file is replaced), and — critically — config.json
   // holds the app password, TOTP secret and Lichess token, which must
   // never enter a repo that scripts/backup-vault.sh pulls off-box (git
   // would retain every past value). sessions.json sits under the same
@@ -89,22 +93,28 @@ export async function startVaultBackup(
   if (existsSync(gitDir)) {
     writeFileSync(
       resolve(gitDir, 'info', 'exclude'),
-      `${HISTORY_DIR_NAME}/\nsources/\nbooks/*/book.pdf\n*.part\nconfig.json\nsessions.json\n*.swp\n`,
+      `${HISTORY_DIR_NAME}/\nsources/\nbooks/*/book.pdf\nbooks/*/open.bin\n*.part\nconfig.json\nsessions.json\n*.swp\n`,
     );
-    // Untrack them if an earlier version committed either; --ignore-unmatch
+    // Untrack them if an earlier version committed any; --ignore-unmatch
     // makes this a no-op once clean. Leaves the working files intact. The
-    // helper passes --literal-pathspecs, so the pdf pattern is spelled as
-    // git's own glob form rather than left to the shell-style default.
-    await git(gitDir, dir, [
-      'rm',
-      '--cached',
-      '--quiet',
-      '--ignore-unmatch',
-      'config.json',
-      'sessions.json',
-      ':(glob)books/*/book.pdf',
-    ]).catch(() => undefined);
+    // per-book files are listed first and then named one by one: the
+    // helper passes --literal-pathspecs, which turns off pathspec magic
+    // as well as globs, so the `:(glob)books/*/book.pdf` this once passed
+    // named a file of that literal name and untracked nothing.
+    // In batches: a path is about 35 characters, and Windows refuses a
+    // command line past 32,767, which a long shelf would otherwise reach.
+    const perBook = (await git(gitDir, dir, ['ls-files', '-z', '--', 'books']).catch(() => ''))
+      .split('\0')
+      .filter((path) => /^books\/[^/]+\/(book\.pdf|open\.bin)$/.test(path));
+    const untrack = ['config.json', 'sessions.json', ...perBook];
+    for (let at = 0; at < untrack.length; at += 200) {
+      const batch = untrack.slice(at, at + 200);
+      await git(gitDir, dir, ['rm', '--cached', '--quiet', '--ignore-unmatch', ...batch]).catch(() => undefined);
+    }
     // Untracking stops here; it does not reach into commits already made.
+    // The open caches an earlier version committed stay in the repo's
+    // objects until its history is rewritten: dead weight rather than a
+    // secret, so nothing is said about them at boot.
     // A history that carries an old config.json carries every password
     // hash, authenticator secret and Lichess token it ever held, and
     // scripts/backup-vault.sh copies the whole repo off-box. Said once,
