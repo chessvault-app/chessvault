@@ -5,6 +5,27 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **A puzzle database that already works can be rebuilt from Settings.**
+  The app offered the build only to a vault with no puzzle database, so
+  the puzzles Lichess has added since could only be had from a terminal.
+  Settings has a Puzzle database card now: how many puzzles the database
+  holds and when it was built, and Rebuild, which asks first (about
+  300 MB to download, about 5.5 GB of free disk while it builds, and a
+  small server can run out of memory) and then shows the progress the
+  first build shows. The trainer keeps the old database until the new
+  one is ready, and your attempts are kept. A failure says why, stays
+  said after a reload, and offers Try again. On the way, what a rebuild
+  beside a working database would have run into was fixed: the first
+  puzzles drawn from the new file could fail on the old file's counts, a
+  failed build left its part-built file on disk until a restart, a
+  download left by a failed build was taken for one you put there and
+  built from ever after, so no rebuild fetched newer puzzles, and the
+  build kept a rollback journal it meant to switch off, which put its
+  peak extra disk at 6.2 GB where it is 4.3 GB now, on a 5,000,000-puzzle
+  set.
+
 ## 0.12.0
 
 Each phone takes its own platform's controls, and the desktop window is a
