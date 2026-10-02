@@ -388,17 +388,30 @@ SSH는 공개 인터넷에 두지 마세요. `deploy.sh`가 네트워크에 바�
 보관함은 자기 히스토리를 유지합니다.
 
 그 히스토리는 `config.json`과 `sessions.json`을 빼놓고, 0.4.x부터 그래
-왔습니다. 그보다 오래된 보관함은 초기 커밋에 아직 둘을 담고 있을 수 있고,
-그러면 그동안의 비밀번호 해시와 인증 앱 비밀키와 Lichess 토큰이 백업마다
-따라갑니다. 서버가 그런 커밋을 찾으면 시작할 때 알립니다. 지우려면 서버를
-멈춘 뒤:
+왔습니다. 그래도 둘을 담고 있을 수 있는 보관함이 두 가지 있습니다. 그보다
+오래된 보관함은 초기 커밋에, 0.12.1 이전에 «모든 데이터 지우기»로 지운
+보관함은 지운 뒤 새 히스토리가 자기 폴더와 함께 커밋한 데에 담고 있습니다.
+그러면 그동안의 비밀번호 해시와 인증 앱 비밀키와 Lichess 토큰이 백업마다,
+내려받은 사본마다 따라갑니다. 서버가 그런 커밋을 찾으면 시작할 때 알립니다.
+지우려면 서버를 멈추고, `h`가 보관함 폴더 안의 `.history.git`을 가리키게 해서
+다음을 실행하세요:
 
 ```bash
-git --git-dir=vault/.history.git --work-tree=vault filter-branch --index-filter 'git rm --cached --ignore-unmatch config.json sessions.json' -- --all
+h=vault/.history.git
+git --git-dir=$h config core.bare true    # filter-branch가 작업 트리 없이 돌도록
+git --git-dir=$h filter-branch --index-filter 'git rm -r -q --cached --ignore-unmatch config.json sessions.json .history.git' -- --all
+git --git-dir=$h for-each-ref --format='delete %(refname)' refs/original | git --git-dir=$h update-ref --stdin
+git --git-dir=$h read-tree HEAD
+git --git-dir=$h reflog expire --expire=now --all
+git --git-dir=$h gc --prune=now
+git --git-dir=$h config core.bare false
 ```
 
-그다음 비밀번호와 Lichess 토큰을 바꾸세요. 이미 다른 기계로 내려받은
-사본은 옛 값을 그대로 갖고 있습니다.
+다시 쓰기만으로는 지워지지 않습니다. filter-branch는 옛 커밋을
+`refs/original` 아래에 남겨 두고, reflog와 인덱스도 옛 파일을 가리키므로, 그
+뒤의 네 줄이 그것들을 치우고 더는 아무것도 가리키지 않는 것을 지웁니다.
+그다음 비밀번호와 Lichess 토큰을 바꾸세요. 이미 다른 기계로 내려받은 사본은
+옛 값을 그대로 갖고 있습니다.
 
 첫 번째 겹은 git 없이 앱 안에서 바로 쓸 수 있습니다. 모든 스터디와 게임과
 노트의 머리글에 있는 시계 아이콘(휴대폰에서는 ⋯ 메뉴의 «이전 버전»)이

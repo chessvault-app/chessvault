@@ -407,17 +407,30 @@ than its first save (a fresh install) takes the copy's history; any other
 keeps its own.
 
 That history leaves `config.json` and `sessions.json` out, and has since
-0.4.x; a vault older than that may still carry them in early commits,
-which means every password hash, authenticator secret and Lichess token
-they ever held goes along with each backup. The server says so at boot
-when it finds any. To purge them, with the server stopped:
+0.4.x. Two kinds of vault may still carry them: one older than that, in
+its early commits, and one wiped with “Wipe all data” before 0.12.1, whose
+new history committed them after the wipe, along with its own folder.
+Then every password hash, authenticator secret and Lichess token they
+ever held goes along with each backup and each downloaded copy. The
+server says so at boot when it finds any. To purge them, stop the server
+and run this, with `h` naming the `.history.git` in your vault folder:
 
 ```bash
-git --git-dir=vault/.history.git --work-tree=vault filter-branch --index-filter 'git rm --cached --ignore-unmatch config.json sessions.json' -- --all
+h=vault/.history.git
+git --git-dir=$h config core.bare true    # so filter-branch needs no work tree
+git --git-dir=$h filter-branch --index-filter 'git rm -r -q --cached --ignore-unmatch config.json sessions.json .history.git' -- --all
+git --git-dir=$h for-each-ref --format='delete %(refname)' refs/original | git --git-dir=$h update-ref --stdin
+git --git-dir=$h read-tree HEAD
+git --git-dir=$h reflog expire --expire=now --all
+git --git-dir=$h gc --prune=now
+git --git-dir=$h config core.bare false
 ```
 
-then rotate the password and the Lichess token, since copies already
-pulled off-box keep the old values.
+The rewrite alone is not the purge: filter-branch keeps the old commits
+under `refs/original`, and the reflog and the index still point at the
+old files, so the four lines after it drop those and delete what nothing
+reaches any more. Then rotate the password and the Lichess token, since
+copies already pulled off-box keep the old values.
 
 That first layer is reachable from the app, not only from git. Every
 study, game and note has a clock in its header (on a phone, Earlier
