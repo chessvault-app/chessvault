@@ -2934,13 +2934,15 @@
                   </tr>
                   <tr>
                     <td data-ko="퍼즐 데이터베이스(Puzzle database)">Puzzle database</td>
-                    <td data-ko="퍼즐 트레이너가 쓰는 Lichess 퍼즐 세트입니다. <strong>Lichess 퍼즐</strong>(Lichess puzzles) 줄에 퍼즐이 몇 개인지와 «{when} 만듦»(built {when})이 나오고, 옆의 <strong>다시 만들기</strong>(Rebuild)가 최신 세트로 다시 만듭니다. 누르면 먼저 묻습니다. 약 300MB를 내려받고 만드는 동안 디스크 여유 공간이 약 5.5GB 필요하며 메모리가 작은 서버에서는 메모리가 모자랄 수 있다는 것, 그리고 새 데이터베이스가 준비될 때까지 지금 것을 계속 쓰고 시도 기록은 그대로 남는다는 것입니다. 도는 동안 카드는 첫 빌드와 같은 단계를 보여 주고, 트레이너는 그대로 쓸 수 있습니다. 실패하면 카드가 이유를 적고(새로 고쳐도 남습니다) <strong>다시 시도</strong>(Try again)를 내놓으며, 새 파일은 하나도 남지 않습니다. 데이터베이스가 아직 없으면 줄이 «아직 만들지 않음»(Not built yet)이고, 퍼즐 페이지와 같은 <strong>내려받아 만들기</strong>(Download and build)가 나옵니다. 카드는 <code>#/settings/puzzle-database</code> 주소로 열립니다. 데모에는 없습니다.">
+                    <td data-ko="퍼즐 트레이너가 쓰는 Lichess 퍼즐 세트입니다. <strong>Lichess 퍼즐</strong>(Lichess puzzles) 줄에 퍼즐이 몇 개인지와 «{when} 만듦»(built {when})이 나오고, 옆의 <strong>다시 만들기</strong>(Rebuild)가 최신 세트로 다시 만듭니다. 누르면 먼저 묻습니다. 약 300MB를 내려받고 만드는 동안 디스크 여유 공간이 약 5.5GB 필요하며 메모리가 작은 서버에서는 메모리가 모자랄 수 있다는 것, 그리고 새 데이터베이스가 준비될 때까지 지금 것을 계속 쓰고 시도 기록은 그대로 남는다는 것입니다. 데이터베이스 폴더에 퍼즐 덤프를 넣어 두었다면 다시 만들기는 그것으로 만들고, 질문도 그에 맞게 바뀝니다. 내려받을 것은 없고, 디스크 여유 공간이 5GB 넘게 필요합니다. 도는 동안 카드는 첫 빌드와 같은 단계를 보여 주고, 트레이너는 그대로 쓸 수 있습니다. 실패하면 카드가 이유를 적고(새로 고쳐도 남습니다) <strong>다시 시도</strong>(Try again)를 내놓으며, 새 파일은 하나도 남지 않습니다. 데이터베이스가 아직 없으면 줄이 «아직 만들지 않음»(Not built yet)이고, 퍼즐 페이지와 같은 <strong>내려받아 만들기</strong>(Download and build)가 나옵니다. 카드는 <code>#/settings/puzzle-database</code> 주소로 열립니다. 데모에는 없습니다.">
                       The puzzle trainer's Lichess set. The <strong>Lichess puzzles</strong> row
                       says how many it holds and “built {when}”, and <strong>Rebuild</strong> beside
                       it replaces it with the latest set. It asks first: about 300 MB to download,
                       about 5.5 GB of free disk while it builds, it can run out of memory on a small
                       server, the current database keeps working until the new one is ready, and
-                      your attempts are kept. While it runs the card shows the same stages the first
+                      your attempts are kept. Where a puzzle dump has been put in the database's folder,
+                      Rebuild builds from that instead and asks accordingly: nothing to download, and
+                      over 5 GB of free disk. While it runs the card shows the same stages the first
                       build does, and the trainer stays usable. If it fails, the card says why (a
                       reload keeps saying it) and offers <strong>Try again</strong>, and nothing of
                       the new file is left behind. With no database yet the row reads “Not built
@@ -3024,11 +3026,12 @@
                   </tr>
                   <tr>
                     <td data-ko="보관함 내 데이터 초기화(Danger zone)">Danger zone</td>
-                    <td data-ko="보관함 전체를 비웁니다. 변경 이력까지 지워집니다. «비밀번호와 2단계 인증, 토큰은 남습니다. 되돌릴 수 없으니 먼저 사본을 내려받으세요.»(The password, 2FA and tokens survive. There is no undo, so download a copy first.) 칸이 요구하는 확인 문구(Type “wipe everything” to arm)를 입력해야 <strong>모든 데이터 지우기</strong>(Wipe all data)를 누를 수 있고, 비밀번호가 있으면 그것까지 다시 묻습니다.">
+                    <td data-ko="보관함 전체를 비웁니다. 변경 이력까지 지워집니다. «비밀번호와 2단계 인증, 토큰은 남습니다. 되돌릴 수 없으니 먼저 사본을 내려받으세요.»(The password, 2FA and tokens survive. There is no undo, so download a copy first.) 칸이 요구하는 확인 문구(Type “wipe everything” to arm)를 입력해야 <strong>모든 데이터 지우기</strong>(Wipe all data)를 누를 수 있고, 비밀번호가 있으면 그것까지 다시 묻습니다. 틀린 비밀번호로는 아무것도 지워지지 않으며, 확인 창이 «비밀번호가 틀렸습니다. 아무것도 지우지 않았습니다.»(That password is wrong. Nothing was wiped.)라고 알려 줍니다.">
                       Wiping the vault — change history included. “The password, 2FA and
                       tokens survive. There is no undo, so download a copy first.” Typing the arming phrase the field asks
                       for — Type “wipe everything” to arm — unlocks <strong>Wipe all data</strong>,
-                      and the confirm asks for the app password when one is set.
+                      and the confirm asks for the app password when one is set. A wrong one wipes
+                      nothing, and the confirm says "That password is wrong. Nothing was wiped."
                     </td>
                   </tr>
                   <tr>
