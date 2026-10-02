@@ -334,8 +334,10 @@ export const ko: Record<string, string> = {
   'Only puzzles and drills were recorded then.': '그때는 퍼즐과 드릴만 기록했습니다.',
   'What you did each day over the last {w} weeks: {n} things on {d} days.':
     '최근 {w}주 동안 하루에 한 일입니다. {d}일에 걸쳐 {n}개.',
-  'What you did each day over the last {w} weeks: 1 thing on 1 day.': '최근 {w}주 동안 하루에 한 일입니다. 1일에 1개.',
-  'What you did each day over the last {w} weeks: {n} things on 1 day.': '최근 {w}주 동안 하루에 한 일입니다. 1일에 {n}개.',
+  // "1일에 걸쳐", as the plural has it: a bare "1일에" reads as a date,
+  // the first of the month.
+  'What you did each day over the last {w} weeks: 1 thing on 1 day.': '최근 {w}주 동안 하루에 한 일입니다. 1일에 걸쳐 1개.',
+  'What you did each day over the last {w} weeks: {n} things on 1 day.': '최근 {w}주 동안 하루에 한 일입니다. 1일에 걸쳐 {n}개.',
   'What you did each day over the last {w} weeks: nothing yet.':
     '최근 {w}주 동안 하루에 한 일입니다. 아직 없습니다.',
   // The day's tip is one clause per kind, and five of the six phrases

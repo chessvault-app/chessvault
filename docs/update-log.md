@@ -25,8 +25,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 - **A count of one reads in the singular.** “Recent games · 1 games”,
   “1 things in the last 7 days” and fifty-odd sentences like them, on
   Home, Games, Insights, the opening map, puzzle books, the repertoire and
-  Settings, now say “1 game” and “1 thing”. The Korean screen, which has
-  no plural, reads as before.
+  Settings, now say “1 game” and “1 thing”. The Korean screen has no
+  plural; only a few of its sentences about a single item change, where
+  their words were written for several.
 - **The Settings outline names Deleted documents.** The list of card
   names beside the cards (above them on a narrower window) left out
   Deleted documents whenever the history answered after the storage did,
