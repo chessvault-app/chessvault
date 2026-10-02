@@ -10,6 +10,7 @@ import { useTheme, type ThemePreference } from '@/store/theme';
 import { ANNOTATION_SIZES, BOARD_THEMES, CASTLE_STYLES, DENSITIES, PIECE_SETS, RADIUS_PRESETS, SCHEME_PRESETS, boardScheme, usePrefs, type AnnotationSize, type BoardTheme, type CastleStyle, type Density, type PieceSet, type RadiusId } from '@/store/prefs';
 import { PIECE_THUMBS } from '@/pieces/thumbs';
 import { currentPlatform } from '@/lib/platform';
+import { useMediaQuery } from '@/lib/media';
 import { Slider } from '@/components/ui/slider';
 import { t, getLang, setLang, LANGS, type Lang } from '@/lib/i18n';
 
@@ -65,9 +66,18 @@ const SCHEME_GROUPS = [
 
 export function AppearanceCard() {
   const [moreOpen, setMoreOpen] = useState(false);
-  // Only where the material is drawn: the `ios:` variants, which is an
-  // iPhone and an iPad narrow enough to be under md (styles/utilities.css).
+  // Only where the material is drawn, which is iOS under md: every glass
+  // surface is `max-md:ios:`, or sits in shell.css's max-md block, or in
+  // a phone-only window. Shown on `ios` alone, the knobs stood on an iPad
+  // at md and up and moved nothing there (the demo as iOS, 2026-10-02: at
+  // 834, 1024 and 932 wide no element drew a backdrop filter and an open
+  // select list was opaque; at 375 the tab bar and a chrome button drew
+  // one). The phone layouts' own query, so an iPhone keeps the knobs and
+  // an iPad in a narrow split view gets them; a large iPhone turned
+  // sideways past 768px draws no glass and hides them until it turns
+  // back. Not subscribed off iOS.
   const ios = currentPlatform() === 'ios';
+  const glassDrawn = useMediaQuery('(max-width: 47.9375rem)', ios) && ios;
   const theme = useTheme((s) => s.preference);
   const setTheme = useTheme((s) => s.setPreference);
   const { boardTheme, pieces, schemeId, radius, density, castleStyle, coordinates, moveBox, reviewOffer, annotationSize, glass, glassTint, setBoardTheme, setPieces, setSchemeId, setRadius, setDensity, setCastleStyle, setCoordinates, setMoveBox, setReviewOffer, setAnnotationSize, setGlass, setGlassTint } =
@@ -284,7 +294,7 @@ export function AppearanceCard() {
               Zero glass is the bottom stop of the first knob rather than a
               switch beside it: one control, and the material goes away
               entirely rather than being drawn opaque at full cost. */}
-          {ios && (
+          {glassDrawn && (
             <>
               {/* `control="full"`, the slider's shape (setting-row.tsx):
                   the words on top and the track at the row's whole width,
