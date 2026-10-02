@@ -5,6 +5,14 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **The Korean manual names pages, tabs and buttons the way the Korean app
+  does.** In 55 paragraphs it still said Games, Databases, Moves or the
+  Vault card in English where the screen says 게임, 데이터베이스, 수순 and
+  보관함, and it carried 84 em-dashes over from the English. Those are now
+  the colon, full stop, comma or parentheses Korean uses there.
+
 ## 0.12.0
 
 Each phone takes its own platform's controls, and the desktop window is a
