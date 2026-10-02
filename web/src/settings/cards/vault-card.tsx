@@ -12,6 +12,7 @@ import { t } from '@/lib/i18n';
 import { BrandMark } from '@/components/brand-mark';
 import { setVaultName } from '@/lib/vaultName';
 import { Feedback, size, type Note, type Settings, type StorageReport } from '@/settings/cards/shared';
+import { RestoreButton, RestorePending, useRestoreState } from '@/settings/cards/restore-copy';
 
 // --- Vault name ----------------------------------------------------------------
 // Its own card, not a second name in Profile: "Display name" is the
@@ -133,6 +134,7 @@ export function VaultCard({
   // it left a hole (see SettingsPage, outlineShown).
   const slow = useSlowLoad(vault === null) || outlineShown;
   const reveal = revealVault();
+  const restore = useRestoreState();
   const copyPath = async (): Promise<void> => {
     // copyText, not the bare Clipboard API: the isolated build denies
     // that one (lib/clipboard.ts says why) and this button failed there.
@@ -183,12 +185,16 @@ export function VaultCard({
         <Button variant="secondary" render={<a href="/api/storage/backup" download />} nativeButton={false}>
           {vault ? t('Download a copy ({size})', { size: size(vaultBytes(vault.rows)) }) : t('Download a copy')}
         </Button>
+        {/* And the copy put back (restore-copy.tsx): an upload, so a phone's
+            file picker reaches it as well as a desktop's. */}
+        <RestoreButton state={restore.state} reload={restore.reload} />
         <Button variant="secondary" onClick={() => void copyPath()}>{t('Copy the path')}</Button>
         {reveal && (
           <Button variant="secondary" onClick={() => void reveal()}>{t('Show in the file manager')}</Button>
         )}
       </div>
       <p className="text-muted-foreground text-sm">{t(VAULT_COPY_NOTE)}</p>
+      <RestorePending state={restore.state} reload={restore.reload} />
     </Card>
   );
 }

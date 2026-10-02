@@ -73,6 +73,7 @@ function SettingsOutlineTop({
             <SkeletonVaultTree paths={paths} />
             <div className="flex flex-wrap items-center gap-2">
               <ButtonPlaceholder variant="secondary" label="Download a copy" />
+              <ButtonPlaceholder variant="secondary" label="Restore from a copy" />
               <ButtonPlaceholder variant="secondary" label="Copy the path" />
             </div>
             <p className="text-muted-foreground text-sm">{t(VAULT_COPY_NOTE)}</p>

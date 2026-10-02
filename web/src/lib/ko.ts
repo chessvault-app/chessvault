@@ -1920,6 +1920,22 @@ export const ko: Record<string, string> = {
   "no games chosen": "고른 게임이 없습니다",
   "need file": "파일이 필요합니다",
   "name must be a plain .pgn filename": "이름은 평범한 .pgn 파일명이어야 합니다",
+  "upload failed": "업로드에 실패했습니다",
+  "that file is not a copy of a vault": "그 파일은 보관함 사본이 아닙니다",
+  "the copy is damaged": "사본이 손상되었습니다",
+  "the copy is cut short": "사본이 중간에 끊겼습니다",
+  "the copy holds a file name that could land outside the vault": "사본에 보관함 밖에 놓일 수 있는 파일 이름이 있습니다",
+  "the copy holds something other than files and folders": "사본에 파일과 폴더가 아닌 것이 있습니다",
+  "not enough free space on the server for this copy": "서버에 이 사본을 둘 빈 공간이 부족합니다",
+  "a restore is already running": "이미 복원이 진행 중입니다",
+  "keep or undo the last restore first": "먼저 지난 복원을 유지하거나 되돌리세요",
+  "the upload stopped": "업로드가 멈췄습니다",
+  "could not put the copy in place, so the vault is as it was": "사본을 제자리에 넣지 못했으므로 보관함은 그대로입니다",
+  "could not put the copy in place, and could not put everything back: restart the server to finish putting it back":
+    "사본을 제자리에 넣지 못했고 모두 되돌려 놓지도 못했습니다. 서버를 다시 시작하면 마저 되돌립니다",
+  "there is no restore to undo": "되돌릴 복원이 없습니다",
+  "there is no restore to keep": "유지할 복원이 없습니다",
+  "could not undo the restore, so the vault is as it was": "복원을 되돌리지 못했으므로 보관함은 그대로입니다",
 
   // --- puzzle themes and panel labels --------------------------------------
   "New study": "새 스터디",
@@ -2362,6 +2378,40 @@ export const ko: Record<string, string> = {
   'Download a copy ({size})': '사본 내려받기 ({size})',
   'The copy is one tar file of every document and the change history. Settings and tokens stay on the server.':
     '사본은 모든 문서와 변경 기록을 담은 tar 파일 하나입니다. 설정과 토큰은 서버에 남습니다.',
+  // Restoring a copy: 복원 puts a state back, 되돌리기 undoes, 유지 keeps.
+  'Restore from a copy': '사본에서 복원',
+  'Keep or undo the last restore first': '먼저 지난 복원을 유지하거나 되돌리세요',
+  'That file is not a copy of a vault.': '그 파일은 보관함 사본이 아닙니다.',
+  'This vault has no history of its own yet, so it takes the copy’s.':
+    '이 보관함에는 아직 자체 기록이 없으므로 사본의 기록을 가져옵니다.',
+  'This vault keeps its own history, with the restore recorded in it.':
+    '이 보관함은 자체 기록을 유지하고, 복원도 그 기록에 남깁니다.',
+  'This server keeps no history, so the copy’s is left out.':
+    '이 서버는 기록을 남기지 않으므로 사본의 기록은 빠집니다.',
+  'Restored, with the copy’s history. Reloading…': '사본의 기록과 함께 복원했습니다. 다시 불러옵니다…',
+  'Restored. Reloading…': '복원했습니다. 다시 불러옵니다…',
+  'Restore from this copy?': '이 사본에서 복원할까요?',
+  'The vault becomes “{name}”, apart from its settings and tokens. What it holds now is kept until you keep or undo the restore.':
+    '설정과 토큰을 뺀 보관함 전체가 “{name}”(으)로 바뀝니다. 지금 들어 있는 것은 복원을 유지하거나 되돌릴 때까지 보관됩니다.',
+  'The server has {free} free, and this copy needs {size}.':
+    '서버의 빈 공간은 {free}인데 이 사본은 {size}가 필요합니다.',
+  'Upload progress': '업로드 진행률',
+  'Putting the copy in place…': '사본을 제자리에 넣는 중…',
+  'Restore ({size})': '복원 ({size})',
+  'Kept. {size} freed.': '유지했습니다. {size}를 비웠습니다.',
+  'Undone. Reloading…': '되돌렸습니다. 다시 불러옵니다…',
+  'Restored from a copy {when}. The vault as it was before still takes {size} on the server.':
+    '{when} 사본에서 복원했습니다. 복원 전의 보관함이 아직 서버에서 {size}를 차지합니다.',
+  'Keep the restored vault': '복원한 보관함 유지',
+  'Undo the restore': '복원 되돌리기',
+  'This deletes the vault as it was before the restore and frees {size}. Its documents can still be brought back from their history; its book PDFs and PGN files cannot.':
+    '복원 전의 보관함을 삭제하고 {size}를 비웁니다. 그 문서들은 기록에서 되살릴 수 있지만, 책 PDF와 PGN 파일은 되살릴 수 없습니다.',
+  'This deletes the vault as it was before the restore and frees {size}. Nothing of it can be brought back.':
+    '복원 전의 보관함을 삭제하고 {size}를 비웁니다. 아무것도 되살릴 수 없습니다.',
+  'The vault goes back to how it was before the restore, and the restored files are deleted. Documents edited since keep those edits in their history.':
+    '보관함이 복원 전으로 돌아가고, 복원한 파일은 삭제됩니다. 그 사이에 고친 문서는 그 수정이 기록에 남습니다.',
+  'The vault goes back to how it was before the restore, and the restored files are deleted with any changes made since.':
+    '보관함이 복원 전으로 돌아가고, 복원한 파일은 그 사이의 변경과 함께 삭제됩니다.',
   // --- insights -------------------------------------------------------------
   // The page's own words. 북 is the opening book, as on the map's deviation
   // rows ("You left the book with this move"); 카탈로그 is the ECO
