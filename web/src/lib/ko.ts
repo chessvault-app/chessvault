@@ -311,7 +311,8 @@ export const ko: Record<string, string> = {
   'Wide screens only.': '넓은 화면에서만 보입니다.',
   'The latest games in your collection, with their results.': '모음의 최신 게임과 그 결과.',
   'Solved today, and what is due for review.': '오늘 푼 수와 복습할 것.',
-  'Everything you did each day over the last six months.': '지난 6개월 동안 하루에 한 일 전부.',
+  'Everything you did each day, half a year to a year back, as room allows.':
+    '자리가 되는 만큼 반년에서 1년 전까지, 하루에 한 일 전부.',
   'The books you are in the middle of.': '풀고 있는 책.',
   'The studies and notes last touched.': '마지막으로 만진 스터디와 노트.',
   // --- home, the activity grid ---------------------------------------------
