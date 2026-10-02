@@ -218,10 +218,11 @@ const skillStep = (skill: number, folded: number, puzzleRating: number, win: boo
 /**
  * COUNT(*) over the rating index walks every matching row — measured at
  * ~158 ms across the full 6.1M-puzzle table, paid on EVERY "next puzzle".
- * The database is opened read-only and is never rewritten in-process (a
- * rebuild renames a fresh file over it and needs a restart, see the handle
- * comment below), so the count for a given filter cannot change: cache it
- * for the process lifetime, exactly like themesCache.
+ * The database is opened read-only and is never rewritten in-process, so
+ * the count for a given filter cannot change while one file is being
+ * served: cache it, exactly like themesCache. A rebuild renames a fresh
+ * file over the same path, and the swap empties this and bucketCache
+ * (see forgetDatabase), since the keys are the path and the path stays.
  */
 const countCache = new Map<string, number>();
 
@@ -661,8 +662,8 @@ export function puzzlesApi(
     return seeded;
   };
 
-  // Lazily opened read-only handle for the process lifetime. A rebuild
-  // renames a fresh file over it; restart the server to pick that up.
+  // Lazily opened read-only handle, kept until a rebuild swaps a fresh
+  // file in (see forgetDatabase); the next request then opens that one.
   let handle: InstanceType<typeof Database> | null = null;
   const puzzleDb = (): InstanceType<typeof Database> | null => {
     if (handle) return handle;
@@ -675,6 +676,30 @@ export function puzzlesApi(
   const closeDb = (): void => {
     handle?.close();
     handle = null;
+  };
+
+  /**
+   * Let go of everything read from the file at dbPath: the handle, and
+   * the three caches built from it.
+   *
+   * The handle alone was not enough. The theme list and the per-filter
+   * counts are cached for as long as one file is served, and the count
+   * caches are keyed by the PATH, which a rebuild keeps. So the new file
+   * was drawn from with the old file's counts: an offset into a rating
+   * the new set holds fewer puzzles at landed past its end and the draw
+   * threw. Measured on a rebuild from 6.1 M puzzles to 5 M with a draw
+   * every 100 ms throughout, 7 of the 40 draws after the swap answered
+   * 500, and every one before it answered.
+   *
+   * Both count caches are emptied whole rather than by key: a filter's
+   * count is one query to work out again, and the only process that
+   * serves more than one file is a test run.
+   */
+  const forgetDatabase = (): void => {
+    closeDb();
+    themesCache = null;
+    countCache.clear();
+    bucketCache.clear();
   };
 
   const api = new Hono();
@@ -762,16 +787,17 @@ export function puzzlesApi(
       }
       // Windows: our own read handle blocks the child's rename-over, so it
       // leaves the fresh file beside the target and we swap it in here.
-      closeDb();
+      //
+      // Let go before the rename, not after. The handle is kept between
+      // requests, so a rebuild left it serving the file that had just
+      // been replaced (on POSIX the child's own rename has already gone
+      // through by now), and on Windows an open file cannot be renamed
+      // over at all, which turned the swap itself into the error below.
+      // Nothing can reopen it in between: this and the rename are one
+      // synchronous turn, and every route reads the file synchronously.
+      forgetDatabase();
       const building = `${dbPath}.building`;
       if (existsSync(building)) {
-        // Before the rename, not after. The handle is opened once and kept
-        // for the life of the process, so a rebuild left it serving the
-        // file that had just been replaced — and on Windows an open file
-        // cannot be renamed over at all, which turned the swap itself into
-        // the error below. Closed here, reopened by the next request that
-        // wants it, which is what the line after this always claimed.
-        closeDb();
         try {
           renameRetrying(building, dbPath);
         } catch (error) {
@@ -780,7 +806,6 @@ export function puzzlesApi(
         }
       }
       // The next request opens the new file; nothing has to be restarted.
-      themesCache = null;
     });
   };
 
@@ -803,8 +828,8 @@ export function puzzlesApi(
     return c.json({ running: true });
   });
 
-  // Theme counts never change while the process lives (a rebuild replaces
-  // the file and the server restarts), so compute once and keep. Newer
+  // Theme counts never change while one file is served (a rebuild's swap
+  // empties this, see forgetDatabase), so compute once and keep. Newer
   // databases carry a precomputed theme_counts table; older ones pay one
   // ~1 s GROUP BY on first request instead of on every request.
   let themesCache: { theme: string; count: number }[] | null = null;

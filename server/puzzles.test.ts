@@ -12,6 +12,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { zstdCompressSync } from 'node:zlib';
 import { puzzlesApi, ratingBound, sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 
 describe('puzzles api', () => {
@@ -622,6 +623,107 @@ describe('sweepUnfinishedPuzzleBuild', () => {
     sweepUnfinishedPuzzleBuild(dbPath);
     expect(existsSync(dbPath)).toBe(false);
   });
+});
+
+/**
+ * A dump in the Lichess layout, zstd-compressed as the real one is: the
+ * real builder reads it, so these tests run the same child process the
+ * app's button does, on a few hundred rows instead of 6.1 million.
+ */
+const dumpOf = (rows: { id: string; rating: number }[]): Buffer =>
+  zstdCompressSync(
+    `${[
+      'PuzzleId,FEN,Moves,Rating,RatingDeviation,Popularity,NbPlays,Themes,GameUrl,OpeningTags',
+      ...rows.map((r) => `${r.id},8/8/8/8/8/8/8/K6k w - - 0 1,a1a2 h1h2,${r.rating},80,90,10,short,,`),
+    ].join('\n')}\n`,
+  );
+
+/**
+ * Replacing a database the server is already serving: the build runs
+ * beside it, and whatever the old file answered must be forgotten when
+ * the new one lands.
+ */
+describe('puzzles api (rebuilding a working database)', () => {
+  let data: string;
+  let dump: string;
+  let app: Hono;
+  let puzzles: ReturnType<typeof puzzlesApi>;
+  const savedData = process.env.CHESS_VAULT_DATA;
+
+  beforeEach(() => {
+    data = mkdtempSync(join(tmpdir(), 'puzzles-rebuild-'));
+    // A dump already in the data directory is the one the builder uses,
+    // so no test downloads anything. The builder is a child process that
+    // finds that directory the way the server does, from the environment.
+    dump = join(data, 'lichess_db_puzzle.csv.zst');
+    process.env.CHESS_VAULT_DATA = data;
+    puzzles = puzzlesApi(join(data, 'puzzles.sqlite'), join(data, 'state'));
+    app = new Hono().route('/api', puzzles);
+  });
+
+  afterEach(() => {
+    puzzles.closeDb();
+    if (savedData === undefined) delete process.env.CHESS_VAULT_DATA;
+    else process.env.CHESS_VAULT_DATA = savedData;
+    rmSync(data, { recursive: true, force: true });
+  });
+
+  /** Start a build and wait for it to end, returning its last status. */
+  const build = async (): Promise<{ running: boolean; error?: string | null }> => {
+    expect((await app.request('/api/puzzles/build', { method: 'POST' })).status).toBe(200);
+    for (;;) {
+      const status = (await (await app.request('/api/puzzles/build')).json()) as {
+        running: boolean;
+        error?: string | null;
+      };
+      if (!status.running) return status;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+  };
+
+  /** A fresh draw: asking past the standing offer makes it go through the counts. */
+  const draw = async (skip: string): Promise<{ status: number; id?: string }> => {
+    const res = await app.request(`/api/puzzles/next?skip=${skip}`);
+    if (res.status !== 200) return { status: res.status };
+    const body = (await res.json()) as { puzzle?: { id: string } };
+    return { status: res.status, id: body.puzzle?.id };
+  };
+
+  it('draws from the new file straight after the swap, never from the old counts', async () => {
+    // 300 puzzles at one rating: past SMALL_POOL, so a draw resolves its
+    // offset through the per-rating counts, which are cached per file.
+    writeFileSync(dump, dumpOf(Array.from({ length: 300 }, (_, i) => ({ id: `a${i}`, rating: 1500 }))));
+    expect((await build()).error ?? null).toBeNull();
+    const first = await draw('');
+    expect(first.id).toMatch(/^a/);
+    await app.request('/api/puzzles/attempt', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ id: first.id, win: false }),
+    });
+
+    // The newer set keeps one puzzle at the rating the old counts said
+    // held 300, so an offset from those counts lands past its end.
+    writeFileSync(
+      dump,
+      dumpOf([
+        { id: 'b0', rating: 1500 },
+        ...Array.from({ length: 299 }, (_, i) => ({ id: `b${i + 1}`, rating: 1600 })),
+      ]),
+    );
+    expect((await build()).error ?? null).toBeNull();
+
+    let last = first.id!;
+    for (let i = 0; i < 20; i++) {
+      const next = await draw(last);
+      expect(next.status).toBe(200);
+      expect(next.id).toMatch(/^b/);
+      last = next.id!;
+    }
+    // Attempts are the vault's, keyed by id, and outlive the file.
+    const history = (await (await app.request('/api/puzzles/history')).json()) as { attempts: { id: string }[] };
+    expect(history.attempts.map((a) => a.id)).toContain(first.id);
+  }, 60_000);
 });
 
 /**
