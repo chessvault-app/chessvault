@@ -47,6 +47,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   and a version number. And a failed puzzle the new set no longer has
   leaves the review pool, where review mode could offer it on every
   visit and never find it.
+- **A puzzle database build says it is building as soon as it is.** Its
+  progress began as “Downloading the puzzle dump” whatever the build was
+  about to do, and the build said nothing more until it had read 200,000
+  puzzles. So a build from a dump already in the data directory, which
+  downloads nothing, read 0 of an unknown number of MB, and after a real
+  download the bar stood full under that label; either way until the
+  200,000th puzzle was read. It now says “Building the database” as it
+  starts reading the dump, and how many it has read every 10,000.
 - **Settings → Vault can put a downloaded copy back.** “Restore from a
   copy”, beside “Download a copy”, uploads the file from any device, a
   phone's file picker included, with a bar that moves as it goes, and
