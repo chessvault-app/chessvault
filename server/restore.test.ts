@@ -701,6 +701,30 @@ describe('restore from a copy', () => {
     expect(existsSync(join(target.vault, 'planted.txt'))).toBe(false);
   });
 
+  it('gives a new vault the copy\'s history when the vault already holds what the copy does', async () => {
+    const source = scratch('source');
+    fillSource(source.vault);
+    const sourceBackup = await startVaultBackup(source.vault, 50);
+    put(source.vault, 'studies/Najdorf.pgn', 'second version\n');
+    await sourceBackup.commitNow();
+    await sourceBackup.stop();
+    const sourceHead = execFileSync('git', ['--git-dir', join(source.vault, '.history.git'), 'rev-parse', 'HEAD'], { encoding: 'utf-8' }).trim();
+    const copy = await download(source.vault);
+
+    // The same files, with a history of one save: nothing of the vault is
+    // missing from the copy's history, so there is nothing to carry over.
+    const target = scratch('target');
+    fillSource(target.vault);
+    put(target.vault, 'studies/Najdorf.pgn', 'second version\n');
+    const backup = await startVaultBackup(target.vault, 50);
+    backups.push(backup);
+    const { restore, state } = restorer(target.vault, { history: async () => backup });
+    expect((await state()).history).toBe('adopt');
+    expect(await (await restore(copy)).json()).toMatchObject({ ok: true, history: 'adopted' });
+    const log = execFileSync('git', ['--git-dir', join(target.vault, '.history.git'), 'log', '--format=%H'], { encoding: 'utf-8' });
+    expect(log).toContain(sourceHead);
+  });
+
   it('keeps a vault\'s own history when it has one, and leaves the copy\'s out', async () => {
     const source = scratch('source');
     fillSource(source.vault);

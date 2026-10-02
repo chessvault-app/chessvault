@@ -318,6 +318,10 @@ async function commitTo(gitDir: string, vault: string, message: string): Promise
   const status = await git(gitDir, vault, ['status', '--porcelain']);
   if (!status.trim()) return;
   await git(gitDir, vault, ['add', '-A']);
+  // A repo assembled from a copy has no index yet, so status lists every
+  // file even when the vault holds what HEAD does. Once added there is
+  // nothing to commit, and git would fail the commit for it.
+  if (!(await git(gitDir, vault, ['diff', '--cached', '--name-only'])).trim()) return;
   await git(gitDir, vault, ['commit', '-q', '-m', message]);
 }
 
