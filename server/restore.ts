@@ -659,7 +659,14 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
       // One rename ends the pending state; the delete after it can take
       // its time, and what it leaves the next start sweeps.
       const work = newWork();
-      move(beforeDir(vault), join(work.dir, 'before'));
+      try {
+        move(beforeDir(vault), join(work.dir, 'before'));
+      } catch (error) {
+        // Nothing moved: the restore is still pending and can be undone.
+        console.error(`[restore] could not keep the restored vault: ${(error as Error).message}`);
+        await rm(work.dir, { recursive: true, force: true }).catch(() => undefined);
+        return c.json({ error: 'Could not keep the restored vault, so the restore can still be undone.' }, 500);
+      }
       await rm(work.dir, { recursive: true, force: true }).catch(() => undefined);
       return c.json({ ok: true, freed });
     } finally {

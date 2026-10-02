@@ -1954,6 +1954,8 @@ export const ko: Record<string, string> = {
   "There is no restore to undo.": "되돌릴 복원이 없습니다.",
   "There is no restore to keep.": "유지할 복원이 없습니다.",
   "Could not undo the restore, so the vault is as it was.": "복원을 되돌리지 못했으므로 보관함은 그대로입니다.",
+  "Could not keep the restored vault, so the restore can still be undone.":
+    "복원한 보관함을 유지하지 못했으므로 복원은 아직 되돌릴 수 있습니다.",
 
   // --- puzzle themes and panel labels --------------------------------------
   "New study": "새 스터디",

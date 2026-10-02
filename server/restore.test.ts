@@ -491,6 +491,32 @@ describe('restore from a copy', () => {
     }
   });
 
+  it('says so in a sentence when keeping fails, and the restore can still be undone', async () => {
+    const source = scratch('source');
+    fillSource(source.vault);
+    const copy = await download(source.vault);
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const before = everything(target.vault);
+    let failing = false;
+    const { restore, state, undo, keep } = restorer(target.vault, {
+      move: (from, to) => {
+        if (failing) throw Object.assign(new Error('the folder is in use'), { code: 'EBUSY' });
+        renameSync(from, to);
+      },
+    });
+    expect((await restore(copy)).status).toBe(200);
+    failing = true;
+    const kept = await keep();
+    expect(kept.status).toBe(500);
+    expect((await kept.json()).error).toBe('Could not keep the restored vault, so the restore can still be undone.');
+    expect((await state()).pending).not.toBeNull();
+    expect(leftovers(target.vault)).toEqual([]);
+    failing = false;
+    expect((await undo()).status).toBe(200);
+    expect(everything(target.vault)).toEqual(before);
+  });
+
   it('leaves the vault as it was when the upload is cut off or goes quiet', async () => {
     const source = scratch('source');
     fillSource(source.vault);
