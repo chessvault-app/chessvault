@@ -32,7 +32,8 @@ vault/
                           (book.json names the book's folder, if any;
                            open.bin is the bytes opening the PDF needs,
                            recorded on its first open, server/pdfWarm.ts;
-                           book.pdf is excluded from .history.git)
+                           book.pdf and open.bin are excluded from
+                           .history.git, and open.bin from a copy)
   puzzles/            history.jsonl  state.json
   repertoire/         history.jsonl  (drill history)
                       map.json       (the opening map, one tree per colour)
@@ -264,7 +265,8 @@ snapshots, and `scripts/backup-vault.sh` for an off-host pull. Any
 client can also take a copy itself, with no shell: Download a copy in
 Settings → Vault streams one tar of every document and the history
 (`server/backup.ts`), leaving out `config.json` and `sessions.json`,
-which hold the credentials.
+which hold the credentials, and each book's `open.bin`, which the
+server records again from the PDF beside it.
 
 `server/vaultHistory.ts` serves that first layer back to the app, so
 recovery never needs a shell: the versions of one document, any version's

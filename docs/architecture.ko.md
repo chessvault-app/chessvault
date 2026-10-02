@@ -32,7 +32,8 @@ vault/
                           (book.json에 책이 든 폴더 이름이 있으면 적히고,
                            open.bin은 PDF를 여는 데 필요한 바이트로
                            처음 열 때 기록됨, server/pdfWarm.ts;
-                           book.pdf은 .history.git에서 제외)
+                           book.pdf와 open.bin은 .history.git에서,
+                           open.bin은 사본에서도 제외)
   puzzles/            history.jsonl  state.json
   repertoire/         history.jsonl  (드릴 기록)
                       map.json       (오프닝 맵, 색마다 트리 하나)
@@ -249,8 +250,8 @@ Tailscale만 쓸 수도 있습니다. 둘 다 같은 서버로 가는 HTTP일 �
 스냅숏, 그리고 호스트 밖으로 받아 두는 `scripts/backup-vault.sh`입니다.
 어느 클라이언트든 셸 없이 직접 사본을 받을 수도 있습니다. 설정 → 보관함의
 사본 내려받기가 모든 문서와 히스토리를 tar 하나로 내려보내며
-(`server/backup.ts`), 자격 증명을 담은 `config.json`과 `sessions.json`은
-뺍니다.
+(`server/backup.ts`), 자격 증명을 담은 `config.json`과 `sessions.json`,
+그리고 서버가 옆의 PDF에서 다시 기록하는 책마다의 `open.bin`은 뺍니다.
 
 `server/vaultHistory.ts`가 그 첫 겹을 앱에 돌려주므로 복구에 셸이 필요
 없습니다. 한 문서의 버전 목록, 특정 버전의 내용, 히스토리에는 있지만

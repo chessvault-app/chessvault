@@ -377,7 +377,8 @@ SSH는 공개 인터넷에 두지 마세요. `deploy.sh`가 네트워크에 바�
 `scripts/backup-vault.sh`가 히스토리까지 포함한 보관함 전체를 아무 기계로나
 내려받습니다. 앱도 셸 없이 그 사본을 만듭니다. 설정 → 보관함 → «사본
 내려받기»가 모든 문서와 히스토리를 tar 파일 하나로 저장하며, 자격 증명이
-든 `config.json`과 `sessions.json`은 빼놓습니다.
+든 `config.json`과 `sessions.json`, 그리고 서버가 책의 PDF에서 다시
+기록하는 캐시인 책마다의 `open.bin`은 빼놓습니다.
 
 그 히스토리는 `config.json`과 `sessions.json`을 빼놓고, 0.4.x부터 그래
 왔습니다. 그보다 오래된 보관함은 초기 커밋에 아직 둘을 담고 있을 수 있고,
