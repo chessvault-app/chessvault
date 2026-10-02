@@ -266,6 +266,31 @@ Settings → Vault streams one tar of every document and the history
 (`server/backup.ts`), leaving out `config.json` and `sessions.json`,
 which hold the credentials.
 
+Restore from a copy is the other half (`server/restore.ts`). The upload
+is unpacked as it arrives by `server/tarRead.ts`, which reads every shape
+the writer has produced (pax path records since 0.12.0; raw UTF-8 names
+and GNU long names before) and refuses the whole archive for a bad
+checksum, a cut, a link or device, or any path that could land outside
+the folder. It unpacks into `vault/.restore/<id>/in/`, inside the vault so
+every rename is on one filesystem, and swaps only a copy that read to its
+end marker. The swap is a list of renames journalled in
+`.restore/journal.json`: a failure part way puts back the ones made, and a
+server killed part way puts them back at its next start
+(`recoverInterruptedRestore`, before anything else touches the vault).
+Nothing is deleted: the vault's folders move into `.restore/before/`
+until the user keeps the restore (which deletes them) or undoes it (which
+moves them back), because book PDFs and `sources/` are in no history and
+the app restores only documents from it. `config.json`, `sessions.json`
+and the vault's dotfiles never move and are never taken from a copy. The
+history writer's `exclusive()` holds autosaves off while the restore
+commits the vault before the swap and after it; the copy's own history
+replaces the vault's only when the vault's holds no more than its first
+save, and then as a fresh repo given the copy's objects, refs and HEAD
+and nothing else (no config, hooks or alternates). After the swap
+`vaultReplaced()` (`server/vaultEvents.ts`) tells every cache keyed on a
+file's mtime to forget, since a restored file can carry the same second
+and size as the one it replaced; the page reloads.
+
 `server/vaultHistory.ts` serves that first layer back to the app, so
 recovery never needs a shell: the versions of one document, any version's
 bytes, the documents the history remembers and the vault no longer has,
