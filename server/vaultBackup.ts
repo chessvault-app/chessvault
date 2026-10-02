@@ -91,19 +91,22 @@ export async function startVaultBackup(
       resolve(gitDir, 'info', 'exclude'),
       `${HISTORY_DIR_NAME}/\nsources/\nbooks/*/book.pdf\n*.part\nconfig.json\nsessions.json\n*.swp\n`,
     );
-    // Untrack them if an earlier version committed either; --ignore-unmatch
+    // Untrack them if an earlier version committed any; --ignore-unmatch
     // makes this a no-op once clean. Leaves the working files intact. The
-    // helper passes --literal-pathspecs, so the pdf pattern is spelled as
-    // git's own glob form rather than left to the shell-style default.
-    await git(gitDir, dir, [
-      'rm',
-      '--cached',
-      '--quiet',
-      '--ignore-unmatch',
-      'config.json',
-      'sessions.json',
-      ':(glob)books/*/book.pdf',
-    ]).catch(() => undefined);
+    // per-book files are listed first and then named one by one: the
+    // helper passes --literal-pathspecs, which turns off pathspec magic
+    // as well as globs, so the `:(glob)books/*/book.pdf` this once passed
+    // named a file of that literal name and untracked nothing.
+    // In batches: a path is about 35 characters, and Windows refuses a
+    // command line past 32,767, which a long shelf would otherwise reach.
+    const perBook = (await git(gitDir, dir, ['ls-files', '-z', '--', 'books']).catch(() => ''))
+      .split('\0')
+      .filter((path) => /^books\/[^/]+\/book\.pdf$/.test(path));
+    const untrack = ['config.json', 'sessions.json', ...perBook];
+    for (let at = 0; at < untrack.length; at += 200) {
+      const batch = untrack.slice(at, at + 200);
+      await git(gitDir, dir, ['rm', '--cached', '--quiet', '--ignore-unmatch', ...batch]).catch(() => undefined);
+    }
     // Untracking stops here; it does not reach into commits already made.
     // A history that carries an old config.json carries every password
     // hash, authenticator secret and Lichess token it ever held, and
