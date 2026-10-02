@@ -11,6 +11,7 @@ import { Readable } from 'node:stream';
 import { resolve } from 'node:path';
 import { authApi, isGated, migratePlaintextPassword, requireAuth } from './auth.ts';
 import { booksApi } from './books.ts';
+import { bootBanner } from './bootBanner.ts';
 import { recordActivity } from './activity.ts';
 import { crossSiteGuard, isRawBodyPath } from './crossSite.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
@@ -477,12 +478,10 @@ if (existsSync(dist)) {
 const REQUEST_TIMEOUT_MS = 6 * 60 * 60 * 1000;
 
 serve({ fetch: app.fetch, port: PORT, hostname: BIND, serverOptions: { requestTimeout: REQUEST_TIMEOUT_MS } }, (info) => {
-  console.log(`  chess-vault server  http://127.0.0.1:${info.port}`);
-  console.log(`  cross-origin isolation: on (Stockfish threads enabled)`);
-  // Phones on the same network reach the app through Vite's LAN address.
-  const lan = Object.values(networkInterfaces())
-    .flat()
-    .find((iface) => iface && iface.family === 'IPv4' && !iface.internal);
-  if (lan) console.log(`  on your phone:      http://${lan.address}:5173`);
+  // The address this server holds (server/bootBanner.ts). `dev:server` is
+  // the npm script `npm run dev` starts beside Vite, the one case where a
+  // phone opens Vite's port rather than this one.
+  const dev = process.env.npm_lifecycle_event === 'dev:server';
+  for (const line of bootBanner(info, { dev, interfaces: networkInterfaces() })) console.log(line);
 });
 
