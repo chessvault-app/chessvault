@@ -409,7 +409,7 @@ SSH는 공개 인터넷에 두지 마세요. `deploy.sh`가 네트워크에 바�
 인증 비밀키는 같은 카드에서 바꾸고, 옛 비밀번호는 아직 쓰는 곳에서
 바꾸고, 알려 준 Lichess 토큰은 모두
 [lichess.org/account/oauth/token](https://lichess.org/account/oauth/token)에서
-삭제하세요. 앱에서 토큰을 바꿔도 Lichess에서 지워지지는 않습니다.
+삭제하세요. 앱에서 토큰을 바꿔도 Lichess에서 삭제되지는 않습니다.
 
 앱으로 할 수 없을 때(서버가 시작되지 않는 경우 등)는 터미널에서 같은 일을 할
 수 있습니다. 서버를 멈추고, `h`가 보관함 폴더 안의 `.history.git`을 가리키게
