@@ -5,6 +5,26 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **With a puzzle dump in the data folder, the app can still get the
+  newest puzzles.** A Lichess dump beside the puzzle database as
+  `lichess_db_puzzle.csv.zst`, whether you put it there or an older
+  version left it after a build that died, was built from by every build
+  and rebuild, and nothing in the app could get past it to newer puzzles:
+  only deleting the file on the server's disk did. Where a dump is in
+  place, Build, Rebuild and Try again now ask which to build from: the
+  dump, which downloads nothing and keeps the file, or the newest puzzles,
+  about 300 MB, after which the dump is deleted once the new database is
+  built, as the question says. A download that fails keeps it. And the
+  words now say what the build will do in every state: with no database
+  yet and a dump in place, the Puzzles page, Settings, the phone's puzzle
+  hub and Themes say the app builds from it, with nothing to download and
+  over 5 GB of free disk while it builds, where they said 300 MB to
+  download; with a database, the card says it can be rebuilt from the
+  dump or from a download. From a terminal, `npm run build:puzzles --
+  --download` does the same.
+
 ## 0.12.1
 
 Settings → Vault can put a downloaded copy of the vault back, keeping the
