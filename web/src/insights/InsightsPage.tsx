@@ -6,7 +6,7 @@ import { PASS_DEPTH, useAnalysisJob } from './analysisJob';
 import { CompareCard } from './CompareCard';
 import { ChartColumn } from 'lucide-react';
 import type { Ending } from '@shared/gameIndex';
-import { api } from '@/lib/api';
+import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { routePlaceholderShown } from '@/lib/lazyRoute';
 import { t, useLang } from '@/lib/i18n';
 import { centipawnsLost, INSIGHTS_COPY } from './copy';
@@ -171,6 +171,9 @@ export function InsightsPage() {
   const query = useMemo(() => filterQuery(filters), [filters]);
   const [report, setReport] = useState<Report | null>(null);
   const [failed, setFailed] = useState(false);
+  /** What the server said when it refused the report, in the reader's
+      language; null for a failure it gave no reason for. */
+  const [refusal, setRefusal] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   // The page is GATED on the engine pass (lanph3re's call) until the
   // first game of yours has been through the engine: before that it is
@@ -245,6 +248,12 @@ export function InsightsPage() {
           if ((error as { name?: string }).name === 'AbortError') return;
           setReport(null);
           setFailed(true);
+          // The server's own sentence where it refused for a reason it
+          // names: a vault part way through a restore refuses the report
+          // until it is put back (server/restore.ts), which every other
+          // page that reads the vault says, and this one said only that
+          // the report could not be loaded.
+          setRefusal(error instanceof ApiError && error.reason !== null ? apiErrorMessage(error) : null);
         });
     };
     ask();
@@ -355,7 +364,7 @@ export function InsightsPage() {
 
       {failed ? (
         <div className="text-muted-foreground flex items-center gap-3 text-sm">
-          <span>{t('The report could not be loaded.')}</span>
+          <span>{refusal ?? t('The report could not be loaded.')}</span>
           <Button variant="secondary" size="sm" onClick={() => setAttempt((n) => n + 1)}>
             {t('Retry')}
           </Button>
