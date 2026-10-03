@@ -730,6 +730,12 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     app.get('/api/settings', (c) => c.json({ ok: true }));
     app.get('/api/storage', (c) => c.json({ ok: true }));
     app.get('/api/engine/nets', (c) => c.json({ ok: true }));
+    // The opening names read the app's catalogue and the data folder; the
+    // opening map's tree is in the vault.
+    app.get('/api/openings', (c) => c.json({ ok: true }));
+    app.get('/api/opening', (c) => c.json({ ok: true }));
+    app.post('/api/opening/batch', (c) => c.json({ ok: true }));
+    app.get('/api/openingmap', (c) => c.json({ ok: true }));
     app.route('/api', restoreApi(target.vault, { free: async () => null }));
     const note = async (): Promise<Response> =>
       app.request('/api/notes', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'During' }) });
@@ -746,9 +752,11 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     // to go back to; it is refused, and no folder appears.
     expect((await note()).status).toBe(503);
     expect(existsSync(join(target.vault, 'notes'))).toBe(false);
-    for (const path of ['/api/settings', '/api/storage', '/api/engine/nets', '/api/storage/restore']) {
+    for (const path of ['/api/settings', '/api/storage', '/api/engine/nets', '/api/storage/restore', '/api/openings', '/api/opening?fen=x']) {
       expect((await app.request(path)).status, path).toBe(200);
     }
+    expect((await app.request('/api/opening/batch', { method: 'POST' })).status).toBe(200);
+    expect((await app.request('/api/openingmap')).status).toBe(503);
 
     expect((await app.request('/api/storage/restore/recover', { method: 'POST' })).status).toBe(200);
     expect(everything(target.vault)).toEqual(before);

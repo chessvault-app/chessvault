@@ -126,9 +126,10 @@ goes through only once that program lets go.
   “Could not read the vault” with that sentence and “Open Settings”, which
   goes to the Vault card. In Settings the Puzzle database, Browsed games
   and Deleted documents cards say it too, and the first neither offers
-  nor mentions a build or rebuild until then. Settings itself, signing in
-  and the Vault card's put-back still answer, and so does “Wipe all
-  data”, which deletes the folders set aside with the rest.
+  nor mentions a build or rebuild until then. Settings itself, signing
+  in, the opening names on the Board, the Editor and the repertoire
+  trainer, and the Vault card's put-back still answer, and so does “Wipe
+  all data”, which deletes the folders set aside with the rest.
 - **A list that did not load says why, and is not drawn as an empty
   one.** The Studies shelf and the Games page's collection said “Vault
   server unreachable” whenever their list failed, even when the server had

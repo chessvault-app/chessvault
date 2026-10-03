@@ -296,9 +296,10 @@ answers 503 with a sentence saying where to put the vault back
 (`stuckGuard`), so nothing writes into the half vault. What still
 answers is the restore's own routes, which check for themselves, the
 few that touch nothing a restore moves (the settings, the engine's
-nets, the tablebase and the explorer), and the storage report Settings
-draws (`GET /api/storage`), the one read of the half vault left: its
-sizes count only what is in place. Nor does the history save it:
+nets, the tablebase, the explorer and the opening names), and the
+storage report Settings draws (`GET /api/storage`), the one read of the
+half vault left: its sizes count only what is in place. Nor does the
+history save it:
 while the journal stands, `commitNow` (which the watcher's timer, the
 first save at startup and a forced save all go through) records nothing
 and logs that once, because its `add -A` saved the half vault as a
