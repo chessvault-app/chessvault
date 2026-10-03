@@ -13,7 +13,7 @@ shell. While one is stopped, pages say so and the history saves nothing;
 failed builds and lists say why. Untried on a real phone or Mac, in the
 desktop app, or out of memory or disk; a put-back another program blocks
 goes through only once that program lets go, and a server restarted before
-then now starts and waits for it.
+then now starts instead of stopping, so the card can still finish it.
 
 - **With a puzzle dump in the data folder, the app can still get the
   newest puzzles.** A Lichess dump beside the puzzle database as
@@ -84,9 +84,9 @@ then now starts and waits for it.
   desktop app, or a restart by whoever runs the server. A restart, like the
   button, goes through only once the file is let go, but it no longer stops
   the server: one that cannot put the vault back as it starts comes up
-  anyway, every page says the vault is part way through a restore, the card
-  offers “Put the vault back”, and nothing the restore moved is touched
-  until it is put back. Tried in a browser at a desktop's and an iPhone's
+  anyway, every page that reads the vault says it is part way through a
+  restore, the card offers “Put the vault back”, and nothing the restore
+  moved is touched until it is put back. Tried in a browser at a desktop's and an iPhone's
   size, in both languages, after a real restore that failed, twice: two
   other programs each held a file open during the swap, so it could neither
   finish nor put the folders back. Pressed while they still held them, the
