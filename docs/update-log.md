@@ -85,7 +85,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   Notes, Studies, Books and Puzzle books also drew the empty shelf: “0
   notes”, “No notes yet” and a New note button the server would have
   refused as well. A shelf whose list never came back now shows the line
-  alone, and one already on screen stays.
+  alone, and one already on screen stays. The collection drew rows still
+  loading under its line for good, and now draws nothing there until Try
+  again brings the list.
 
 ## 0.12.1
 
