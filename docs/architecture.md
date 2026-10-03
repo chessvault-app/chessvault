@@ -303,9 +303,8 @@ no safer, since the journal guards either way, and left a desktop app with
 no server to press the button on. What still stops a start is a journal
 that cannot be looked for (`lstat` refusing), which the guards would read
 as none. Until the vault is put back, a restore, an undo and a keep are
-refused,
-since a second swap would write its journal over this one and an undo
-would delete what the first had put back; and every other API route
+refused, since a second swap would write its journal over this one and
+an undo would delete what the first had put back; and every other API route
 answers 503 with a sentence saying where to put the vault back
 (`stuckGuard`), so nothing writes into the half vault. What still
 answers is the restore's own routes, which check for themselves, the
