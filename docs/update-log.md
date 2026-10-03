@@ -63,21 +63,22 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 - **Settings → Vault can finish a restore that stopped part way.** When a
   restore or its undo failed part way and could not put the vault's
   folders back either, only a restart of the server finished it, and
-  nothing said so: the card went on offering “Restore from a copy” and
-  pages that read a moved folder failed. A phone, or the desktop app
-  pointed at a server, cannot restart one. The card now says “A restore
-  stopped part way through.” and offers “Put the vault back”, which runs
-  the same put-back as the server's next start, from any device; “Restore
-  from a copy” waits for it. Only when something still holds one of the
-  folders does the card say what else finishes it: quitting and reopening
-  the desktop app, or a restart by whoever runs the server. Tried in a
-  browser at a desktop's and an iPhone's size, in both languages, after
-  a real restore that failed, twice: two other programs each held a file
-  open during the swap, so it could neither finish nor put the folders
-  back. Pressed while they still held them, the card said “Could not put
-  the vault back yet. Every folder is still on the server.” and moved
-  nothing; pressed after they let go, every file came back byte for byte
-  as it was before the restore.
+  nothing said so: the card went on offering “Restore from a copy”. A
+  phone, or the desktop app pointed at a server, cannot restart one. The
+  card now says “A restore stopped part way through.” and offers “Put the
+  vault back”, which runs the same put-back as the server's next start,
+  from any device. “Restore from a copy” waits for it, and so does
+  “Download a copy”, which packed the half vault without the folders set
+  aside. Only when the put-back fails too, as it does while another
+  program still holds a file in a folder it has to move, does the card say
+  what else finishes it: quitting and reopening the desktop app, or a
+  restart by whoever runs the server. Tried in a browser at a desktop's
+  and an iPhone's size, in both languages, after a real restore that
+  failed, twice: two other programs each held a file open during the swap,
+  so it could neither finish nor put the folders back. Pressed while they
+  still held them, the card said “Could not put the vault back yet. Every
+  folder is still on the server.” and moved nothing; pressed after they
+  let go, every file came back byte for byte as it was before the restore.
 - **While a restore is stopped part way, pages say so and leave the
   vault alone.** A page that read a folder the restore had moved said
   “Request failed (500)”, and a page that saved something wrote into a
@@ -96,8 +97,8 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   the Puzzle database and Browsed games cards say it too: the first
   offered Rebuild over a database it could not see and asked the server
   about the build every second for as long as the page was open, and the
-  second held its loading row for good. Settings, the Vault card and
-  signing in work as before.
+  second held its loading row for good. Settings itself, signing in and
+  the Vault card's put-back still answer.
 - **A list that did not load says why, and is not drawn as an empty
   one.** The Studies shelf and the Games page's collection said “Vault
   server unreachable” whenever their list failed, even when the server had
