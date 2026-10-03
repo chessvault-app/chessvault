@@ -294,7 +294,8 @@ since a second swap would write its journal over this one and an undo
 would delete what the first had put back; and every other API route,
 but the few that touch nothing a restore moves, answers 503 with a
 sentence saying where to put the vault back (`stuckGuard`), so nothing
-reads the half vault or writes into it. A write was the danger: a note
+reads the half vault or writes into it. The wipe alone still runs, and
+deletes it all, the folders set aside included. A write was the danger: a note
 saved there made `notes/` again where the vault's own had to go back to,
 and the put-back, which skips a rename whose source is back, left the
 vault's own in `.restore`. What makes a put-back fail in a running

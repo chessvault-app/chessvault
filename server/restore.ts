@@ -426,7 +426,11 @@ const RECOVER_PAUSES_MS = [1_000, 3_000];
  * in place; the engine's nets and the tablebase and explorer caches are
  * in the data folder). The Settings page needs these to draw the Vault
  * card that puts the vault back, and Home needs the settings to tell a
- * vault that refuses from a server that is gone.
+ * vault that refuses from a server that is gone. One settings route does
+ * touch it all: the wipe, which deletes the half vault and `.restore`
+ * with it, the folders set aside included, and leaves an empty vault
+ * with no journal. It is let through as before, behind its own
+ * confirmation.
  */
 function answersWhileStuck(method: string, path: string): boolean {
   if (path === '/api/storage/restore' || path.startsWith('/api/storage/restore/')) return true;
