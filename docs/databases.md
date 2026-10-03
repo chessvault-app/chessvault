@@ -73,11 +73,14 @@ set peaked with the new file and SQLite's VACUUM temp at 2.62 GB each,
 beside the old database and the download. The new database is written to
 a temp file and renamed over the old one, so the trainer keeps serving
 the old one until then and picks the new one up with no restart. The card
-shows the same progress the first build does; a failure leaves nothing of
-the new file behind, says why on the card in a sentence of its own (a
-download that could not start or was cut off, a dump that cannot be
-read, a full disk, running out of memory), survives a reload and offers
-**Try again**.
+shows the same progress the first build does; a failure says why on the
+card in a sentence of its own (a download that could not start or was
+cut off, a dump that cannot be read, a full disk, running out of memory,
+a build that was stopped), survives a reload, offers **Try again** and
+leaves nothing of the new file behind. The one exception is a database
+that was built and could not be renamed over the old one: it stays
+beside it whole, the card says so, and the server's next start swaps it
+in.
 
 `npm run build:puzzles` does the same from a terminal. A dump you put in
 `data/` as `lichess_db_puzzle.csv.zst` is built from and left alone;
