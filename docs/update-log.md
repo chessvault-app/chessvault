@@ -54,8 +54,10 @@ goes through only once that program lets go.
   asks first, then writes again every save from the first that held them,
   leaving them out (and the history's own folder, which such a wipe saved
   too), keeps every version of every document, and deletes the old copies.
-  A copy downloaded before keeps them, so the question and the line after
-  it name the secrets the history holds and what closes each: the app
+  Should those copies not be deletable yet, the card says that trying
+  again deletes them, as the server's next start also does. A copy
+  downloaded before keeps them, so the question and the line after it
+  name the secrets the history holds and what closes each: the app
   password or 2FA secret in use is changed in the same card, an old
   password wherever it is still used, and every Lichess token in it is
   deleted at Lichess, whose page the line links, since replacing a token
