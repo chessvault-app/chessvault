@@ -116,9 +116,11 @@ goes through only once that program lets go.
   opened by its address says it could not be opened and why, where a
   puzzle stood on its placeholder for good, and so does a book opened
   from a shelf drawn before, which said only “could not open” and a
-  status, in English on a Korean screen too. A study or a game that will
-  not open for any other reason, such as a document since deleted, now
-  says so in Korean on a Korean screen, where it said it in English.
+  status, in English on a Korean screen too. Insights says it beside
+  Retry, in place of “The report could not be loaded.”, which it keeps
+  for a server that does not answer. A study or a game that will not
+  open for any other reason, such as a document since deleted, now says
+  so in Korean on a Korean screen, where it said it in English.
   The change history records nothing either until the vault is put back:
   it had saved the half vault, and the put-back then saved every document
   set aside again, a duplicate version of each every time. Home, which
