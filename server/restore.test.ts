@@ -313,7 +313,11 @@ const vaultWith = (...parts: Buffer[]): Buffer =>
 
 // --- tests ---------------------------------------------------------------
 
-describe('restore from a copy', () => {
+// Each test unpacks a copy, swaps folders and runs the history's git
+// processes. Alone the slowest took 1.9 s and the two that timed out
+// 264 and 511 ms; with the whole suite on a busy machine those two took
+// 5.2 s each and failed vitest's five seconds.
+describe('restore from a copy', { timeout: 30_000 }, () => {
   it('puts back every file the copy holds, byte for byte, and leaves the credentials where they are', async () => {
     const source = scratch('source');
     fillSource(source.vault);
