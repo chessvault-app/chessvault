@@ -120,10 +120,9 @@ goes through only once that program lets go.
   good, and so does a book opened from a shelf drawn before, which said
   only “could not open” and a status, in English on a Korean screen too.
   Insights says it beside Retry, and keeps “The report could not be
-  loaded.” for a server that does not answer. A study or
-  a game that will not open for any other reason, such as a document
-  since deleted, now says so in Korean on a Korean screen, where it said
-  it in English.
+  loaded.” for a failure that gives no reason. A study or a game that
+  will not open for any other reason, such as a document since deleted,
+  now says so in Korean on a Korean screen, where it said it in English.
   The change history records nothing either until the vault is put back:
   it had saved the half vault, and the put-back then saved every document
   set aside again, a duplicate version of each every time. Home, which
