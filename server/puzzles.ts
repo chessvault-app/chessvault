@@ -975,7 +975,11 @@ export function puzzlesApi(
   api.get('/puzzles/meta', (c) => {
     const db = puzzleDb();
     const user = readState();
-    if (!db) return c.json({ ready: false as const, user: publicState(user) });
+    // Whether a dump is in place, which decides what the first build or
+    // a rebuild would do: said here as well as in the build's status, so
+    // the setup screen and Settings, which wait for this answer, start on
+    // the right words rather than correcting them a poll later.
+    if (!db) return c.json({ ready: false as const, user: publicState(user), dumpInPlace: dumpInPlace() });
     const meta = Object.fromEntries(
       (db.prepare('SELECT key, value FROM meta').all() as { key: string; value: string }[]).map(
         (r) => [r.key, r.value],
@@ -992,6 +996,7 @@ export function puzzlesApi(
       // When this file was built, which is how old its puzzles are: the
       // one thing to know before rebuilding it (Settings, Puzzle database).
       builtAt: meta.built_at ?? null,
+      dumpInPlace: dumpInPlace(),
       themes: themeCounts(db),
       failed: pool.length,
       // What the ladder says: how many are due now, and when the next

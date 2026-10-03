@@ -909,6 +909,10 @@ export const ko: Record<string, string> = {
   'Puzzles you get wrong come back here.': '틀린 퍼즐은 여기로 돌아옵니다.',
   'The trainer runs on the Lichess puzzle database, 6.1 million puzzles, free to use. The app fetches and builds it: about 300 MB to download, around 2.5 GB once built.':
     '트레이너는 Lichess 퍼즐 데이터베이스를 사용합니다. 자유롭게 쓸 수 있는 610만 개의 퍼즐입니다. 앱이 대신 내려받아 만듭니다. 내려받기는 약 300MB, 다 만들면 약 2.5GB를 씁니다.',
+  'The trainer runs on the Lichess puzzle database. The app builds it from the puzzle dump already in its folder: nothing to download, over 5 GB of free disk while it builds, around 2.5 GB once built.':
+    '트레이너는 Lichess 퍼즐 데이터베이스를 사용합니다. 앱이 데이터베이스 폴더에 이미 있는 퍼즐 덤프로 만듭니다. 내려받을 것은 없고, 만드는 동안 디스크 여유 공간이 5GB 넘게 필요하며, 다 만들면 약 2.5GB를 씁니다.',
+  'Build it from the puzzle dump in its folder to start training.':
+    '데이터베이스 폴더에 있는 퍼즐 덤프로 만들면 훈련을 시작할 수 있습니다.',
   'Download and build': '내려받아 만들기',
   'Downloading the puzzle dump': '퍼즐 덤프를 내려받는 중',
   'Building the database': '데이터베이스를 만드는 중',
@@ -923,6 +927,8 @@ export const ko: Record<string, string> = {
   'Puzzle database': '퍼즐 데이터베이스',
   'The Lichess puzzles the trainer draws from. Rebuild it to get the ones added since.':
     '트레이너가 문제를 내는 Lichess 퍼즐입니다. 다시 만들면 그 뒤에 추가된 퍼즐까지 받습니다.',
+  'The Lichess puzzles the trainer draws from. Rebuild it from the puzzle dump in its folder, or from a download of the ones added since.':
+    '트레이너가 문제를 내는 Lichess 퍼즐입니다. 데이터베이스 폴더에 있는 퍼즐 덤프로 다시 만들거나, 그 뒤에 추가된 퍼즐까지 내려받아 다시 만들 수 있습니다.',
   'Lichess puzzles': 'Lichess 퍼즐',
   'Not built yet': '아직 만들지 않음',
   'built {when}': '{when} 만듦',
@@ -930,9 +936,17 @@ export const ko: Record<string, string> = {
   'Rebuild the puzzle database from the latest Lichess puzzles': '최신 Lichess 퍼즐로 퍼즐 데이터베이스 다시 만들기',
   'Rebuild the puzzle database from the latest Lichess puzzles? It downloads about 300 MB and needs about 5.5 GB of free disk while it builds, and can run out of memory on a small server. The current one keeps working until the new one is ready, and your attempts are kept.':
     '최신 Lichess 퍼즐로 퍼즐 데이터베이스를 다시 만들까요? 약 300MB를 내려받고 만드는 동안 디스크 여유 공간이 약 5.5GB 필요하며, 메모리가 작은 서버에서는 메모리가 모자랄 수 있습니다. 새 데이터베이스가 준비될 때까지 지금 것을 계속 쓰고, 시도 기록은 그대로 남습니다.',
-  'Rebuild the puzzle database from the puzzle dump in its folder': '데이터베이스 폴더에 있는 퍼즐 덤프로 퍼즐 데이터베이스 다시 만들기',
-  'Rebuild the puzzle database from the puzzle dump already in its folder? It downloads nothing and needs over 5 GB of free disk while it builds, and can run out of memory on a small server. The current one keeps working until the new one is ready, and your attempts are kept.':
-    '데이터베이스 폴더에 이미 있는 퍼즐 덤프로 퍼즐 데이터베이스를 다시 만들까요? 아무것도 내려받지 않고, 만드는 동안 디스크 여유 공간이 5GB 넘게 필요하며, 메모리가 작은 서버에서는 메모리가 모자랄 수 있습니다. 새 데이터베이스가 준비될 때까지 지금 것을 계속 쓰고, 시도 기록은 그대로 남습니다.',
+  'Rebuild the puzzle database from the puzzle dump in its folder or from a download':
+    '데이터베이스 폴더에 있는 퍼즐 덤프나 새로 내려받은 퍼즐로 퍼즐 데이터베이스 다시 만들기',
+  'Rebuild the puzzle database? It needs over 5 GB of free disk while it builds, and can run out of memory on a small server. The current one keeps working until the new one is ready, and your attempts are kept.':
+    '퍼즐 데이터베이스를 다시 만들까요? 만드는 동안 디스크 여유 공간이 5GB 넘게 필요하며, 메모리가 작은 서버에서는 메모리가 모자랄 수 있습니다. 새 데이터베이스가 준비될 때까지 지금 것을 계속 쓰고, 시도 기록은 그대로 남습니다.',
+  'Build the puzzle database? It needs over 5 GB of free disk while it builds and around 2.5 GB once built, and can run out of memory on a small server.':
+    '퍼즐 데이터베이스를 만들까요? 만드는 동안 디스크 여유 공간이 5GB 넘게, 다 만든 뒤에는 약 2.5GB가 필요하며, 메모리가 작은 서버에서는 메모리가 모자랄 수 있습니다.',
+  'From the puzzle dump in its folder': '데이터베이스 폴더에 있는 퍼즐 덤프로',
+  'Downloads nothing, and the file stays.': '아무것도 내려받지 않고, 파일도 그대로 둡니다.',
+  'Download the newest puzzles': '최신 퍼즐 내려받기',
+  'Downloads about 300 MB. The file in the folder is deleted once the new database is built.':
+    '약 300MB를 내려받습니다. 폴더에 있던 파일은 새 데이터베이스를 다 만들면 삭제됩니다.',
   Theme: '테마',
   Played: '플레이 횟수',
   'Finding a puzzle…': '퍼즐을 찾는 중…',

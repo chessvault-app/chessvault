@@ -1,19 +1,25 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Download, Puzzle, RefreshCw, RotateCcw, TriangleAlert } from 'lucide-react';
+import { Download, Hammer, Puzzle, RefreshCw, RotateCcw, TriangleAlert } from 'lucide-react';
 import { Skeleton } from '@/components/skeletons';
-import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/confirm-dialog';
 import { SETTINGS_LIST, SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
-import { PuzzleBuildProgress, SETUP_BLURB, usePuzzleBuild } from '@/puzzles/PuzzleDbSetup';
+import {
+  PuzzleBuildButton,
+  PuzzleBuildProgress,
+  SETUP_BLURB,
+  SETUP_BLURB_DUMP,
+  usePuzzleBuild,
+} from '@/puzzles/PuzzleDbSetup';
 import { api } from '@/lib/api';
 import { formatAgo } from '@/lib/dates';
 import { t } from '@/lib/i18n';
 
-/** What /api/puzzles/meta says about the file itself. */
+/** What /api/puzzles/meta says about the file itself, and about a dump
+    in place beside it. */
 interface Installed {
   ready: boolean;
   puzzles?: number;
   builtAt?: string | null;
+  dumpInPlace?: boolean;
 }
 
 /**
@@ -44,7 +50,9 @@ export function PuzzleDatabaseCard() {
   const [db, setDb] = useState<Installed | 'unknown' | null>(null);
   const read = useCallback(() => {
     void api<Installed>('/api/puzzles/meta')
-      .then((m) => setDb({ ready: m.ready, puzzles: m.puzzles, builtAt: m.builtAt ?? null }))
+      .then((m) =>
+        setDb({ ready: m.ready, puzzles: m.puzzles, builtAt: m.builtAt ?? null, dumpInPlace: m.dumpInPlace === true }),
+      )
       .catch(() => setDb('unknown'));
   }, []);
   useEffect(() => read(), [read]);
@@ -57,6 +65,9 @@ export function PuzzleDatabaseCard() {
   // one starts, and a failed rebuild is one whose old file is still in use.
   const error = running ? null : (failed ?? status?.error ?? null);
   const installed = db !== null && db !== 'unknown' ? db : null;
+  // The build's status follows the folder from its first poll on; until
+  // then, what the meta said, which the figures wait for anyway.
+  const dumpInPlace = status?.dumpInPlace ?? installed?.dumpInPlace ?? false;
 
   // How many, and how old: the age is what a rebuild is for. An em dash
   // for a read that failed, as Storage used draws an area it could not
@@ -74,10 +85,14 @@ export function PuzzleDatabaseCard() {
       <p className="text-muted-foreground text-sm leading-relaxed">
         {/* With no database yet, the Puzzles page's own words, which carry
             the sizes the first build costs; the rebuild's are in its
-            question. */}
+            question. A dump in place changes both: the first build reads
+            it and downloads nothing, and a rebuild can read it or fetch
+            the newest past it. */}
         {installed && !installed.ready
-          ? t(SETUP_BLURB)
-          : t('The Lichess puzzles the trainer draws from. Rebuild it to get the ones added since.')}
+          ? t(dumpInPlace ? SETUP_BLURB_DUMP : SETUP_BLURB)
+          : dumpInPlace
+            ? t('The Lichess puzzles the trainer draws from. Rebuild it from the puzzle dump in its folder, or from a download of the ones added since.')
+            : t('The Lichess puzzles the trainer draws from. Rebuild it to get the ones added since.')}
       </p>
       <div className={SETTINGS_LIST}>
         <div className="flex items-center gap-2 py-(--row-py-dense) pl-3 pr-1.5">
@@ -99,42 +114,54 @@ export function PuzzleDatabaseCard() {
           {error ? (
             // Straight to the build: the question was asked before the
             // attempt that failed, and the reason is on the line below.
-            <Button variant="ghost" size="sm" className="shrink-0" onClick={() => void start()} disabled={starting}>
-              <RotateCcw className="glyph" data-icon="inline-start" />
-              {t('Try again')}
-            </Button>
+            // Unless a dump is in place, where the question is also the
+            // way past it: a retry of the same file would fail the same
+            // way, so it asks again, on the download if that is what
+            // failed.
+            <PuzzleBuildButton
+              label="Try again"
+              icon={RotateCcw}
+              className="shrink-0"
+              installed={installed?.ready === true}
+              dumpInPlace={dumpInPlace}
+              preferDownload={status?.source === 'download'}
+              disabled={starting}
+              onStart={(download) => void start(download)}
+            />
           ) : installed && !installed.ready ? (
-            // No database to replace, so no question: the same offer the
-            // Puzzles page makes, with the same sizes in the line above.
-            <Button variant="ghost" size="sm" className="shrink-0" onClick={() => void start()} disabled={starting || running}>
-              <Download className="glyph" data-icon="inline-start" />
-              {t('Download and build')}
-            </Button>
+            // No database to replace: the same offer the Puzzles page
+            // makes, with the same sizes in the line above, and the same
+            // question where a dump is in place.
+            <PuzzleBuildButton
+              label={dumpInPlace ? 'Build' : 'Download and build'}
+              icon={dumpInPlace ? Hammer : Download}
+              className="shrink-0"
+              installed={false}
+              dumpInPlace={dumpInPlace}
+              disabled={starting || running}
+              onStart={(download) => void start(download)}
+            />
           ) : (
-            // What the build will do. A dump somebody put beside the
-            // database is built from instead of the latest set, and nothing
-            // is downloaded, where the question said 300 MB all the same.
-            // The disk is the measured peak of a full rebuild (docs/
+            // What the build will do, asked first. A dump somebody put
+            // beside the database is one answer and the newest set the
+            // other, where the question said 300 MB all the same. The
+            // disk is the measured peak of a full rebuild (docs/
             // databases.md): the new file and VACUUM's temp at 2.62 GB
             // each, 5.24 GB, and the 304 MB download on top makes 5.5.
-            <ConfirmDialog
-              icon={RefreshCw}
-              tone="default"
+            <PuzzleBuildButton
               label="Rebuild"
-              triggerTitle={
-                status?.dumpInPlace
-                  ? 'Rebuild the puzzle database from the puzzle dump in its folder'
+              icon={RefreshCw}
+              title={
+                dumpInPlace
+                  ? 'Rebuild the puzzle database from the puzzle dump in its folder or from a download'
                   : 'Rebuild the puzzle database from the latest Lichess puzzles'
               }
-              triggerClassName="shrink-0"
+              className="shrink-0"
+              installed
+              dumpInPlace={dumpInPlace}
+              ask
               disabled={db === null || starting || running}
-              question={
-                status?.dumpInPlace
-                  ? 'Rebuild the puzzle database from the puzzle dump already in its folder? It downloads nothing and needs over 5 GB of free disk while it builds, and can run out of memory on a small server. The current one keeps working until the new one is ready, and your attempts are kept.'
-                  : 'Rebuild the puzzle database from the latest Lichess puzzles? It downloads about 300 MB and needs about 5.5 GB of free disk while it builds, and can run out of memory on a small server. The current one keeps working until the new one is ready, and your attempts are kept.'
-              }
-              confirmLabel="Rebuild"
-              onConfirm={() => void start()}
+              onStart={(download) => void start(download)}
             />
           )}
         </div>

@@ -164,6 +164,9 @@ export function ThemesPage() {
   // The server has no puzzle database to count: the zeros are true, and
   // the page says what to do about them rather than printing them.
   const [ready, setReady] = useState(true);
+  // And whether its first build would read a dump in place, which
+  // downloads nothing.
+  const [dumpInPlace, setDumpInPlace] = useState(false);
 
   // What this device reserves while the answer is in the air — read once;
   // the wait it stands through cannot change it. Storage a browser has
@@ -183,13 +186,14 @@ export function ThemesPage() {
   const load = useCallback(() => {
     setError(null);
     setThemes(null);
-    void api<{ ready?: boolean; themes?: ThemeCount[]; puzzles?: number; failed?: number }>(
+    void api<{ ready?: boolean; themes?: ThemeCount[]; puzzles?: number; failed?: number; dumpInPlace?: boolean }>(
       '/api/puzzles/meta',
     )
       .then((d) => {
         const list = d.themes ?? [];
         setThemes(list);
         setReady(d.ready !== false);
+        setDumpInPlace(d.dumpInPlace === true);
         setTotal(d.puzzles ?? 0);
         setFailed(d.failed ?? 0);
         // Remembered for the next visit's reservation, above. Query
@@ -338,7 +342,11 @@ export function ThemesPage() {
           <EmptyState ground
             icon={Database}
             title="No puzzle database yet"
-            body="Download and build it to start training."
+            body={
+              dumpInPlace
+                ? 'Build it from the puzzle dump in its folder to start training.'
+                : 'Download and build it to start training.'
+            }
             action={
               <Button variant="default" size="sm" onClick={() => navigate('puzzles')}>
                 {t('Set up')}

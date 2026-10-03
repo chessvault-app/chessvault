@@ -779,12 +779,19 @@ describe('puzzles api (rebuilding a working database)', () => {
   it('says whether the next build would download, for the Rebuild question', async () => {
     const dumpInPlace = async (): Promise<unknown> =>
       ((await (await app.request('/api/puzzles/build')).json()) as { dumpInPlace?: unknown }).dumpInPlace;
+    // The meta says it too, with or without a database, for the pages
+    // that wait on it before they draw a word.
+    const metaSays = async (): Promise<unknown> =>
+      ((await (await app.request('/api/puzzles/meta')).json()) as { dumpInPlace?: unknown }).dumpInPlace;
     expect(await dumpInPlace()).toBe(false);
+    expect(await metaSays()).toBe(false);
     writeFileSync(dump, dumpOf([{ id: 'a0', rating: 1500 }]));
     expect(await dumpInPlace()).toBe(true);
+    expect(await metaSays()).toBe(true);
     // And still after a build from it, which keeps it.
     expect((await build()).error ?? null).toBeNull();
     expect(await dumpInPlace()).toBe(true);
+    expect(await metaSays()).toBe(true);
   }, 60_000);
 
   it('says it is building, never downloading, while it builds from a dump in place', async () => {
