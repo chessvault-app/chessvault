@@ -458,7 +458,13 @@ const RECOVER_PAUSES_MS = [1_000, 3_000];
  * in place; the engine's nets and the tablebase and explorer caches are
  * in the data folder). The Settings page needs these to draw the Vault
  * card that puts the vault back, and Home needs the settings to tell a
- * vault that refuses from a server that is gone. One settings route does
+ * vault that refuses from a server that is gone. The opening names are
+ * among them (server/openings.ts): the catalogue, one position's name and
+ * a batch of them read the vendored lines that ship with the app and the
+ * index compiled from them into the data folder, and nothing in the
+ * vault, so refusing them only took the names off the Board, the Editor
+ * and the repertoire trainer, with no word why. The opening map's routes
+ * are not: its tree is in the vault. One settings route does
  * touch it all: the wipe, which deletes the half vault and `.restore`
  * with it, the folders set aside included, and leaves an empty vault
  * with no journal. It is let through as before, behind its own
@@ -467,7 +473,7 @@ const RECOVER_PAUSES_MS = [1_000, 3_000];
 function answersWhileStuck(method: string, path: string): boolean {
   if (path === '/api/storage/restore' || path.startsWith('/api/storage/restore/')) return true;
   if (path === '/api/storage') return method === 'GET';
-  return ['/api/settings', '/api/engine', '/api/tablebase', '/api/explorer'].some(
+  return ['/api/settings', '/api/engine', '/api/tablebase', '/api/explorer', '/api/openings', '/api/opening'].some(
     (prefix) => path === prefix || path.startsWith(`${prefix}/`),
   );
 }

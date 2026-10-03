@@ -244,11 +244,15 @@ const vaultBackup = startVaultBackup().catch((error: Error) => {
 });
 
 /**
- * Reading that safety net back out. NOT in mountVault: the demo shares
- * that list and has neither git nor node:child_process, so it answers 404
- * here and the recovery UI shows its unavailable state. Handed the writer
- * twice over: a restore commits the state it overwrites first, and taking
- * old secrets out of the history holds the autosaves off while it runs.
+ * Reading that safety net back out. NOT in mountVault, because each side
+ * mounts it over its own answers. Here they come from the history repo,
+ * and the writer is handed in twice over: a restore commits the state it
+ * overwrites first, and taking old secrets out of the history holds the
+ * autosaves off while it runs. The static demo has no git, so it mounts
+ * the same routes over a record of the visitor's own writes
+ * (web/src/demo/server.ts, nodeShim/history.ts), and hands in no purge:
+ * there `GET /api/history/purge` answers `{ available: false }` and the
+ * `POST` refuses with a 409.
  */
 app.route(
   '/api',

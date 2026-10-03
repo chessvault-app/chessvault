@@ -53,6 +53,7 @@ import {
 } from './data';
 import { PuzzleList } from './PuzzleList';
 import { PuzzleEntry } from './PuzzleEntry';
+import { BookRefused } from './BookRefused';
 
 // ---------------------------------------------------------------------------
 // Book page: numbered grid coloured by result, entry flow
@@ -163,6 +164,9 @@ export function BookPage({ slug }: { slug: string }) {
   const detailPending = useSlowLoad(book === null) || (book !== null && !gridReady);
   const [adding, setAdding] = useState(false);
   const [missing, setMissing] = useState(false);
+  /** The server's sentence when it refused the book for a reason it names
+      (./BookRefused); a book missing without one is not on the shelf. */
+  const [refusal, setRefusal] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const importJob = useImportJob();
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -204,11 +208,13 @@ export function BookPage({ slug }: { slug: string }) {
   const load = useCallback(async () => {
     // Landed once the page has stopped moving (lib/router): the grid this
     // sets off is the heaviest commit the page has.
-    const detail = await afterRouteSettled(loadBook(slug, true));
+    const detail = await afterRouteSettled(loadBook(slug, true, setRefusal));
     if (!detail) {
       setMissing(true);
       return;
     }
+    setRefusal(null);
+    setMissing(false);
     setBook(detail);
   }, [slug]);
   useEffect(() => void load(), [load]);
@@ -250,6 +256,7 @@ export function BookPage({ slug }: { slug: string }) {
     void load();
   };
 
+  if (missing && refusal !== null) return <BookRefused reason={refusal} />;
   if (missing) {
     return (
       <div className="optical-center h-full">

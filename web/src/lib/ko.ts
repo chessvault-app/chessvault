@@ -298,7 +298,6 @@ export const ko: Record<string, string> = {
   'Nothing in the vault is named this': '보관함에 이 이름을 가진 항목이 없습니다',
   'More than one document is named this': '이 이름을 가진 문서가 둘 이상입니다',
   'Untitled note': '제목 없는 노트',
-  'could not open “{id}”': '“{id}”을(를) 열 수 없습니다',
 
   // --- the error boundary --------------------------------------------------
   'Something went wrong': '문제가 발생했습니다',
@@ -925,6 +924,7 @@ export const ko: Record<string, string> = {
     '아직 퍼즐 데이터베이스가 없습니다. 퍼즐 페이지에서 만들 수 있습니다.',
   // --- Settings, the puzzle database ---------------------------------------
   'Puzzle database': '퍼즐 데이터베이스',
+  'The Lichess puzzles the trainer draws from.': '트레이너가 문제를 내는 Lichess 퍼즐입니다.',
   'The Lichess puzzles the trainer draws from. Rebuild it to get the ones added since.':
     '트레이너가 문제를 내는 Lichess 퍼즐입니다. 다시 만들면 그 뒤에 추가된 퍼즐까지 받습니다.',
   'The Lichess puzzles the trainer draws from. Rebuild it from the puzzle dump in its folder, or from a download of the ones added since.':
@@ -2371,6 +2371,7 @@ export const ko: Record<string, string> = {
   'It may have been removed. The shelf has what is there.': '제거되었을 수 있습니다. 목록에서 남아 있는 책을 확인하세요.',
   'The PDF could not be opened': 'PDF를 열 수 없습니다',
   'That puzzle book is not on the shelf': '목록에 없는 퍼즐 책입니다',
+  'The puzzle book could not be opened': '퍼즐 책을 열 수 없습니다',
   'Back to Puzzle books': '퍼즐 책 목록으로',
   'That puzzle is not in this book': '이 책에 없는 퍼즐입니다',
   'The book may have been imported again since. Its list has what is there.':
@@ -2378,6 +2379,7 @@ export const ko: Record<string, string> = {
   'The note could not be opened': '노트를 열 수 없습니다',
   'The study could not be opened': '스터디를 열 수 없습니다',
   'The game could not be opened': '게임을 열 수 없습니다',
+  'The book could not be opened': '책을 열 수 없습니다',
   'Could not open “{id}”.': '“{id}”을(를) 열 수 없습니다.',
   'Storage used': '저장 공간 사용량',
   'What the app keeps on disk. The vault is your documents. The rest is rebuilt or refetched after it is cleared from its own place.':

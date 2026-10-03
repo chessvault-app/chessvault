@@ -55,8 +55,10 @@ then now starts instead of stopping, so the card can still finish it.
   asks first, then writes again every save from the first that held them,
   leaving them out (and the history's own folder, which such a wipe saved
   too), keeps every version of every document, and deletes the old copies.
-  A copy downloaded before keeps them, so the question and the line after
-  it name the secrets the history holds and what closes each: the app
+  Should those copies not be deletable yet, the card says that trying
+  again deletes them, as the server's next start also does. A copy
+  downloaded before keeps them, so the question and the line after it
+  name the secrets the history holds and what closes each: the app
   password or 2FA secret in use is changed in the same card, an old
   password wherever it is still used, and every Lichess token in it is
   deleted at Lichess, whose page the line links, since replacing a token
@@ -118,17 +120,28 @@ then now starts instead of stopping, so the card can still finish it.
   vault's own notes stayed set aside. Until the vault is put back,
   everything that would read or write it is refused with “The vault is
   still part way through a restore. Put it back under Settings, Vault.”,
-  which a page shows wherever it shows an error, and nothing is written.
+  and nothing is written. A page that cannot show what it was opened for
+  shows that sentence in its place. A study, a note, a game, a book, a
+  puzzle book or one of its puzzles opened by its address says it could
+  not be opened and why, where a puzzle stood on its placeholder for
+  good, and so does a book opened from a shelf drawn before, which said
+  only “could not open” and a status, in English on a Korean screen too.
+  Insights says it beside Retry, and keeps “The report could not be
+  loaded.” for a failure that gives no reason. A study or a game that
+  the server will not open for any other reason, such as a document
+  since deleted, now says so in Korean on a Korean screen, where it said
+  it in English.
   The change history records nothing either until the vault is put back:
   it had saved the half vault, and the put-back then saved every document
   set aside again, a duplicate version of each every time. Home, which
   drew what it could still read with no word of the restore, now says
   “Could not read the vault” with that sentence and “Open Settings”, which
-  goes to the Vault card. In Settings the Puzzle database and Browsed
-  games cards say it too, and the first offers no build or rebuild until
-  then. Settings itself, signing in and the Vault card's put-back still
-  answer, and so does “Wipe all data”, which deletes the folders set
-  aside with the rest.
+  goes to the Vault card. In Settings the Puzzle database, Browsed games
+  and Deleted documents cards say it too, and the first neither offers
+  nor mentions a build or rebuild until then. Settings itself, signing
+  in, the opening names on the Board, the Editor and the repertoire
+  trainer, and the Vault card's put-back still answer, and so does “Wipe
+  all data”, which deletes the folders set aside with the rest.
 - **A list that did not load says why, and is not drawn as an empty
   one.** The Studies shelf and the Games page's collection said “Vault
   server unreachable” whenever their list failed, even when the server had

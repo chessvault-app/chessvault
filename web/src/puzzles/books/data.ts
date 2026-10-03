@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 
 import { parseFen } from 'chessops/fen';
 
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, apiRefusal } from '@/lib/api';
 import { cycleAttempt, reviewDueAt, type CycleWindow } from '@shared/review';
 
 export type { CycleWindow };
@@ -317,7 +317,10 @@ export function forgetBook(slug?: string): void {
  * puzzles has to stay instant, and the goal is to keep this weight off the
  * path that merely OPENS a book, not to trade one wait for a hundred.
  */
-export async function loadSolutions(slug: string): Promise<Record<string, PuzzleSolution>> {
+export async function loadSolutions(
+  slug: string,
+  onRefused?: (sentence: string) => void,
+): Promise<Record<string, PuzzleSolution>> {
   const hit = solutionCache.get(slug);
   if (hit) return hit;
   try {
@@ -337,12 +340,28 @@ export async function loadSolutions(slug: string): Promise<Record<string, Puzzle
     }
     solutionCache.set(slug, solutions);
     return solutions;
-  } catch {
+  } catch (e) {
+    reportRefusal(e, onRefused);
     return {};
   }
 }
 
-export async function loadBook(slug: string, force = false): Promise<BookDetail | null> {
+/**
+ * Hands a caller that asked for it the server's sentence, where it refused
+ * for a reason it names. A vault part way through a restore refuses every
+ * book until it is put back (server/restore.ts), and the pages took that
+ * for no such book or puzzle, or stood on their placeholder for good.
+ */
+function reportRefusal(e: unknown, onRefused?: (sentence: string) => void): void {
+  const sentence = apiRefusal(e);
+  if (sentence !== null) onRefused?.(sentence);
+}
+
+export async function loadBook(
+  slug: string,
+  force = false,
+  onRefused?: (sentence: string) => void,
+): Promise<BookDetail | null> {
   if (!force) {
     const hit = bookCache.get(slug);
     if (hit) return hit;
@@ -354,8 +373,10 @@ export async function loadBook(slug: string, force = false): Promise<BookDetail 
     // A thrown fetch used to escape every caller and pin the view on its
     // skeleton with nothing to say. Offline (status 0), the cached copy
     // (even a force-refresh wanted fresher) beats both that and an error;
-    // the server actually refusing stays "no such book".
+    // the server actually refusing stays "no such book", unless it named
+    // its reason, which a caller that asks is told.
     if (e instanceof ApiError && e.status === 0) return bookCache.get(slug) ?? null;
+    reportRefusal(e, onRefused);
     return null;
   }
   // A success with no body is not a book; only a real one may be cached.

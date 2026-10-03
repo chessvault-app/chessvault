@@ -54,17 +54,22 @@ import {
 } from './data';
 import { useWideLayout } from '@/lib/media';
 import { SourceCrop, SourcePane, SolutionsView, hasSolutions } from './evidence';
+import { BookRefused } from './BookRefused';
 import { useElementWidth } from '@/hooks/use-element-width';
 import { TitleTip } from '@/components/title-tip';
 
 /** Load the puzzle, then reuse the standard entry flow to replace it. */
 export function PuzzleCorrector({ slug, puzzleId }: { slug: string; puzzleId: string }) {
   const [book, setBook] = useState<BookDetail | null>(null);
+  /** The server's sentence when it refused the book for a reason it
+      names (./BookRefused); without it this stood on its placeholder. */
+  const [refusal, setRefusal] = useState<string | null>(null);
   useEffect(() => {
-    void loadBook(slug).then(setBook);
+    void loadBook(slug, false, setRefusal).then(setBook);
   }, [slug]);
   const puzzle = book?.puzzles.find((p) => p.id === puzzleId);
   const pending = useSlowLoad(!book);
+  if (!book && refusal !== null) return <BookRefused reason={refusal} />;
   if (!book) {
     // The correction screen is a board beside its panel, like the trainer
     // it corrects; the wait takes that shape rather than a spinner.
