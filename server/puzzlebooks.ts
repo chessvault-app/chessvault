@@ -251,6 +251,9 @@ export function puzzleBooksApi(
   dir: string = BOOKS_DIR,
   libraryDir?: string,
   hooks: { onImported?: (slug: string) => void; onSolved?: () => void } = {},
+  /** `partWay`: the vault is part way through a restore (server/mountVault.ts),
+      so the startup pass below waits for the next start. */
+  options: { partWay?: boolean } = {},
 ): Hono {
   const bookDir = (slug: string): string => resolve(dir, slug);
   /**
@@ -441,7 +444,7 @@ export function puzzleBooksApi(
    * a folder that will not move is left exactly as it was and tried again
    * next time.
    */
-  if (existsSync(dir)) {
+  if (!options.partWay && existsSync(dir)) {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       if (!entry.isDirectory() || isLibraryBookId(entry.name)) continue;
       const path = resolve(bookDir(entry.name), 'book.json');

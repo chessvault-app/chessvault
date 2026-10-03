@@ -16,10 +16,11 @@ import { recordActivity } from './activity.ts';
 import { crossSiteGuard, isRawBodyPath } from './crossSite.ts';
 import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
 import { mountVault } from './mountVault.ts';
+import { openVault } from './openVault.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
 import { sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 import { migrateLegacyRefgames, refgamesBuildRunning, seedBundledRefgames, sweepUnfinishedBuilds } from './refgames.ts';
-import { recoverInterruptedRestore, restoreApi, stuckGuard } from './restore.ts';
+import { restoreApi, stuckGuard } from './restore.ts';
 import { settingsApi } from './settings.ts';
 import { storageApi } from './storage.ts';
 import { engineNetsApi } from './engineNets.ts';
@@ -27,8 +28,7 @@ import { backupApi } from './backup.ts';
 import { proberFor, tablebaseApi } from './tablebase.ts';
 import { startVaultBackup } from './vaultBackup.ts';
 import { vaultHistoryApi } from './vaultHistory.ts';
-import { seedWelcomeDocs } from './welcome.ts';
-import { ALLOWED_HOSTS, APP_VERSION, BIND, DATA, LOOPBACK_ONLY, REPO_ROOT, VAULT, VAULT_CONFIG, VAULT_SKELETON, UPDATES } from './paths.ts';
+import { ALLOWED_HOSTS, APP_VERSION, BIND, DATA, LOOPBACK_ONLY, REPO_ROOT, VAULT_CONFIG, UPDATES } from './paths.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -70,18 +70,14 @@ setDefaultAutoSelectFamilyAttemptTimeout(2_000);
  */
 
 
-// Before anything reads the vault or creates a folder in it: a restore the
-// server was killed in the middle of is put back (see server/restore.ts),
-// and a skeleton folder made first would stand where one of its renames
-// has to go back to.
-recoverInterruptedRestore();
-
-// Opening an empty folder as a vault must Just Work: create the skeleton
-// up front so every listing endpoint finds its directory. The wipe and the
-// restore put back the same list (server/paths.ts).
-for (const d of [...VAULT_SKELETON.map((name) => resolve(VAULT, name)), DATA]) {
-  mkdirSync(d, { recursive: true });
-}
+// The vault first: a restore cut off part way put back, its folders made,
+// the welcome seeded (server/openVault.ts). A put-back that fails leaves
+// it part way, and the server starts anyway, guarded: every step below
+// that would write into the vault is told, and leaves it alone. The data
+// folder is outside the vault, or inside it as a dot-folder a restore
+// never moves.
+const { partWay } = openVault();
+mkdirSync(DATA, { recursive: true });
 
 // The starter reference games that ship with the app, copied in the
 // first time this data directory is used — so the explorer, the
@@ -98,9 +94,6 @@ migrateLegacyRefgames();
 sweepUnfinishedBuilds();
 sweepUnfinishedPuzzleBuild();
 seedBundledRefgames();
-// A fresh vault opens with a welcome study and note — onboarding as
-// content, seeded once and never resurrected (see welcome.ts).
-seedWelcomeDocs();
 // A config still holding the app password verbatim is rewritten to its
 // scrypt form before the server answers anything (see auth.ts) — the same
 // rewrite a successful login performs, done here so the plaintext does
@@ -237,7 +230,7 @@ app.use('/api/*', stuckGuard());
 // Everything that reads or writes the vault. Shared with the static demo,
 // which mounts the same list over an in-memory filesystem — see
 // server/mountVault.ts for why that list is not written twice any more.
-mountVault(app, { tablebase: () => proberFor(VAULT_CONFIG) });
+mountVault(app, { tablebase: () => proberFor(VAULT_CONFIG), partWay });
 
 /**
  * The safety net, started here so recovery can force a commit before it
@@ -278,14 +271,19 @@ app.route('/api', tablebaseApi());
 // days are counted differently.
 app.route(
   '/api',
-  puzzleBooksApi(undefined, undefined, {
-    onImported: (slug) => {
-      recordActivity('book', { id: slug });
+  puzzleBooksApi(
+    undefined,
+    undefined,
+    {
+      onImported: (slug) => {
+        recordActivity('book', { id: slug });
+      },
+      onSolved: () => {
+        recordActivity('puzzle');
+      },
     },
-    onSolved: () => {
-      recordActivity('puzzle');
-    },
-  }),
+    { partWay },
+  ),
 );
 app.route(
   '/api',

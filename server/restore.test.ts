@@ -22,6 +22,9 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 import { requireAuth } from './auth.ts';
 import { backupApi } from './backup.ts';
+import { mountVault } from './mountVault.ts';
+import { openVault } from './openVault.ts';
+import { puzzleBooksApi } from './puzzlebooks.ts';
 import { recoverInterruptedRestore, restoreApi, stuckGuard, type RestoreOptions } from './restore.ts';
 import { studiesApi } from './studies.ts';
 import { startVaultBackup, type VaultBackup } from './vaultBackup.ts';
@@ -808,6 +811,111 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
       close();
     }
     expect(everything(target.vault)).toEqual(before);
+  });
+
+  it('starts guarded on a restore it cannot put back yet, makes nothing in the vault, and the card puts it back after', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    // A profile, so the games' startup heal would read their folder, and
+    // no welcome marker yet, so a start that seeded one would show.
+    put(target.vault, 'config.json', '{"appPassword":"target-secret","profile":{"lichess":"me"}}\n');
+    put(target.vault, 'games/collection/a.pgn', '[White "me"]\n[Black "you"]\n\n1. e4 *\n');
+    put(target.vault, 'puzzlebooks/Old shelf/book.json', '{"title":"Old shelf"}\n');
+    rmSync(join(target.vault, '.welcomed'));
+    const first = await startVaultBackup(target.vault, 50);
+    await first.stop();
+    const inHistory = (args: string[]): string =>
+      execFileSync('git', ['--git-dir', join(target.vault, '.history.git'), ...args], { encoding: 'utf-8' });
+    const head = inHistory(['rev-parse', 'HEAD']).trim();
+    const before = everything(target.vault);
+
+    // Cut off part way with the vault's games/ and notes/ set aside, and
+    // its history, as a restore taking a copy's history leaves it.
+    const id = 'c0ffee02';
+    mkdirSync(join(target.vault, '.restore', id, 'out'), { recursive: true });
+    mkdirSync(join(target.vault, '.restore', id, 'bin'));
+    const moves = [
+      { from: 'games', to: join('.restore', id, 'out', 'games') },
+      { from: 'notes', to: join('.restore', id, 'out', 'notes') },
+      { from: '.history.git', to: join('.restore', id, 'bin', '.history.git') },
+    ];
+    const journal = join(target.vault, '.restore', 'journal.json');
+    writeFileSync(journal, JSON.stringify({ moves }));
+    for (const move of moves) renameSync(join(target.vault, move.from), join(target.vault, move.to));
+    const written = readFileSync(journal, 'utf-8');
+    const stuck = everything(target.vault);
+
+    // The start, every rename refused as a file another program holds
+    // refuses it on Windows. It comes up part way instead of throwing,
+    // with the journal as it was, and builds what the server builds.
+    const refused = (): void => {
+      throw Object.assign(new Error('EPERM: operation not permitted, rename'), { code: 'EPERM' });
+    };
+    expect(openVault(target.vault, { move: refused })).toEqual({ partWay: true });
+    expect(readFileSync(journal, 'utf-8')).toBe(written);
+    const backup = await startVaultBackup(target.vault, 50);
+    backups.push(backup);
+    const data = join(target.parent, 'data');
+    const app = new Hono();
+    app.use('/api/*', requireAuth(() => null, join(target.vault, 'sessions.json')));
+    app.use('/api/*', stuckGuard(target.vault));
+    mountVault(app, {
+      vault: target.vault,
+      studies: join(target.vault, 'studies'),
+      notes: join(target.vault, 'notes'),
+      games: join(target.vault, 'games'),
+      sources: join(target.vault, 'sources'),
+      repertoireState: join(target.vault, 'repertoire'),
+      puzzlesState: join(target.vault, 'puzzles'),
+      books: join(target.vault, 'books'),
+      puzzleBooks: join(target.vault, 'puzzlebooks'),
+      puzzlesDb: join(data, 'puzzles.sqlite'),
+      // In memory: the put-back tells the index to forget its files, which
+      // opens it, and a database file would stay held past the test.
+      myGamesDb: ':memory:',
+      myGamesAnalysisDb: join(data, 'mygames-analysis.sqlite'),
+      searchIndex: join(data, 'search-index.json'),
+      partWay: true,
+    });
+    app.route('/api', puzzleBooksApi(join(target.vault, 'puzzlebooks'), join(target.vault, 'books'), {}, { partWay: true }));
+    app.route('/api', restoreApi(target.vault, { history: async () => backup, free: async () => null }));
+
+    // None of it made a folder or wrote a file: not the skeleton, not the
+    // welcome, not a route's own folder, not the shelf's renaming pass,
+    // and no history repo where the vault's own has to go back to.
+    await backup.commitNow();
+    expect(everything(target.vault)).toEqual(stuck);
+    expect(existsSync(join(target.vault, '.history.git'))).toBe(false);
+
+    // Every page that reads the vault says where to put it back, and the
+    // card's own question says it is stuck.
+    for (const path of ['/api/notes', '/api/studies', '/api/games', '/api/puzzlebooks']) {
+      const res = await app.request(path);
+      expect(res.status, path).toBe(503);
+      expect(await res.json()).toEqual({
+        error: 'The vault is still part way through a restore. Put it back under Settings, Vault.',
+        reason: 'stuck',
+      });
+    }
+    expect(await (await app.request('/api/storage/restore')).json()).toMatchObject({ stuck: true, pending: null });
+
+    // Once whatever held the files lets go, the card's put-back brings
+    // every folder home, the history included, with nothing new in it.
+    expect((await app.request('/api/storage/restore/recover', { method: 'POST' })).status).toBe(200);
+    expect(everything(target.vault)).toEqual(before);
+    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+    expect(inHistory(['rev-parse', 'HEAD']).trim()).toBe(head);
+    const listed = (await (await app.request('/api/notes')).json()) as { studies: { id: string }[] };
+    expect(listed.studies.map((s) => s.id)).toEqual(['Gone']);
+    // And the history, opened now, records what is saved after it.
+    const note = await app.request('/api/notes', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name: 'After' }),
+    });
+    expect(note.status).toBe(200);
+    await backup.commitNow();
+    expect(inHistory(['log', '--format=%H', `${head}..HEAD`, '--', 'notes/After.md']).trim()).not.toBe('');
   });
 
   it('leaves nothing of a restore that stuck once it is put back, the copy it unpacked included', async () => {

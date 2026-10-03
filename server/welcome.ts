@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { VAULT, VAULT_NOTES, VAULT_STUDIES } from './paths.ts';
+import { VAULT } from './paths.ts';
 
 /**
  * Onboarding as content: a fresh vault opens with one study and one note
@@ -19,7 +19,7 @@ import { VAULT, VAULT_NOTES, VAULT_STUDIES } from './paths.ts';
  * the marker and no seed: its owner needs no welcome.
  */
 
-const MARKER = resolve(VAULT, '.welcomed');
+const MARKER = '.welcomed';
 
 const hasDocs = (dir: string, ext: string): boolean => {
   try {
@@ -73,13 +73,16 @@ Notes are plain markdown with live boards anywhere in the text. This one is an o
 Delete this note whenever you like. It will not come back.
 `;
 
-export function seedWelcomeDocs(): void {
-  if (existsSync(MARKER)) return;
-  const fresh = !hasDocs(VAULT_STUDIES, '.pgn') && !hasDocs(VAULT_NOTES, '.md');
+export function seedWelcomeDocs(vault: string = VAULT): void {
+  const marker = resolve(vault, MARKER);
+  const studies = resolve(vault, 'studies');
+  const notes = resolve(vault, 'notes');
+  if (existsSync(marker)) return;
+  const fresh = !hasDocs(studies, '.pgn') && !hasDocs(notes, '.md');
   if (fresh) {
     try {
-      writeFileSync(resolve(VAULT_STUDIES, 'Welcome to Chess Vault.pgn'), WELCOME_STUDY);
-      writeFileSync(resolve(VAULT_NOTES, 'Welcome.md'), WELCOME_NOTE);
+      writeFileSync(resolve(studies, 'Welcome to Chess Vault.pgn'), WELCOME_STUDY);
+      writeFileSync(resolve(notes, 'Welcome.md'), WELCOME_NOTE);
     } catch {
       // A vault that cannot be written will fail louder on first real use;
       // the welcome is not the place to crash the server from.
@@ -88,5 +91,5 @@ export function seedWelcomeDocs(): void {
   }
   // Written for lived-in vaults too: their owners need no welcome, and the
   // marker records the decision so nothing re-asks it.
-  writeFileSync(MARKER, `${JSON.stringify({ seeded: fresh, at: new Date().toISOString() })}\n`);
+  writeFileSync(marker, `${JSON.stringify({ seeded: fresh, at: new Date().toISOString() })}\n`);
 }

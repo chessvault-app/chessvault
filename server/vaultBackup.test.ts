@@ -183,29 +183,44 @@ describe('vault backup', () => {
     }
   });
 
-  it('makes no first save at startup while a restore stands part way, and lets a restore\'s own saves through', async () => {
+  /**
+   * A start whose put-back failed comes up with the journal standing
+   * (server/restore.ts), and the vault's own history may be one of the
+   * folders set aside. A repo made then stood where that one has to go
+   * back to, and the put-back, which skips a rename whose source is there
+   * again, would have left the vault's history in `.restore`.
+   */
+  it('makes no repo and no first save at startup while a restore stands part way, and opens it once the vault is put back', async () => {
     dir = mkdtempSync(join(tmpdir(), 'vault-backup-'));
     writeFileSync(join(dir, 'note.md'), 'first\n');
-    // One that cannot be read, which the startup put-back leaves in place.
+    // One the startup put-back could not finish, or cannot read: both stay.
     const journal = stuckJournal(dir, 'not a journal');
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     try {
       backup = await startVaultBackup(dir, 50);
+      await backup.commitNow();
     } finally {
       warn.mockRestore();
     }
-    expect(saves(dir)).toBe(0);
+    expect(existsSync(join(dir, '.history.git'))).toBe(false);
+    // Nor does a save forced through exclusive() make one; no route
+    // commits while the journal stands, and this one is refused.
+    await expect(backup.exclusive((commit) => commit('too soon'))).rejects.toThrow(/part way through a restore/);
+    expect(existsSync(join(dir, '.history.git'))).toBe(false);
+
+    // Put back: the first save opens the repo and records the vault.
+    rmSync(journal);
+    await backup.commitNow();
+    expect(saves(dir)).toBe(1);
 
     // A restore records the vault on each side of its swap through
     // exclusive(), outside the journal's lifetime; nothing holds those.
-    await backup.exclusive((commit) => commit("a restore's own save"));
-    expect(log(dir)).toEqual(["a restore's own save"]);
-    expect(tracked(dir)).not.toContain('journal.json');
-
-    rmSync(journal);
+    stuckJournal(dir, 'not a journal');
     writeFileSync(join(dir, 'note.md'), 'second\n');
-    await backup.commitNow();
+    await backup.exclusive((commit) => commit("a restore's own save"));
+    expect(log(dir)[0]).toBe("a restore's own save");
     expect(saves(dir)).toBe(2);
+    expect(tracked(dir)).not.toContain('journal.json');
   });
 
   /**

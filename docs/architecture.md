@@ -121,11 +121,11 @@ flowchart LR
   (`server/engineNets.ts`): the net server sends no CORS headers, and
   the page is cross-origin isolated. Sets COOP/COEP so the
   browser Stockfish can use threads. `CHESS_VAULT_DIR` / `CHESS_VAULT_DATA`
-  override the vault/data locations; the server creates the vault
-  skeleton on boot, so pointing it at an empty folder works. The skeleton
-  is one list (`VAULT_SKELETON`, `server/paths.ts`), and the wipe and a
-  restore leave the vault in that shape too, since no route makes its
-  own folder again.
+  override the vault/data locations; the server creates the vault skeleton
+  on boot (not while a restore stands part way, below), so pointing it at
+  an empty folder works. The skeleton is one list (`VAULT_SKELETON`,
+  `server/paths.ts`), and the wipe and a restore leave the vault in that
+  shape too, since no route makes its own folder again.
 - **Web app** (`web/`, React + Vite + Tailwind v4 + shadcn/ui + zustand,
   with the React Compiler memoising every component it will take;
   `web/vite.compiler.ts` wires it and, under `CHESS_COMPILER_LOG=1`,
@@ -289,7 +289,21 @@ Where putting them back fails too, the journal stands until the same
 put-back (`finishInterruptedSwap`) runs again: from the Vault card's “Put
 the vault back” (`POST /api/storage/restore/recover`, under the history's
 `exclusive()` and the same busy guard, tried again after 1 s and 3 s), or
-at the next start. Until then a restore, an undo and a keep are refused,
+at the next start. A start whose put-back fails does not stop: `openVault`
+(`server/openVault.ts`) reports the vault part way, the server comes up
+guarded by the journal, and nothing the start does writes among what the
+restore moves: no skeleton, no welcome seed, no folder a route makes when
+it is built (`partWay`, through `mountVault`), no heal of the kept games
+or renaming pass over the puzzle shelf, and no history repo, which the
+writer makes, repairs and opens at its first save after the put-back. A
+folder made then would stand where a set-aside one has to go back to, and
+the put-back, which skips a rename whose source is there again, would
+leave the vault's own in `.restore`. It used to throw instead, which was
+no safer, since the journal guards either way, and left a desktop app with
+no server to press the button on. What still stops a start is a journal
+that cannot be looked for (`lstat` refusing), which the guards would read
+as none. Until the vault is put back, a restore, an undo and a keep are
+refused,
 since a second swap would write its journal over this one and an undo
 would delete what the first had put back; and every other API route
 answers 503 with a sentence saying where to put the vault back

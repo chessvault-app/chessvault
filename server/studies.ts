@@ -289,8 +289,11 @@ export function studiesApi(
   base = 'studies',
   ext = '.pgn',
   hooks: StudiesHooks = {},
+  /** `partWay`: the vault is part way through a restore (server/mountVault.ts),
+      so the folder is not made here; it may be one a put-back has to move home. */
+  options: { partWay?: boolean } = {},
 ): Hono {
-  mkdirSync(dir, { recursive: true });
+  if (!options.partWay) mkdirSync(dir, { recursive: true });
   const api = new Hono();
   const pathOf = (id: string): string => resolve(dir, `${id}${ext}`);
 

@@ -65,6 +65,12 @@ export interface VaultRoutes {
   /** How the endgame drill reaches a tablebase, or nothing: the demo
       has no source to offer and its drill says so. */
   tablebase?: () => TablebaseProbe | null;
+  /** The vault is part way through a restore that the start could not
+      put back (server/openVault.ts): the routes are built without making
+      a folder or rewriting a file, since a folder made now would stand
+      where one set aside has to go back to. stuckGuard refuses them all
+      until the vault is put back. */
+  partWay?: boolean;
 }
 
 export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
@@ -73,6 +79,7 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   const games = paths.games ?? VAULT_GAMES;
   const repertoire = paths.repertoireState ?? resolve(VAULT, 'repertoire');
   const vault = paths.vault ?? VAULT;
+  const atStart = { partWay: paths.partWay ?? false };
 
   /**
    * What this vault did, day by day, for the home page's grid.
@@ -122,12 +129,12 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   // histories beside it. Here rather than at the call sites because the
   // grid it feeds is on the home page, which both deployments have.
   app.route('/api', activityApi(vault));
-  app.route('/api', studiesApi(studies, 'studies', '.pgn', follow('study')));
+  app.route('/api', studiesApi(studies, 'studies', '.pgn', follow('study'), atStart));
   // The games collection speaks the same document API as studies: an
   // annotated game is a one-chapter study living in games/collection/.
-  app.route('/api', studiesApi(resolve(games, 'collection'), 'games/docs', '.pgn', follow('game')));
+  app.route('/api', studiesApi(resolve(games, 'collection'), 'games/docs', '.pgn', follow('game'), atStart));
   // Notes: the same document API over markdown files.
-  app.route('/api', studiesApi(notes, 'notes', '.md', follow('note')));
+  app.route('/api', studiesApi(notes, 'notes', '.md', follow('note'), atStart));
   // What points AT a document, derived by reading the notes — the only
   // documents that can hold a [[link]] — and resolving each one.
   app.route('/api', linksApi(notes, studies, resolve(games, 'collection')));
@@ -151,9 +158,14 @@ export function mountVault(app: Hono, paths: VaultRoutes = {}): void {
   // reads the profile from THIS vault, not the module-default one.
   app.route(
     '/api',
-    gamesApi(games, resolve(games, '..', 'config.json'), (n) => {
-      recordActivity('game', { n }, vault);
-    }),
+    gamesApi(
+      games,
+      resolve(games, '..', 'config.json'),
+      (n) => {
+        recordActivity('game', { n }, vault);
+      },
+      atStart,
+    ),
   );
   // The vault's own games, explorable under filters. Not a book: see
   // server/myGames.ts for why they are indexed rather than compiled.

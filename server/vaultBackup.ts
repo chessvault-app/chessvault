@@ -141,48 +141,74 @@ export async function prepareHistoryRepo(gitDir: string, dir: string): Promise<v
 /**
  * Start watching `dir` and auto-committing its changes. Returns handles
  * for shutdown and tests; resolves after the repo exists and the current
- * state is committed, so the safety net has no startup gap.
+ * state is committed, so the safety net has no startup gap. Unless a
+ * restore stands part way: then it resolves with neither, and both
+ * happen at the first save after the vault is put back (see `open`).
  */
 export async function startVaultBackup(
   dir: string = VAULT,
   debounceMs: number = DEBOUNCE_MS,
 ): Promise<VaultBackup> {
   const gitDir = historyGitDir(dir);
+  const journal = restoreJournalPath(dir);
 
   // Before ANY git command touches it: a history repo that came with the
   // folder rather than from this server is not run. See unsafeHistoryRepo.
-  const unsafe = existsSync(gitDir) ? unsafeHistoryRepo(gitDir) : null;
-  if (unsafe !== null) {
-    throw new Error(
-      `refusing to use ${HISTORY_DIR_NAME} in this vault: ${unsafe}. ` +
-        `A history repo that did not come from this app can run code when the app commits. ` +
-        `Move or delete ${HISTORY_DIR_NAME} to get the safety net back.`,
-    );
-  }
+  const refuseUnsafe = (): void => {
+    const unsafe = existsSync(gitDir) ? unsafeHistoryRepo(gitDir) : null;
+    if (unsafe !== null) {
+      throw new Error(
+        `refusing to use ${HISTORY_DIR_NAME} in this vault: ${unsafe}. ` +
+          `A history repo that did not come from this app can run code when the app commits. ` +
+          `Move or delete ${HISTORY_DIR_NAME} to get the safety net back.`,
+      );
+    }
+  };
+  refuseUnsafe();
 
-  if (!existsSync(gitDir)) {
-    mkdirSync(dir, { recursive: true });
-    // Plain init (no --work-tree: `git init --bare` refuses the flag).
-    await new Promise<void>((resolvePromise, reject) => {
-      execFile('git', ['init', '--quiet', '--bare', gitDir], (error, _out, stderr) => {
-        if (error) reject(new Error(stderr.trim() || error.message));
-        else resolvePromise();
+  /**
+   * The repo made when there is none, a purge cut off finished, and its
+   * settings repaired, before the first save. At the start, unless a
+   * restore stands part way there (its journal, server/restore.ts), as it
+   * does when the start could not put it back: the history may be one of
+   * the folders set aside, and a repo made now would stand where it has to
+   * go back to, so the put-back would leave the vault's own history behind
+   * in `.restore`; or what stands there may be the copy's, which the
+   * put-back moves away again. So it waits, and the first save after the
+   * vault is put back or wiped opens it, asking again whether what stands
+   * there now is safe to run.
+   */
+  let opened = false;
+  const open = async (): Promise<void> => {
+    if (opened) return;
+    if (existsSync(journal)) throw new Error('the vault is part way through a restore; its history opens once it is put back');
+    refuseUnsafe();
+    if (!existsSync(gitDir)) {
+      mkdirSync(dir, { recursive: true });
+      // Plain init (no --work-tree: `git init --bare` refuses the flag).
+      await new Promise<void>((resolvePromise, reject) => {
+        execFile('git', ['init', '--quiet', '--bare', gitDir], (error, _out, stderr) => {
+          if (error) reject(new Error(stderr.trim() || error.message));
+          else resolvePromise();
+        });
       });
+      // A bare git-dir plus --work-tree is only accepted with bare=false.
+      await git(gitDir, dir, ['config', 'core.bare', 'false']);
+    }
+
+    // A purge the server was stopped in the middle of has rewritten the
+    // history and not yet deleted the old saves; finished first, so the
+    // count below is of a history that holds none of them.
+    await finishInterruptedPurge(gitDir, dir).catch((error: Error) => {
+      console.error('[vault-backup] could not finish removing the old secrets:', error.message);
     });
-    // A bare git-dir plus --work-tree is only accepted with bare=false.
-    await git(gitDir, dir, ['config', 'core.bare', 'false']);
-  }
 
-  // A purge the server was stopped in the middle of has rewritten the
-  // history and not yet deleted the old saves; finished first, so the count
-  // below is of a history that holds none of them.
-  await finishInterruptedPurge(gitDir, dir).catch((error: Error) => {
-    console.error('[vault-backup] could not finish removing the old secrets:', error.message);
-  });
-
-  // Run on EVERY startup, not just first init, so a repo created before a
-  // given exclude existed is repaired on the next boot.
-  if (existsSync(gitDir)) await prepareHistoryRepo(gitDir, dir);
+    // Run on EVERY startup, not just first init, so a repo created before a
+    // given exclude existed is repaired on the next boot.
+    if (existsSync(gitDir)) await prepareHistoryRepo(gitDir, dir);
+    opened = true;
+  };
+  if (!existsSync(journal)) await open();
 
   let timer: ReturnType<typeof setTimeout> | null = null;
   let running: Promise<void> = Promise.resolve();
@@ -218,9 +244,12 @@ export async function startVaultBackup(
     await git(gitDir, dir, ['commit', '-q', '-m', message]);
   };
 
-  /** commitAll, with a stale lock repaired and the commit tried once
-      more. Throws what git says otherwise. */
+  /** commitAll, with the repo opened first if the start could not, and a
+      stale lock repaired and the commit tried once more. Throws what git
+      says otherwise, and before a repo that never opened is made while a
+      restore's journal stands (no route commits then anyway). */
   const commitRepairing = async (message: string): Promise<void> => {
+    await open();
     try {
       await commitAll(message);
     } catch (error) {
@@ -238,14 +267,14 @@ export async function startVaultBackup(
    * restore had set aside, the put-back's own save added them again, and
    * each of them gained a duplicate version per episode. So nothing here records while
    * the journal stands: not the watcher's run, not the baseline at startup
-   * (a journal that cannot be read stays in place at boot), not one a
+   * (a journal the start could not put back, or cannot read, stays in
+   * place, and the server starts guarded by it), not one a
    * route forces. Asked when the run starts, not when it was scheduled,
    * since a run queued behind a restore's swap starts after it. The saves a
    * restore makes itself go through exclusive(), before its journal is
    * written and after it is gone, and are not held. Said once per
    * episode, not on every skipped run.
    */
-  const journal = restoreJournalPath(dir);
   let held = false;
 
   const commitNow = (): Promise<void> => {
@@ -319,7 +348,11 @@ export async function startVaultBackup(
     commitNow,
     exclusive,
     leaks: () => historyLeaks(gitDir, dir),
-    purge: () => exclusive(() => purgeHistory(gitDir, dir)),
+    purge: () =>
+      exclusive(async () => {
+        await open();
+        return purgeHistory(gitDir, dir);
+      }),
     stop: () => {
       if (timer) clearTimeout(timer);
       watcher?.close();

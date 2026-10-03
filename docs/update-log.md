@@ -12,7 +12,8 @@ in place and removes old secrets from the history, which 0.12.1 left to a
 shell. While one is stopped, pages say so and the history saves nothing;
 failed builds and lists say why. Untried on a real phone or Mac, in the
 desktop app, or out of memory or disk; a put-back another program blocks
-goes through only once that program lets go.
+goes through only once that program lets go, and a server restarted before
+then now starts instead of stopping, so the card can still finish it.
 
 - **With a puzzle dump in the data folder, the app can still get the
   newest puzzles.** A Lichess dump beside the puzzle database as
@@ -68,27 +69,33 @@ goes through only once that program lets go.
   languages, on vaults with no password or token, with either, with both
   and with 2FA, not yet on a device.
 - **Settings → Vault can finish a restore that stopped part way.** When a
-  restore or its undo failed part way and could not put the vault's
-  folders back either, only a restart of the server finished it, and
-  nothing said so: the card went on offering “Restore from a copy”. A
-  phone, or the desktop app pointed at a server, cannot restart one. The
-  card now says “A restore stopped part way through.” and offers “Put the
-  vault back”, which runs the same put-back as the server's next start,
-  from any device. “Restore from a copy” waits for it, and so does
-  “Download a copy”, which packed the half vault without the folders set
-  aside. Only when the put-back fails too, as it does while another
-  program still holds a file in a folder it has to move, does the card say
-  what else can finish it: quitting and reopening the desktop app, or a
-  restart by whoever runs the server. Tried in a browser at a desktop's
-  and an iPhone's size, in both languages, after a real restore that
-  failed, twice: two other programs each held a file open during the swap,
-  so it could neither finish nor put the folders back. Pressed while they
-  still held them, the card said “Could not put the vault back yet. Every
-  folder is still on the server.” and moved nothing; pressed after they
-  let go, every file came back byte for byte as it was before the restore.
-  A restart, like the button, goes through only once the file is let go:
-  started while one was still held, a server run from this release
-  stopped at once, and started after, it put the vault back.
+  restore or its undo failed part way and could not put the vault's folders
+  back either, only a restart of the server finished it, and nothing said
+  so: the card went on offering “Restore from a copy”. A phone, or the
+  desktop app pointed at a server, cannot restart one. The card now says “A
+  restore stopped part way through.” and offers “Put the vault back”, which
+  runs the same put-back as the server's next start, from any device.
+  “Restore from a copy” waits for it, and so does “Download a copy”, which
+  packed the half vault without the folders set aside. Only when the
+  put-back fails too, as it does while another program still holds a file
+  in a folder it has to move, does the card say what finishes it: closing
+  that program, such as a sync client, an editor or a terminal in a vault
+  folder, and pressing again, and failing that, quitting and reopening the
+  desktop app, or a restart by whoever runs the server. A restart, like the
+  button, goes through only once the file is let go, but it no longer stops
+  the server: one that cannot put the vault back as it starts comes up
+  anyway, every page that reads the vault says it is part way through a
+  restore, the card offers “Put the vault back”, and nothing the restore
+  moved is touched until it is put back. Tried in a browser at a desktop's and an iPhone's
+  size, in both languages, after a real restore that failed, twice: two
+  other programs each held a file open during the swap, so it could neither
+  finish nor put the folders back. Pressed while they still held them, the
+  card said “Could not put the vault back yet. Every folder is still on the
+  server.” and moved nothing; pressed after they let go, every file came
+  back byte for byte as it was before the restore. Restarted while they
+  still held them, a server run from this release came up in 2 s with its
+  pages and card as above and the vault as the restore had left it, where
+  before this change it stopped in 2 s.
 - **Putting back a stopped restore keeps only what it could not move
   home.** A put-back, at the server's next start or now from the Vault
   card, kept the whole copy the restore had unpacked in the vault's

@@ -2570,9 +2570,10 @@ export const ko: Record<string, string> = {
   'Put the vault back': '보관함 되돌려 놓기',
   'Put the vault back first': '먼저 보관함을 되돌려 놓으세요',
   'The vault is back. Reloading…': '보관함을 되돌려 놓았습니다. 다시 불러옵니다…',
-  'Quit and reopen the app to finish putting it back.': '앱을 종료했다가 다시 열면 마저 되돌려 놓습니다.',
-  'Restart the server to finish putting it back, or ask whoever runs it to.':
-    '서버를 다시 시작하면 마저 되돌려 놓습니다. 직접 운영하는 서버가 아니라면 운영하는 사람에게 부탁하세요.',
+  'Close any other program that has the vault’s files open, such as a sync client, an editor or a terminal in a vault folder, and try again. If it still fails, quit and reopen the app.':
+    '동기화 클라이언트나 편집기, 보관함 폴더에서 연 터미널처럼 보관함의 파일을 열어 둔 다른 프로그램을 닫고 다시 시도하세요. 그래도 안 되면 앱을 종료했다가 다시 여세요.',
+  'Close any program on the server that has the vault’s files open, such as a sync client, an editor or a terminal in a vault folder, and try again. If it still fails, restart the server, or ask whoever runs it to.':
+    '동기화 클라이언트나 편집기, 보관함 폴더에서 연 터미널처럼 서버에서 보관함의 파일을 열어 둔 프로그램을 닫고 다시 시도하세요. 그래도 안 되면 서버를 다시 시작하거나, 운영하는 사람에게 부탁하세요.',
   'This deletes the vault as it was before the restore and frees {size}. Its documents can still be brought back from their history; its book PDFs and PGN files cannot.':
     '복원 전의 보관함을 삭제하고 {size}를 비웁니다. 그 문서들은 기록에서 되살릴 수 있지만, 책 PDF와 PGN 파일은 되살릴 수 없습니다.',
   'This deletes the vault as it was before the restore and frees {size}. Nothing of it can be brought back.':
