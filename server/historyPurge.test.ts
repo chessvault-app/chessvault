@@ -154,6 +154,8 @@ describe('removing old secrets from the history', { timeout: 30_000 }, () => {
     const outcome = await backup!.purge();
     expect(outcome.pruned).toBe(true);
     expect(outcome.removed.commits).toBe(5);
+    // Counted without reading the secrets, which nothing after a purge uses.
+    expect(outcome.removed).not.toHaveProperty('secrets');
 
     // The same saves, each with its own author, committer, dates, message,
     // parents and every other file.

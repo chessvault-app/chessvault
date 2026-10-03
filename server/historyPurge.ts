@@ -94,12 +94,16 @@ export interface HeldSecrets {
   token: HeldSecret;
 }
 
+/** The count alone, without which secrets: what the start's warning and a
+    purge go by (see historyCount). */
+export type HistoryCount = Omit<HistoryLeaks, 'secrets'>;
+
 /** What a purge did. */
 export interface PurgeOutcome {
   /** Saves written again: every one from the first that held them. */
   rewritten: number;
   /** What the history held before. */
-  removed: HistoryLeaks;
+  removed: HistoryCount;
   /** Whether the old saves are gone from git's store too. False leaves
       the marker, and the next start (or the next purge) deletes them. */
   pruned: boolean;
@@ -157,7 +161,7 @@ async function writers(
 /** A count: what the client is told, and the versions of config.json the
     secrets are read from, which it is not. */
 interface Count {
-  leaks: Omit<HistoryLeaks, 'secrets'>;
+  leaks: HistoryCount;
   configs: string[];
 }
 
@@ -203,20 +207,39 @@ const counted = new Map<string, Promise<Count>>();
 const judged = new Map<string, { count: Promise<Count>; config: string; secrets: Promise<HeldSecrets | null> }>();
 const DIGEST_KEY = randomBytes(32);
 
-/** What the history at `gitDir` holds, as last counted; counted now when
-    `fresh` or when nothing has been. */
+/** The count for `gitDir`, as last taken; taken now when `fresh` or when
+    nothing has been. */
+function countFor(gitDir: string, dir: string, fresh: boolean): Promise<Count> {
+  const key = resolve(gitDir);
+  const known = fresh ? undefined : counted.get(key);
+  if (known) return known;
+  const counting = countLeaks(gitDir, dir);
+  counted.set(key, counting);
+  // A count that failed is not remembered: the next ask tries again.
+  counting.catch(() => {
+    if (counted.get(key) === counting) counted.delete(key);
+  });
+  return counting;
+}
+
+/**
+ * How many saves hold them, without which secrets: all the start's warning
+ * and a purge need. The reading is a `cat-file` of every version of
+ * config.json and an scrypt for each password kept from before the hashing,
+ * which on a generated history of 10,000 saves each writing a different
+ * config.json took 267-284 ms on a Windows desktop, and a purge that did
+ * it took 1.48-1.52 s against 1.20-1.29 s without. So neither does, and
+ * the first ask from Settings reads them.
+ */
+export async function historyCount(gitDir: string, dir: string, { fresh = false } = {}): Promise<HistoryCount> {
+  return (await countFor(gitDir, dir, fresh)).leaks;
+}
+
+/** What the history at `gitDir` holds and which secrets, as last counted;
+    counted now when `fresh` or when nothing has been. */
 export async function historyLeaks(gitDir: string, dir: string, { fresh = false } = {}): Promise<HistoryLeaks> {
   const key = resolve(gitDir);
-  let count = fresh ? undefined : counted.get(key);
-  if (!count) {
-    const counting = countLeaks(gitDir, dir);
-    count = counting;
-    counted.set(key, counting);
-    // A count that failed is not remembered: the next ask tries again.
-    counting.catch(() => {
-      if (counted.get(key) === counting) counted.delete(key);
-    });
-  }
+  const count = countFor(gitDir, dir, fresh);
   const { leaks, configs } = await count;
   // Cut off, the old saves are in git's store but in no save, so nothing
   // here can say what they held.
@@ -509,7 +532,7 @@ async function pruned(gitDir: string, dir: string): Promise<boolean> {
  */
 export async function purgeHistory(gitDir: string, dir: string): Promise<PurgeOutcome> {
   const started = Date.now();
-  const removed = await historyLeaks(gitDir, dir, { fresh: true });
+  const removed = await historyCount(gitDir, dir, { fresh: true });
   if (removed.commits === 0) {
     // Nothing to write again; only what a cut-off purge left to delete.
     const done = !removed.pending || (await pruned(gitDir, dir));
