@@ -79,16 +79,16 @@ then now starts instead of stopping, so the card can still finish it.
   runs the same put-back as the server's next start, from any device.
   “Restore from a copy” waits for it, and so does “Download a copy”, which
   packed the half vault without the folders set aside. Only when the
-  put-back fails too, as it does while another program still holds a file
-  in a folder it has to move, does the card say what finishes it: closing
-  that program, such as a sync client, an editor or a terminal in a vault
-  folder, and pressing again, and failing that, quitting and reopening the
-  desktop app, or a restart by whoever runs the server. A restart, like the
-  button, goes through only once the file is let go, but it no longer stops
-  the server: one that cannot put the vault back as it starts comes up
-  anyway, every page that reads the vault says it is part way through a
-  restore, the card offers “Put the vault back”, and nothing the restore
-  moved is touched until it is put back. Tried in a browser at a desktop's and an iPhone's
+  put-back fails too, as it does while another program still holds a file in
+  a folder it has to move, does the card say what finishes it: closing that
+  program, such as a sync client, an editor or a terminal in a vault folder,
+  and pressing again, and failing that, quitting and reopening the desktop
+  app, or a restart by whoever runs the server. A restart, like the button,
+  goes through only once the file is let go, but it no longer stops the
+  server: one that cannot put the vault back as it starts comes up anyway,
+  every page that reads the vault says it is part way through a restore, the
+  card offers “Put the vault back”, and nothing the restore moved is touched
+  until it is put back. Tried in a browser at a desktop's and an iPhone's
   size, in both languages, after a real restore that failed, twice: two
   other programs each held a file open during the swap, so it could neither
   finish nor put the folders back. Pressed while they still held them, the
@@ -112,36 +112,34 @@ then now starts instead of stopping, so the card can still finish it.
   from this release with each state made by hand: after “Put the vault
   back” .restore was empty, and after the undo's put-back the restored
   vault's notes were still in it.
-- **While a restore is stopped part way, pages say so and leave the
-  vault alone.** A page that read a folder the restore had moved said
-  “Request failed (500)”, and a page that saved something wrote into a
-  vault that was half one and half the other: a note saved then made a
-  new notes folder where the vault's own had to go back to, and the
-  vault's own notes stayed set aside. Until the vault is put back,
-  everything that would read or write it is refused with “The vault is
-  still part way through a restore. Put it back under Settings, Vault.”,
-  and nothing is written. A page that cannot show what it was opened for
-  shows that sentence in its place. A study, a note, a game, a book, a
-  puzzle book or one of its puzzles opened by its address says it could
-  not be opened and why, where a puzzle stood on its placeholder for
-  good, and so does a book opened from a shelf drawn before, which said
-  only “could not open” and a status, in English on a Korean screen too.
-  Insights says it beside Retry, and keeps “The report could not be
-  loaded.” for a failure that gives no reason. A study or a game that
-  the server will not open for any other reason, such as a document
-  since deleted, now says so in Korean on a Korean screen, where it said
-  it in English.
-  The change history records nothing either until the vault is put back:
-  it had saved the half vault, and the put-back then saved every document
-  set aside again, a duplicate version of each every time. Home, which
-  drew what it could still read with no word of the restore, now says
-  “Could not read the vault” with that sentence and “Open Settings”, which
-  goes to the Vault card. In Settings the Puzzle database, Browsed games
-  and Deleted documents cards say it too, and the first neither offers
-  nor mentions a build or rebuild until then. Settings itself, signing
-  in, the opening names on the Board, the Editor and the repertoire
-  trainer, and the Vault card's put-back still answer, and so does “Wipe
-  all data”, which deletes the folders set aside with the rest.
+- **While a restore is stopped part way, pages say so and leave the vault
+  alone.** A page that read a folder the restore had moved said “Request
+  failed (500)”, and a page that saved something wrote into a vault that was
+  half one and half the other: a note saved then made a new notes folder
+  where the vault's own had to go back to, and the vault's own notes stayed
+  set aside. Until the vault is put back, everything that would read or
+  write it is refused with “The vault is still part way through a restore.
+  Put it back under Settings, Vault.”, and nothing is written. A page that
+  cannot show what it was opened for shows that sentence in its place. A
+  study, a note, a game, a book, a puzzle book or one of its puzzles opened
+  by its address says it could not be opened and why, where a puzzle stood
+  on its placeholder for good, and so does a book opened from a shelf drawn
+  before, which said only “could not open” and a status, in English on a
+  Korean screen too. Insights says it beside Retry, and keeps “The report
+  could not be loaded.” for a failure that gives no reason. A study or a
+  game that the server will not open for any other reason, such as a
+  document since deleted, now says so in Korean on a Korean screen, where it
+  said it in English. The change history records nothing either until the
+  vault is put back: it had saved the half vault, and the put-back then
+  saved every document set aside again, a duplicate version of each every
+  time. Home, which drew what it could still read with no word of the
+  restore, now says “Could not read the vault” with that sentence and “Open
+  Settings”, which goes to the Vault card. In Settings the Puzzle database,
+  Browsed games and Deleted documents cards say it too, and the first
+  neither offers nor mentions a build or rebuild until then. Settings
+  itself, signing in, the opening names on the Board, the Editor and the
+  repertoire trainer, and the Vault card's put-back still answer, and so
+  does “Wipe all data”, which deletes the folders set aside with the rest.
 - **A list that did not load says why, and is not drawn as an empty
   one.** The Studies shelf and the Games page's collection said “Vault
   server unreachable” whenever their list failed, even when the server had
