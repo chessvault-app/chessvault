@@ -294,7 +294,15 @@ since a second swap would write its journal over this one and an undo
 would delete what the first had put back; and every other API route,
 but the few that touch nothing a restore moves, answers 503 with a
 sentence saying where to put the vault back (`stuckGuard`), so nothing
-reads the half vault or writes into it. The wipe alone still runs, and
+reads the half vault or writes into it. Nor does the history save it:
+while the journal stands, `commitNow` (which the watcher's timer, the
+first save at startup and a forced save all go through) records nothing
+and logs that once, because its `add -A` saved the half vault as a
+version (measured: the autosave 15 s after a stuck restore deleted the
+seven files set aside, and the put-back's save added them again, a
+duplicate version of each per episode). The saves under `exclusive()`
+are not held; a restore makes them before its journal is written and
+after it is gone. The wipe alone still runs, and
 deletes it all, the folders set aside included. A write was the danger: a note
 saved there made `notes/` again where the vault's own had to go back to,
 and the put-back, which skips a rename whose source is back, left the

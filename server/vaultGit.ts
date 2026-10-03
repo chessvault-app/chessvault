@@ -30,6 +30,16 @@ export const HISTORY_DIR_NAME = '.history.git';
  */
 export const RESTORE_DIR_NAME = '.restore';
 
+/**
+ * The journal a restore's swap writes before its first rename and deletes
+ * after its last (server/restore.ts). While it stands, the vault is part way
+ * through a restore. Here rather than in restore.ts because that file
+ * imports the history writer, which must read this path too.
+ */
+export function restoreJournalPath(vaultDir: string): string {
+  return resolve(vaultDir, RESTORE_DIR_NAME, 'journal.json');
+}
+
 /** The history git-dir for a given vault directory. */
 export function historyGitDir(vaultDir: string): string {
   return resolve(vaultDir, HISTORY_DIR_NAME);

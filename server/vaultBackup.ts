@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync, type
 import { resolve } from 'node:path';
 import { finishInterruptedPurge, forgetHistoryLeaks, historyLeaks, purgeHistory, type HistoryLeaks, type PurgeOutcome } from './historyPurge.ts';
 import { VAULT } from './paths.ts';
-import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME, unsafeHistoryRepo } from './vaultGit.ts';
+import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME, restoreJournalPath, unsafeHistoryRepo } from './vaultGit.ts';
 
 /**
  * Vault safety net: every change inside vault/ is auto-committed to a
@@ -22,7 +22,8 @@ const DEBOUNCE_MS = 15_000;
 export interface VaultBackup {
   /** Debounced; called by the fs watcher, exposed for tests. */
   schedule: () => void;
-  /** Commit now if anything changed. Resolves when the commit is done. */
+  /** Commit now if anything changed, unless a restore stands part way
+      (see startVaultBackup). Resolves when the commit is done. */
   commitNow: () => Promise<void>;
   /**
    * Stop watching, and resolve once the git work already in flight is
@@ -227,9 +228,38 @@ export async function startVaultBackup(
     }
   };
 
+  /**
+   * A restore that stopped part way and could not put itself back leaves
+   * its journal standing (server/restore.ts), and the vault half one vault
+   * and half another until something puts it back. An autosave's `add -A`
+   * there saves the half vault as a version: measured on a running server,
+   * the autosave 15 s after such a restore deleted the seven files the
+   * restore had set aside, the put-back's own save added them again, and
+   * each of them gained a duplicate version per episode. So nothing here records while
+   * the journal stands: not the watcher's run, not the baseline at startup
+   * (a journal that cannot be read stays in place at boot), not one a
+   * route forces. Asked when the run starts, not when it was scheduled,
+   * since a run queued behind a restore's swap starts after it. The saves a
+   * restore makes itself go through exclusive(), before its journal is
+   * written and after it is gone, and are not held. Said once per
+   * episode, not on every skipped run.
+   */
+  const journal = restoreJournalPath(dir);
+  let held = false;
+
   const commitNow = (): Promise<void> => {
     // Serialised: git locks its index, and overlapping runs would just fail.
     running = running.then(async () => {
+      if (existsSync(journal)) {
+        if (!held) {
+          console.warn(
+            '[vault-backup] the vault is part way through a restore; nothing is saved to the history until it is put back',
+          );
+        }
+        held = true;
+        return;
+      }
+      held = false;
       try {
         await commitRepairing(`vault autosave ${new Date().toISOString()}`);
       } catch (error) {

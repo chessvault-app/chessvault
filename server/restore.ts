@@ -10,7 +10,7 @@ import { walk } from './storage.ts';
 import { readTar, TarError, type TarFault } from './tarRead.ts';
 import { prepareHistoryRepo, type VaultBackup } from './vaultBackup.ts';
 import { vaultReplaced } from './vaultEvents.ts';
-import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME } from './vaultGit.ts';
+import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME, restoreJournalPath } from './vaultGit.ts';
 
 /**
  * Putting a copy of the vault back, over the API: "Restore from a copy".
@@ -58,7 +58,9 @@ import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME } from './vaultG
  * next start (recoverInterruptedRestore), and a put-back that failed too
  * is finished from the Vault card ("Put the vault back") or at that next
  * start, both by the same code, so the vault is always one whole vault
- * or the other once it is done. The last rename is what makes a restore
+ * or the other once it is done. Until then the history saves nothing
+ * either: the autosave holds off while the journal stands
+ * (server/vaultBackup.ts). The last rename is what makes a restore
  * pending, `.restore/<id>/out` becoming `.restore/before`, so the state
  * changes at one instant too.
  *
@@ -127,7 +129,7 @@ const SPACE_MARGIN = 64 * 1024 * 1024;
 const SWAP_TRIES = 25;
 
 const workDir = (vault: string): string => resolve(vault, RESTORE_DIR_NAME);
-const journalPath = (vault: string): string => resolve(workDir(vault), 'journal.json');
+const journalPath = restoreJournalPath;
 const beforeDir = (vault: string): string => resolve(workDir(vault), 'before');
 const restoredPath = (vault: string): string => resolve(beforeDir(vault), '.restored.json');
 
