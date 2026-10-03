@@ -27,7 +27,7 @@ import { usePinnedBand } from '@/hooks/use-pinned-band';
 import { JumpColumn, useJumpTargets, type JumpTarget } from '@/components/jump-list';
 import { t } from '@/lib/i18n';
 import { MARKDOWN_TYPE, shareFileName } from '@/lib/share-doc';
-import { api, apiErrorMessage } from '@/lib/api';
+import { api, apiErrorMessage, apiRefusal } from '@/lib/api';
 
 const AUTOSAVE_MS = 1500;
 /** How long after the last edit the pending copy is parked. See the study
@@ -85,8 +85,13 @@ export function NoteView({ id }: { id: string }) {
         setInitialDoc(markdownToDoc(pgn).toJSON() as object);
         if (draft && draftAt) setRecovery({ pgn: draft, at: draftAt });
       })
-      .catch(() => {
-        if (!ctl.signal.aborted) setFailed(t('could not open “{id}”', { id }));
+      .catch((e: unknown) => {
+        if (ctl.signal.aborted) return;
+        // The server's own sentence where it refused for a reason it
+        // names (a vault part way through a restore, server/restore.ts),
+        // which "could not open" alone made read as a note lost; the
+        // study and game pages say the same (store/study).
+        setFailed(apiRefusal(e) ?? t('Could not open “{id}”.', { id }));
       });
     return () => {
       ctl.abort();

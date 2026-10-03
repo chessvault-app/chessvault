@@ -298,7 +298,6 @@ export const ko: Record<string, string> = {
   'Nothing in the vault is named this': '보관함에 이 이름을 가진 항목이 없습니다',
   'More than one document is named this': '이 이름을 가진 문서가 둘 이상입니다',
   'Untitled note': '제목 없는 노트',
-  'could not open “{id}”': '“{id}”을(를) 열 수 없습니다',
 
   // --- the error boundary --------------------------------------------------
   'Something went wrong': '문제가 발생했습니다',
