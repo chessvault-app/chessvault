@@ -1,5 +1,7 @@
+import { createHmac, randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { isHashedPassword, verifyPassword } from './password.ts';
 import { git, gitPipe, HISTORY_DIR_NAME } from './vaultGit.ts';
 
 /**
@@ -63,6 +65,33 @@ export interface HistoryLeaks {
   /** A purge was cut off after the rewrite: the old saves are out of the
       history but still in git's store, so a copy still carries them. */
   pending: boolean;
+  /** Which secrets those saves hold, set against the ones in use now;
+      null where that cannot be told (a purge cut off, whose old saves
+      nothing reaches, or a config.json that is not JSON). Kinds and
+      numbers only, never a value. */
+  secrets: HeldSecrets | null;
+}
+
+/** One kind of secret in the history: what closes the leak depends on
+    whether it is still the one in use. */
+export interface HeldSecret {
+  /** The value in use now is in an earlier save. */
+  current: boolean;
+  /** Values no longer in use, replaced or removed, that earlier saves hold. */
+  past: number;
+}
+
+/** The three secrets config.json holds. sessions.json holds only hashes
+    of session tokens, which give nothing back, so it is not one. */
+export interface HeldSecrets {
+  /** appPassword: an scrypt hash, or in a save older than the hashing
+      (which is every save older than the exclude), the password itself. */
+  password: HeldSecret;
+  /** totpSecret: what the authenticator's codes are made from. */
+  totp: HeldSecret;
+  /** lichessToken: valid at Lichess until deleted there, whatever this
+      vault does with it. */
+  token: HeldSecret;
 }
 
 /** What a purge did. */
@@ -88,8 +117,17 @@ export interface PurgeOutcome {
  * --full-history so a side branch is walked even where a merge matches
  * the other side; --no-renames so a renamed config.json is still a
  * config.json written.
+ *
+ * With `blobsOf`, the same walk also lists the id of every version of that
+ * file it wrote (--raw: one line per file a save changed, ids in full),
+ * which is what the secrets are read from. Ids, not contents.
  */
-async function writers(gitDir: string, dir: string, paths: string[]): Promise<Set<string>> {
+async function writers(
+  gitDir: string,
+  dir: string,
+  paths: string[],
+  blobsOf?: string,
+): Promise<{ commits: Set<string>; blobs: Set<string> }> {
   const out = await git(gitDir, dir, [
     'log',
     '--all',
@@ -97,23 +135,46 @@ async function writers(gitDir: string, dir: string, paths: string[]): Promise<Se
     '--no-renames',
     '--diff-filter=d',
     '--format=%H',
+    ...(blobsOf ? ['--raw', '--no-abbrev'] : []),
     '--',
     ...paths,
   ]).catch(() => ''); // a repo with no commits yet holds nothing
-  return new Set(out.split('\n').filter(Boolean));
+  const commits = new Set<string>();
+  const blobs = new Set<string>();
+  for (const line of out.split('\n').filter(Boolean)) {
+    if (!line.startsWith(':')) {
+      commits.add(line);
+      continue;
+    }
+    // :<old mode> <new mode> <old id> <new id> <status>\t<path>
+    const [fields = '', path] = line.split('\t');
+    const id = fields.split(' ')[3] ?? '';
+    if (path === blobsOf && /^[0-9a-f]+$/.test(id) && !/^0+$/.test(id)) blobs.add(id);
+  }
+  return { commits, blobs };
+}
+
+/** A count: what the client is told, and the versions of config.json the
+    secrets are read from, which it is not. */
+interface Count {
+  leaks: Omit<HistoryLeaks, 'secrets'>;
+  configs: string[];
 }
 
 /** Count afresh. */
-async function countLeaks(gitDir: string, dir: string): Promise<HistoryLeaks> {
+async function countLeaks(gitDir: string, dir: string): Promise<Count> {
   const [credentials, folder] = await Promise.all([
-    writers(gitDir, dir, CREDENTIALS),
+    writers(gitDir, dir, CREDENTIALS, 'config.json'),
     writers(gitDir, dir, [HISTORY_DIR_NAME]),
   ]);
   return {
-    commits: new Set([...credentials, ...folder]).size,
-    credentials: credentials.size,
-    folder: folder.size,
-    pending: existsSync(resolve(gitDir, MARKER)),
+    leaks: {
+      commits: new Set([...credentials.commits, ...folder.commits]).size,
+      credentials: credentials.commits.size,
+      folder: folder.commits.size,
+      pending: existsSync(resolve(gitDir, MARKER)),
+    },
+    configs: [...credentials.blobs],
   };
 }
 
@@ -125,26 +186,148 @@ async function countLeaks(gitDir: string, dir: string): Promise<HistoryLeaks> {
  * it. So it is counted then and remembered, and Settings asks for nothing
  * more than this map holds.
  */
-const counted = new Map<string, Promise<HistoryLeaks>>();
+const counted = new Map<string, Promise<Count>>();
+
+/**
+ * The last reading of which secrets the history holds, per history repo.
+ * It depends on the count and on the secrets in use now, which change
+ * without the history changing (a new password, a token replaced), so it
+ * is kept beside a digest of the secrets it was read against and read
+ * again when either has moved. Of the secrets only, so the trainer's
+ * settings, which config.json also holds and which change often, do not
+ * cost a reading: on a generated history of 3,000 saves each writing a
+ * different config.json, one took about 100 ms on a Windows desktop.
+ * What is kept is the answer and that digest, keyed afresh at each start:
+ * no old value and no current one outlives the reading.
+ */
+const judged = new Map<string, { count: Promise<Count>; config: string; secrets: Promise<HeldSecrets | null> }>();
+const DIGEST_KEY = randomBytes(32);
 
 /** What the history at `gitDir` holds, as last counted; counted now when
     `fresh` or when nothing has been. */
-export function historyLeaks(gitDir: string, dir: string, { fresh = false } = {}): Promise<HistoryLeaks> {
+export async function historyLeaks(gitDir: string, dir: string, { fresh = false } = {}): Promise<HistoryLeaks> {
   const key = resolve(gitDir);
-  const known = fresh ? undefined : counted.get(key);
-  if (known) return known;
-  const count = countLeaks(gitDir, dir);
-  counted.set(key, count);
-  // A count that failed is not remembered: the next ask tries again.
-  count.catch(() => {
-    if (counted.get(key) === count) counted.delete(key);
-  });
-  return count;
+  let count = fresh ? undefined : counted.get(key);
+  if (!count) {
+    const counting = countLeaks(gitDir, dir);
+    count = counting;
+    counted.set(key, counting);
+    // A count that failed is not remembered: the next ask tries again.
+    counting.catch(() => {
+      if (counted.get(key) === counting) counted.delete(key);
+    });
+  }
+  const { leaks, configs } = await count;
+  // Cut off, the old saves are in git's store but in no save, so nothing
+  // here can say what they held.
+  if (leaks.pending) return { ...leaks, secrets: null };
+  const now = secretsInUse(dir);
+  const config = createHmac('sha256', DIGEST_KEY).update(JSON.stringify(now)).digest('hex');
+  let known = judged.get(key);
+  if (!known || known.count !== count || known.config !== config) {
+    const reading = { count, config, secrets: heldSecrets(gitDir, dir, configs, now) };
+    judged.set(key, reading);
+    // Like a count, a reading that failed is not remembered.
+    reading.secrets.catch(() => {
+      if (judged.get(key) === reading) judged.delete(key);
+    });
+    known = reading;
+  }
+  return { ...leaks, secrets: await known.secrets.catch(() => null) };
 }
 
 /** Forget the count for `gitDir`: what the repo holds may have changed. */
 export function forgetHistoryLeaks(gitDir: string): void {
   counted.delete(resolve(gitDir));
+  judged.delete(resolve(gitDir));
+}
+
+// --- Which secrets ------------------------------------------------------------
+
+/** The secrets in use now: none without a config.json, null for one that
+    cannot be read for them. */
+function secretsInUse(dir: string): Secrets | null {
+  let raw: Buffer;
+  try {
+    raw = readFileSync(resolve(dir, 'config.json'));
+  } catch {
+    return { password: null, totp: null, token: null };
+  }
+  return secretsIn(raw);
+}
+
+interface Secrets {
+  password: string | null;
+  totp: string | null;
+  token: string | null;
+}
+
+/** The three secrets in one version of config.json, as the server reads
+    them (settings.ts, auth.ts): trimmed, and absent when blank. Null for a
+    file that is not a JSON object, which cannot be read for them. */
+function secretsIn(raw: Buffer): Secrets | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw.toString('utf-8').replace(/^\uFEFF/, ''));
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  const config = parsed as Record<string, unknown>;
+  const value = (v: unknown): string | null => (typeof v === 'string' && v.trim() !== '' ? v.trim() : null);
+  return { password: value(config.appPassword), totp: value(config.totpSecret), token: value(config.lichessToken) };
+}
+
+/**
+ * Whether an old app password is the one in use. The same text is; so is a
+ * password kept from before the hashing that the hash in use now verifies,
+ * which is how every such vault's password reads once a login has
+ * rewritten it. Two different hashes cannot be told apart without the
+ * password, so a password set again to itself counts as a past one.
+ */
+async function samePassword(old: string, now: string): Promise<boolean> {
+  if (old === now) return true;
+  const oldHashed = isHashedPassword(old);
+  if (oldHashed === isHashedPassword(now)) return false;
+  return oldHashed ? verifyPassword(now, old) : verifyPassword(old, now);
+}
+
+/**
+ * Which secrets the versions of config.json in `configs` hold, against the
+ * ones in use `now`. One `cat-file --batch` for every version; each is
+ * read, compared and let go, and only kinds and numbers come back.
+ */
+async function heldSecrets(gitDir: string, dir: string, configs: string[], now: Secrets | null): Promise<HeldSecrets | null> {
+  if (now === null) return null;
+  const old = new Map<keyof Secrets, Set<string>>([
+    ['password', new Set()],
+    ['totp', new Set()],
+    ['token', new Set()],
+  ]);
+  for (const version of await readObjects(gitDir, dir, configs)) {
+    const held = secretsIn(version);
+    if (held === null) return null;
+    for (const [kind, values] of old) {
+      const value = held[kind];
+      if (value !== null) values.add(value);
+    }
+  }
+  const tally = async (kind: keyof Secrets, same: (old: string, now: string) => boolean | Promise<boolean>): Promise<HeldSecret> => {
+    const inUse = now[kind];
+    let current = false;
+    let past = 0;
+    for (const value of old.get(kind)!) {
+      if (inUse !== null && (await same(value, inUse))) current = true;
+      else past += 1;
+    }
+    return { current, past };
+  };
+  const equal = (a: string, b: string): boolean => a === b;
+  return {
+    password: await tally('password', samePassword),
+    totp: await tally('totp', equal),
+    token: await tally('token', equal),
+  };
 }
 
 // --- Reading objects ----------------------------------------------------------
