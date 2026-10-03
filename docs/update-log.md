@@ -78,10 +78,11 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   Home, whose read of the settings still answered, drew a vault with
   nothing in it and offered to set one up; it now says “Could not read
   the vault” with that sentence and “Open Settings”, which goes to the
-  Vault card. In Settings the Puzzle database card says it too, where it
-  offered Rebuild over a database it could not see and asked the server
-  about the build every second for as long as the page was open.
-  Settings, the Vault card and signing in work as before.
+  Vault card. In Settings the Puzzle database and Browsed games cards say
+  it too: the first offered Rebuild over a database it could not see and
+  asked the server about the build every second for as long as the page
+  was open, and the second held its loading row for good. Settings, the
+  Vault card and signing in work as before.
 - **A list that did not load says why, and is not drawn as an empty
   one.** The Studies shelf and the Games page's collection said “Vault
   server unreachable” whenever their list failed, even when the server had
