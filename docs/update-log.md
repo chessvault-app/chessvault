@@ -88,7 +88,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   server unreachable” whenever their list failed, even when the server had
   answered with its reason, and the shelf said it in English on a Korean
   shelf. Both now show the server's own sentence, translated, and say the
-  server is unreachable only when it did not answer. Under that line
+  server is unreachable only when it did not answer, and so does the
+  explorer, which said the sentence in English on a Korean screen and
+  called a refused list of reference databases unreachable. Under that line
   Notes, Studies, Books and Puzzle books also drew the empty shelf: “0
   notes”, “No notes yet” and a New note button the server would have
   refused as well. A shelf whose list never came back now shows the line
