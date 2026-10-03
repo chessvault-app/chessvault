@@ -335,15 +335,18 @@ const inDesktopApp = (): boolean => 'vaultShell' in window;
  * A restore, or its undo, that stopped part way and could not put itself
  * back (server/restore.ts): what happened, and the button that finishes
  * putting the vault back on the server, from any device. Only when that
- * fails too does the card say what else does it, a restart, in the words
- * of whoever can make one: the desktop app's own server restarts with the
- * app, and any other has somebody who runs it. Nothing while nothing is
- * stuck.
+ * fails too does the card say what finishes it, in the order that works:
+ * whatever else has the vault's files open is closed and the button
+ * pressed again, since a held file refuses a restart's put-back just as
+ * it refuses this one; then a restart, which starts the server guarded
+ * and tries once more. In the words of whoever can do it: the desktop
+ * app's own server restarts with the app, and any other has somebody who
+ * runs it. Nothing while nothing is stuck.
  */
 export function RestoreStuck({ state }: { state: RestoreState | null }) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<Note>(null);
-  /** The put-back failed in a way a restart can still finish. */
+  /** The put-back failed with the journal standing: something still holds a file. */
   const [failed, setFailed] = useState(false);
   if (!state?.stuck) return null;
   /** Put back, with the page about to reload. */
@@ -381,8 +384,8 @@ export function RestoreStuck({ state }: { state: RestoreState | null }) {
       {failed && (
         <p className="text-muted-foreground text-sm">
           {state.sameMachine && inDesktopApp()
-            ? t('Quit and reopen the app to finish putting it back.')
-            : t('Restart the server to finish putting it back, or ask whoever runs it to.')}
+            ? t('Close any other program that has the vault’s files open, such as a sync client, an editor or a terminal in a vault folder, and try again. If it still fails, quit and reopen the app.')
+            : t('Close any program on the server that has the vault’s files open, such as a sync client, an editor or a terminal in a vault folder, and try again. If it still fails, restart the server, or ask whoever runs it to.')}
         </p>
       )}
     </div>
