@@ -182,9 +182,20 @@ export function VaultCard({
             session is a cookie and the browser's own download handles a
             vault of books without holding it in memory. Its size is on
             the button because on a phone that is the decision. */}
-        <Button variant="secondary" render={<a href="/api/storage/backup" download />} nativeButton={false}>
-          {vault ? t('Download a copy ({size})', { size: size(vaultBytes(vault.rows)) }) : t('Download a copy')}
-        </Button>
+        {/* Not while a restore is stuck: the server refuses the copy then
+            (a copy of the half vault would be a backup of nothing anyone
+            had), and a link the browser follows into a refusal fails with
+            no word in the app, so the button says why instead, as Restore
+            beside it does. */}
+        {restore.state?.stuck ? (
+          <Button variant="secondary" disabled title={t('Put the vault back first')}>
+            {vault ? t('Download a copy ({size})', { size: size(vaultBytes(vault.rows)) }) : t('Download a copy')}
+          </Button>
+        ) : (
+          <Button variant="secondary" render={<a href="/api/storage/backup" download />} nativeButton={false}>
+            {vault ? t('Download a copy ({size})', { size: size(vaultBytes(vault.rows)) }) : t('Download a copy')}
+          </Button>
+        )}
         {/* And the copy put back (restore-copy.tsx): an upload, so a phone's
             file picker reaches it as well as a desktop's. */}
         <RestoreButton state={restore.state} reload={restore.reload} />
