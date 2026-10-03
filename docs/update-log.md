@@ -131,6 +131,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   says why. And the Databases page, which stood on its outline with no
   word when the databases could not be read, now says “Could not load
   reference games” with the reason and Try again.
+- **Home's “Vault server unreachable” card goes once the server answers.**
+  Shown again after the server came back, Home drew the vault under the
+  card and kept the card, which says the page fills itself once the server
+  answers, until Retry was pressed. A load that brings the vault back now
+  takes the card away, as it does the one a stopped restore puts there.
+  Checked on the demo at a desktop's size in English and a phone's in
+  Korean, with every request failing and then answered again: 0.12.1 kept
+  the card above the vault it drew, and this release drops it.
 
 ## 0.12.1
 
