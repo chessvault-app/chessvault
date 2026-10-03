@@ -2370,6 +2370,7 @@ export const ko: Record<string, string> = {
   'It may have been removed. The shelf has what is there.': '제거되었을 수 있습니다. 목록에서 남아 있는 책을 확인하세요.',
   'The PDF could not be opened': 'PDF를 열 수 없습니다',
   'That puzzle book is not on the shelf': '목록에 없는 퍼즐 책입니다',
+  'The puzzle book could not be opened': '퍼즐 책을 열 수 없습니다',
   'Back to Puzzle books': '퍼즐 책 목록으로',
   'That puzzle is not in this book': '이 책에 없는 퍼즐입니다',
   'The book may have been imported again since. Its list has what is there.':

@@ -65,6 +65,7 @@ import {
 } from './data';
 import { useWideLayout } from '@/lib/media';
 import { EvidencePeek } from './evidence';
+import { BookRefused } from './BookRefused';
 import { outcomeTone } from '../outcome';
 import { PuzzleGrid } from './PuzzleList';
 import { turnOf } from '@/lib/fen';
@@ -119,6 +120,9 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   // from the solutions request, which is cached per book — so this is one
   // fetch when the first puzzle opens, not one per puzzle.
   const [solutions, setSolutions] = useState<Record<string, PuzzleSolution> | null>(null);
+  /** The server's sentence when it refused the book or its answers for a
+      reason it names (./BookRefused). */
+  const [refusal, setRefusal] = useState<string | null>(null);
   const entry = index >= 0 ? book!.puzzles[index]! : null;
   const answer = entry && solutions ? solutions[entry.id] : undefined;
   // The scan this puzzle came off, for the peek button beside the board.
@@ -139,11 +143,18 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
     // One commit for the two, and not while the page is sliding in
     // (lib/router, afterRouteSettled): the book and its answers landed
     // as two renders of the whole trainer inside the push.
-    void afterRouteSettled(Promise.all([loadBook(slug), loadSolutions(slug)])).then(([b, s]) => {
-      if (!live) return;
-      setBook(b);
-      setSolutions(s);
-    });
+    let refused: string | null = null;
+    const onRefused = (sentence: string): void => {
+      refused = sentence;
+    };
+    void afterRouteSettled(Promise.all([loadBook(slug, false, onRefused), loadSolutions(slug, onRefused)])).then(
+      ([b, s]) => {
+        if (!live) return;
+        setRefusal(refused);
+        setBook(b);
+        setSolutions(s);
+      },
+    );
     return () => {
       live = false;
     };
@@ -394,6 +405,10 @@ export function BookTrainer({ slug, puzzleId }: { slug: string; puzzleId: string
   const pending = useSlowLoad(book === null || !puzzle || !tree || !node || !pos);
 
   if (book === null || !puzzle || !tree || !node || !pos) {
+    // Refused for a reason the server names: the book stood on the
+    // placeholder below for good, or, held from an earlier visit, said
+    // its puzzle was not in it, since the answers were refused too.
+    if (refusal !== null && !puzzle) return <BookRefused reason={refusal} />;
     // A puzzle needs BOTH the book and the solutions, which arrive in two
     // requests — so "no such puzzle" may only be said once both are in.
     // Judging it on `puzzle` alone flashed the message at every puzzle
