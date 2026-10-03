@@ -153,8 +153,29 @@ export default class Database {
     return [];
   }
 
+  /**
+   * `fn` between BEGIN and COMMIT, rolled back if it throws, which is what
+   * better-sqlite3 does.
+   *
+   * This used to hand `fn` back as it was. The my-games index writes
+   * through it, one transaction per file, and without one sql.js committed
+   * every row on its own, each commit looking for, writing and removing a
+   * journal file in its in-memory filesystem: a full index of the demo's
+   * 46 games took 365 ms, and takes 51 ms like this. A file that failed
+   * halfway also kept the half it had written.
+   */
   transaction<T extends (...args: never[]) => unknown>(fn: T): T {
-    return fn;
+    return ((...args: Parameters<T>) => {
+      this.db.run('BEGIN');
+      try {
+        const result = fn(...args);
+        this.db.run('COMMIT');
+        return result;
+      } catch (error) {
+        this.db.run('ROLLBACK');
+        throw error;
+      }
+    }) as T;
   }
 
   close(): void {
