@@ -1590,6 +1590,7 @@ export const ko: Record<string, string> = {
   'Vault server unreachable': '보관함 서버에 연결할 수 없습니다',
   'Nothing could be read from the vault. The page fills itself once the server answers.':
     '보관함에서 아무것도 읽을 수 없습니다. 서버가 응답하면 페이지가 다시 채워집니다.',
+  'Could not read the vault': '보관함을 읽지 못했습니다',
   'Vault server unreachable, changes not saved': '보관함 서버에 연결할 수 없어 변경이 저장되지 않았습니다',
   'Searching…': '검색 중…',
   Continue: '계속',
