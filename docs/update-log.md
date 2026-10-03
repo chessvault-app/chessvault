@@ -5,6 +5,23 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **Settings → Vault can finish a restore that stopped part way.** When a
+  restore or its undo failed part way and could not put the vault's
+  folders back either, only a restart of the server finished it, and
+  nothing said so: the card went on offering “Restore from a copy” and
+  pages that read a moved folder failed. A phone, or the desktop app
+  pointed at a server, cannot restart one. The card now says “A restore
+  stopped part way through.” and offers “Put the vault back”, which runs
+  the same put-back as the server's next start, from any device; “Restore
+  from a copy” waits for it. Only when something still holds one of the
+  folders does the card say what else finishes it: quitting and reopening
+  the desktop app, or a restart by whoever runs the server. Tried in a
+  browser at a desktop's and an iPhone's size, in both languages, on a
+  vault stopped part way by hand; not yet after a real restore that
+  failed.
+
 ## 0.12.1
 
 Settings → Vault can put a downloaded copy of the vault back, keeping the
