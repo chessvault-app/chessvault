@@ -6,6 +6,7 @@ import { dirname, resolve } from 'node:path';
 import { renameRetrying, writeAtomic } from './atomic.ts';
 import { DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD, PUZZLE_DUMP_PLACED, REPO_ROOT, VAULT } from './paths.ts';
 import { reviewDueAt, type ReviewAttempt } from '../shared/review.ts';
+import type { PuzzleBuildFailure, PuzzleDumpSource } from '../shared/puzzleBuild.ts';
 
 /**
  * Puzzle trainer backed by the local Lichess dump (data/puzzles.sqlite,
@@ -72,7 +73,9 @@ function isFinishedPuzzleBuild(path: string): boolean {
  * is a whole database that only missed its rename and is renamed in instead.
  *
  * A dump somebody PUT there (PUZZLE_DUMP_PLACED) is left alone:
- * it is theirs, and a build uses it rather than downloading. That name
+ * it is theirs, and a build uses it rather than downloading, unless it
+ * was asked for the newest set, which deletes it only once a database is
+ * built (scripts/build-puzzles.ts). That name
  * used to be the download's as well, so a download a dead build left
  * could not be told from it and stayed for good; the download has a name
  * of its own now (PUZZLE_DUMP_DOWNLOAD). Only the `.part` older versions
@@ -114,21 +117,34 @@ export function sweepUnfinishedPuzzleBuild(
 }
 
 /**
- * What a failed build tells the user, from how its child ended.
+ * Why a build failed, from how its child ended. The app says it in a
+ * sentence of its own for each reason (PuzzleDbSetup.tsx); the detail is
+ * the raw words, which it shows only where they help.
  *
- * The last line the child wrote to stderr says it best when there is
- * one. A child the system killed wrote nothing, and was shown "the build
- * stopped unexpectedly (exit null)", which named neither the cause nor
- * the signal. The one failure of this build on record is running out of
- * memory on a 2 GB server (README), and on Linux the out-of-memory killer
- * ends a process with SIGKILL, so that signal says what it is. A signal
- * is read before stderr: a killed child's last line is whatever it was
- * saying before, not why it stopped.
+ * What the child reported (`reported`, its `failed` event) says it best,
+ * since the child knows which step it was on. A child the system killed
+ * reported nothing. The one failure of this build on record is running
+ * out of memory on a 2 GB server (README), and on Linux the out-of-memory
+ * killer ends a process with SIGKILL, so that signal is read as memory,
+ * and first: a killed child's last words are whatever it was saying
+ * before, not why it stopped. V8 running out of heap cannot be caught
+ * either: it prints "JavaScript heap out of memory" and aborts, so that
+ * is looked for in what the child wrote (`stderr`, its tail) before any
+ * other signal is taken at its word. Whatever is left is `other`, with
+ * the child's last line or its exit code.
  */
-export function buildFailure(code: number | null, signal: NodeJS.Signals | null, lastError: string): string {
-  if (signal === 'SIGKILL') return 'the build was killed (SIGKILL), which is how a system out of memory stops a process';
-  if (signal) return `the build was stopped (${signal})`;
-  return lastError || `the build stopped unexpectedly (exit ${code})`;
+export function buildFailure(
+  code: number | null,
+  signal: NodeJS.Signals | null,
+  reported: PuzzleBuildFailure | null,
+  stderr: string,
+): PuzzleBuildFailure {
+  if (signal === 'SIGKILL') return { reason: 'memory', detail: 'SIGKILL' };
+  if (reported) return reported;
+  const last = stderr.trim().split('\n').pop()?.trim() ?? '';
+  if (/out of memory/i.test(stderr)) return { reason: 'memory', detail: last || null };
+  if (signal) return { reason: 'stopped', detail: signal };
+  return { reason: 'other', detail: last || `exit ${code}` };
 }
 
 /**
@@ -799,39 +815,56 @@ export function puzzlesApi(
   let build: {
     startedAt: number;
     running: boolean;
+    /** What it reads, so the app can say which file failed. */
+    source: PuzzleDumpSource;
     progress: BuildProgress;
-    error: string | null;
+    error: PuzzleBuildFailure | null;
   } | null = null;
 
   /**
    * Whether a dump somebody put beside the database is there, which a
-   * build uses instead of downloading (scripts/build-puzzles.ts, the same
-   * name in the same directory).
+   * build uses instead of downloading unless it is asked for the newest
+   * set (scripts/build-puzzles.ts, the same name in the same directory).
    */
   const dumpInPlace = (): boolean => existsSync(resolve(dirname(dbPath), PUZZLE_DUMP_PLACED));
 
-  const startBuild = (): void => {
+  /**
+   * `download`: fetch the newest set even with a dump in place, which the
+   * builder then deletes once the database is built. The question Build,
+   * Rebuild and Try again ask where a dump is in place offers it beside
+   * the dump and says so (PuzzleBuildButton). Without it a dump in place is
+   * built from, as it always was, and with no dump in place the build
+   * downloads either way.
+   */
+  const startBuild = (download: boolean): void => {
+    // Settled here, once, and handed to the builder as a flag, so the
+    // first status below and what the builder reads cannot disagree.
+    const source: PuzzleDumpSource = !download && dumpInPlace() ? 'dump' : 'download';
     const current = {
       startedAt: Date.now(),
       running: true,
+      source,
       // What is shown until the child's first line, once Node has started
       // it (120 ms on a fast desktop, from source). It was always the
       // download, so a build from a dump in place read "Downloading the
       // puzzle dump, 0 / ? MB" with nothing being downloaded, and a
       // 500-row one said that until it was indexing.
-      progress: (dumpInPlace()
+      progress: (source === 'dump'
         ? { phase: 'building', rows: 0 }
         : { phase: 'downloading', bytes: 0, total: 0 }) as BuildProgress,
-      error: null as string | null,
+      error: null as PuzzleBuildFailure | null,
     };
+    /** Why, in the child's own words, when it got to say (its `failed`). */
+    let reported: PuzzleBuildFailure | null = null;
     build = current;
 
     // A packaged build has no scripts/ and no tsx, so it ships the builder
     // as a bundle beside the server; the repo runs the source directly.
     const bundled = resolve(REPO_ROOT, 'server', 'build-puzzles.mjs');
+    const flags = source === 'download' ? ['--progress-json', '--download'] : ['--progress-json'];
     const args = existsSync(bundled)
-      ? [bundled, '--progress-json']
-      : ['--import', 'tsx', 'scripts/build-puzzles.ts', '--progress-json'];
+      ? [bundled, ...flags]
+      : ['--import', 'tsx', 'scripts/build-puzzles.ts', ...flags];
     const child = spawn(process.execPath, args, {
       cwd: REPO_ROOT,
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -845,28 +878,30 @@ export function puzzlesApi(
       for (const line of lines) {
         if (!line.startsWith('{')) continue;
         try {
-          current.progress = JSON.parse(line) as BuildProgress;
+          const event = JSON.parse(line) as BuildProgress | { phase: 'failed'; reason: PuzzleBuildFailure['reason']; detail: string };
+          // The bar keeps the step it failed on; the reason is kept apart.
+          if (event.phase === 'failed') reported = { reason: event.reason, detail: event.detail || null };
+          else current.progress = event;
         } catch {
           // A partial or unexpected line is not worth failing a build over.
         }
       }
     });
-    // Kept only to explain a failure: the last stderr line is what the user
-    // is shown when the child dies, and it beats "exit code 1".
-    let lastError = '';
+    // Kept only to explain a failure the child could not report: its tail,
+    // where V8 says it ran out of heap and where the last line is.
+    let stderr = '';
     child.stderr.on('data', (chunk: Buffer) => {
-      const text = chunk.toString().trim();
-      if (text) lastError = text.split('\n').pop() ?? text;
+      stderr = (stderr + chunk.toString()).slice(-4096);
     });
 
     child.on('error', (error) => {
       current.running = false;
-      current.error = error.message;
+      current.error = { reason: 'other', detail: error.message };
     });
     child.on('close', (code, signal) => {
       current.running = false;
       if (code !== 0) {
-        current.error = buildFailure(code, signal, lastError);
+        current.error = buildFailure(code, signal, reported, stderr);
         // Settle what it left now, as a restart would, rather than at the
         // next restart. A part-built database is gigabytes (a 5,000,000-row
         // build peaked at 2.14 GB of .building beside 2.14 GB of VACUUM
@@ -896,7 +931,9 @@ export function puzzlesApi(
         try {
           renameRetrying(building, dbPath);
         } catch (error) {
-          current.error = `the database was built but could not be swapped in (${(error as Error).message})`;
+          // Still whole beside the old one, so the next start swaps it in
+          // (sweepUnfinishedPuzzleBuild), which the app's sentence says.
+          current.error = { reason: 'swap', detail: (error as Error).message };
           return;
         }
       }
@@ -911,20 +948,25 @@ export function puzzlesApi(
             running: build.running,
             seconds: (Date.now() - build.startedAt) / 1000,
             error: build.error,
+            source: build.source,
             ...build.progress,
           }
         : { running: false }),
-      // What the next build would do, for Settings' Rebuild question:
-      // with a dump in place it downloads nothing, and the question said
-      // "It downloads about 300 MB" all the same. Read on every poll, so
-      // a dump put there while the page is open is answered for too.
+      // What the next build could do, for Settings' Rebuild question:
+      // with a dump in place it can build from it and download nothing,
+      // and the question said "It downloads about 300 MB" all the same.
+      // Read on every poll, so a dump put there while the page is open is
+      // answered for too.
       dumpInPlace: dumpInPlace(),
     }),
   );
 
-  api.post('/puzzles/build', (c) => {
+  // `{ download: true }` is the question's other answer: the newest set,
+  // past a dump in place. No body is the build as it always was.
+  api.post('/puzzles/build', async (c) => {
+    const body = (await c.req.json().catch(() => ({}))) as { download?: unknown };
     if (build?.running) return c.json({ error: 'a build is already running' }, 409);
-    startBuild();
+    startBuild(body.download === true);
     return c.json({ running: true });
   });
 
@@ -953,7 +995,11 @@ export function puzzlesApi(
   api.get('/puzzles/meta', (c) => {
     const db = puzzleDb();
     const user = readState();
-    if (!db) return c.json({ ready: false as const, user: publicState(user) });
+    // Whether a dump is in place, which decides what the first build or
+    // a rebuild would do: said here as well as in the build's status, so
+    // the setup screen and Settings, which wait for this answer, start on
+    // the right words rather than correcting them a poll later.
+    if (!db) return c.json({ ready: false as const, user: publicState(user), dumpInPlace: dumpInPlace() });
     const meta = Object.fromEntries(
       (db.prepare('SELECT key, value FROM meta').all() as { key: string; value: string }[]).map(
         (r) => [r.key, r.value],
@@ -970,6 +1016,7 @@ export function puzzlesApi(
       // When this file was built, which is how old its puzzles are: the
       // one thing to know before rebuilding it (Settings, Puzzle database).
       builtAt: meta.built_at ?? null,
+      dumpInPlace: dumpInPlace(),
       themes: themeCounts(db),
       failed: pool.length,
       // What the ladder says: how many are due now, and when the next

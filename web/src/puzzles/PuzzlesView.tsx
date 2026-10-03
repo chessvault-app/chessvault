@@ -85,6 +85,8 @@ interface Meta {
   ready: boolean;
   puzzles?: number;
   themes?: { theme: string; count: number }[];
+  /** A dump is in the database's folder for the first build to read. */
+  dumpInPlace?: boolean;
   user: UserState;
 }
 
@@ -626,6 +628,7 @@ function Trainer({
   if (meta && !meta.ready) {
     return (
       <PuzzleDbSetup
+        dumpInPlace={meta.dumpInPlace === true}
         onReady={() => {
           // Both, and the second one is the point. Arriving here means the
           // boot already tried to load a puzzle and failed — there was no

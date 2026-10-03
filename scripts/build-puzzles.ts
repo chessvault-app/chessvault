@@ -3,6 +3,9 @@
  *
  *   npm run build:puzzles                     downloads the dump if it is missing
  *   npm run build:puzzles -- path/to/file.csv.zst
+ *   npm run build:puzzles -- --download       downloads the newest dump even
+ *                                             with one in place, and deletes
+ *                                             that one once the database is built
  *   npm run build:puzzles -- --progress-json  one JSON event per line (the app)
  *
  * The dump (https://database.lichess.org/lichess_db_puzzle.csv.zst, CC0,
@@ -13,6 +16,17 @@
  * is left alone, because it is somebody's file and not ours. The two have
  * different names, so that what is ours can be told apart afterwards: see
  * PUZZLE_DUMP_DOWNLOAD.
+ *
+ * Unless the build is asked for the newest set instead (`--download`, the
+ * second answer of the question the app's Build, Rebuild and Try again ask
+ * when a dump is in place). A dump in place was
+ * otherwise built from on every build, so one an older version left
+ * behind, or one somebody put there a year ago, held every rebuild to
+ * that set, and only deleting the file on the server's disk got newer
+ * puzzles. Asked to download, the build leaves the dump in place alone
+ * while it works and deletes it once the new database is built, because
+ * a dump older than the database is no use to anyone and the question
+ * that asked says so. A build that fails keeps it.
  *
  * Output lands at data/puzzles.sqlite via a temp file + rename, so a running
  * server keeps serving the old database until the build completes.
@@ -31,42 +45,79 @@ import { pipeline } from 'node:stream/promises';
 import { Decompress } from 'fzstd';
 import Database from 'better-sqlite3';
 import { DATA, DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD, PUZZLE_DUMP_PLACED } from '../server/paths.ts';
+import { machineReasonOf, type PuzzleBuildFailureReason } from '../shared/puzzleBuild.ts';
 import { PUZZLE_COUNT_TABLES } from './lib/db-tuning.ts';
 import { resolve } from 'node:path';
 
 export const PUZZLE_SCHEMA_VERSION = 1;
 
-const DUMP_URL = 'https://database.lichess.org/lichess_db_puzzle.csv.zst';
+/**
+ * Where the dump comes from. `CHESS_TEST_PUZZLE_DUMP_URL` is for tests
+ * only and is not a setting: it points the download at a local server,
+ * so that a test of the download can run without fetching 300 MB from
+ * Lichess (server/puzzles.test.ts).
+ */
+const DUMP_URL =
+  process.env.CHESS_TEST_PUZZLE_DUMP_URL || 'https://database.lichess.org/lichess_db_puzzle.csv.zst';
 
-/** What the app's progress bar is drawn from. One per line on stdout. */
+/**
+ * What the app's progress bar is drawn from. One per line on stdout. The
+ * last, when there is one, is a `failed`: why, for the app to say in a
+ * sentence of its own (see the handler below).
+ */
 type Event =
   | { phase: 'downloading'; bytes: number; total: number }
   | { phase: 'building'; rows: number }
   | { phase: 'indexing' }
-  | { phase: 'done'; puzzles: number; seconds: number };
+  | { phase: 'done'; puzzles: number; seconds: number }
+  | { phase: 'failed'; reason: PuzzleBuildFailureReason; detail: string };
 
 const args = process.argv.slice(2);
 const JSON_PROGRESS = args.includes('--progress-json');
+/** The newest set, whether or not a dump is in place (see the top). */
+const DOWNLOAD = args.includes('--download');
 const positional = args.find((a) => !a.startsWith('--'));
 
+/** A failure whose step knows what it was: see PuzzleBuildFailureReason. */
+class BuildError extends Error {
+  constructor(
+    readonly reason: PuzzleBuildFailureReason,
+    message: string,
+    options?: { cause?: unknown },
+  ) {
+    super(message, options);
+  }
+}
+
+/** An error's own words, with its cause's: fetch's message alone
+    ("fetch failed") names nothing. */
+const describe = (error: unknown): string => {
+  const message = error instanceof Error ? error.message : String(error);
+  const cause = error instanceof Error && error.cause instanceof Error ? `: ${error.cause.message}` : '';
+  return `${message}${cause}`;
+};
+
 /**
- * A failure, as the app is told it: one line on stderr, the error's own.
+ * A failure, as the app is told it: why, as a `failed` event on stdout,
+ * and the error's own line on stderr for the server's log.
  *
- * The server shows the last line the child wrote to stderr (buildFailure
- * in server/puzzles.ts), and Node's report of an uncaught error ends on
- * its version banner. So every failure that was thrown rather than
- * printed, a full disk, a dropped download or a dump that stops decoding
- * half way, reached the Puzzles page and Settings as "Node.js v24.19.0",
- * under a Try again. Only for the app's runs: from a terminal the stack
- * is worth more than the line. The cause goes along when there is one,
- * since fetch's own message ("fetch failed") names nothing. Exit waits on
- * the write, which a pipe may not have flushed yet.
+ * It was the stderr line alone, which the server showed as it was: "invalid
+ * zstd data", "database or disk is full", "terminated", in English on a
+ * Korean card, and before that the version banner Node's report of an
+ * uncaught error ends on. The reason is the step's (BuildError, thrown
+ * where the step knows: the download, the reading of the dump) or the
+ * machine's (a full disk, memory), and the app turns it into a sentence.
+ * Only for the app's runs: from a terminal the stack is worth more. Exit
+ * waits on both writes, which a pipe may not have flushed yet.
  */
 if (JSON_PROGRESS) {
   process.on('uncaughtException', (error: unknown) => {
-    const message = error instanceof Error ? error.message : String(error);
-    const cause = error instanceof Error && error.cause instanceof Error ? `: ${error.cause.message}` : '';
-    process.stderr.write(`${message}${cause}\n`, () => process.exit(1));
+    const reason = error instanceof BuildError ? error.reason : (machineReasonOf(error) ?? 'other');
+    // A BuildError's message already carries its cause's.
+    const detail = error instanceof BuildError ? error.message : describe(error);
+    process.stdout.write(`${JSON.stringify({ phase: 'failed', reason, detail } satisfies Event)}\n`, () =>
+      process.stderr.write(`${detail}\n`, () => process.exit(1)),
+    );
   });
 }
 
@@ -82,14 +133,22 @@ const report = (event: Event): void => {
     console.log(event.rows === 0 ? 'building…' : `  ${event.rows.toLocaleString()} puzzles…`);
   } else if (event.phase === 'indexing') {
     console.log('indexing…');
-  } else {
+  } else if (event.phase === 'done') {
     console.log(`done: ${event.puzzles.toLocaleString()} puzzles in ${event.seconds.toFixed(1)}s`);
   }
 };
 
-/** A dump somebody put in the data directory, which a build uses and keeps. */
+/** A dump somebody put in the data directory, which a build uses and
+    keeps unless it was asked to download the newest set instead. */
 const placed = resolve(DATA, PUZZLE_DUMP_PLACED);
-const fetched = !positional && !existsSync(placed);
+/** The dump in place this build was asked to download past, deleted
+    once the database is built. Only where one was there from the start:
+    with none, a file put there while the build ran is not one the
+    question named. It is deleted by name, so a file that replaced the one
+    in place mid-build goes instead, being "the file in the folder" the
+    question says is deleted. */
+const passedOver = !positional && DOWNLOAD && existsSync(placed);
+const fetched = !positional && (DOWNLOAD || !existsSync(placed));
 const source = positional
   ? resolve(process.cwd(), positional)
   : fetched
@@ -104,9 +163,16 @@ const source = positional
  * produce tens of thousands of lines for a bar that moves in percent.
  */
 async function downloadDump(to: string): Promise<void> {
-  const response = await fetch(DUMP_URL);
+  // Two ways for it to fail, which the app tells apart: it never started
+  // (no connection, or Lichess said no), or it started and was cut off.
+  let response: Response;
+  try {
+    response = await fetch(DUMP_URL);
+  } catch (error) {
+    throw new BuildError('unreachable', describe(error), { cause: error });
+  }
   if (!response.ok || !response.body) {
-    throw new Error(`could not download the puzzle dump (HTTP ${response.status})`);
+    throw new BuildError('unreachable', `HTTP ${response.status}`);
   }
   const total = Number(response.headers.get('content-length') ?? 0);
   const part = `${to}.part`;
@@ -115,20 +181,30 @@ async function downloadDump(to: string): Promise<void> {
   let bytes = 0;
   let reported = 0;
   report({ phase: 'downloading', bytes: 0, total });
-  await pipeline(
-    Readable.fromWeb(response.body as Parameters<typeof Readable.fromWeb>[0]),
-    async function* (chunks) {
-      for await (const chunk of chunks) {
-        bytes += (chunk as Buffer).length;
-        if (bytes - reported >= 2e6) {
-          reported = bytes;
-          report({ phase: 'downloading', bytes, total });
+  try {
+    await pipeline(
+      Readable.fromWeb(response.body as Parameters<typeof Readable.fromWeb>[0]),
+      async function* (chunks) {
+        for await (const chunk of chunks) {
+          bytes += (chunk as Buffer).length;
+          if (bytes - reported >= 2e6) {
+            reported = bytes;
+            report({ phase: 'downloading', bytes, total });
+          }
+          yield chunk;
         }
-        yield chunk;
-      }
-    },
-    createWriteStream(part),
-  );
+      },
+      createWriteStream(part),
+    );
+  } catch (error) {
+    // A full disk fills under the .part file as readily as anywhere.
+    throw new BuildError(machineReasonOf(error) ?? 'download', describe(error), { cause: error });
+  }
+  // A body that ended short of what the server said it would send is a
+  // cut-off download too, whether or not the connection said so.
+  if (total && bytes !== total) {
+    throw new BuildError('download', `the download ended at ${bytes} of ${total} bytes`);
+  }
   report({ phase: 'downloading', bytes, total: total || bytes });
   renameSync(part, to);
 }
@@ -214,8 +290,9 @@ const takeLine = (line: string): void => {
   if (header) {
     header = false;
     if (!line.startsWith('PuzzleId,FEN,Moves,Rating')) {
-      console.error(`unexpected header: ${line}`);
-      process.exit(1);
+      // A file that decodes and is not the dump is, to whoever put it
+      // there, a dump that cannot be read: the same answer either way.
+      throw new BuildError('decode', `not a Lichess puzzle dump (unexpected header: ${line.slice(0, 80)})`);
     }
     return;
   }
@@ -280,9 +357,26 @@ const decompress = new Decompress((chunk) => {
 // not at the first count.
 report({ phase: 'building', rows: 0 });
 db.exec('BEGIN');
-for await (const chunk of createReadStream(source)) decompress.push(chunk as Uint8Array);
-decompress.push(new Uint8Array(0), true);
-if (carry) takeLine(carry);
+/**
+ * Reading the dump, where a failure is the dump's own unless it says
+ * otherwise. fzstd's errors carry a numeric code ("invalid zstd data",
+ * "unexpected EOF" for a file cut short); a code that is a string belongs
+ * to the system or SQLite, a full disk or memory being the two worth
+ * naming and anything else (a duplicate id, a permission) left as it is.
+ */
+try {
+  for await (const chunk of createReadStream(source)) decompress.push(chunk as Uint8Array);
+  decompress.push(new Uint8Array(0), true);
+  if (carry) takeLine(carry);
+} catch (error) {
+  if (error instanceof BuildError) throw error;
+  const code = (error as { code?: unknown } | null)?.code;
+  throw new BuildError(machineReasonOf(error) ?? (typeof code === 'number' ? 'decode' : 'other'), describe(error), {
+    cause: error,
+  });
+}
+// Not a line at all: an empty file, or one that decodes to nothing.
+if (header) throw new BuildError('decode', 'the dump holds no lines');
 db.exec('COMMIT');
 
 report({ phase: 'indexing' });
@@ -317,8 +411,11 @@ try {
   if (!JSON_PROGRESS) console.log('  rename deferred (target busy) — server will swap the file in');
 }
 
-// Only what this run fetched: a dump the user put there is theirs.
+// Only what this run fetched: a dump the user put there is theirs,
 if (fetched) rmSync(source, { force: true });
+// unless they asked for the newest set instead of it. The database is
+// whole by now, even where the server is left to rename it in.
+if (passedOver) rmSync(placed, { force: true });
 
 const seconds = (Date.now() - started) / 1000;
 report({ phase: 'done', puzzles: rows, seconds });

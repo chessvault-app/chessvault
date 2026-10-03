@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -55,6 +55,14 @@ interface ConfirmDialogQuestion {
   question: string;
   confirmLabel: string;
   onConfirm: () => void;
+  /**
+   * What the answer needs beside yes or no, drawn between the question
+   * and its buttons: the puzzle rebuild's choice of where the dump comes
+   * from, which is one question with two ways of saying yes. Translated
+   * by the caller, being the caller's own markup. Opt-in; every question
+   * without it is drawn as it was.
+   */
+  children?: ReactNode;
 }
 
 /**
@@ -105,7 +113,7 @@ interface ConfirmDialogHeldOpen {
 export function ConfirmDialog(
   props: ConfirmDialogQuestion & (ConfirmDialogOwnTrigger | ConfirmDialogHeldOpen),
 ) {
-  const { icon: Icon, tone = 'danger', question, confirmLabel, onConfirm } = props;
+  const { icon: Icon, tone = 'danger', question, confirmLabel, onConfirm, children } = props;
   const [own, setOwn] = useState(false);
   const held = props.open !== undefined;
   const open = props.open ?? own;
@@ -161,6 +169,7 @@ export function ConfirmDialog(
               <AlertDialogTitle>{t(confirmLabel)}</AlertDialogTitle>
               <AlertDialogDescription>{t(question)}</AlertDialogDescription>
             </AlertDialogHeader>
+            {children}
             {/* The danger tone used to stack Cancel over the action on a phone,
                 because the thumb that opened a SHEET rests on its bottom edge,
                 where the action would have been. A question is a centred card

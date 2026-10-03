@@ -74,16 +74,23 @@ beside the old database and the download. The new database is written to
 a temp file and renamed over the old one, so the trainer keeps serving
 the old one until then and picks the new one up with no restart. The card
 shows the same progress the first build does; a failure leaves nothing of
-the new file behind, says why on the card, survives a reload and offers
+the new file behind, says why on the card in a sentence of its own (a
+download that could not start or was cut off, a dump that cannot be
+read, a full disk, running out of memory), survives a reload and offers
 **Try again**.
 
 `npm run build:puzzles` does the same from a terminal. A dump you put in
 `data/` as `lichess_db_puzzle.csv.zst` is built from and left alone;
 without one the dump is downloaded under a name of its own, which is
 deleted when the build ends, or by the server's next start if the build
-did not end cleanly. The app's build uses a dump in place the same way,
-and Rebuild's question then says it is building from that dump and
-downloads nothing.
+did not end cleanly. `--download` downloads the newest dump even with one
+in place, and deletes the one in place once the new database is built; a
+build that fails keeps it. The app offers both: where a dump is in place,
+the first build, Rebuild and Try again ask whether to build from it
+(nothing to download, over 5 GB of free disk) or download the newest
+puzzles, and the question says the dump is deleted after. That is also
+the way past a dump an older version left behind after a build that
+died, which every build would otherwise read for good.
 
 Attempt history lives in the vault and is keyed by puzzle id, so it
 survives a rebuild.

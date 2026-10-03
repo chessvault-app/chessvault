@@ -5,6 +5,39 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
+## Unreleased
+
+- **With a puzzle dump in the data folder, the app can still get the
+  newest puzzles.** A Lichess dump beside the puzzle database as
+  `lichess_db_puzzle.csv.zst`, whether you put it there or an older
+  version left it after a build that died, was built from by every build
+  and rebuild, and nothing in the app could get past it to newer puzzles:
+  only deleting the file on the server's disk did. Where a dump is in
+  place, Build, Rebuild and Try again now ask which to build from: the
+  dump, which downloads nothing and keeps the file, or the newest puzzles,
+  about 300 MB, after which the dump is deleted once the new database is
+  built, as the question says. A download that fails keeps it. And the
+  words now say what the build will do in every state: with no database
+  yet and a dump in place, the Puzzles page and Settings say the app
+  builds from it, with nothing to download and over 5 GB of free disk
+  while it builds, where they said 300 MB to download, and the phone's
+  puzzle hub and Themes say to build it from the dump where they said to
+  download and build it; with a database, the card says it can be rebuilt
+  from the dump or from a download. From a terminal, `npm run
+  build:puzzles -- --download` does the same.
+- **A failed puzzle build says what failed, in a sentence and in your
+  language.** It showed the builder's last line as it was, “invalid zstd
+  data” or “database or disk is full”, in English whichever language the
+  app was in. Now a download that could not start, one that was cut off,
+  a dump that cannot be read, a full disk, running out of memory, a build
+  that was stopped and a database that was built but could not be put in
+  place each have a sentence of their own, with the raw words under it
+  only where they help, such as an HTTP status. A dump in the data folder
+  that cannot be read says to try again and download the newest instead,
+  and Try again then asks with that answer chosen. The Puzzles page now
+  keeps saying why after a reload, as Settings did. And an empty dump
+  fails as one that cannot be read, where it built an empty database.
+
 ## 0.12.1
 
 Settings → Vault can put a downloaded copy of the vault back, keeping the

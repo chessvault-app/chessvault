@@ -80,6 +80,8 @@ interface Meta {
   nextDue?: string | null;
   /** The theme this vault loses most often — see weakestTheme(), server. */
   weakTheme?: WeakTheme | null;
+  /** With no database, whether its first build reads a dump in place. */
+  dumpInPlace?: boolean;
 }
 
 interface WeakTheme {
@@ -722,7 +724,12 @@ function Hub() {
           // the same place (the review slot's rule, applied here).
           <EmptySlot
             title={t('No puzzle database yet')}
-            detail={t('Download and build it to start training.')}
+            // Nothing is downloaded where a dump is in place.
+            detail={
+              meta?.dumpInPlace
+                ? t('Build it from the puzzle dump in its folder to start training.')
+                : t('Download and build it to start training.')
+            }
             go={() => navigate('puzzles')}
           />
         ) : settled ? (

@@ -532,7 +532,11 @@ of building here, after the download. Nothing to install, nothing to type,
 and it keeps going if you leave the page. `npm run build:puzzles` does the
 same thing from a terminal if you prefer one. A newer set later is
 Settings → **Puzzle database** → **Rebuild**, which builds beside the
-working database and swaps it in when it is ready.
+working database and swaps it in when it is ready. A dump you put in
+`data/` as `lichess_db_puzzle.csv.zst` is built from instead, with
+nothing downloaded; while one is there, the build asks whether to use it
+or download the newest set, which deletes it once the new database is
+built ([docs/databases.md](docs/databases.md#when-you-need-to-do-anything)).
 
 **Reference games build in the app too, and they are plural.** The
 desktop starts seeded — the installer's starter set is one
