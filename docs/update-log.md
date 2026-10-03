@@ -24,6 +24,18 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   download; with a database, the card says it can be rebuilt from the
   dump or from a download. From a terminal, `npm run build:puzzles --
   --download` does the same.
+- **A failed puzzle build says what failed, in a sentence and in your
+  language.** It showed the builder's last line as it was, “invalid zstd
+  data” or “database or disk is full”, in English whichever language the
+  app was in. Now a download that could not start, one that was cut off,
+  a dump that cannot be read, a full disk, running out of memory, a build
+  that was stopped and a database that was built but could not be put in
+  place each have a sentence of their own, with the raw words under it
+  only where they help, such as an HTTP status. A dump in the data folder
+  that cannot be read says to try again and download the newest instead,
+  and Try again then asks with that answer chosen. The Puzzles page now
+  keeps saying why after a reload, as Settings did. And an empty dump
+  fails as one that cannot be read, where it built an empty database.
 
 ## 0.12.1
 
