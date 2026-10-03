@@ -23,7 +23,10 @@ const PURGED_LINE = /\t(config\.json|sessions\.json|\.history\.git\/)/;
     so the counts it checks are not raced by the watcher's own. */
 const QUIET = 600_000;
 
-describe('removing old secrets from the history', () => {
+// Every test here builds a real history, restarts its writer and runs a
+// few dozen git processes, which took over vitest's five seconds once
+// the whole suite ran beside it.
+describe('removing old secrets from the history', { timeout: 30_000 }, () => {
   let dir = '';
   let backup: VaultBackup | null = null;
 
@@ -36,15 +39,15 @@ describe('removing old secrets from the history', () => {
   });
 
   const gitDir = (): string => join(dir, '.history.git');
-  const run = (args: string[]): string => execFileSync('git', ['--git-dir', gitDir(), ...args], { encoding: 'utf-8' });
-  const exists = (id: string): boolean => {
-    try {
-      execFileSync('git', ['--git-dir', gitDir(), 'cat-file', '-e', id], { stdio: 'ignore' });
-      return true;
-    } catch {
-      return false;
-    }
-  };
+  const run = (args: string[], input?: string): string =>
+    execFileSync('git', ['--git-dir', gitDir(), ...args], { encoding: 'utf-8', input });
+  /** Which of `ids` git's store still has, asked in one process. */
+  const present = (ids: string[]): string[] =>
+    run(['cat-file', '--batch-check'], `${ids.join('\n')}\n`)
+      .split('\n')
+      .filter((line) => line && !line.endsWith(' missing'))
+      .map((line) => line.split(' ')[0]!);
+  const exists = (id: string): boolean => present([id]).length > 0;
   const write = (path: string, content: string): void => {
     mkdirSync(join(dir, path, '..'), { recursive: true });
     writeFileSync(join(dir, path), content);
@@ -56,15 +59,23 @@ describe('removing old secrets from the history', () => {
    * a purge must leave exactly as it was.
    */
   const saves = (): { meta: string; parents: number[]; files: string }[] => {
-    const ids = run(['rev-list', '--all', '--topo-order', '--reverse']).split('\n').filter(Boolean);
-    return ids.map((id) => ({
-      meta: run(['show', '-s', '--date=raw', '--format=%an%x00%ae%x00%ad%x00%cn%x00%ce%x00%cd%x00%B', id]),
-      parents: run(['rev-list', '--parents', '-n', '1', id]).trim().split(' ').slice(1).map((parent) => ids.indexOf(parent)),
-      files: run(['ls-tree', '-r', '--full-tree', id])
-        .split('\n')
-        .filter((line) => line && !PURGED_LINE.test(line))
-        .join('\n'),
-    }));
+    // One log for every save's header and message, %x01 between saves.
+    const logged = run(['log', '--all', '--topo-order', '--reverse', '--date=raw', '--format=%H %P%x00%an%x00%ae%x00%ad%x00%cn%x00%ce%x00%cd%x00%B%x01'])
+      .split('\x01')
+      .map((entry) => entry.replace(/^\n/, ''))
+      .filter(Boolean);
+    const ids = logged.map((entry) => entry.slice(0, 40));
+    return logged.map((entry) => {
+      const [graph = '', ...meta] = entry.split('\0');
+      return {
+        meta: meta.join('\0'),
+        parents: graph.split(' ').slice(1).map((parent) => ids.indexOf(parent)),
+        files: run(['ls-tree', '-r', '--full-tree', graph.slice(0, 40)])
+          .split('\n')
+          .filter((line) => line && !PURGED_LINE.test(line))
+          .join('\n'),
+      };
+    });
   };
 
   /**
@@ -134,9 +145,9 @@ describe('removing old secrets from the history', () => {
     // None of them holds a purged path, and none of the old ids is left in
     // git's store: not the files, not the saves that held them.
     expect(run(['log', '--all', '--full-history', '--format=%H', '--', 'config.json', 'sessions.json', '.history.git'])).toBe('');
-    for (const id of oldIds) expect(exists(id), `${id} is still in the store`).toBe(false);
+    expect(present(oldIds)).toEqual([]);
     const kept = new Set(run(['rev-list', '--all']).split('\n').filter(Boolean));
-    for (const id of oldCommits.filter((commit) => !kept.has(commit))) expect(exists(id)).toBe(false);
+    expect(present(oldCommits.filter((commit) => !kept.has(commit)))).toEqual([]);
     // The save before the first that held them keeps its id.
     expect(kept.has(oldCommits.at(-1)!)).toBe(true);
     expect(run(['reflog', 'show', '--all'])).toBe('');
