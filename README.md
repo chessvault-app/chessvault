@@ -410,9 +410,11 @@ until you keep or undo the restore. A vault whose history holds no more
 than its first save (a fresh install) takes the copy's history; any other
 keeps its own. A restore that stops part way and cannot put the vault back
 either is finished from the same card, “Put the vault back”, from any
-client; the server's next start does the same. Until then the history
-saves nothing, so it never records a vault that is half one and half the
-other.
+client, once whatever held its files has let go; the server's next start
+does the same, and a start that cannot put it back still comes up, touches
+nothing the restore moved, and refuses every page that would read the
+vault until it is put back. Until then the history saves nothing, so it
+never records a vault that is half one and half the other.
 
 That history leaves `config.json` and `sessions.json` out, and has since
 0.4.x. Two kinds of vault may still carry them: one older than that, in
