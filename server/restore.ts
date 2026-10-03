@@ -58,7 +58,9 @@ import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME, restoreJournalP
  * next start (recoverInterruptedRestore), and a put-back that failed too
  * is finished from the Vault card ("Put the vault back") or at that next
  * start, both by the same code, so the vault is always one whole vault
- * or the other once it is done. The last rename is what makes a restore
+ * or the other once it is done. Until then the history saves nothing
+ * either: the autosave holds off while the journal stands
+ * (server/vaultBackup.ts). The last rename is what makes a restore
  * pending, `.restore/<id>/out` becoming `.restore/before`, so the state
  * changes at one instant too.
  *

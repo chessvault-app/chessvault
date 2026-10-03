@@ -680,7 +680,7 @@ describe('restore from a copy', () => {
     expect(await state()).toMatchObject({ stuck: false, pending: null, sameMachine: false });
 
     stuckByHand(target.vault);
-    // A running server's autosave records the half vault it sees.
+    // An autosave asked for while stuck, which once saved the half vault.
     await backup.commitNow();
     // What the 0.12.1 audit saw: the page that lists notes failed, and the
     // card said nothing. The card's answer says it now.
@@ -699,10 +699,11 @@ describe('restore from a copy', () => {
     expect(await state()).toMatchObject({ stuck: false, pending: null });
     const listed = (await (await notes.request('/api/notes')).json()) as { studies: { id: string }[] };
     expect(listed.studies.map((s) => s.id)).toEqual(['Gone']);
-    // Recorded in the history, which the put-back had to itself, so the
-    // note the half vault lacked is not left in Deleted documents.
+    // The history never held the half vault, so the put-back, which had
+    // the history to itself, found nothing to record, and the note the
+    // half vault lacked was never in Deleted documents.
     const log = execFileSync('git', ['--git-dir', join(target.vault, '.history.git'), 'log', '--format=%s'], { encoding: 'utf-8' });
-    expect(log).toMatch(/^vault put back after a restore stopped part way .*\nvault autosave /);
+    expect(log).toMatch(/^vault autosave [^\n]*\n$/);
     const recovery = new Hono().route('/api', vaultHistoryApi(target.vault, { commitNow: () => backup.commitNow() }));
     expect(((await (await recovery.request('/api/history/deleted')).json()) as { deleted: unknown[] }).deleted).toEqual([]);
 
@@ -839,6 +840,70 @@ describe('restore from a copy', () => {
     expect((await recover()).status).toBe(200);
     expect(everything(target.vault)).toEqual(before);
     expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+  });
+
+  it('saves nothing to the history while a restore stands part way, so no document gains a version from it', async () => {
+    const source = scratch('source');
+    fillSource(source.vault);
+    const copy = await download(source.vault);
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const backup = await startVaultBackup(target.vault, 50);
+    backups.push(backup);
+    const inHistory = (args: string[]): string =>
+      execFileSync('git', ['--git-dir', join(target.vault, '.history.git'), '-c', 'core.quotePath=false', ...args], { encoding: 'utf-8' });
+    // A document's versions, counted as the Earlier versions panel counts them.
+    const versions = (path: string): number => inHistory(['log', '--diff-filter=AM', '--format=%H', '--', path]).split('\n').filter(Boolean).length;
+    const head = inHistory(['rev-parse', 'HEAD']).trim();
+    const documents = inHistory(['ls-tree', '-r', '--name-only', 'HEAD']).split('\n').filter(Boolean);
+    const counts = Object.fromEntries(documents.map((path) => [path, versions(path)]));
+    expect(documents).toContain('notes/Gone.md');
+    const before = everything(target.vault);
+    let calls = 0;
+    let copyDir = '';
+    const { restore, recover } = restorer(target.vault, {
+      history: async () => backup,
+      move: (from, to) => {
+        // As above: the vault's five folders out, three of the copy's
+        // entries in, the next failing, and the rollback stopped by a file
+        // where the copy's folder has to go back to.
+        if (++calls === 9) {
+          copyDir = dirname(from);
+          renameSync(copyDir, `${copyDir}-aside`);
+          writeFileSync(copyDir, '');
+          throw Object.assign(new Error('the disk said no'), { code: 'EIO' });
+        }
+        renameSync(from, to);
+      },
+    });
+    const stuck = await restore(copy);
+    expect(stuck.status).toBe(500);
+    expect((await stuck.json()).reason).toBe('stuck');
+    expect(existsSync(join(target.vault, 'notes'))).toBe(false);
+    // The watcher saw the vault's folders go: its run, past the debounce,
+    // and one asked for directly, record nothing.
+    await new Promise((done) => setTimeout(done, 300));
+    await backup.commitNow();
+    expect(inHistory(['rev-parse', 'HEAD']).trim()).toBe(head);
+
+    rmSync(copyDir);
+    renameSync(`${copyDir}-aside`, copyDir);
+    expect((await recover()).status).toBe(200);
+    expect(everything(target.vault)).toEqual(before);
+    // And the runs after the put-back record nothing either: the vault is
+    // what the history last held.
+    await new Promise((done) => setTimeout(done, 300));
+    await backup.commitNow();
+
+    // No save since the restore was asked for adds or deletes a document,
+    // and each document has the versions it had before it.
+    const changed = inHistory(['log', '--no-renames', '--name-status', '--format=', `${head}..HEAD`]).split('\n').filter(Boolean);
+    expect(changed.filter((line) => /^[AD]\t/.test(line))).toEqual([]);
+    expect(Object.fromEntries(documents.map((path) => [path, versions(path)]))).toEqual(counts);
+    // Nor does Deleted documents list the copy's games, which the half
+    // vault held for a moment.
+    const recovery = new Hono().route('/api', vaultHistoryApi(target.vault, { commitNow: () => backup.commitNow() }));
+    expect(((await (await recovery.request('/api/history/deleted')).json()) as { deleted: unknown[] }).deleted).toEqual([]);
   });
 
   it('keeps what an undo set aside when something has taken its place, and deletes none of it', async () => {

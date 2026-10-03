@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { startVaultBackup, type VaultBackup } from './vaultBackup.ts';
 import { git } from './vaultGit.ts';
 
@@ -18,6 +18,20 @@ const tracked = (dir: string): string =>
   execFileSync('git', ['--git-dir', join(dir, '.history.git'), 'ls-tree', '-r', '--name-only', 'HEAD'], {
     encoding: 'utf-8',
   });
+
+/** How many saves the history holds; 0 for one that has none yet. */
+const saves = (dir: string): number =>
+  Number(execFileSync('git', ['--git-dir', join(dir, '.history.git'), 'rev-list', '--count', '--all'], { encoding: 'utf-8' }).trim());
+
+/** What a restore that stopped part way leaves standing (server/restore.ts). */
+function stuckJournal(dir: string, content = '{"moves":[]}'): string {
+  const journal = join(dir, '.restore', 'journal.json');
+  mkdirSync(join(dir, '.restore'), { recursive: true });
+  writeFileSync(journal, content);
+  return journal;
+}
+
+const settle = (ms: number): Promise<void> => new Promise((done) => setTimeout(done, ms));
 
 describe('vault backup', () => {
   let dir: string;
@@ -124,6 +138,74 @@ describe('vault backup', () => {
     backup = await startVaultBackup(dir, 50);
     expect(tracked(dir)).not.toContain('.history.git/');
     expect(tracked(dir)).toContain('games.json');
+  });
+
+  /**
+   * While a restore's journal stands, the vault is half one vault and half
+   * another. An autosave there saved the half vault as a version, and the
+   * put-back's save then added back everything it lacked: a duplicate
+   * version of each document set aside, per episode (measured on a running
+   * server before this was held).
+   */
+  it('records nothing while a restore stands part way, and saves again once it is put back', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'vault-backup-'));
+    writeFileSync(join(dir, 'note.md'), 'first\n');
+    backup = await startVaultBackup(dir, 50);
+    expect(saves(dir)).toBe(1);
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const said = (): number => warn.mock.calls.filter(([line]) => String(line).includes('part way through a restore')).length;
+    try {
+      const journal = stuckJournal(dir);
+      writeFileSync(join(dir, 'note.md'), 'second\n');
+      // The watcher's run, past its debounce, and two asked for directly.
+      await settle(300);
+      await backup.commitNow();
+      await backup.commitNow();
+      expect(saves(dir)).toBe(1);
+      // Said once, not on every run held off.
+      expect(said()).toBe(1);
+
+      // Put back: the next run saves what changed.
+      rmSync(journal);
+      await backup.commitNow();
+      expect(saves(dir)).toBe(2);
+      expect(execFileSync('git', ['--git-dir', join(dir, '.history.git'), 'show', 'HEAD:note.md'], { encoding: 'utf-8' })).toBe('second\n');
+
+      // A second episode is said again, once.
+      stuckJournal(dir);
+      writeFileSync(join(dir, 'note.md'), 'third\n');
+      await backup.commitNow();
+      await backup.commitNow();
+      expect(saves(dir)).toBe(2);
+      expect(said()).toBe(2);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it('makes no first save at startup while a restore stands part way, and lets a restore\'s own saves through', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'vault-backup-'));
+    writeFileSync(join(dir, 'note.md'), 'first\n');
+    // One that cannot be read, which the startup put-back leaves in place.
+    const journal = stuckJournal(dir, 'not a journal');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      backup = await startVaultBackup(dir, 50);
+    } finally {
+      warn.mockRestore();
+    }
+    expect(saves(dir)).toBe(0);
+
+    // A restore records the vault on each side of its swap through
+    // exclusive(), outside the journal's lifetime; nothing holds those.
+    await backup.exclusive((commit) => commit("a restore's own save"));
+    expect(log(dir)).toEqual(["a restore's own save"]);
+    expect(tracked(dir)).not.toContain('journal.json');
+
+    rmSync(journal);
+    writeFileSync(join(dir, 'note.md'), 'second\n');
+    await backup.commitNow();
+    expect(saves(dir)).toBe(2);
   });
 
   /**
