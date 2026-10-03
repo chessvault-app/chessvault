@@ -210,8 +210,8 @@ function DumpSourceChoice({
  *
  * Shared by the setup screen and Settings' card, which draw it at their
  * own weight, so the two cannot ask different questions about one file.
- * `preferDownload` picks the second answer to start on, for a retry of a
- * build that was downloading.
+ * `preferDownload` picks the second answer to start on, for a retry
+ * (retryPrefersDownload says when).
  */
 export function PuzzleBuildButton({
   label,
