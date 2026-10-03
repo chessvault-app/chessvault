@@ -416,8 +416,16 @@ its early commits, and one wiped with “Wipe all data” before 0.12.1, whose
 new history committed them after the wipe, along with its own folder.
 Then every password hash, authenticator secret and Lichess token they
 ever held goes along with each backup and each downloaded copy. The
-server says so at boot when it finds any. To purge them, stop the server
-and run this, with `h` naming the `.history.git` in your vault folder:
+server says so at boot when it finds any, and Settings → Security then
+opens with “Old secrets in the history”: **Remove old secrets** writes
+every save again without them, keeping every version of every document,
+and deletes the old copies from the history. Then change the app
+password, in the same card, and the Lichess token, in its own, since
+copies already downloaded or pulled off-box keep the old values.
+
+Where the app cannot do it (a server that will not start, say), the same
+from a terminal: stop the server and run this, with `h` naming the
+`.history.git` in your vault folder:
 
 ```bash
 h=vault/.history.git
@@ -433,8 +441,8 @@ git --git-dir=$h config core.bare false
 The rewrite alone is not the purge: filter-branch keeps the old commits
 under `refs/original`, and the reflog and the index still point at the
 old files, so the four lines after it drop those and delete what nothing
-reaches any more. Then rotate the password and the Lichess token, since
-copies already pulled off-box keep the old values.
+reaches any more. Then change the password and the Lichess token, as
+above.
 
 That first layer is reachable from the app, not only from git. Every
 study, game and note has a clock in its header (on a phone, Earlier
