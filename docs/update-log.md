@@ -12,7 +12,7 @@ in place and removes old secrets from the history, which 0.12.1 left to a
 shell. While one is stopped, pages say so and the history saves nothing;
 failed builds and lists say why. Untried on a real phone or Mac, in the
 desktop app, or out of memory or disk; a put-back another program blocks
-needs the server's owner.
+goes through only once that program lets go.
 
 - **With a puzzle dump in the data folder, the app can still get the
   newest puzzles.** A Lichess dump beside the puzzle database as
@@ -78,7 +78,7 @@ needs the server's owner.
   “Download a copy”, which packed the half vault without the folders set
   aside. Only when the put-back fails too, as it does while another
   program still holds a file in a folder it has to move, does the card say
-  what else finishes it: quitting and reopening the desktop app, or a
+  what else can finish it: quitting and reopening the desktop app, or a
   restart by whoever runs the server. Tried in a browser at a desktop's
   and an iPhone's size, in both languages, after a real restore that
   failed, twice: two other programs each held a file open during the swap,
@@ -86,6 +86,9 @@ needs the server's owner.
   still held them, the card said “Could not put the vault back yet. Every
   folder is still on the server.” and moved nothing; pressed after they
   let go, every file came back byte for byte as it was before the restore.
+  A restart, like the button, goes through only once the file is let go:
+  started while one was still held, a server run from this release
+  stopped at once, and started after, it put the vault back.
 - **Putting back a stopped restore keeps only what it could not move
   home.** A put-back, at the server's next start or now from the Vault
   card, kept the whole copy the restore had unpacked in the vault's
