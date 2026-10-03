@@ -1026,8 +1026,8 @@ export const ko: Record<string, string> = {
   Drill: '드릴',
   'Drill from here': '여기서 드릴하기',
   'Whole map': '맵 전체',
-  'Link a study first. A drill needs prepared moves.':
-    '먼저 스터디를 연결하세요. 드릴에는 준비된 수가 필요합니다.',
+  'Not prepared. A drill needs a linked study that holds this position.':
+    '준비되지 않았습니다. 드릴에는 이 포지션이 들어 있는 연결된 스터디가 필요합니다.',
   'Save failed': '저장 실패',
   'Map menu': '맵 메뉴',
   'Switch to the black map': '흑 맵으로 전환',
@@ -1486,8 +1486,6 @@ export const ko: Record<string, string> = {
   'Delete this PGN file': '이 PGN 파일 삭제',
   'Delete “{name}”? Databases already built from it are not affected.':
     '“{name}”을(를) 삭제할까요? 이미 만들어진 데이터베이스는 영향을 받지 않습니다.',
-  'Wait for the build to finish': '만들기가 끝날 때까지 기다리세요',
-  'Wait for the running job to finish': '진행 중인 작업이 끝날 때까지 기다리세요',
   'Add games to this database': '이 데이터베이스에 게임 추가',
   'Add games to “{name}”': '“{name}”에 게임 추가',
   'No PGN files uploaded yet. Upload the games to add first.':
@@ -2541,7 +2539,6 @@ export const ko: Record<string, string> = {
     '사본은 모든 문서와 변경 기록을 담은 tar 파일 하나입니다. 설정과 토큰은 서버에 남습니다.',
   // Restoring a copy: 복원 puts a state back, 되돌리기 undoes, 유지 keeps.
   'Restore from a copy': '사본에서 복원',
-  'Keep or undo the last restore first': '먼저 지난 복원을 유지하거나 되돌리세요',
   'That file is not a copy of a vault.': '그 파일은 보관함 사본이 아닙니다.',
   'This vault has no history of its own yet, so it takes the copy’s.':
     '이 보관함에는 아직 자체 기록이 없으므로 사본의 기록을 가져옵니다.',
@@ -2563,6 +2560,8 @@ export const ko: Record<string, string> = {
   'Undone. Reloading…': '되돌렸습니다. 다시 불러옵니다…',
   'Restored from a copy {when}. The vault as it was before still takes {size} on the server.':
     '{when} 사본에서 복원했습니다. 복원 전의 보관함이 아직 서버에서 {size}를 차지합니다.',
+  'Keep or undo this restore before restoring another copy.':
+    '다른 사본을 복원하기 전에 이 복원을 유지하거나 되돌리세요.',
   'Keep the restored vault': '복원한 보관함 유지',
   'Undo the restore': '복원 되돌리기',
   // A restore or its undo that stopped part way: 되돌려 놓기 puts the

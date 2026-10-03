@@ -72,6 +72,14 @@ const HISTORY_LINE: Record<RestoreState['history'], string> = {
   none: 'This server keeps no history, so the copy’s is left out.',
 };
 
+/**
+ * The sentence in RestorePending that says why Restore waits. The button
+ * is described by it rather than titled with it: a disabled button shows
+ * no tooltip to a mouse, a key or a finger (ui/button.tsx), so the reason
+ * is on the card, where a phone can read it too. One Vault card a page.
+ */
+const RESTORE_WAITS = 'restore-waits';
+
 export function RestoreButton({ state, reload }: { state: RestoreState | null; reload: () => Promise<void> }) {
   const [file, setFile] = useState<File | null>(null);
   const pick = async (picked: File): Promise<void> => {
@@ -89,13 +97,8 @@ export function RestoreButton({ state, reload }: { state: RestoreState | null; r
       <FilePicker
         accept=".tar,application/x-tar"
         disabled={state?.pending != null || state?.stuck === true}
-        title={
-          state?.stuck
-            ? t('Put the vault back first')
-            : state?.pending
-              ? t('Keep or undo the last restore first')
-              : undefined
-        }
+        title={state?.stuck ? t('Put the vault back first') : undefined}
+        aria-describedby={state?.pending && !state.stuck ? RESTORE_WAITS : undefined}
         onFiles={([picked]) => void pick(picked!)}
         render={<Button variant="secondary" />}
       >
@@ -288,7 +291,8 @@ export function RestorePending({ state, reload }: { state: RestoreState | null; 
         {t('Restored from a copy {when}. The vault as it was before still takes {size} on the server.', {
           when: formatAgo(pending.at),
           size: size(pending.bytes),
-        })}
+        })}{' '}
+        <span id={RESTORE_WAITS}>{t('Keep or undo this restore before restoring another copy.')}</span>
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="secondary" disabled={busy} onClick={() => setAsking('keep')}>

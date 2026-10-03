@@ -1,6 +1,6 @@
 import { AlertTriangle, Check, ChevronUp, Compass, Crosshair, Folder, GitBranch, Grid3x3, Library, ListTree, Maximize2, Network, NotebookPen, Orbit, Play, Plus, Repeat, Scissors, Target, Trash2, X, ZoomIn, ZoomOut } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { addSan, createTree, moveNumberLabel } from '@shared/tree';
 import { treeToPgn } from '@shared/pgn';
 import { sanitizeSegment } from '@shared/vaultNames';
@@ -905,6 +905,7 @@ function PanelAction({
   icon: Icon,
   label,
   title,
+  describedBy,
   disabled,
   onSelect,
 }: {
@@ -913,6 +914,9 @@ function PanelAction({
   label: string;
   /** What the column means, in full, on hover and to a screen reader. */
   title: string;
+  /** The panel's line that says why the column is off: never the title,
+      which a disabled button does not show. */
+  describedBy?: string;
   disabled?: boolean;
   onSelect: () => void;
 }) {
@@ -922,6 +926,7 @@ function PanelAction({
       size="sm"
       title={t(title)}
       aria-label={t(title)}
+      aria-describedby={describedBy}
       disabled={disabled}
       onClick={onSelect}
       className={PANEL_ACTION}
@@ -1053,6 +1058,11 @@ function NodePanel({
   const node = facts.mapNode;
   const isRoot = facts.parentId === null;
   const title = isRoot ? t('Starting position') : `${moveNumberLabel(facts.ply)} ${node.san ?? ''}`;
+  // Why Drill at the panel's foot is off, said as a line of the panel and
+  // not as its tooltip: a disabled button shows none (ui/button.tsx). Not
+  // under an illegal move, whose own line already says why.
+  const drillWhy = useId();
+  const drillOff = coverage !== undefined && !coverage.covered && facts.fen !== null;
 
   // The line's deepest opening name — what a player calls where they are.
   const fens: string[] = [];
@@ -1145,6 +1155,11 @@ function NodePanel({
           {coverage?.covered && (
             <p className="text-muted-foreground text-sm">
               {preparedText(coverage.preparedPlies, coverage.lineCount)}
+            </p>
+          )}
+          {drillOff && (
+            <p id={drillWhy} className="text-muted-foreground text-sm">
+              {t('Not prepared. A drill needs a linked study that holds this position.')}
             </p>
           )}
           {node.depth !== undefined && coverage && (
@@ -1539,11 +1554,8 @@ function NodePanel({
         <PanelAction
           icon={Play}
           label="Drill"
-          title={
-            coverage?.covered
-              ? 'Drill from here'
-              : 'Link a study first. A drill needs prepared moves.'
-          }
+          title="Drill from here"
+          describedBy={drillOff ? drillWhy : undefined}
           disabled={!coverage?.covered}
           onSelect={() => {
             // The trainer takes the map's whole repertoire — every scoped

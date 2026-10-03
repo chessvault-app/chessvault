@@ -87,6 +87,13 @@ interface ConfirmDialogOwnTrigger {
    */
   triggerTone?: 'quiet' | 'danger';
   disabled?: boolean;
+  /**
+   * The id of the line on the page that says why the trigger is
+   * disabled. The reason is never the title: a disabled button shows no
+   * tooltip (ui/button.tsx), and on an icon-only trigger the title is
+   * also its name, which a reason would replace.
+   */
+  triggerDescribedBy?: string;
   open?: never;
   onOpenChange?: never;
 }
@@ -108,6 +115,7 @@ interface ConfirmDialogHeldOpen {
   triggerClassName?: never;
   triggerTone?: never;
   disabled?: never;
+  triggerDescribedBy?: never;
 }
 
 export function ConfirmDialog(
@@ -131,6 +139,7 @@ export function ConfirmDialog(
           title={t(props.triggerTitle!)}
           aria-haspopup="dialog"
           aria-expanded={open}
+          aria-describedby={props.triggerDescribedBy}
           disabled={props.disabled ?? false}
           // A hover-revealed trigger must not fade away while its question is up.
           className={cn(props.triggerClassName, open && 'opacity-100')}
