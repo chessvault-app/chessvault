@@ -2371,7 +2371,7 @@
               </picture>
             </figure>
             <h2 data-ko="첫 방문: 풀 만들기">First visit: building the pool</h2>
-            <p data-ko="데이터베이스가 없으면 «아직 퍼즐 데이터베이스가 없습니다»(No puzzle database yet)와 <strong>내려받아 만들기</strong>(Download and build) 버튼이 표시됩니다. 단계가 그대로 보이고(«퍼즐 덤프를 내려받는 중»(Downloading the puzzle dump) → «데이터베이스를 만드는 중»(Building the database) → «색인하는 중»(Indexing)), «페이지를 떠나도 계속됩니다. 몇 분 걸립니다.»라고 안내하는데, 실제로 그렇습니다. 데이터베이스 폴더에 Lichess 퍼즐 덤프를 넣어 두었다면 페이지는 앱이 그것으로 만들고 내려받을 것은 없다고 말하며, 버튼은 <strong>만들기</strong>(Build)입니다. 누르면 먼저 묻습니다. «데이터베이스 폴더에 있는 퍼즐 덤프로»(From the puzzle dump in its folder) 만들지, «최신 퍼즐 내려받기»(Download the newest puzzles)를 고를지인데, 내려받기를 고르면 새 데이터베이스를 다 만든 뒤 그 덤프를 삭제합니다. 실패하면 이유를 한 문장으로 적고 <strong>다시 시도</strong>(Try again)를 내놓습니다. 그 뒤에 Lichess가 추가한 퍼즐을 받으려면 <a href='#settings'>설정</a>의 <strong>퍼즐 데이터베이스</strong>(Puzzle database) 카드에서 <strong>다시 만들기</strong>(Rebuild)를 누릅니다. 트레이너는 새 것이 준비될 때까지 지금 것을 씁니다.">
+            <p data-ko="데이터베이스가 없으면 «아직 퍼즐 데이터베이스가 없습니다»(No puzzle database yet)와 <strong>내려받아 만들기</strong>(Download and build) 버튼이 표시됩니다. 단계가 그대로 보이고(«퍼즐 덤프를 내려받는 중»(Downloading the puzzle dump) → «데이터베이스를 만드는 중»(Building the database) → «색인하는 중»(Indexing)), «페이지를 떠나도 계속됩니다. 몇 분 걸립니다.»라고 안내하는데, 실제로 그렇습니다. 데이터베이스 폴더에 Lichess 퍼즐 덤프를 넣어 두었다면 페이지는 앱이 그것으로 만들고 내려받을 것은 없다고 말하며, 버튼은 <strong>만들기</strong>(Build)입니다. 누르면 먼저 묻습니다. «데이터베이스 폴더에 있는 퍼즐 덤프로»(From the puzzle dump in its folder) 만들지, «최신 퍼즐 내려받기»(Download the newest puzzles)를 고를지인데, 내려받기를 고르면 새 데이터베이스를 다 만든 뒤 그 덤프를 삭제합니다. 실패하면 이유를 한 문장으로 적고(새로 고쳐도 남습니다) <strong>다시 시도</strong>(Try again)를 내놓습니다. 그 뒤에 Lichess가 추가한 퍼즐을 받으려면 <a href='#settings'>설정</a>의 <strong>퍼즐 데이터베이스</strong>(Puzzle database) 카드에서 <strong>다시 만들기</strong>(Rebuild)를 누릅니다. 트레이너는 새 것이 준비될 때까지 지금 것을 씁니다.">
               With no database the page shows “No puzzle database yet” and a
               <strong>Download and build</strong> button. The stages report themselves
               (“Downloading the puzzle dump” → “Building the database” → “Indexing”), and — “This
@@ -2380,7 +2380,8 @@
               builds from it with nothing to download, and the button is <strong>Build</strong>,
               which asks first: “From the puzzle dump in its folder”, or “Download the newest
               puzzles”, which deletes the dump once the new database is built. A build that
-              fails says why in a sentence and offers <strong>Try again</strong>. For the
+              fails says why in a sentence (a reload keeps saying it) and offers
+              <strong>Try again</strong>. For the
               puzzles Lichess has added since, <strong>Rebuild</strong> on the
               <strong>Puzzle database</strong> card in <a href="#settings">Settings</a> builds a
               newer set; the trainer keeps the current one until it is ready.
@@ -2976,7 +2977,7 @@
                   </tr>
                   <tr>
                     <td data-ko="퍼즐 데이터베이스(Puzzle database)">Puzzle database</td>
-                    <td data-ko="퍼즐 트레이너가 쓰는 Lichess 퍼즐 세트입니다. <strong>Lichess 퍼즐</strong>(Lichess puzzles) 줄에 퍼즐이 몇 개인지와 «{when} 만듦»(built {when})이 나오고, 옆의 <strong>다시 만들기</strong>(Rebuild)가 최신 세트로 다시 만듭니다. 누르면 먼저 묻습니다. 약 300MB를 내려받고 만드는 동안 디스크 여유 공간이 약 5.5GB 필요하며 메모리가 작은 서버에서는 메모리가 모자랄 수 있다는 것, 그리고 새 데이터베이스가 준비될 때까지 지금 것을 계속 쓰고 시도 기록은 그대로 남는다는 것입니다. 데이터베이스 폴더에 퍼즐 덤프를 넣어 두었다면 카드가 그렇게 말하고, 질문이 두 답 중 하나를 고르게 합니다. «데이터베이스 폴더에 있는 퍼즐 덤프로»(From the puzzle dump in its folder)는 아무것도 내려받지 않고 파일도 그대로 두며, «최신 퍼즐 내려받기»(Download the newest puzzles)는 약 300MB를 내려받고 새 데이터베이스를 다 만든 뒤 그 덤프를 삭제합니다. 어느 쪽이든 디스크 여유 공간이 5GB 넘게 필요합니다. 도는 동안 카드는 첫 빌드와 같은 단계를 보여 주고, 트레이너는 그대로 쓸 수 있습니다. 실패하면 카드가 이유를 한 문장으로 적고(새로 고쳐도 남습니다. 내려받기가 끊겼는지, 덤프를 읽을 수 없는지, 디스크나 메모리가 모자랐는지) <strong>다시 시도</strong>(Try again)를 내놓으며, 새 파일은 하나도 남지 않습니다. 폴더의 덤프를 읽을 수 없었다면 다시 시도는 내려받기를 고른 채로 묻습니다. 데이터베이스가 아직 없으면 줄이 «아직 만들지 않음»(Not built yet)이고, 퍼즐 페이지와 같은 <strong>내려받아 만들기</strong>(Download and build)가, 덤프가 있으면 같은 질문을 하는 <strong>만들기</strong>(Build)가 나옵니다. 보관함이 복원 도중에 멈춰 있는 동안에는 무엇이 설치되어 있는지 알 수 없으므로, 줄에는 대시만 나오고 그 아래에 이유가 적히며 다시 만들기는 나오지 않습니다. 카드는 <code>#/settings/puzzle-database</code> 주소로 열립니다. 데모에는 없습니다.">
+                    <td data-ko="퍼즐 트레이너가 쓰는 Lichess 퍼즐 세트입니다. <strong>Lichess 퍼즐</strong>(Lichess puzzles) 줄에 퍼즐이 몇 개인지와 «{when} 만듦»(built {when})이 나오고, 옆의 <strong>다시 만들기</strong>(Rebuild)가 최신 세트로 다시 만듭니다. 누르면 먼저 묻습니다. 약 300MB를 내려받고 만드는 동안 디스크 여유 공간이 약 5.5GB 필요하며 메모리가 작은 서버에서는 메모리가 모자랄 수 있다는 것, 그리고 새 데이터베이스가 준비될 때까지 지금 것을 계속 쓰고 시도 기록은 그대로 남는다는 것입니다. 데이터베이스 폴더에 퍼즐 덤프를 넣어 두었다면 카드가 그렇게 말하고, 질문이 두 답 중 하나를 고르게 합니다. «데이터베이스 폴더에 있는 퍼즐 덤프로»(From the puzzle dump in its folder)는 아무것도 내려받지 않고 파일도 그대로 두며, «최신 퍼즐 내려받기»(Download the newest puzzles)는 약 300MB를 내려받고 새 데이터베이스를 다 만든 뒤 그 덤프를 삭제합니다. 어느 쪽이든 디스크 여유 공간이 5GB 넘게 필요합니다. 도는 동안 카드는 첫 빌드와 같은 단계를 보여 주고, 트레이너는 그대로 쓸 수 있습니다. 실패하면 카드가 이유를 한 문장으로 적고(새로 고쳐도 남습니다. 내려받기를 시작하지 못했는지 도중에 끊겼는지, 덤프를 읽을 수 없는지, 디스크나 메모리가 모자랐는지) <strong>다시 시도</strong>(Try again)를 내놓으며, 새 파일은 하나도 남지 않습니다. 덤프가 있으면 다시 시도도 같은 질문을 다시 하는데, 실패한 것이 내려받기였거나 폴더의 덤프를 읽을 수 없었다면 내려받기를 고른 채로 묻습니다. 데이터베이스가 아직 없으면 줄이 «아직 만들지 않음»(Not built yet)이고, 퍼즐 페이지와 같은 <strong>내려받아 만들기</strong>(Download and build)가, 덤프가 있으면 같은 질문을 하는 <strong>만들기</strong>(Build)가 나옵니다. 보관함이 복원 도중에 멈춰 있는 동안에는 무엇이 설치되어 있는지 알 수 없으므로, 줄에는 대시만 나오고 그 아래에 이유가 적히며 다시 만들기는 나오지 않습니다. 카드는 <code>#/settings/puzzle-database</code> 주소로 열립니다. 데모에는 없습니다.">
                       The puzzle trainer's Lichess set. The <strong>Lichess puzzles</strong> row
                       says how many it holds and “built {when}”, and <strong>Rebuild</strong> beside
                       it replaces it with the latest set. It asks first: about 300 MB to download,
@@ -2989,10 +2990,11 @@
                       built; either needs over 5 GB of free disk. While it runs the card shows the
                       same stages the first build does, and the trainer stays usable. If it fails,
                       the card says why in a sentence (a reload keeps saying it): a download that
-                      was cut off, a dump that cannot be read, a full disk, memory. It offers
-                      <strong>Try again</strong>, and nothing of the new file is left behind; where
-                      the dump in the folder could not be read, Try again asks with the download
-                      chosen. With no database yet the row reads “Not built yet” and offers the
+                      could not start or was cut off, a dump that cannot be read, a full disk,
+                      memory. It offers <strong>Try again</strong>, and nothing of the new file is
+                      left behind. With a dump in place Try again asks the question again, with the
+                      download chosen where the download is what failed or the dump in the folder
+                      could not be read. With no database yet the row reads “Not built yet” and offers the
                       Puzzles page's own <strong>Download and build</strong>, or with a dump in place
                       <strong>Build</strong>, which asks the same question. While the vault is
                       stopped part way through a restore the card cannot tell what is installed:
