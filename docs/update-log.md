@@ -112,6 +112,10 @@ goes through only once that program lets go.
   everything that would read or write it is refused with “The vault is
   still part way through a restore. Put it back under Settings, Vault.”,
   which a page shows wherever it shows an error, and nothing is written.
+  A study or a game opened by its address says it could not be opened and
+  why. One that will not open for any other reason, such as a document
+  since deleted, now says so in Korean on a Korean screen, where it said
+  it in English.
   The change history records nothing either until the vault is put back:
   it had saved the half vault, and the put-back then saved every document
   set aside again, a duplicate version of each every time. Home, which

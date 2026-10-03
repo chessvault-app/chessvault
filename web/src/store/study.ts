@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { chaptersToPgn, pgnToChapters } from '@shared/pgn';
 import { createTree } from '@shared/tree';
 import type { Chapter } from '@shared/types';
-import { api, ApiError, apiErrorMessage } from '@/lib/api';
+import { api, ApiError, apiErrorMessage, apiRefusal } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { afterRouteSettled } from '@/lib/router';
 import { useAnalysis } from './analysis';
@@ -403,13 +403,19 @@ export const useStudy = create<StudyState>()((set, get) => {
         loadIntoAnalysis(chapters[0]!);
         return true;
       } catch (e) {
-        // A server that ANSWERED with an error is a document that would
-        // not open (deleted, renamed); anything else is the server away.
+        // The server's own sentence where it refused for a reason it
+        // names: a vault part way through a restore refuses every
+        // document until it is put back (server/restore.ts), and saying
+        // only that this one would not open read as a document lost.
+        // Otherwise a server that ANSWERED with an error is a document
+        // that would not open (deleted, renamed), and anything else is
+        // the server away. Each is translated here: the page's own t()
+        // knew no key for the line with the id already in it, so a
+        // Korean screen read it in English.
         set({
           error:
-            e instanceof ApiError && e.status !== 0
-              ? `could not open “${id}”`
-              : 'Vault server unreachable',
+            apiRefusal(e) ??
+            (e instanceof ApiError && e.status !== 0 ? t('Could not open “{id}”.', { id }) : t('Vault server unreachable')),
         });
         return false;
       }
