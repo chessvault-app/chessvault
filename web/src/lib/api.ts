@@ -273,3 +273,17 @@ export function apiErrorMessage(error: unknown): string {
     ? t(error.message)
     : t('Request failed ({status})', { status: '?' });
 }
+
+/**
+ * The server's own sentence, translated, when it refused for a reason it
+ * names (`reason` in its error body); null for any other failure, the
+ * network's included.
+ *
+ * For a page that has its own words for a failure and keeps them for
+ * that: a vault part way through a restore refuses nearly every route
+ * until it is put back (server/restore.ts), and "could not be loaded" or
+ * "not on the shelf" in its place reads as something lost.
+ */
+export function apiRefusal(error: unknown): string | null {
+  return error instanceof ApiError && error.reason !== null ? apiErrorMessage(error) : null;
+}

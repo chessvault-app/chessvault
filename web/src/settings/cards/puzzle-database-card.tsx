@@ -11,7 +11,7 @@ import {
   retryPrefersDownload,
   usePuzzleBuild,
 } from '@/puzzles/PuzzleDbSetup';
-import { api, ApiError, apiErrorMessage } from '@/lib/api';
+import { api, apiRefusal } from '@/lib/api';
 import { formatAgo } from '@/lib/dates';
 import { t } from '@/lib/i18n';
 import { Feedback } from '@/settings/cards/shared';
@@ -67,7 +67,7 @@ export function PuzzleDatabaseCard() {
         setDb({ ready: m.ready, puzzles: m.puzzles, builtAt: m.builtAt ?? null, dumpInPlace: m.dumpInPlace === true });
       })
       .catch((e: unknown) => {
-        setRefusal(e instanceof ApiError && e.reason !== null ? apiErrorMessage(e) : null);
+        setRefusal(apiRefusal(e));
         setDb('unknown');
       });
   }, []);

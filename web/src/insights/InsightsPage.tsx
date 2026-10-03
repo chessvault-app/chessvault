@@ -6,7 +6,7 @@ import { PASS_DEPTH, useAnalysisJob } from './analysisJob';
 import { CompareCard } from './CompareCard';
 import { ChartColumn } from 'lucide-react';
 import type { Ending } from '@shared/gameIndex';
-import { api, ApiError, apiErrorMessage } from '@/lib/api';
+import { api, apiRefusal } from '@/lib/api';
 import { routePlaceholderShown } from '@/lib/lazyRoute';
 import { t, useLang } from '@/lib/i18n';
 import { centipawnsLost, INSIGHTS_COPY } from './copy';
@@ -253,7 +253,7 @@ export function InsightsPage() {
           // until it is put back (server/restore.ts), which every other
           // page that reads the vault says, and this one said only that
           // the report could not be loaded.
-          setRefusal(error instanceof ApiError && error.reason !== null ? apiErrorMessage(error) : null);
+          setRefusal(apiRefusal(error));
         });
     };
     ask();
