@@ -19,7 +19,7 @@ import { mountVault } from './mountVault.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
 import { sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 import { migrateLegacyRefgames, refgamesBuildRunning, seedBundledRefgames, sweepUnfinishedBuilds } from './refgames.ts';
-import { recoverInterruptedRestore, restoreApi } from './restore.ts';
+import { recoverInterruptedRestore, restoreApi, stuckGuard } from './restore.ts';
 import { settingsApi } from './settings.ts';
 import { storageApi } from './storage.ts';
 import { engineNetsApi } from './engineNets.ts';
@@ -229,6 +229,10 @@ app.use('/api/*', (c, next) =>
 // this point requires the session (no-op unless appPassword is set).
 app.route('/api', authApi());
 app.use('/api/*', requireAuth());
+// A restore stopped part way leaves the vault half one and half another
+// until it is put back; every route but the few that touch nothing it
+// moves says so instead of reading or writing the half (server/restore.ts).
+app.use('/api/*', stuckGuard());
 
 // Everything that reads or writes the vault. Shared with the static demo,
 // which mounts the same list over an in-memory filesystem — see

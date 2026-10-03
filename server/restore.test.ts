@@ -22,7 +22,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 import { requireAuth } from './auth.ts';
 import { backupApi } from './backup.ts';
-import { recoverInterruptedRestore, restoreApi, type RestoreOptions } from './restore.ts';
+import { recoverInterruptedRestore, restoreApi, stuckGuard, type RestoreOptions } from './restore.ts';
 import { studiesApi } from './studies.ts';
 import { startVaultBackup, type VaultBackup } from './vaultBackup.ts';
 import { vaultHistoryApi } from './vaultHistory.ts';
@@ -712,6 +712,45 @@ describe('restore from a copy', () => {
     expect((await again.json()).error).toBe('The vault is not part way through a restore.');
   });
 
+  it('answers every other route with the sentence while stuck, so nothing reads or writes the half vault', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const before = everything(target.vault);
+    // Mounted as server/index.ts mounts them: the session, the guard, then
+    // the routes, with the few the Vault card needs standing in.
+    const app = new Hono();
+    app.use('/api/*', requireAuth(() => null, join(target.vault, 'sessions.json')));
+    app.use('/api/*', stuckGuard(target.vault));
+    app.route('/api', studiesApi(join(target.vault, 'notes'), 'notes', '.md'));
+    app.get('/api/settings', (c) => c.json({ ok: true }));
+    app.get('/api/storage', (c) => c.json({ ok: true }));
+    app.get('/api/engine/nets', (c) => c.json({ ok: true }));
+    app.route('/api', restoreApi(target.vault, { free: async () => null }));
+    const note = async (): Promise<Response> =>
+      app.request('/api/notes', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'During' }) });
+    expect((await app.request('/api/notes')).status).toBe(200);
+
+    stuckByHand(target.vault);
+    const refused = await app.request('/api/notes');
+    expect(refused.status).toBe(503);
+    expect(await refused.json()).toEqual({
+      error: 'The vault is still part way through a restore. Put it back under Settings, Vault.',
+      reason: 'stuck',
+    });
+    // A note saved now would make notes/ again where the vault's own has
+    // to go back to; it is refused, and no folder appears.
+    expect((await note()).status).toBe(503);
+    expect(existsSync(join(target.vault, 'notes'))).toBe(false);
+    for (const path of ['/api/settings', '/api/storage', '/api/engine/nets', '/api/storage/restore']) {
+      expect((await app.request(path)).status, path).toBe(200);
+    }
+
+    expect((await app.request('/api/storage/restore/recover', { method: 'POST' })).status).toBe(200);
+    expect(everything(target.vault)).toEqual(before);
+    expect((await app.request('/api/notes')).status).toBe(200);
+    expect((await note()).status).toBe(200);
+  });
+
   it('says so when a stuck vault still cannot be put back, and leaves the journal for the next try', async () => {
     const target = scratch('target');
     fillTarget(target.vault);
@@ -775,8 +814,11 @@ describe('restore from a copy', () => {
 
     const gated = new Hono();
     gated.use('/api/*', requireAuth(() => 'a password is set', join(target.vault, 'sessions.json')));
+    gated.use('/api/*', stuckGuard(target.vault));
     gated.route('/api', restoreApi(target.vault));
     expect((await gated.request('/api/storage/restore/recover', { method: 'POST' })).status).toBe(401);
+    // The lock screen first, as for any route: the guard is behind the session.
+    expect((await gated.request('/api/notes')).status).toBe(401);
 
     const busy = await restorer(target.vault, { busy: () => 'A database build is reading the vault’s files.' }).recover();
     expect(busy.status).toBe(409);

@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdir, open, rm, statfs, utimes, type FileHandle } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
-import { Hono } from 'hono';
+import { Hono, type MiddlewareHandler } from 'hono';
 import { readJson, renameRetrying, writeJson } from './atomic.ts';
 import { LOOPBACK_ONLY, VAULT, VAULT_SKELETON } from './paths.ts';
 import { walk } from './storage.ts';
@@ -390,14 +390,58 @@ const STUCK = 'The vault is still part way through a restore. Put it back under 
  * SQLite database or a process beside the folder rather than in it, do
  * not. Nothing this server keeps open sits under a folder a restore
  * moves: its databases are in the data folder, outside the vault or in
- * its `.data`, which stays in place. What is left is a request that was
- * already reading (a book's PDF, a download), and processes outside this
- * one: a scanner or indexer opening files it has just seen renamed, a
- * sync client, an editor or a terminal in a vault folder. Those let go
- * in their own time, which is all a restart had over a running server,
- * besides closing what the old process had open.
+ * its `.data`, which stays in place, and stuckGuard stops any request
+ * from opening a file in one while the journal stands. What is left is a
+ * request that was already reading (a book's PDF, a download), and
+ * processes outside this one: a scanner or indexer opening files it has
+ * just seen renamed, a sync client, an editor or a terminal in a vault
+ * folder. Those let go in their own time, which is all a restart had
+ * over a running server, besides closing what the old process had open.
  */
 const RECOVER_PAUSES_MS = [1_000, 3_000];
+
+/**
+ * Whether a request may still be answered while a swap's journal stands:
+ * the restore's own routes, which check for themselves, and the routes
+ * that touch nothing a restore moves (config.json and sessions.json stay
+ * in place; the engine's nets and the tablebase and explorer caches are
+ * in the data folder). The Settings page needs these to draw the Vault
+ * card that puts the vault back, and Home needs the settings to tell a
+ * vault that refuses from a server that is gone.
+ */
+function answersWhileStuck(method: string, path: string): boolean {
+  if (path === '/api/storage/restore' || path.startsWith('/api/storage/restore/')) return true;
+  if (path === '/api/storage') return method === 'GET';
+  return ['/api/settings', '/api/engine', '/api/tablebase', '/api/explorer'].some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+  );
+}
+
+/**
+ * Every other API route, refused while a swap's journal stands.
+ *
+ * The vault is half one vault and half another until it is put back. A
+ * route that went on would read the half: the notes list answered 500
+ * because its folder had moved, and the page said "Request failed (500)".
+ * Or it would write into the half, which is worse: a note saved or a
+ * puzzle solved makes `notes/` or `activity.jsonl` again where the
+ * put-back has to move the vault's own back to, and the put-back skips a
+ * rename whose source is back, so the vault's own would stay in
+ * `.restore` with nothing in the app to fetch it. So each is answered
+ * with the sentence that says what is wrong and where to put it right,
+ * which a page shows as it shows any refusal (reason 'stuck'). Deny by
+ * default, so a route added later is covered without being listed; the
+ * cost is one stat per API request, whether anything is stuck or not.
+ * Mounted after the session check, so a signed-out client is still sent
+ * to the lock screen.
+ */
+export function stuckGuard(vaultDir: string = VAULT): MiddlewareHandler {
+  const journal = journalPath(resolve(vaultDir));
+  return async (c, next) => {
+    if (!existsSync(journal) || answersWhileStuck(c.req.method, c.req.path)) return next();
+    return c.json({ error: STUCK, reason: 'stuck' }, 503);
+  };
+}
 
 export interface RestoreOptions {
   /** The running history writer, or null where there is none. */
