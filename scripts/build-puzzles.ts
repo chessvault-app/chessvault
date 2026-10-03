@@ -18,7 +18,8 @@
  * PUZZLE_DUMP_DOWNLOAD.
  *
  * Unless the build is asked for the newest set instead (`--download`, the
- * app's Rebuild question when a dump is in place). A dump in place was
+ * second answer of the question the app's Build, Rebuild and Try again ask
+ * when a dump is in place). A dump in place was
  * otherwise built from on every build, so one an older version left
  * behind, or one somebody put there a year ago, held every rebuild to
  * that set, and only deleting the file on the server's disk got newer
@@ -141,8 +142,11 @@ const report = (event: Event): void => {
     keeps unless it was asked to download the newest set instead. */
 const placed = resolve(DATA, PUZZLE_DUMP_PLACED);
 /** The dump in place this build was asked to download past, deleted
-    once the database is built. Only one that was there from the start:
-    a file put there while the build ran is not the one the question named. */
+    once the database is built. Only where one was there from the start:
+    with none, a file put there while the build ran is not one the
+    question named. It is deleted by name, so a file that replaced the one
+    in place mid-build goes instead, being "the file in the folder" the
+    question says is deleted. */
 const passedOver = !positional && DOWNLOAD && existsSync(placed);
 const fetched = !positional && (DOWNLOAD || !existsSync(placed));
 const source = positional

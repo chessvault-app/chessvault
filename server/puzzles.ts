@@ -830,8 +830,9 @@ export function puzzlesApi(
 
   /**
    * `download`: fetch the newest set even with a dump in place, which the
-   * builder then deletes once the database is built. The Rebuild question
-   * offers it beside the dump and says so. Without it a dump in place is
+   * builder then deletes once the database is built. The question Build,
+   * Rebuild and Try again ask where a dump is in place offers it beside
+   * the dump and says so (PuzzleBuildButton). Without it a dump in place is
    * built from, as it always was, and with no dump in place the build
    * downloads either way.
    */
