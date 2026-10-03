@@ -357,12 +357,12 @@ have held: `config.json` and `sessions.json`, which a history older than
 its excludes or one a wipe made before 0.12.1 saved, and the repo's own
 folder, which such a wipe's saved too. It is Settings → Security's
 Remove old secrets (`GET` and `POST /api/history/purge`, handed in as
-`purge` beside `commitNow`; the demo hands in none, so there the route
-answers `{ available: false }`, and its Settings has no Security card to
-ask). The count of saves that wrote them is kept per repo, taken at boot
-and again after a restore, a wipe or a purge, the only things that can
-change it. The same
-walk lists every version of `config.json` those saves wrote, and the `GET`
+`purge` beside `commitNow`; the demo hands in none, so there the `GET`
+answers `{ available: false }` and the `POST` refuses with a 409, and
+its Settings has no Security card to ask). The count of saves that
+wrote them is kept per repo, taken at boot and again after a restore, a
+wipe or a purge, the only things that can change it. The same walk
+lists every version of `config.json` those saves wrote, and the `GET`
 reads them in one `cat-file --batch` to say which of the app password, the
 2FA secret and the Lichess token they hold and whether each is the one in
 use now, so Settings can name what closes each: kinds and counts, never a
