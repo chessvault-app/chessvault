@@ -263,7 +263,9 @@ function finishInterruptedSwap(vault: string, rename?: Rename): Finished {
  * start used to throw instead, which was no safer, since the journal
  * guards either way, and left nothing to press: measured on Windows 11,
  * a server started while one file was still held exited in about 2 s,
- * and the desktop app's window then said its server had not started.
+ * and the desktop app's window, which waits up to 15 s for /api/health
+ * (desktop/main.mjs, read rather than run), then says its server did not
+ * start.
  * An unreadable journal was already left standing this way.
  *
  * What still stops a start is a journal nobody can look for (lstat
