@@ -87,7 +87,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   refused as well. A shelf whose list never came back now shows the line
   alone, and one already on screen stays. The collection drew rows still
   loading under its line for good, and now draws nothing there until Try
-  again brings the list.
+  again brings the list. Drill a study, in the repertoire trainer, said
+  “No studies yet” when the studies could not be listed at all, and now
+  says why.
 
 ## 0.12.1
 
