@@ -5,7 +5,7 @@
 What changed, newest first. Feature-level entries, not a commit ledger —
 `git log` has the full detail.
 
-## Unreleased
+## 0.12.2
 
 The app now puts back a stopped restore, gets the newest puzzles past a dump
 in place and removes old secrets from the history, which 0.12.1 left to a
