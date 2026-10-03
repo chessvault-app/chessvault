@@ -21,6 +21,16 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   browser at a desktop's and an iPhone's size, in both languages, on a
   vault stopped part way by hand; not yet after a real restore that
   failed.
+- **While a restore is stopped part way, pages say so and leave the
+  vault alone.** A page that read a folder the restore had moved said
+  “Request failed (500)”, and a page that saved something wrote into a
+  vault that was half one and half the other: a note saved then made a
+  new notes folder where the vault's own had to go back to, and the
+  vault's own notes stayed set aside. Until the vault is put back,
+  everything that would read or write it is refused with “The vault is
+  still part way through a restore. Put it back under Settings, Vault.”,
+  which a page shows wherever it shows an error, and nothing is written.
+  Settings, the Vault card and signing in work as before.
 
 ## 0.12.1
 
