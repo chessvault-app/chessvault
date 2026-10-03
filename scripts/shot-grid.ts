@@ -17,8 +17,9 @@
  * one vault that is the same for everyone.
  *
  * WHAT IT WALKS. Every route `check:contrast` walks plus the pages the
- * phone reaches through More and two leaf pages that claim the bottom
- * bar. Desktop and phone widths, light and dark, and six phone-only
+ * phone reaches through More, two leaf pages that claim the bottom
+ * bar, and the Workspace, the one picture of the explorer's My games
+ * counts. Desktop and phone widths, light and dark, and six phone-only
  * states: the phone as iOS (`chess-vault:platform` overriding the guess
  * lib/platform.ts makes, so the `ios:` variants apply in Chromium; a
  * change meant for iOS shows here and nowhere else), the phone as
@@ -34,16 +35,25 @@
  * settle rather than render, so those shots differ between two runs of
  * one build; capture-screenshots.mjs measured the same. Diff a pair of
  * runs of the SAME build first if a number there looks like a change.
- * Measured on 0.11.4: 28 of 202 pictures differed between two runs. The
- * trainer differed by 4 to 9% and the hub by 0.6 to 1.2%, both because
- * each load picks a different puzzle and draws its position; the hub is
- * named here because the 0.8.5 reading this paragraph used to quote had
- * only the trainer and the dashboard in it, and a 1.2% box nobody
- * expects reads as a change. The other 14 pictures moved 244 pixels at
- * most, scattered rather than filling their box (thumbnail edges). The
- * phone's scrolled, revealed, keyboard and 320px states were identical.
- * So a change that matters shows as a box the size of the thing
- * changed, anywhere but the two puzzle picks.
+ * Measured after 0.12.2: 30 of 210 pictures differed between two runs.
+ * The trainer differed by 5 to 8% and the hub by 0.6 to 0.9% on the
+ * phone, both because each load picks a different puzzle and draws its
+ * position; the hub is named here because the 0.8.5 reading this
+ * paragraph used to quote had only the trainer and the dashboard in it,
+ * and a box of nearly 1% nobody expects reads as a change. The
+ * Workspace's two desktop pictures moved 719 and 737 pixels: 591 of
+ * them the antialiased edges of the pieces on the top two ranks (7 a
+ * channel at most), the rest icon, chip and row edges and, in light, 1
+ * a channel at the rounded ends of the explorer's result bars. Its counts
+ * and recent games did not move, which is what makes a moved count a
+ * change; until the demo indexed every game before its first answer
+ * they changed from load to load. The other 14 pictures moved 351
+ * pixels at most (the Board page's board, also 7 a channel at most),
+ * scattered rather than filling their box. The phone's scrolled,
+ * revealed, keyboard and 320px states were identical, and so was the
+ * Workspace's gate card on the phone. So a change that matters shows
+ * as a box the size of the thing changed, anywhere but the two puzzle
+ * picks.
  */
 import { chromium, type BrowserContext } from 'playwright';
 import sharp from 'sharp';
@@ -88,6 +98,13 @@ const ROUTES = [
   // the page with the most cards and the longest column, and its outline
   // reserves every one of them, so it is worth a picture.
   '#/insights',
+  // The one picture of the explorer with rows in it: #/board has the
+  // explorer switched off, and the Workspace switches it on. That switch
+  // is persisted (store/explorer), so this route stays after #/board:
+  // ahead of it, every Board picture would show the explorer too. Under
+  // 72rem landscape the page is its gate card, which is what the phone
+  // states photograph.
+  '#/workspace',
   '#/more',
 ];
 
