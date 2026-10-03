@@ -3,7 +3,7 @@ import { Skeleton, useSlowLoad } from '@/components/skeletons';
 import { History, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
-import { api, apiErrorMessage } from '@/lib/api';
+import { api, apiErrorMessage, apiRefusal } from '@/lib/api';
 import { formatWhen } from '@/lib/dates';
 import { t } from '@/lib/i18n';
 import { Feedback, type Note } from '@/settings/cards/shared';
@@ -46,13 +46,22 @@ async function restoreLatest(kind: string, id: string): Promise<void> {
  * install with no git, the demo — rather than showing a permanently empty
  * box. It stays visible when the history exists and nothing is missing,
  * because a card that only appears after a disaster is one nobody knows
- * they have.
+ * they have, and when the list is refused for a reason the server names,
+ * which it then says where the list goes.
  */
 export function RecoveryCard() {
   type Gone = { kind: 'studies' | 'notes' | 'games'; id: string; at: string };
   const [gone, setGone] = useState<Gone[] | null>(null);
   const [available, setAvailable] = useState<boolean | null>(null);
   const [note, setNote] = useState<Note>(null);
+  /**
+   * Why the list could not be read, when the server refused it for a
+   * reason it names. A vault part way through a restore refuses it until
+   * the vault is put back (server/restore.ts), and the card took that for
+   * no history at all: it dropped out of the page and of the jump list,
+   * on the one page that says where the vault is put back.
+   */
+  const [unread, setUnread] = useState<string | null>(null);
   const [busy, setBusy] = useState('');
   const [showAll, setShowAll] = useState(false);
   const pending = useSlowLoad(available === null);
@@ -68,14 +77,22 @@ export function RecoveryCard() {
   const load = async (): Promise<void> => {
     // Only the request is in the try: the React Compiler cannot lower
     // the `?? []` inside one yet.
-    let res: { available: boolean; deleted?: Gone[] };
+    let res: { available: boolean; deleted?: Gone[] } | null = null;
+    let refused: string | null = null;
     try {
       res = await api<{ available: boolean; deleted?: Gone[] }>('/api/history/deleted');
-    } catch {
-      // No history route at all: nothing to offer, and nothing is wrong.
-      setAvailable(false);
+    } catch (e) {
+      refused = apiRefusal(e);
+    }
+    if (res === null) {
+      // Refused for a reason the server names: the card stays and says
+      // it. Any other failure is no history route at all: nothing to
+      // offer, and nothing is wrong.
+      setUnread(refused);
+      setAvailable(refused !== null);
       return;
     }
+    setUnread(null);
     setAvailable(res.available);
     setGone(res.deleted ?? []);
   };
@@ -133,6 +150,9 @@ export function RecoveryCard() {
   return (
     <Card icon={History} title={t('Deleted documents')}>
       <p className="text-muted-foreground text-sm leading-relaxed">{t(RECOVERY_BLURB)}</p>
+
+      {/* Where the list goes, as the Browsed games card says it. */}
+      <Feedback note={unread === null ? null : { kind: 'error', text: unread }} />
 
       {gone?.length === 0 && (
         <p className="text-muted-foreground text-sm">{t('Nothing is missing.')}</p>
