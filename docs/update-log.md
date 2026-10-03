@@ -76,11 +76,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   still part way through a restore. Put it back under Settings, Vault.”,
   which a page shows wherever it shows an error, and nothing is written.
   Settings, the Vault card and signing in work as before.
-- **The Studies shelf says why its list did not load.** It said “Vault
-  server unreachable” whenever the list failed, even when the server had
-  answered with its reason, and said it in English on a Korean shelf. It
-  now shows the server's own sentence, translated, and says the server is
-  unreachable only when it did not answer.
+- **The Studies shelf and the Games page's collection say why their list
+  did not load.** Both said “Vault server unreachable” whenever the list
+  failed, even when the server had answered with its reason, and the shelf
+  said it in English on a Korean shelf. Both now show the server's own
+  sentence, translated, and say the server is unreachable only when it did
+  not answer.
 
 ## 0.12.1
 
