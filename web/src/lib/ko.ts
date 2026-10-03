@@ -999,8 +999,8 @@ export const ko: Record<string, string> = {
   Drill: '드릴',
   'Drill from here': '여기서 드릴하기',
   'Whole map': '맵 전체',
-  'Link a study first. A drill needs prepared moves.':
-    '먼저 스터디를 연결하세요. 드릴에는 준비된 수가 필요합니다.',
+  'Not prepared. A drill needs a linked study that holds this position.':
+    '준비되지 않았습니다. 드릴에는 이 포지션이 들어 있는 연결된 스터디가 필요합니다.',
   'Save failed': '저장 실패',
   'Map menu': '맵 메뉴',
   'Switch to the black map': '흑 맵으로 전환',
