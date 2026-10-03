@@ -23,15 +23,15 @@ import { git, gitPipe, HISTORY_DIR_NAME } from './vaultGit.ts';
  * which is the half that matters: rewritten saves alone leave the old
  * ones in the packs that a copy carries.
  *
- * How: `cat-file --batch` reads every commit and its top-level tree, and
- * `fast-import` writes the new ones, one process each. The purged entries
- * are all at the top of the vault, so only a commit's root tree changes and
- * every folder under it is reused by id. The obvious plumbing, `ls-tree`,
- * `mktree` and `commit-tree` per save, is three processes a save, and one
- * measured 28 ms on a Windows desktop (200 `commit-tree`s in 5.6 s): about
- * four minutes for 3,000 saves. This way, a generated history of 3,000
- * saves and 30 MB of packs took 1.3 s, half of it the `gc`, and one of
- * 10,000 saves and 114 MB took 3.9 s.
+ * How: one `cat-file --batch` reads every commit and a second every
+ * top-level tree, and one `fast-import` writes the new ones. The purged
+ * entries are all at the top of the vault, so only a commit's root tree
+ * changes and every folder under it is reused by id. The obvious plumbing,
+ * `ls-tree`, `mktree` and `commit-tree` per save, is three processes a
+ * save, and one measured 28 ms on a Windows desktop (200 `commit-tree`s in
+ * 5.6 s): about four minutes for 3,000 saves. This way, a generated
+ * history of 3,000 saves and 30 MB of packs took 1.3 s, 0.5 s of it the
+ * reflog expiry and the `gc`, and one of 10,000 saves and 114 MB took 3.9 s.
  */
 
 /** The credentials: what the history must never hold. */
