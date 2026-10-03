@@ -18,12 +18,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   about 300 MB, after which the dump is deleted once the new database is
   built, as the question says. A download that fails keeps it. And the
   words now say what the build will do in every state: with no database
-  yet and a dump in place, the Puzzles page, Settings, the phone's puzzle
-  hub and Themes say the app builds from it, with nothing to download and
-  over 5 GB of free disk while it builds, where they said 300 MB to
-  download; with a database, the card says it can be rebuilt from the
-  dump or from a download. From a terminal, `npm run build:puzzles --
-  --download` does the same.
+  yet and a dump in place, the Puzzles page and Settings say the app
+  builds from it, with nothing to download and over 5 GB of free disk
+  while it builds, where they said 300 MB to download, and the phone's
+  puzzle hub and Themes say to build it from the dump where they said to
+  download and build it; with a database, the card says it can be rebuilt
+  from the dump or from a download. From a terminal, `npm run
+  build:puzzles -- --download` does the same.
 - **A failed puzzle build says what failed, in a sentence and in your
   language.** It showed the builder's last line as it was, “invalid zstd
   data” or “database or disk is full”, in English whichever language the
