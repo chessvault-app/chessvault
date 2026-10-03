@@ -1146,6 +1146,12 @@ export function HomePage() {
         .slice(0, 5);
       // Which tiles ended up with a figure, for next launch's reservation.
       writeFigures(counts);
+      // The vault answered, so whatever the card said is over. A kept Home
+      // asks again each time it is shown, and the stuck card has no Retry
+      // to clear it: with the vault put back from another device, or by a
+      // restart, it went on saying the restore had stopped part way above
+      // the vault it had just drawn.
+      setOutage(null);
       setData({
         counts,
         solvedToday: today,
