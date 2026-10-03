@@ -18,7 +18,7 @@ import {
   loadCollection,
 } from './collection';
 
-import { api, apiErrorMessage } from '@/lib/api';
+import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Disclosure } from '@/components/disclosure';
 import { autoFocusField } from '@/lib/media';
@@ -119,6 +119,12 @@ function Box({
     <div className={cn('flex min-h-0 flex-col [--card:var(--background)]', className)}>{children}</div>
   );
 }
+
+/** Why the collection did not load: the server's own sentence where it
+    answered (a vault part way through a restore says so,
+    server/restore.ts), translated; the network's where it did not. */
+const collectionError = (e: unknown): string =>
+  e instanceof ApiError ? apiErrorMessage(e) : t('Vault server unreachable');
 
 /**
  * The tabbed games browser: reference databases, the collection, and
@@ -391,8 +397,8 @@ export function GamesBrowser({
     try {
       setGames(await loadCollection());
       setLoaded(true);
-    } catch {
-      setError(t('Vault server unreachable'));
+    } catch (e) {
+      setError(collectionError(e));
     }
   }, []);
 
@@ -410,7 +416,7 @@ export function GamesBrowser({
         setGames(games);
         setLoaded(true);
       })
-      .catch(() => setError(t('Vault server unreachable')));
+      .catch((e: unknown) => setError(collectionError(e)));
     void afterRouteSettled(api<{ keys: string[] }>('/api/games/bookmarks'))
       .then((b) => setBookmarks(new Set(b.keys)))
       .catch(() => {});
