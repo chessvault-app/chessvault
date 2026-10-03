@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { Database } from 'lucide-react';
+import { api, apiErrorMessage } from '@/lib/api';
 import { navigate } from '@/lib/router';
+import { EmptyState } from '@/components/empty-state';
+import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { RefDbManager, type RefDb, type Source } from './RefDbManager';
@@ -42,10 +45,21 @@ export function DatabasesPage() {
     games?: number;
     databases?: RefDb[];
   } | null>(null);
+  /** Why /api/refgames did not answer, in the reader's language. A failed
+      read used to leave the page in its wait for good, the panel's
+      outline with nothing coming, and no word of why (a vault part way
+      through a restore is refused here, server/restore.ts). */
+  const [metaError, setMetaError] = useState<string | null>(null);
   const loadMeta = useCallback(() => {
     void api<{ ready: boolean; games?: number; databases?: RefDb[] }>('/api/refgames')
-      .then(setMeta)
-      .catch(() => setMeta(null));
+      .then((answer) => {
+        setMeta(answer);
+        setMetaError(null);
+      })
+      .catch((e: unknown) => {
+        setMeta(null);
+        setMetaError(apiErrorMessage(e));
+      });
   }, []);
 
   // What this device reserves while /api/refgames is out, from what it
@@ -115,7 +129,27 @@ export function DatabasesPage() {
         )}
       />
 
-      {meta === null ? (
+      {meta === null && metaError !== null ? (
+        // The Games page's Databases tab says the same failure of the
+        // same answer this way (games/DatabaseGames), with the same press.
+        <EmptyState
+          ground
+          icon={Database}
+          title="Could not load reference games"
+          body={metaError}
+          action={
+            <Button
+              size="sm"
+              onClick={() => {
+                setMetaError(null);
+                loadMeta();
+              }}
+            >
+              {t('Try again')}
+            </Button>
+          }
+        />
+      ) : meta === null ? (
         slow &&
         (reserved.mount === 'manager' ? (
           <RefDbManagerSkeleton rows={reserved.rows} />
