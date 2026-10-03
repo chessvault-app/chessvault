@@ -2569,7 +2569,8 @@ export const ko: Record<string, string> = {
   'A restore stopped part way through. Some of the vault’s folders are set aside until it is put back.':
     '복원이 도중에 멈췄습니다. 되돌려 놓을 때까지 보관함의 폴더 일부가 옆에 비켜 있습니다.',
   'Put the vault back': '보관함 되돌려 놓기',
-  'Put the vault back first': '먼저 보관함을 되돌려 놓으세요',
+  'Put the vault back before downloading or restoring a copy.':
+    '사본을 내려받거나 복원하기 전에 보관함을 되돌려 놓으세요.',
   'The vault is back. Reloading…': '보관함을 되돌려 놓았습니다. 다시 불러옵니다…',
   'Close any other program that has the vault’s files open, such as a sync client, an editor or a terminal in a vault folder, and try again. If it still fails, quit and reopen the app.':
     '동기화 클라이언트나 편집기, 보관함 폴더에서 연 터미널처럼 보관함의 파일을 열어 둔 다른 프로그램을 닫고 다시 시도하세요. 그래도 안 되면 앱을 종료했다가 다시 여세요.',

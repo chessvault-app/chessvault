@@ -80,6 +80,14 @@ const HISTORY_LINE: Record<RestoreState['history'], string> = {
  */
 const RESTORE_WAITS = 'restore-waits';
 
+/**
+ * The same for a restore stuck part way: the sentence in RestoreStuck's
+ * warning that says why Restore, and Download a copy in the Vault card,
+ * are off until the vault is put back. Stuck says it apart from pending,
+ * as the server does, so it wins where both stand.
+ */
+export const RESTORE_STUCK = 'restore-stuck';
+
 export function RestoreButton({ state, reload }: { state: RestoreState | null; reload: () => Promise<void> }) {
   const [file, setFile] = useState<File | null>(null);
   const pick = async (picked: File): Promise<void> => {
@@ -97,8 +105,7 @@ export function RestoreButton({ state, reload }: { state: RestoreState | null; r
       <FilePicker
         accept=".tar,application/x-tar"
         disabled={state?.pending != null || state?.stuck === true}
-        title={state?.stuck ? t('Put the vault back first') : undefined}
-        aria-describedby={state?.pending && !state.stuck ? RESTORE_WAITS : undefined}
+        aria-describedby={state?.stuck ? RESTORE_STUCK : state?.pending ? RESTORE_WAITS : undefined}
         onFiles={([picked]) => void pick(picked!)}
         render={<Button variant="secondary" />}
       >
@@ -376,7 +383,10 @@ export function RestoreStuck({ state }: { state: RestoreState | null }) {
     <div className="flex flex-col gap-2">
       <p className="text-warn flex items-start gap-2 text-sm leading-relaxed">
         <TriangleAlert className="mt-0.5 glyph shrink-0" />
-        <span>{t('A restore stopped part way through. Some of the vault’s folders are set aside until it is put back.')}</span>
+        <span>
+          {t('A restore stopped part way through. Some of the vault’s folders are set aside until it is put back.')}{' '}
+          <span id={RESTORE_STUCK}>{t('Put the vault back before downloading or restoring a copy.')}</span>
+        </span>
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="secondary" disabled={busy || done} onClick={() => void putBack()}>

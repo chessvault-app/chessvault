@@ -12,7 +12,7 @@ import { t } from '@/lib/i18n';
 import { BrandMark } from '@/components/brand-mark';
 import { setVaultName } from '@/lib/vaultName';
 import { Feedback, size, type Note, type Settings, type StorageReport } from '@/settings/cards/shared';
-import { RestoreButton, RestorePending, RestoreStuck, useRestoreState } from '@/settings/cards/restore-copy';
+import { RESTORE_STUCK, RestoreButton, RestorePending, RestoreStuck, useRestoreState } from '@/settings/cards/restore-copy';
 
 // --- Vault name ----------------------------------------------------------------
 // Its own card, not a second name in Profile: "Display name" is the
@@ -185,10 +185,12 @@ export function VaultCard({
         {/* Not while a restore is stuck: the server refuses the copy then
             (a copy of the half vault would be a backup of nothing anyone
             had), and a link the browser follows into a refusal fails with
-            no word in the app, so the button says why instead, as Restore
-            beside it does. */}
+            no word in the app, so the button is off and the stuck warning
+            below says why, as it does for Restore beside it. Described by
+            that sentence, not titled with it: a disabled button shows no
+            tooltip (ui/button.tsx). */}
         {restore.state?.stuck ? (
-          <Button variant="secondary" disabled title={t('Put the vault back first')}>
+          <Button variant="secondary" disabled aria-describedby={RESTORE_STUCK}>
             {vault ? t('Download a copy ({size})', { size: size(vaultBytes(vault.rows)) }) : t('Download a copy')}
           </Button>
         ) : (
