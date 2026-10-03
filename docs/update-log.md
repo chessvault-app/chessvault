@@ -79,6 +79,20 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   still held them, the card said “Could not put the vault back yet. Every
   folder is still on the server.” and moved nothing; pressed after they
   let go, every file came back byte for byte as it was before the restore.
+- **Putting back a stopped restore keeps only what it could not move
+  home.** A put-back, at the server's next start or now from the Vault
+  card, kept the whole copy the restore had unpacked in the vault's
+  .restore folder for good, with a line in the server's log at every start
+  and nothing in the app that could delete it; it now leaves .restore
+  empty. And an undo put back after something outside the server had made
+  one of its folders again in the vault, as a sync client or an editor
+  can, deleted the restored vault's own copy of that folder, with whatever
+  had been written in it since the restore. That copy now stays in
+  .restore and the server's log names it; the card still says the vault is
+  back, and only the server's disk reaches the copy. Tried on a server run
+  from this release with each state made by hand: after “Put the vault
+  back” .restore was empty, and after the undo's put-back the restored
+  vault's notes were still in it.
 - **While a restore is stopped part way, pages say so and leave the
   vault alone.** A page that read a folder the restore had moved said
   “Request failed (500)”, and a page that saved something wrote into a
