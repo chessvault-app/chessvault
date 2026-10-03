@@ -146,23 +146,19 @@ export function unsafeHistoryRepo(gitDir: string): string | null {
   return null;
 }
 
+/** A history command's whole argument list: how the repo is addressed, then `args`. */
+function historyArgs(gitDir: string, workTree: string, args: string[]): string[] {
+  // --literal-pathspecs: a document id may hold `[`, which git reads as a
+  // glob, so `log -- studies/a[bc].pgn` listed another document's
+  // versions. Every path these helpers are handed is a real name.
+  return ['--literal-pathspecs', '--git-dir', gitDir, '--work-tree', workTree, ...IDENTITY, ...NO_EXEC, ...args];
+}
+
 export function git(gitDir: string, workTree: string, args: string[]): Promise<string> {
   return new Promise((resolvePromise, reject) => {
     execFile(
       'git',
-      // --literal-pathspecs: a document id may hold `[`, which git reads
-      // as a glob, so `log -- studies/a[bc].pgn` listed another document's
-      // versions. Every path this helper is handed is a real name.
-      [
-        '--literal-pathspecs',
-        '--git-dir',
-        gitDir,
-        '--work-tree',
-        workTree,
-        ...IDENTITY,
-        ...NO_EXEC,
-        ...args,
-      ],
+      historyArgs(gitDir, workTree, args),
       // 64 MB rather than execFile's 1 MB default. `git show` of a study
       // hands back a whole PGN, which the studies route caps at 20 MB, and
       // `status --porcelain` over a vault mid-import lists thousands of
