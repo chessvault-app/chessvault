@@ -89,7 +89,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   loading under its line for good, and now draws nothing there until Try
   again brings the list. Drill a study, in the repertoire trainer, said
   “No studies yet” when the studies could not be listed at all, and now
-  says why.
+  says why. And the Databases page, which stood on its outline with no
+  word when the databases could not be read, now says “Could not load
+  reference games” with the reason and Try again.
 
 ## 0.12.1
 
