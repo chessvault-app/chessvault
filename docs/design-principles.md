@@ -1357,6 +1357,25 @@ Tailwind v4, CSS variables). What that means here, and what it does not:
   flush against its right edge and had lost the ring's whole right side
   and a third of its top, while the clip still trims the Cancel's resting
   shadow as it always did.
+- **A disabled control says why in text, never in its tooltip.** A
+  `title` on a disabled Button is drawn as the themed tooltip and is
+  never seen: `disabled:pointer-events-none` takes the hover, a disabled
+  button takes no focus, and a phone opens no tooltip at all. So the
+  reason a control is off is a line on the page near it, and the control
+  names that line with `aria-describedby`, while its title stays its
+  name. The editor's Analyse was already drawn this way (the warning
+  under the board); the opening map's Drill and Settings' Restore from a
+  copy are now. Base UI's `focusableWhenDisabled` was measured as the
+  other road (2026-10-03, headless Chromium, `ui/button.tsx` with the
+  app's CSS) and is not one. Hover and Tab did reach its tooltip, but the
+  registry's `disabled:` classes match `:disabled` and not the
+  `aria-disabled` it sets, so the button drew at full opacity and took
+  its hover fill; a phone still showed nothing; and a screen reader heard
+  no reason, because Base UI's tooltip sets no `aria-describedby`. A
+  wrapper that takes the hover reached the mouse alone, and given a
+  `tabIndex` it was a tab stop with no name. An icon's name on a
+  disabled button (Previous page, Zoom in) costs nothing hidden: only a
+  reason needs the line.
 
 ## Platform-specific design
 

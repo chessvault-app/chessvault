@@ -219,6 +219,21 @@ function Button({
   // keyboard focus, never on touch — instead of the browser's bubble. The
   // attribute itself is not set: two tips for one control would be the
   // worst of both.
+  //
+  // So a DISABLED button's title is never seen: `disabled:pointer-events-none`
+  // takes the hover, a disabled button takes no focus, and a finger opens
+  // no tip. The reason a button is off is visible text beside it, named by
+  // `aria-describedby`, and the title stays the button's name (the editor's
+  // Analyse, the map's Drill, Settings' Restore from a copy). Measured
+  // 2026-10-03 in headless Chromium on this file with the app's CSS,
+  // against the two ways of keeping the tip: `focusableWhenDisabled` let
+  // hover and Tab open it, but the `disabled:` classes above match
+  // `:disabled` and not the `aria-disabled` it sets, so the button drew at
+  // opacity 1 and took its hover fill; a phone showed nothing either way,
+  // and a screen reader got no reason, since Base UI's tooltip sets no
+  // `aria-describedby`. A wrapper taking the hover reached the mouse alone.
+  // Only the visible line reached a mouse, a key, a screen reader and a
+  // phone. See "The component layer" in docs/design-principles.md.
   if (title === undefined) return button;
   return (
     <Tooltip
