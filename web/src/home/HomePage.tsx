@@ -1532,8 +1532,10 @@ export function HomePage() {
             {outage.stuck ? (
               // The same card, for a server that answered and refused:
               // its sentence says where the vault is put back, and the
-              // press goes there. A retry would only be refused again,
-              // and putting the vault back reloads every page anyway.
+              // press goes there. A retry would only be refused again.
+              // The card goes once the vault answers: Home asks again each
+              // time it is shown, and the device that put the vault back
+              // reloads.
               <EmptyState
                 icon={ArchiveRestore}
                 title="Could not read the vault"
