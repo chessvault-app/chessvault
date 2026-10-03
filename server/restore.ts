@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdir, open, rm, statfs, utimes, type FileHandle } from 'node:fs/promises';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { Hono, type MiddlewareHandler } from 'hono';
 import { readJson, renameRetrying, writeJson } from './atomic.ts';
 import { LOOPBACK_ONLY, VAULT, VAULT_SKELETON } from './paths.ts';
@@ -190,6 +190,9 @@ function finishInterruptedSwap(vault: string): Finished {
   const work = workDir(vault);
   if (!existsSync(work)) return 'nothing';
   let outcome: Finished = 'nothing';
+  /** Work folders still holding a vault entry the put-back could not
+      move home, because something has made its place again. */
+  const stranded = new Set<string>();
   if (existsSync(journalPath(vault))) {
     let journal: { moves?: Move[] } | null = null;
     try {
@@ -208,6 +211,15 @@ function finishInterruptedSwap(vault: string): Finished {
     } catch (error) {
       throw new StillSwapped((error as Error).message);
     }
+    // rollBack skips a rename whose source is there again. When the
+    // target is in a work folder, what it skipped is a vault entry set
+    // aside there, kept below: the vault's own for a restore, in `out`,
+    // or the restored vault's for an undo, in `bin`, which the `out`
+    // check alone would delete with its folder.
+    for (const move of journal.moves) {
+      const [owner] = relative(work, resolve(vault, move.to)).split(sep);
+      if (owner && owner !== '..' && owner !== 'before' && exists(resolve(vault, move.to))) stranded.add(owner);
+    }
     rmSync(journalPath(vault), { force: true });
     console.warn('[restore] a restore was cut off part way; the vault is back as it was before it');
     outcome = 'put-back';
@@ -215,6 +227,10 @@ function finishInterruptedSwap(vault: string): Finished {
   for (const name of readdirSync(work)) {
     if (name === 'before') continue;
     const path = join(work, name);
+    if (stranded.has(name)) {
+      console.error(`[restore] ${RESTORE_DIR_NAME}/${name} holds vault files whose place something else has taken; left in place`);
+      continue;
+    }
     // A folder holding vault entries it was meant to hand on is kept and
     // said: deleting it could only lose them. The restore's own note,
     // written into `out` before the swap, is not one (a vault's dotfiles

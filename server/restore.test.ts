@@ -841,6 +841,46 @@ describe('restore from a copy', () => {
     expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
   });
 
+  it('keeps what an undo set aside when something has taken its place, and deletes none of it', async () => {
+    const source = scratch('source');
+    fillSource(source.vault);
+    const copy = await download(source.vault);
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const before = join(target.vault, '.restore', 'before');
+    let sabotage = false;
+    let calls = 0;
+    const { restore, undo, recover } = restorer(target.vault, {
+      move: (from, to) => {
+        // As in the undo above: its eight renames out and the first one
+        // back made, the next failing, and the rollback stopped.
+        if (sabotage && ++calls === 10) {
+          renameSync(before, `${before}-aside`);
+          writeFileSync(before, '');
+          throw Object.assign(new Error('the disk said no'), { code: 'EIO' });
+        }
+        renameSync(from, to);
+      },
+    });
+    expect((await restore(copy)).status).toBe(200);
+    put(target.vault, 'notes/Written since.md', 'work done after the restore\n');
+    sabotage = true;
+    expect((await undo()).status).toBe(500);
+    rmSync(before);
+    renameSync(`${before}-aside`, before);
+    // Something outside the server makes notes/ again, where the
+    // restored vault's notes, set aside by the undo, have to come back to.
+    expect(existsSync(join(target.vault, 'notes'))).toBe(false);
+    mkdirSync(join(target.vault, 'notes'));
+
+    expect((await recover()).status).toBe(200);
+    // They could not go home; they are kept where the undo put them, not
+    // swept away with the work folder.
+    const [work] = readdirSync(join(target.vault, '.restore')).filter((name) => name !== 'before');
+    expect(read(target.vault, `.restore/${work}/bin/notes/Written since.md`)).toBe('work done after the restore\n');
+    expect(read(target.vault, 'studies/Najdorf.pgn')).toBe('[Event "Najdorf"]\n\n1. e4 c5 *\n');
+  });
+
   it('puts a stuck vault back only for a signed-in client, one at a time, and not while a build reads its files', async () => {
     const target = scratch('target');
     fillTarget(target.vault);
