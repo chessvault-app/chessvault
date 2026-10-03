@@ -85,10 +85,10 @@ then now starts and waits for it.
   button, goes through only once the file is let go, but it no longer stops
   the server: one that cannot put the vault back as it starts comes up
   anyway, every page says the vault is part way through a restore, the card
-  offers “Put the vault back”, and nothing is written into the vault until
-  it is put back. Tried in a browser at a desktop's and an iPhone's size,
-  in both languages, after a real restore that failed, twice: two other
-  programs each held a file open during the swap, so it could neither
+  offers “Put the vault back”, and nothing the restore moved is touched
+  until it is put back. Tried in a browser at a desktop's and an iPhone's
+  size, in both languages, after a real restore that failed, twice: two
+  other programs each held a file open during the swap, so it could neither
   finish nor put the folders back. Pressed while they still held them, the
   card said “Could not put the vault back yet. Every folder is still on the
   server.” and moved nothing; pressed after they let go, every file came
