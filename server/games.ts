@@ -412,9 +412,13 @@ export function gamesApi(
   dir: string = VAULT_GAMES,
   configPath: string = VAULT_CONFIG,
   onCollected?: (n: number) => void,
+  /** `partWay`: the vault is part way through a restore (server/mountVault.ts),
+      so neither the folder is made nor the kept games healed here; the
+      first listing after the vault is put back heals them. */
+  options: { partWay?: boolean } = {},
 ): Hono {
   const collectionDir = resolve(dir, 'collection');
-  mkdirSync(collectionDir, { recursive: true });
+  if (!options.partWay) mkdirSync(collectionDir, { recursive: true });
   const api = new Hono();
 
   /** The handle the vault owner claimed for a provider, lowercased —
@@ -489,7 +493,7 @@ export function gamesApi(
       }
     }
   };
-  healVaultSides();
+  if (!options.partWay) healVaultSides();
 
   /**
    * The collection: one game per file, newest date first.

@@ -58,9 +58,10 @@ import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME, restoreJournalP
  * next start (recoverInterruptedRestore), and a put-back that failed too
  * is finished from the Vault card ("Put the vault back") or at that next
  * start, both by the same code, so the vault is always one whole vault
- * or the other once it is done. Until then the history saves nothing
- * either: the autosave holds off while the journal stands
- * (server/vaultBackup.ts). The last rename is what makes a restore
+ * or the other once it is done. A start whose put-back fails as well
+ * comes up guarded rather than not at all, so the card is there to press.
+ * Until then the history saves nothing either: the autosave holds off
+ * while the journal stands (server/vaultBackup.ts). The last rename is what makes a restore
  * pending, `.restore/<id>/out` becoming `.restore/before`, so the state
  * changes at one instant too.
  *
@@ -135,15 +136,20 @@ const restoredPath = (vault: string): string => resolve(beforeDir(vault), '.rest
 
 const exists = (path: string): boolean => lstatSync(path, { throwIfNoEntry: false }) !== undefined;
 
+/** How one rename of a swap or its put-back is made. Tests make one fail. */
+type Rename = (from: string, to: string) => void;
+
+const renameSwapped: Rename = (from, to) => renameRetrying(from, to, SWAP_TRIES);
+
 /** Undo the renames that were made, newest first. A rename whose target
     is gone or whose source is back was never made, or is undone. */
-function rollBack(vault: string, moves: Move[]): void {
+function rollBack(vault: string, moves: Move[], rename: Rename = renameSwapped): void {
   for (const move of [...moves].reverse()) {
     const from = resolve(vault, move.from);
     const to = resolve(vault, move.to);
     if (exists(to) && !exists(from)) {
       mkdirSync(dirname(from), { recursive: true });
-      renameRetrying(to, from, SWAP_TRIES);
+      rename(to, from);
     }
   }
 }
@@ -174,9 +180,6 @@ function swap(vault: string, moves: Move[], move: (from: string, to: string) => 
   rmSync(journalPath(vault), { force: true });
 }
 
-/** A rename of the journal that could not be undone: the journal stays. */
-class StillSwapped extends Error {}
-
 /** What finishInterruptedSwap found to do. */
 type Finished = 'nothing' | 'put-back' | 'unreadable';
 
@@ -185,10 +188,10 @@ type Finished = 'nothing' | 'put-back' | 'unreadable';
  * of operations that never finished. The one put-back there is, so that
  * whatever runs it does the same thing: recoverInterruptedRestore at the
  * start, and "Put the vault back" (POST /storage/restore/recover) in a
- * running server. Throws StillSwapped, with the journal left standing,
- * when a rename cannot be undone.
+ * running server. Throws what the rename said, with the journal left
+ * standing, when a rename cannot be undone.
  */
-function finishInterruptedSwap(vault: string): Finished {
+function finishInterruptedSwap(vault: string, rename?: Rename): Finished {
   const work = workDir(vault);
   if (!existsSync(work)) return 'nothing';
   let outcome: Finished = 'nothing';
@@ -208,11 +211,7 @@ function finishInterruptedSwap(vault: string): Finished {
       console.error(`[restore] ${RESTORE_DIR_NAME}/journal.json cannot be read; the vault may be part way through a restore. Nothing was changed.`);
       return 'unreadable';
     }
-    try {
-      rollBack(vault, journal.moves);
-    } catch (error) {
-      throw new StillSwapped((error as Error).message);
-    }
+    rollBack(vault, journal.moves, rename);
     // rollBack skips a rename whose source is there again. When the
     // target is in a work folder, what it skipped is a vault entry set
     // aside there, kept below: the vault's own for a restore, in `out`,
@@ -253,20 +252,49 @@ function finishInterruptedSwap(vault: string): Finished {
  * Called at startup, before anything else reads the vault: a swap cut off
  * after its first rename is put back from its journal, and the work
  * folders of operations that never finished are deleted.
+ *
+ * A put-back that fails here, as it does while another program holds a
+ * file in a folder it has to move, does not stop the start: the vault is
+ * 'part-way', the journal stands, and the server comes up guarded by it.
+ * stuckGuard refuses every route that would read or write the half vault,
+ * the history saves nothing, nothing at the start makes a folder or
+ * writes a file in it (server/openVault.ts), and the Vault card's "Put
+ * the vault back" runs this same put-back once the holder lets go. The
+ * start used to throw instead, which was no safer, since the journal
+ * guards either way, and left nothing to press: measured on Windows 11,
+ * a server started while one file was still held exited in about 2 s,
+ * and the desktop app's window then said its server had not started.
+ * An unreadable journal was already left standing this way.
+ *
+ * What still stops a start is a journal nobody can look for (lstat
+ * refusing, not finding nothing): the guards would read that as no
+ * journal, and every page would answer from what may be half a vault.
  */
-export function recoverInterruptedRestore(vault: string = VAULT): void {
+export function recoverInterruptedRestore(
+  vault: string = VAULT,
+  options: { move?: Rename } = {},
+): 'whole' | 'part-way' {
+  let failure: Error | null = null;
   try {
-    finishInterruptedSwap(vault);
+    finishInterruptedSwap(vault, options.move);
   } catch (error) {
-    if (!(error instanceof StillSwapped)) throw error;
-    // Starting on half of one vault and half of another would have the
-    // history record it and every page show it; the files are all still
-    // on disk, and the next start tries again.
-    throw new Error(
-      `a restore was cut off part way and could not be put back (${error.message}); ` +
-        `the vault's folders are all in ${workDir(vault)}, and the next start tries again`,
+    failure = error as Error;
+  }
+  if (lstatSync(journalPath(vault), { throwIfNoEntry: false }) === undefined) {
+    // Put back, and only the sweep after it failed: what it left the
+    // next start or the next put-back sweeps, as the card's does.
+    if (failure) console.error(`[restore] put the vault back, but could not clear the work folders: ${failure.message}`);
+    return 'whole';
+  }
+  // A journal that cannot be read has said so already.
+  if (failure) {
+    console.error(
+      `[restore] the vault is still part way through a restore, since a folder could not be put back (${failure.message}); ` +
+        `every folder is in ${workDir(vault)}. The server starts and refuses every page that reads or writes the vault ` +
+        `until it is put back: close whatever else has the vault's files open, then press "Put the vault back" in Settings, Vault, or restart the server.`,
     );
   }
+  return 'part-way';
 }
 
 class Stalled extends Error {}

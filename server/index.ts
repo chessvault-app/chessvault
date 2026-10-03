@@ -71,8 +71,12 @@ setDefaultAutoSelectFamilyAttemptTimeout(2_000);
 
 
 // The vault first: a restore cut off part way put back, its folders made,
-// the welcome seeded (server/openVault.ts).
-openVault();
+// the welcome seeded (server/openVault.ts). A put-back that fails leaves
+// it part way, and the server starts anyway, guarded: every step below
+// that would write into the vault is told, and leaves it alone. The data
+// folder is outside the vault, or inside it as a dot-folder a restore
+// never moves.
+const { partWay } = openVault();
 mkdirSync(DATA, { recursive: true });
 
 // The starter reference games that ship with the app, copied in the
@@ -226,7 +230,7 @@ app.use('/api/*', stuckGuard());
 // Everything that reads or writes the vault. Shared with the static demo,
 // which mounts the same list over an in-memory filesystem — see
 // server/mountVault.ts for why that list is not written twice any more.
-mountVault(app, { tablebase: () => proberFor(VAULT_CONFIG) });
+mountVault(app, { tablebase: () => proberFor(VAULT_CONFIG), partWay });
 
 /**
  * The safety net, started here so recovery can force a commit before it
@@ -267,14 +271,19 @@ app.route('/api', tablebaseApi());
 // days are counted differently.
 app.route(
   '/api',
-  puzzleBooksApi(undefined, undefined, {
-    onImported: (slug) => {
-      recordActivity('book', { id: slug });
+  puzzleBooksApi(
+    undefined,
+    undefined,
+    {
+      onImported: (slug) => {
+        recordActivity('book', { id: slug });
+      },
+      onSolved: () => {
+        recordActivity('puzzle');
+      },
     },
-    onSolved: () => {
-      recordActivity('puzzle');
-    },
-  }),
+    { partWay },
+  ),
 );
 app.route(
   '/api',
