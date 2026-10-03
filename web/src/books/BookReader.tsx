@@ -39,7 +39,7 @@ import { EditorView } from '@/editor/EditorView';
 import { useElementWidth } from '@/hooks/use-element-width';
 import { usePinchZoom, ZOOM_MAX, type PinchPoint } from '@/hooks/use-pinch-zoom';
 import { announce } from '@/lib/announce';
-import { api, apiErrorMessage } from '@/lib/api';
+import { api, apiErrorMessage, apiRefusal } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { useMediaQuery, useWideLayout } from '@/lib/media';
 import { navigate, up } from '@/lib/router';
@@ -154,17 +154,27 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
     );
   };
 
+  /**
+   * The server's own sentence when it refused the shelf for a reason it
+   * names. A vault part way through a restore refuses it until the vault
+   * is put back (server/restore.ts), and the page said the book was not
+   * on the shelf and may have been removed, while it was only set aside.
+   */
+  const [refusal, setRefusal] = useState<string | null>(null);
+
   // The book's row from the shelf: its title, and where reading stopped.
   const load = useCallback(async (force = false): Promise<void> => {
     // Only the awaited lookup is in the try: the React Compiler refuses a
     // conditional inside a try block, so the shelf's second ask lives in
     // findOnShelf and the answer is set after.
     let found: LibraryBook | null = null;
+    let refused: string | null = null;
     try {
       found = await findOnShelf(id, force);
-    } catch {
-      found = null;
+    } catch (e) {
+      refused = apiRefusal(e);
     }
+    setRefusal(refused);
     setBook(found);
   }, [id]);
   useEffect(() => {
@@ -463,11 +473,14 @@ export function BookReader({ id, page }: { id: string; page?: string }) {
             open): optically centred in what the header leaves, and
             standing on the page, not in a panel. */}
         <div className="optical-center min-h-0 flex-1">
+          {/* A refusal with a reason is a shelf nobody could read, not a
+              book gone from it: the note's and the study's own words
+              then, with the server's sentence under them. */}
           <EmptyState
             ground
-            icon={BookX}
-            title={t('That book is not on the shelf')}
-            body={t('It may have been removed. The shelf has what is there.')}
+            icon={refusal === null ? BookX : FileX}
+            title={refusal === null ? t('That book is not on the shelf') : t('The book could not be opened')}
+            body={refusal ?? t('It may have been removed. The shelf has what is there.')}
             action={<Button onClick={() => navigate('books')}>{t('Back to Books')}</Button>}
           />
         </div>

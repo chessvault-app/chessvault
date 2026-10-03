@@ -13,12 +13,27 @@
  * before.
  */
 import type { PDFDocumentLoadingTask } from 'pdfjs-dist';
+import { ApiError } from '@/lib/api';
 import { PDF_OPTIONS, type loadPdfjs } from '@/puzzles/ocr/pdfPage';
 import { PDF_RANGE_CHUNK, chunkBytes, decodeWarm } from '../../../shared/pdfWarm';
 
 type Pdfjs = Awaited<ReturnType<typeof loadPdfjs>>;
 
 const RETRIES = 3;
+
+/**
+ * Why the first range did not come, as the server put it where it named a
+ * reason (`{ error, reason }`, which api() reads the same way): a vault
+ * part way through a restore refuses the PDF until it is put back
+ * (server/restore.ts), and a book opened from a shelf drawn before that
+ * said "could not open (503)". Otherwise the status alone, as before.
+ */
+async function refused(res: Response): Promise<Error> {
+  const body = (await res.json().catch(() => null)) as { error?: unknown; reason?: unknown } | null;
+  return typeof body?.error === 'string' && typeof body.reason === 'string'
+    ? new ApiError(res.status, body.error, false, body.reason)
+    : new Error(`could not open (${res.status})`);
+}
 
 export async function openBookPdf(
   pdfjs: Pdfjs,
@@ -38,7 +53,7 @@ export async function openBookPdf(
     // length, which is what pdf.js's own loader starts from.
     const res = await fetch(urls.pdf, { headers: { range: `bytes=0-${PDF_RANGE_CHUNK - 1}` }, signal });
     const total = /\/(\d+)$/.exec(res.headers.get('content-range') ?? '')?.[1];
-    if (res.status !== 206 || !total) throw new Error(`could not open (${res.status})`);
+    if (res.status !== 206 || !total) throw await refused(res);
     warm = { length: Number(total), chunks: new Map([[0, new Uint8Array(await res.arrayBuffer())]]) };
   }
   const { length, chunks } = warm;

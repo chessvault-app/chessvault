@@ -5,6 +5,7 @@ import { useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState, 
 import { useSlowLoad } from '@/components/skeletons';
 
 import type { PinchLive, PinchPoint } from '@/hooks/use-pinch-zoom';
+import { apiRefusal } from '@/lib/api';
 import { afterRouteSettled, routeChanging, routeSettled } from '@/lib/router';
 import { cn } from '@/lib/utils';
 import { loadPdfjs } from '@/puzzles/ocr/pdfPage';
@@ -94,7 +95,9 @@ export function useBookPdf(
           owned = opened;
           setDoc(opened);
         } catch (e) {
-          if (live) setError((e as Error).message || 'could not open');
+          // The server's own sentence, translated, where it refused the
+          // PDF for a reason it names (books/pdfTransport).
+          if (live) setError(apiRefusal(e) ?? ((e as Error).message || 'could not open'));
         }
       })();
     }

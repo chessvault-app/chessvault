@@ -2377,6 +2377,7 @@ export const ko: Record<string, string> = {
   'The note could not be opened': '노트를 열 수 없습니다',
   'The study could not be opened': '스터디를 열 수 없습니다',
   'The game could not be opened': '게임을 열 수 없습니다',
+  'The book could not be opened': '책을 열 수 없습니다',
   'Could not open “{id}”.': '“{id}”을(를) 열 수 없습니다.',
   'Storage used': '저장 공간 사용량',
   'What the app keeps on disk. The vault is your documents. The rest is rebuilt or refetched after it is cleared from its own place.':
