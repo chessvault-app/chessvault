@@ -1459,8 +1459,6 @@ export const ko: Record<string, string> = {
   'Delete this PGN file': '이 PGN 파일 삭제',
   'Delete “{name}”? Databases already built from it are not affected.':
     '“{name}”을(를) 삭제할까요? 이미 만들어진 데이터베이스는 영향을 받지 않습니다.',
-  'Wait for the build to finish': '만들기가 끝날 때까지 기다리세요',
-  'Wait for the running job to finish': '진행 중인 작업이 끝날 때까지 기다리세요',
   'Add games to this database': '이 데이터베이스에 게임 추가',
   'Add games to “{name}”': '“{name}”에 게임 추가',
   'No PGN files uploaded yet. Upload the games to add first.':

@@ -1,5 +1,5 @@
 ﻿import { Database, FileText, Hammer, MoreHorizontal, Plus, Square, Trash2, Upload, Zap } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 
 import { announce } from '@/lib/announce';
 import { api, apiErrorMessage } from '@/lib/api';
@@ -200,6 +200,11 @@ export function RefDbManager({
   }, [onChanged]);
 
   const running = status?.running === true;
+  // The band's line, while a job runs, is the reason the verbs that would
+  // touch a database wait: they are described by it, and keep their own
+  // names (a disabled button shows no tooltip, ui/button.tsx).
+  const jobLineId = useId();
+  const waitingOn = running ? jobLineId : null;
   const stopped = !running && status?.stopped === true;
   const failed = !running && !stopped && status?.exitCode != null && status.exitCode !== 0;
 
@@ -401,7 +406,7 @@ export function RefDbManager({
         onAddTo={(n) => setAddTo(n)}
         onFastScan={(n, on) => void fastScan(n, on)}
         scanBusy={scanBusy}
-        optimizeDisabled={running}
+        waitingOn={waitingOn}
       />
     ) : (
       <SourceList
@@ -416,7 +421,7 @@ export function RefDbManager({
           })
         }
         onDelete={(n) => void delSource(n)}
-        deleteDisabled={running}
+        waitingOn={waitingOn}
       />
     );
 
@@ -526,7 +531,7 @@ export function RefDbManager({
                 the only place the games count ties to a file. */}
             <div className="flex items-center gap-2">
               <Spinner className="glyph shrink-0" />
-              <p className="text-foreground min-w-0 flex-1 truncate text-sm">{jobLine(status)}</p>
+              <p id={jobLineId} className="text-foreground min-w-0 flex-1 truncate text-sm">{jobLine(status)}</p>
               {/* Stop is a question, like Delete and Optimise: what was
                   indexed so far is thrown away. */}
               <Button variant="outline" size="sm" className="shrink-0" onClick={() => setAskingStop(true)}>
@@ -683,7 +688,7 @@ function DbList({
   onAddTo,
   onFastScan,
   scanBusy,
-  optimizeDisabled,
+  waitingOn,
 }: {
   databases: RefDb[];
   onDelete: (name: string) => void;
@@ -692,7 +697,9 @@ function DbList({
   onFastScan: (name: string, on: boolean) => void;
   /** The database whose scan index is loading or unloading right now. */
   scanBusy: string | null;
-  optimizeDisabled: boolean;
+  /** While a job runs, the id of its line in the band: Add games and
+      Optimise wait for it, and are described by it. */
+  waitingOn: string | null;
 }) {
   return (
     <ul className="divide-border divide-y">
@@ -705,7 +712,7 @@ function DbList({
           onAddTo={onAddTo}
           onFastScan={onFastScan}
           scanBusy={scanBusy}
-          optimizeDisabled={optimizeDisabled}
+          waitingOn={waitingOn}
         />
       ))}
     </ul>
@@ -728,7 +735,7 @@ function DbRow({
   onAddTo,
   onFastScan,
   scanBusy,
-  optimizeDisabled,
+  waitingOn,
 }: {
   d: RefDb;
   onDelete: (name: string) => void;
@@ -736,8 +743,9 @@ function DbRow({
   onAddTo: (name: string) => void;
   onFastScan: (name: string, on: boolean) => void;
   scanBusy: string | null;
-  optimizeDisabled: boolean;
+  waitingOn: string | null;
 }) {
+  const optimizeDisabled = waitingOn !== null;
   // Which question the ⋯ menu has asked, if any. The wide row's icons
   // keep their own — a ConfirmDialog with a trigger always has.
   const [asking, setAsking] = useState<'optimize' | 'delete' | null>(null);
@@ -856,11 +864,8 @@ function DbRow({
               variant="ghost"
               size="icon-sm"
               disabled={optimizeDisabled}
-              title={
-                optimizeDisabled
-                  ? t('Wait for the running job to finish')
-                  : t('Add games to this database')
-              }
+              title={t('Add games to this database')}
+              aria-describedby={waitingOn ?? undefined}
               className="shrink-0"
               onClick={() => onAddTo(d.name)}
             >
@@ -881,9 +886,8 @@ function DbRow({
               // Heavy, not destructive: the question is about the minutes,
               // and a red dialog said this deletes your database.
               tone="default"
-              triggerTitle={
-                optimizeDisabled ? 'Wait for the running job to finish' : 'Optimise this database'
-              }
+              triggerTitle="Optimise this database"
+              triggerDescribedBy={waitingOn ?? undefined}
               question={optimizeQuestion}
               confirmLabel="Optimise"
               onConfirm={() => onOptimize(d.name)}
@@ -989,13 +993,15 @@ function SourceList({
   picked,
   onToggle,
   onDelete,
-  deleteDisabled,
+  waitingOn,
 }: {
   sources: Source[];
   picked: Set<string> | null;
   onToggle: (name: string, on: boolean) => void;
   onDelete: (name: string) => void;
-  deleteDisabled: boolean;
+  /** While a job runs, the id of its line in the band: Delete waits for
+      it, and is described by it. */
+  waitingOn: string | null;
 }) {
   return (
     <ul className="divide-border divide-y">
@@ -1037,10 +1043,9 @@ function SourceList({
           <ConfirmDialog
             icon={Trash2}
             triggerClassName="shrink-0"
-            disabled={deleteDisabled}
-            triggerTitle={
-              deleteDisabled ? 'Wait for the build to finish' : 'Delete this PGN file'
-            }
+            disabled={waitingOn !== null}
+            triggerTitle="Delete this PGN file"
+            triggerDescribedBy={waitingOn ?? undefined}
             question={t('Delete “{name}”? Databases already built from it are not affected.', {
               name: s.name,
             })}
