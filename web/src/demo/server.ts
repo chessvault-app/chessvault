@@ -503,12 +503,42 @@ export async function installDemoBackend(): Promise<void> {
   }
   seedAnalysis();
   const app = buildApp();
+  /**
+   * Every seeded game is indexed before the first question about them is
+   * answered, so two loads of one build count the same games.
+   *
+   * The my-games index builds itself on its first request and, once that
+   * has taken 100 ms, hands the remaining files to a walk that indexes
+   * 50 ms of them at a time (server/myGames.ts, sync). A server keeps a
+   * big vault answering that way; here it made every count depend on how
+   * fast the machine was when the page asked. Measured on one build, the
+   * Workspace explorer's answer at the starting position counted 26 to
+   * 36 of the 46 games over eight loads, and it asks once per position.
+   * A grid run photographed Insights at 17 to 19 of its 31 games, before
+   * the page's own re-ask a second later had landed. Faster indexing only
+   * moves the line: with the sqlite shim's transactions, a 4x CPU
+   * throttle still counted 39 to 44.
+   *
+   * So the first /api/mygames request waits for the module's own reindex
+   * route, which indexes every file inline, and every later one is
+   * answered from the whole vault. The cost is one block on the first
+   * page that asks: that first answer took 47 ms, 293 ms under that
+   * throttle, where the walk spread the same work over 50 ms slices. A
+   * visitor who never opens a page that reads their games pays nothing,
+   * which is why this is not done at boot, where every visitor would
+   * wait for it before the first paint.
+   */
+  let gamesIndexed: Promise<Response> | null = null;
   const real = window.fetch.bind(window);
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const request = new Request(input as RequestInfo, init);
     const url = new URL(request.url, window.location.href);
     if (url.origin !== window.location.origin || !url.pathname.startsWith('/api/')) {
       return real(input as RequestInfo, init);
+    }
+    if (url.pathname.startsWith('/api/mygames')) {
+      gamesIndexed ??= Promise.resolve(app.request('/api/mygames/reindex', { method: 'POST' }));
+      await gamesIndexed;
     }
     return app.fetch(new Request(url.toString(), request));
   };
