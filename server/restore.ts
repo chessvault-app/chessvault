@@ -170,15 +170,23 @@ function swap(vault: string, moves: Move[], move: (from: string, to: string) => 
   rmSync(journalPath(vault), { force: true });
 }
 
+/** A rename of the journal that could not be undone: the journal stays. */
+class StillSwapped extends Error {}
+
+/** What finishInterruptedSwap found to do. */
+type Finished = 'nothing' | 'put-back' | 'unreadable';
+
 /**
- * Finish what a server killed part way through a restore left behind.
- * Called at startup, before anything else reads the vault: a swap cut off
- * after its first rename is put back from its journal, and the work
- * folders of operations that never finished are deleted.
+ * Put back a swap whose journal still stands, then delete the work folders
+ * of operations that never finished. The one put-back there is, so that
+ * whatever runs it does the same thing: recoverInterruptedRestore at the
+ * start. Throws StillSwapped, with the journal left standing, when a
+ * rename cannot be undone.
  */
-export function recoverInterruptedRestore(vault: string = VAULT): void {
+function finishInterruptedSwap(vault: string): Finished {
   const work = workDir(vault);
-  if (!existsSync(work)) return;
+  if (!existsSync(work)) return 'nothing';
+  let outcome: Finished = 'nothing';
   if (existsSync(journalPath(vault))) {
     let journal: { moves?: Move[] } | null = null;
     try {
@@ -190,21 +198,16 @@ export function recoverInterruptedRestore(vault: string = VAULT): void {
       // Unreadable: nothing here may be deleted, since the work folders
       // may hold half of the vault.
       console.error(`[restore] ${RESTORE_DIR_NAME}/journal.json cannot be read; the vault may be part way through a restore. Nothing was changed.`);
-      return;
+      return 'unreadable';
     }
     try {
       rollBack(vault, journal.moves);
     } catch (error) {
-      // Starting on half of one vault and half of another would have the
-      // history record it and every page show it; the files are all still
-      // on disk, and the next start tries again.
-      throw new Error(
-        `a restore was cut off part way and could not be put back (${(error as Error).message}); ` +
-          `the vault's folders are all in ${work}, and the next start tries again`,
-      );
+      throw new StillSwapped((error as Error).message);
     }
     rmSync(journalPath(vault), { force: true });
     console.warn('[restore] a restore was cut off part way; the vault is back as it was before it');
+    outcome = 'put-back';
   }
   for (const name of readdirSync(work)) {
     if (name === 'before') continue;
@@ -217,6 +220,28 @@ export function recoverInterruptedRestore(vault: string = VAULT): void {
       continue;
     }
     rmSync(path, { recursive: true, force: true });
+  }
+  return outcome;
+}
+
+/**
+ * Finish what a server killed part way through a restore left behind.
+ * Called at startup, before anything else reads the vault: a swap cut off
+ * after its first rename is put back from its journal, and the work
+ * folders of operations that never finished are deleted.
+ */
+export function recoverInterruptedRestore(vault: string = VAULT): void {
+  try {
+    finishInterruptedSwap(vault);
+  } catch (error) {
+    if (!(error instanceof StillSwapped)) throw error;
+    // Starting on half of one vault and half of another would have the
+    // history record it and every page show it; the files are all still
+    // on disk, and the next start tries again.
+    throw new Error(
+      `a restore was cut off part way and could not be put back (${error.message}); ` +
+        `the vault's folders are all in ${workDir(vault)}, and the next start tries again`,
+    );
   }
 }
 
