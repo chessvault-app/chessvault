@@ -291,10 +291,14 @@ the vault back” (`POST /api/storage/restore/recover`, under the history's
 `exclusive()` and the same busy guard, tried again after 1 s and 3 s), or
 at the next start. Until then a restore, an undo and a keep are refused,
 since a second swap would write its journal over this one and an undo
-would delete what the first had put back; and every other API route,
-but the few that touch nothing a restore moves, answers 503 with a
-sentence saying where to put the vault back (`stuckGuard`), so nothing
-reads the half vault or writes into it. Nor does the history save it:
+would delete what the first had put back; and every other API route
+answers 503 with a sentence saying where to put the vault back
+(`stuckGuard`), so nothing writes into the half vault. What still
+answers is the restore's own routes, which check for themselves, the
+few that touch nothing a restore moves (the settings, the engine's
+nets, the tablebase and the explorer), and the storage report Settings
+draws (`GET /api/storage`), the one read of the half vault left: its
+sizes count only what is in place. Nor does the history save it:
 while the journal stands, `commitNow` (which the watcher's timer, the
 first save at startup and a forced save all go through) records nothing
 and logs that once, because its `add -A` saved the half vault as a
@@ -357,10 +361,12 @@ have held: `config.json` and `sessions.json`, which a history older than
 its excludes or one a wipe made before 0.12.1 saved, and the repo's own
 folder, which such a wipe's saved too. It is Settings → Security's
 Remove old secrets (`GET` and `POST /api/history/purge`, handed in as
-`purge` beside `commitNow`, so the demo has no such route). The count of
-saves that wrote them is kept per repo, taken at boot and again after a
-restore, a wipe or a purge, the only things that can change it. The same
-walk lists every version of `config.json` those saves wrote, and the `GET`
+`purge` beside `commitNow`; the demo hands in none, so there the `GET`
+answers `{ available: false }` and the `POST` refuses with a 409, and
+its Settings has no Security card to ask). The count of saves that
+wrote them is kept per repo, taken at boot and again after a restore, a
+wipe or a purge, the only things that can change it. The same walk
+lists every version of `config.json` those saves wrote, and the `GET`
 reads them in one `cat-file --batch` to say which of the app password, the
 2FA secret and the Lichess token they hold and whether each is the one in
 use now, so Settings can name what closes each: kinds and counts, never a
