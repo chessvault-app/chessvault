@@ -103,12 +103,16 @@ export function PuzzleDatabaseCard() {
             the sizes the first build costs; the rebuild's are in its
             question. A dump in place changes both: the first build reads
             it and downloads nothing, and a rebuild can read it or fetch
-            the newest past it. */}
-        {installed && !installed.ready
-          ? t(dumpInPlace ? SETUP_BLURB_DUMP : SETUP_BLURB)
-          : dumpInPlace
-            ? t('The Lichess puzzles the trainer draws from. Rebuild it from the puzzle dump in its folder, or from a download of the ones added since.')
-            : t('The Lichess puzzles the trainer draws from. Rebuild it to get the ones added since.')}
+            the newest past it. Refused, what the card is and nothing
+            more: no rebuild is offered until the reason under the row is
+            gone, and the line said to rebuild it all the same. */}
+        {refusal !== null
+          ? t('The Lichess puzzles the trainer draws from.')
+          : installed && !installed.ready
+            ? t(dumpInPlace ? SETUP_BLURB_DUMP : SETUP_BLURB)
+            : dumpInPlace
+              ? t('The Lichess puzzles the trainer draws from. Rebuild it from the puzzle dump in its folder, or from a download of the ones added since.')
+              : t('The Lichess puzzles the trainer draws from. Rebuild it to get the ones added since.')}
       </p>
       <div className={SETTINGS_LIST}>
         <div className="flex items-center gap-2 py-(--row-py-dense) pl-3 pr-1.5">

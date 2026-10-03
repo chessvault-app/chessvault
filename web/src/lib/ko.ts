@@ -924,6 +924,7 @@ export const ko: Record<string, string> = {
     '아직 퍼즐 데이터베이스가 없습니다. 퍼즐 페이지에서 만들 수 있습니다.',
   // --- Settings, the puzzle database ---------------------------------------
   'Puzzle database': '퍼즐 데이터베이스',
+  'The Lichess puzzles the trainer draws from.': '트레이너가 문제를 내는 Lichess 퍼즐입니다.',
   'The Lichess puzzles the trainer draws from. Rebuild it to get the ones added since.':
     '트레이너가 문제를 내는 Lichess 퍼즐입니다. 다시 만들면 그 뒤에 추가된 퍼즐까지 받습니다.',
   'The Lichess puzzles the trainer draws from. Rebuild it from the puzzle dump in its folder, or from a download of the ones added since.':
