@@ -10,8 +10,9 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 The app now puts back a stopped restore, gets the newest puzzles past a dump
 in place and removes old secrets from the history, which 0.12.1 left to a
 shell. While one is stopped, pages say so and the history saves nothing;
-failed builds and lists say why. Untried on a real phone or Mac, out of
-memory or disk; a put-back another program blocks needs the server's owner.
+failed builds and lists say why. Untried on a real phone or Mac, in the
+desktop app, or out of memory or disk; a put-back another program blocks
+needs the server's owner.
 
 - **With a puzzle dump in the data folder, the app can still get the
   newest puzzles.** A Lichess dump beside the puzzle database as
