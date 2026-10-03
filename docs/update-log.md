@@ -38,26 +38,28 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   keeps saying why after a reload, as Settings did. And an empty dump
   fails as one that cannot be read, where it built an empty database.
 - **Old secrets in the change history can be removed from Settings.** A
-  vault older than 0.4.x, or one wiped before 0.12.1, can hold
-  config.json and sessions.json in earlier saves, so every password hash,
+  vault older than 0.4.x, or one wiped before 0.12.1, can hold config.json
+  and sessions.json in earlier saves, so every password hash,
   authenticator secret and Lichess token it ever had rides along in each
   downloaded copy, and until now taking them out meant the README's git
-  commands in a terminal. While the history holds any, Settings →
-  Security opens with “Old secrets in the history” and “Remove old
-  secrets”, which asks first, then writes every save again without them
-  (and without the history's own folder, which such a wipe saved too),
-  keeps every version of every document, and deletes the old copies. A
-  copy downloaded before keeps them, so the question and the line after it
-  name the secrets the history holds and what closes each: the app
+  commands in a terminal. While the history holds any, Settings → Security
+  opens with “Old secrets in the history” and “Remove old secrets”, which
+  asks first, then writes again every save from the first that held them,
+  leaving them out (and the history's own folder, which such a wipe saved
+  too), keeps every version of every document, and deletes the old copies.
+  A copy downloaded before keeps them, so the question and the line after
+  it name the secrets the history holds and what closes each: the app
   password or 2FA secret in use is changed in the same card, an old
   password wherever it is still used, and every Lichess token in it is
   deleted at Lichess, whose page the line links, since replacing a token
-  in the app does not revoke it. A history whose copies of the settings
-  hold no secret is told so instead. The server then stops warning about
-  them. On generated histories a Windows desktop took 1.3 s for 3,000
-  saves and 3.9 s for 10,000. Tried in a browser at a desktop's and a
-  phone's size in both languages, on vaults with no password or token,
-  with either, with both and with 2FA, not yet on a device.
+  in the app does not revoke it. A history that holds only its own folder,
+  or copies of the settings with no secret in them, gets “Old files in the
+  history” and “Remove old files” instead. The server then stops warning
+  about them. On generated histories a Windows desktop took 1.3 and 1.6 s
+  in two runs for 3,000 saves (30 MB of history) and 3.9 s for 10,000
+  (114 MB). Tried in a browser at a desktop's and a phone's size in both
+  languages, on vaults with no password or token, with either, with both
+  and with 2FA, not yet on a device.
 - **Settings → Vault can finish a restore that stopped part way.** When a
   restore or its undo failed part way and could not put the vault's
   folders back either, only a restart of the server finished it, and
