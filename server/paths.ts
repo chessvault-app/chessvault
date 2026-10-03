@@ -94,7 +94,9 @@ export const DATA = fromEnv('CHESS_VAULT_DATA') ?? resolve(REPO_ROOT, 'data');
 export const DATA_PUZZLES = resolve(DATA, 'puzzles.sqlite');
 /**
  * The name of a Lichess puzzle dump somebody put beside DATA_PUZZLES. A
- * build uses it rather than downloading, and keeps it: it is theirs.
+ * build uses it rather than downloading, and keeps it: it is theirs. Only
+ * a build asked for the newest set instead (the Rebuild question's other
+ * answer) passes it over, and deletes it once the new database is built.
  */
 export const PUZZLE_DUMP_PLACED = 'lichess_db_puzzle.csv.zst';
 /**

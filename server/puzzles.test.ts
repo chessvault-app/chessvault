@@ -11,6 +11,8 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { spawn } from 'node:child_process';
+import { createServer, type Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { zstdCompressSync } from 'node:zlib';
@@ -674,6 +676,9 @@ describe('puzzles api (rebuilding a working database)', () => {
   let app: Hono;
   let puzzles: ReturnType<typeof puzzlesApi>;
   const savedData = process.env.CHESS_VAULT_DATA;
+  const savedUrl = process.env.CHESS_TEST_PUZZLE_DUMP_URL;
+  /** A stand-in for Lichess, for the tests of the download. */
+  let lichess: Server | null = null;
 
   beforeEach(() => {
     data = mkdtempSync(join(tmpdir(), 'puzzles-rebuild-'));
@@ -682,28 +687,85 @@ describe('puzzles api (rebuilding a working database)', () => {
     // finds that directory the way the server does, from the environment.
     dump = join(data, 'lichess_db_puzzle.csv.zst');
     process.env.CHESS_VAULT_DATA = data;
+    // And a download that a test did not set up goes nowhere: port 9 is
+    // discard, closed on every machine these run on. The real dump is
+    // 300 MB, and no test may fetch it.
+    process.env.CHESS_TEST_PUZZLE_DUMP_URL = 'http://127.0.0.1:9/lichess_db_puzzle.csv.zst';
     puzzles = puzzlesApi(join(data, 'puzzles.sqlite'), join(data, 'state'));
     app = new Hono().route('/api', puzzles);
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     puzzles.closeDb();
     if (savedData === undefined) delete process.env.CHESS_VAULT_DATA;
     else process.env.CHESS_VAULT_DATA = savedData;
+    if (savedUrl === undefined) delete process.env.CHESS_TEST_PUZZLE_DUMP_URL;
+    else process.env.CHESS_TEST_PUZZLE_DUMP_URL = savedUrl;
+    if (lichess) await new Promise((done) => lichess!.close(done));
+    lichess = null;
     rmSync(data, { recursive: true, force: true });
   });
 
-  /** Start a build and wait for it to end, returning its last status. */
-  const build = async (): Promise<{ running: boolean; error?: string | null }> => {
-    expect((await app.request('/api/puzzles/build', { method: 'POST' })).status).toBe(200);
+  /**
+   * Serve `body` as the dump, from a local server the builder is pointed
+   * at. `cut` sends that many bytes of it and then drops the connection,
+   * as a download cut off half way does.
+   */
+  const serveDump = async (body: Buffer | null, cut?: number): Promise<void> => {
+    lichess = createServer((_req, res) => {
+      if (!body) {
+        res.writeHead(503).end();
+        return;
+      }
+      res.writeHead(200, { 'content-length': String(body.length) });
+      if (cut === undefined) res.end(body);
+      else res.write(body.subarray(0, cut), () => res.destroy());
+    });
+    await new Promise<void>((done) => lichess!.listen(0, '127.0.0.1', done));
+    const { port } = lichess.address() as AddressInfo;
+    process.env.CHESS_TEST_PUZZLE_DUMP_URL = `http://127.0.0.1:${port}/lichess_db_puzzle.csv.zst`;
+  };
+
+  type Status = {
+    running: boolean;
+    error?: string | null;
+    source?: string;
+    phase?: string;
+    dumpInPlace?: boolean;
+  };
+  const status = async (): Promise<Status> =>
+    (await (await app.request('/api/puzzles/build')).json()) as Status;
+
+  /** Start a build, with the Rebuild question's answer when there is one. */
+  const start = async (choice?: { download: boolean }): Promise<void> => {
+    const res = await app.request('/api/puzzles/build', {
+      method: 'POST',
+      ...(choice && { headers: { 'content-type': 'application/json' }, body: JSON.stringify(choice) }),
+    });
+    expect(res.status).toBe(200);
+  };
+
+  /** Wait for the running build to end, returning its last status. */
+  const settle = async (): Promise<Status> => {
     for (;;) {
-      const status = (await (await app.request('/api/puzzles/build')).json()) as {
-        running: boolean;
-        error?: string | null;
-      };
-      if (!status.running) return status;
+      const now = await status();
+      if (!now.running) return now;
       await new Promise((r) => setTimeout(r, 50));
     }
+  };
+
+  /** Start a build and wait for it to end, returning its last status. */
+  const build = async (choice?: { download: boolean }): Promise<Status> => {
+    await start(choice);
+    return settle();
+  };
+
+  /** The ids the served database holds, by asking the file itself. */
+  const idsBuilt = (): string[] => {
+    const db = new Database(join(data, 'puzzles.sqlite'), { readonly: true, fileMustExist: true });
+    const ids = (db.prepare('SELECT id FROM puzzles ORDER BY id').all() as { id: string }[]).map((r) => r.id);
+    db.close();
+    return ids;
   };
 
   /** A fresh draw: asking past the standing offer makes it go through the counts. */
@@ -739,6 +801,44 @@ describe('puzzles api (rebuilding a working database)', () => {
     }
     expect(phases[0]).toBe('building');
     expect(phases).not.toContain('downloading');
+  }, 60_000);
+
+  it('builds from the dump in place and fetches nothing unless asked for the newest set', async () => {
+    // The download points at a closed port (beforeEach), so a build that
+    // tried one would fail rather than pass.
+    writeFileSync(dump, dumpOf([{ id: 'old0', rating: 1500 }]));
+    const done = await build({ download: false });
+    expect(done.error ?? null).toBeNull();
+    expect(done.source).toBe('dump');
+    expect(idsBuilt()).toEqual(['old0']);
+    expect(existsSync(dump)).toBe(true);
+  }, 60_000);
+
+  it('downloads the newest set past a dump in place when asked, then deletes that dump', async () => {
+    writeFileSync(dump, dumpOf([{ id: 'old0', rating: 1500 }]));
+    await serveDump(dumpOf([{ id: 'new0', rating: 1500 }, { id: 'new1', rating: 1600 }]));
+    await start({ download: true });
+    // The server's own first word, before the child has said one, is the
+    // answer's: it is the download, not the dump in place.
+    expect(await status()).toMatchObject({ running: true, source: 'download', phase: 'downloading' });
+    const done = await settle();
+    expect(done.error ?? null).toBeNull();
+    expect(idsBuilt()).toEqual(['new0', 'new1']);
+    // The question says the dump in place goes once the database is built,
+    // and the download is the app's and goes too.
+    expect(existsSync(dump)).toBe(false);
+    expect(existsSync(join(data, PUZZLE_DUMP_DOWNLOAD))).toBe(false);
+    expect(done.dumpInPlace).toBe(false);
+  }, 60_000);
+
+  it('keeps the dump in place when the download it was passed over for fails', async () => {
+    writeFileSync(dump, dumpOf([{ id: 'old0', rating: 1500 }]));
+    await serveDump(null);
+    const failed = await build({ download: true });
+    expect(failed.error).toBeTruthy();
+    expect(failed.source).toBe('download');
+    expect(readFileSync(dump)).toEqual(dumpOf([{ id: 'old0', rating: 1500 }]));
+    expect(existsSync(join(data, 'puzzles.sqlite'))).toBe(false);
   }, 60_000);
 
   it('has the builder say it is building as it starts, and count every 10,000 rows', async () => {

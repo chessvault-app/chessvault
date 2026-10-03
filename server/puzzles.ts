@@ -6,6 +6,7 @@ import { dirname, resolve } from 'node:path';
 import { renameRetrying, writeAtomic } from './atomic.ts';
 import { DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD, PUZZLE_DUMP_PLACED, REPO_ROOT, VAULT } from './paths.ts';
 import { reviewDueAt, type ReviewAttempt } from '../shared/review.ts';
+import type { PuzzleDumpSource } from '../shared/puzzleBuild.ts';
 
 /**
  * Puzzle trainer backed by the local Lichess dump (data/puzzles.sqlite,
@@ -72,7 +73,9 @@ function isFinishedPuzzleBuild(path: string): boolean {
  * is a whole database that only missed its rename and is renamed in instead.
  *
  * A dump somebody PUT there (PUZZLE_DUMP_PLACED) is left alone:
- * it is theirs, and a build uses it rather than downloading. That name
+ * it is theirs, and a build uses it rather than downloading, unless it
+ * was asked for the newest set, which deletes it only once a database is
+ * built (scripts/build-puzzles.ts). That name
  * used to be the download's as well, so a download a dead build left
  * could not be told from it and stayed for good; the download has a name
  * of its own now (PUZZLE_DUMP_DOWNLOAD). Only the `.part` older versions
@@ -799,27 +802,40 @@ export function puzzlesApi(
   let build: {
     startedAt: number;
     running: boolean;
+    /** What it reads, so the app can say which file failed. */
+    source: PuzzleDumpSource;
     progress: BuildProgress;
     error: string | null;
   } | null = null;
 
   /**
    * Whether a dump somebody put beside the database is there, which a
-   * build uses instead of downloading (scripts/build-puzzles.ts, the same
-   * name in the same directory).
+   * build uses instead of downloading unless it is asked for the newest
+   * set (scripts/build-puzzles.ts, the same name in the same directory).
    */
   const dumpInPlace = (): boolean => existsSync(resolve(dirname(dbPath), PUZZLE_DUMP_PLACED));
 
-  const startBuild = (): void => {
+  /**
+   * `download`: fetch the newest set even with a dump in place, which the
+   * builder then deletes once the database is built. The Rebuild question
+   * offers it beside the dump and says so. Without it a dump in place is
+   * built from, as it always was, and with no dump in place the build
+   * downloads either way.
+   */
+  const startBuild = (download: boolean): void => {
+    // Settled here, once, and handed to the builder as a flag, so the
+    // first status below and what the builder reads cannot disagree.
+    const source: PuzzleDumpSource = !download && dumpInPlace() ? 'dump' : 'download';
     const current = {
       startedAt: Date.now(),
       running: true,
+      source,
       // What is shown until the child's first line, once Node has started
       // it (120 ms on a fast desktop, from source). It was always the
       // download, so a build from a dump in place read "Downloading the
       // puzzle dump, 0 / ? MB" with nothing being downloaded, and a
       // 500-row one said that until it was indexing.
-      progress: (dumpInPlace()
+      progress: (source === 'dump'
         ? { phase: 'building', rows: 0 }
         : { phase: 'downloading', bytes: 0, total: 0 }) as BuildProgress,
       error: null as string | null,
@@ -829,9 +845,10 @@ export function puzzlesApi(
     // A packaged build has no scripts/ and no tsx, so it ships the builder
     // as a bundle beside the server; the repo runs the source directly.
     const bundled = resolve(REPO_ROOT, 'server', 'build-puzzles.mjs');
+    const flags = source === 'download' ? ['--progress-json', '--download'] : ['--progress-json'];
     const args = existsSync(bundled)
-      ? [bundled, '--progress-json']
-      : ['--import', 'tsx', 'scripts/build-puzzles.ts', '--progress-json'];
+      ? [bundled, ...flags]
+      : ['--import', 'tsx', 'scripts/build-puzzles.ts', ...flags];
     const child = spawn(process.execPath, args, {
       cwd: REPO_ROOT,
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -911,20 +928,25 @@ export function puzzlesApi(
             running: build.running,
             seconds: (Date.now() - build.startedAt) / 1000,
             error: build.error,
+            source: build.source,
             ...build.progress,
           }
         : { running: false }),
-      // What the next build would do, for Settings' Rebuild question:
-      // with a dump in place it downloads nothing, and the question said
-      // "It downloads about 300 MB" all the same. Read on every poll, so
-      // a dump put there while the page is open is answered for too.
+      // What the next build could do, for Settings' Rebuild question:
+      // with a dump in place it can build from it and download nothing,
+      // and the question said "It downloads about 300 MB" all the same.
+      // Read on every poll, so a dump put there while the page is open is
+      // answered for too.
       dumpInPlace: dumpInPlace(),
     }),
   );
 
-  api.post('/puzzles/build', (c) => {
+  // `{ download: true }` is the question's other answer: the newest set,
+  // past a dump in place. No body is the build as it always was.
+  api.post('/puzzles/build', async (c) => {
+    const body = (await c.req.json().catch(() => ({}))) as { download?: unknown };
     if (build?.running) return c.json({ error: 'a build is already running' }, 409);
-    startBuild();
+    startBuild(body.download === true);
     return c.json({ running: true });
   });
 

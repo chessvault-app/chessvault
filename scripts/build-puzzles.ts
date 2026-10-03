@@ -3,6 +3,9 @@
  *
  *   npm run build:puzzles                     downloads the dump if it is missing
  *   npm run build:puzzles -- path/to/file.csv.zst
+ *   npm run build:puzzles -- --download       downloads the newest dump even
+ *                                             with one in place, and deletes
+ *                                             that one once the database is built
  *   npm run build:puzzles -- --progress-json  one JSON event per line (the app)
  *
  * The dump (https://database.lichess.org/lichess_db_puzzle.csv.zst, CC0,
@@ -13,6 +16,16 @@
  * is left alone, because it is somebody's file and not ours. The two have
  * different names, so that what is ours can be told apart afterwards: see
  * PUZZLE_DUMP_DOWNLOAD.
+ *
+ * Unless the build is asked for the newest set instead (`--download`, the
+ * app's Rebuild question when a dump is in place). A dump in place was
+ * otherwise built from on every build, so one an older version left
+ * behind, or one somebody put there a year ago, held every rebuild to
+ * that set, and only deleting the file on the server's disk got newer
+ * puzzles. Asked to download, the build leaves the dump in place alone
+ * while it works and deletes it once the new database is built, because
+ * a dump older than the database is no use to anyone and the question
+ * that asked says so. A build that fails keeps it.
  *
  * Output lands at data/puzzles.sqlite via a temp file + rename, so a running
  * server keeps serving the old database until the build completes.
@@ -36,7 +49,14 @@ import { resolve } from 'node:path';
 
 export const PUZZLE_SCHEMA_VERSION = 1;
 
-const DUMP_URL = 'https://database.lichess.org/lichess_db_puzzle.csv.zst';
+/**
+ * Where the dump comes from. `CHESS_TEST_PUZZLE_DUMP_URL` is for tests
+ * only and is not a setting: it points the download at a local server,
+ * so that a test of the download can run without fetching 300 MB from
+ * Lichess (server/puzzles.test.ts).
+ */
+const DUMP_URL =
+  process.env.CHESS_TEST_PUZZLE_DUMP_URL || 'https://database.lichess.org/lichess_db_puzzle.csv.zst';
 
 /** What the app's progress bar is drawn from. One per line on stdout. */
 type Event =
@@ -47,6 +67,8 @@ type Event =
 
 const args = process.argv.slice(2);
 const JSON_PROGRESS = args.includes('--progress-json');
+/** The newest set, whether or not a dump is in place (see the top). */
+const DOWNLOAD = args.includes('--download');
 const positional = args.find((a) => !a.startsWith('--'));
 
 /**
@@ -87,9 +109,14 @@ const report = (event: Event): void => {
   }
 };
 
-/** A dump somebody put in the data directory, which a build uses and keeps. */
+/** A dump somebody put in the data directory, which a build uses and
+    keeps unless it was asked to download the newest set instead. */
 const placed = resolve(DATA, PUZZLE_DUMP_PLACED);
-const fetched = !positional && !existsSync(placed);
+/** The dump in place this build was asked to download past, deleted
+    once the database is built. Only one that was there from the start:
+    a file put there while the build ran is not the one the question named. */
+const passedOver = !positional && DOWNLOAD && existsSync(placed);
+const fetched = !positional && (DOWNLOAD || !existsSync(placed));
 const source = positional
   ? resolve(process.cwd(), positional)
   : fetched
@@ -317,8 +344,11 @@ try {
   if (!JSON_PROGRESS) console.log('  rename deferred (target busy) — server will swap the file in');
 }
 
-// Only what this run fetched: a dump the user put there is theirs.
+// Only what this run fetched: a dump the user put there is theirs,
 if (fetched) rmSync(source, { force: true });
+// unless they asked for the newest set instead of it. The database is
+// whole by now, even where the server is left to rename it in.
+if (passedOver) rmSync(placed, { force: true });
 
 const seconds = (Date.now() - started) / 1000;
 report({ phase: 'done', puzzles: rows, seconds });
