@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import QRCode from 'qrcode';
-import { ShieldCheck } from 'lucide-react';
+import { Eraser, ShieldCheck } from 'lucide-react';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
@@ -9,13 +10,34 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { api, apiErrorMessage } from '@/lib/api';
 import { t } from '@/lib/i18n';
-import { Feedback, reauth, type Note, type Settings } from '@/settings/cards/shared';
+import { Feedback, reauth, type HistoryLeaks, type Note, type Settings } from '@/settings/cards/shared';
 
 // --- Security ----------------------------------------------------------------
 
-export function SecurityCard({ settings, onChanged }: { settings: Settings; onChanged: () => Promise<void> }) {
+export function SecurityCard({
+  settings,
+  leaks,
+  onChanged,
+  onHistoryRewritten,
+}: {
+  settings: Settings;
+  /** What the history holds of old credentials, or null where it cannot say. */
+  leaks: HistoryLeaks | null;
+  onChanged: () => Promise<void>;
+  /** The history was written again, and is smaller for it. */
+  onHistoryRewritten: () => void;
+}) {
+  const held = leaks?.available === true && ((leaks.commits ?? 0) > 0 || leaks.pending === true);
   return (
     <Card icon={ShieldCheck} title={t('Security')}>
+      {/* First, and only while there is something to take out: it is the
+          one thing in this card that is wrong now rather than a choice. */}
+      {held && leaks && (
+        <>
+          <HistorySecretsBlock leaks={leaks} settings={settings} onRewritten={onHistoryRewritten} />
+          <Separator />
+        </>
+      )}
       <PasswordBlock gate={settings.gate} />
       <Separator />
       <TotpBlock settings={settings} onChanged={onChanged} />
@@ -29,6 +51,109 @@ export function SecurityCard({ settings, onChanged }: { settings: Settings; onCh
       )}
     </Card>
   );
+}
+
+/**
+ * Old credentials in the history, and the way to take them out.
+ *
+ * A vault older than the history's excludes, or one wiped before 0.12.1,
+ * holds config.json and sessions.json in earlier saves, and a wipe's may
+ * hold the repo's own folder: every password hash, authenticator secret and
+ * Lichess token they ever held rides along in each downloaded copy. The
+ * way out was git in a terminal (server/historyPurge.ts does it now).
+ *
+ * In Security rather than Deleted documents: what it guards is the
+ * credentials, and the two things to do after it, a new password and a
+ * new token, are this card and the one under it. Shown only while the
+ * history holds them; a history that holds only the folder (a wipe of a
+ * vault with no config.json yet) is told so, with nothing to change after.
+ */
+function HistorySecretsBlock({
+  leaks,
+  settings,
+  onRewritten,
+}: {
+  leaks: HistoryLeaks;
+  settings: Settings;
+  onRewritten: () => void;
+}) {
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<Note>(null);
+  /** Credentials, rather than only the folder. A purge cut off part way
+      cannot say which it was, so it is taken for the worse. */
+  const secrets = (leaks.credentials ?? 0) > 0 || leaks.pending === true;
+
+  const purge = async (): Promise<void> => {
+    setBusy(true);
+    setNote(null);
+    try {
+      await api('/api/history/purge', { method: 'POST' });
+    } catch (e) {
+      // Through t(): every refusal the route gives is a sentence the
+      // dictionary has.
+      setNote({ kind: 'error', text: t(apiErrorMessage(e)) });
+      setBusy(false);
+      return;
+    }
+    setBusy(false);
+    setNote({ kind: 'ok', text: purgedLine(secrets, settings) });
+    onRewritten();
+  };
+
+  // Done: what is left to do, in the block's place, until the page is
+  // read again. The heading and the offer are not true any more.
+  if (note?.kind === 'ok') return <Feedback note={note} />;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <span className="text-base font-medium">
+        {secrets ? t('Old secrets in the history') : t('Old files in the history')}
+      </span>
+      <p className="text-muted-foreground text-sm">
+        {secrets
+          ? t('Removes the old passwords, 2FA secrets and Lichess tokens that earlier saves left in the change history, which every downloaded copy carries. Every version of every document stays.')
+          : t('Removes the copy of the history’s own files that earlier saves left in it, which every downloaded copy carries. Every version of every document stays.')}
+      </p>
+      <div className="flex items-center gap-3">
+        <Button variant="secondary" disabled={busy} onClick={() => setAsking(true)}>
+          {busy ? t('Removing…') : secrets ? t('Remove old secrets') : t('Remove old files')}
+        </Button>
+        <Feedback note={note} />
+      </div>
+      {/* The default tone: nothing the owner wants is lost, which is what
+          the question says first. The label is the window's title and its
+          button too, and "Remove them from the history" was cut to
+          "emove them from the histor" in that button at 1280 wide. */}
+      <ConfirmDialog
+        icon={Eraser}
+        tone="default"
+        open={asking}
+        onOpenChange={setAsking}
+        question={
+          secrets
+            ? t('Every version of every document stays, and only the old passwords, 2FA secrets and Lichess tokens go. A copy downloaded before still holds them, so afterwards change the app password in this card and replace the token in the Lichess token card.')
+            : t('Every version of every document stays, and only the copy of the history’s own files goes. A copy downloaded before still holds it.')
+        }
+        confirmLabel={secrets ? 'Remove old secrets' : 'Remove old files'}
+        onConfirm={() => void purge()}
+      />
+    </div>
+  );
+}
+
+/** What is left to do once the history no longer holds them: the
+    credentials this vault has now, each named where it is changed. */
+function purgedLine(secrets: boolean, settings: Settings): string {
+  if (!secrets) return t('The history no longer holds a copy of its own files.');
+  if (settings.gate && settings.lichess.configured) {
+    return t('The old secrets are out of the history. Now change the app password below and replace the token in the Lichess token card.');
+  }
+  if (settings.gate) return t('The old secrets are out of the history. Now change the app password below.');
+  if (settings.lichess.configured) {
+    return t('The old secrets are out of the history. Now replace the token in the Lichess token card.');
+  }
+  return t('The old secrets are out of the history.');
 }
 
 /**

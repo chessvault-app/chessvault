@@ -131,7 +131,7 @@ export async function prepareHistoryRepo(gitDir: string, dir: string): Promise<v
   const leaks = await historyLeaks(gitDir, dir, { fresh: true }).catch(() => null);
   if (leaks && leaks.commits > 0) {
     console.warn(
-      `[vault-backup] ${leaks.commits} save(s) in ${HISTORY_DIR_NAME} hold config.json, sessions.json or the history's own folder, from an older version or an earlier wipe. They hold past secrets: Settings, Security, "Remove them from the history" takes them out (the paragraph on backups in README.md does the same from a terminal).`,
+      `[vault-backup] ${leaks.commits} save(s) in ${HISTORY_DIR_NAME} hold config.json, sessions.json or the history's own folder, from an older version or an earlier wipe. They hold past secrets: Settings, Security, "Remove old secrets" takes them out (the paragraph on backups in README.md does the same from a terminal).`,
     );
   }
 }
