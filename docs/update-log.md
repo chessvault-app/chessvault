@@ -75,7 +75,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   everything that would read or write it is refused with “The vault is
   still part way through a restore. Put it back under Settings, Vault.”,
   which a page shows wherever it shows an error, and nothing is written.
-  Settings, the Vault card and signing in work as before.
+  The change history records nothing either until the vault is put back:
+  it had saved the half vault, and the put-back then saved every document
+  set aside again, a duplicate version of each every time. Settings, the
+  Vault card and signing in work as before.
 - **The Studies shelf and the Games page's collection say why their list
   did not load.** Both said “Vault server unreachable” whenever the list
   failed, even when the server had answered with its reason, and the shelf
