@@ -76,6 +76,13 @@ export function BooksPage() {
   const [books, setBooks] = useState<LibraryBook[] | null>(libraryMemory.books);
   const [folders, setFolders] = useState<string[]>(libraryMemory.folders);
   const [error, setError] = useState<string | null>(null);
+  /** The last load failed. With no list ever in hand that is the whole
+      answer: the error line, and no count, no skeleton and no empty
+      shelf under it (a vault part way through a restore was told "No
+      books yet" beneath the sentence saying why it could not be read).
+      A list already drawn stays drawn. */
+  const [failed, setFailed] = useState(false);
+  const unread = failed && books === null;
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');
   const undoable = useUndoable();
@@ -125,8 +132,9 @@ export function BooksPage() {
       setBooks(next);
       setFolders(libraryMemory.folders);
       setError(null);
+      setFailed(false);
     } catch (e) {
-      setBooks((prev) => prev ?? []);
+      setFailed(true);
       setError(apiErrorMessage(e));
     }
   }, []);
@@ -254,7 +262,7 @@ export function BooksPage() {
       <ShelfToolbar
         title={t('Books')}
         subtitle={
-          books === null ? (
+          unread ? undefined : books === null ? (
             <SkeletonSubtitle />
           ) : (
             <ShelfCount
@@ -288,7 +296,7 @@ export function BooksPage() {
 
       {error && <p className="text-destructive text-sm">{error}</p>}
 
-      {books === null ? (
+      {unread ? null : books === null ? (
         // A vault seen without books (or never seen — nothing seeds one)
         // reserves nothing: its settle is the EmptyState.
         pending && shelfHasShape(reservedShelf) ? (

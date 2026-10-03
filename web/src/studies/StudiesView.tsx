@@ -76,6 +76,11 @@ function StudyList() {
   const studies = useStudy((s) => s.studies);
   const folders = useStudy((s) => s.folders);
   const listLoaded = useStudy((s) => s.listLoaded);
+  // A list whose first load failed: the error line is the whole answer,
+  // with no count and no empty shelf under it (a vault part way through a
+  // restore was told "No studies yet" beneath the sentence saying why it
+  // could not be read). A later failure keeps the list already drawn.
+  const unread = useStudy((s) => s.listLoaded && !s.listArrived);
   const error = useStudy((s) => s.error);
   const refresh = useStudy((s) => s.refresh);
   const create = useStudy((s) => s.create);
@@ -211,7 +216,7 @@ function StudyList() {
               shelfHasShape(reservedShelf)
               ? <SkeletonSubtitle />
               : undefined
-            : studies.length === 0
+            : unread || studies.length === 0
               ? undefined
               : (
                 <ShelfCount
@@ -249,7 +254,7 @@ function StudyList() {
         pending && shelfHasShape(reservedShelf) ? (
           <StudiesCards layout={view.layout} groups={reservedShelf} />
         ) : null
-      ) : /* Nothing in the vault at all — no study at any depth (the listing
+      ) : unread ? null : /* Nothing in the vault at all — no study at any depth (the listing
              walks the tree) and not one collection either. A shelf holding
              only empty collections is NOT this: it has something to show,
              and GroupedStudies below shows it. */

@@ -155,6 +155,13 @@ function NoteList() {
   const [linkCounts, setLinkCounts] = useState<Record<string, number>>({});
   const [markedOnly, setMarkedOnly] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  /** Whether the list has come back at least once. A shelf whose first
+      load failed has no notes to count and no empty shelf to offer: the
+      error line is the whole answer (a vault part way through a restore
+      was told "No notes yet" under the sentence saying why it could not
+      be read). A later failure keeps the list it already had. */
+  const [arrived, setArrived] = useState(false);
+  const unread = loaded && !arrived;
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   /** The route's outline drew these same cards while the chunk came
@@ -222,6 +229,7 @@ function NoteList() {
     setMarked(new Set(marks?.ids ?? []));
     setLinkCounts(links?.outgoing.notes ?? {});
     setLoaded(true);
+    setArrived(true);
     setError(null);
   }, []);
 
@@ -311,7 +319,7 @@ function NoteList() {
         subtitle={
           !loaded ? (
             <SkeletonSubtitle />
-          ) : (
+          ) : unread ? undefined : (
             <ShelfCount
               count={notes.length === 1 ? t('1 note') : t('{n} notes', { n: notes.length })}
               shown={filtering ? visible.length : null}
@@ -345,7 +353,7 @@ function NoteList() {
         pending && shelfHasShape(reservedShelf) ? (
           <NotesCards layout={view.layout} groups={reservedShelf} />
         ) : null
-      ) : /* Nothing in the vault at all — no note at any depth (the listing
+      ) : unread ? null : /* Nothing in the vault at all — no note at any depth (the listing
              walks the tree) and not one collection either. A shelf holding
              only empty collections is NOT this: it has something to show,
              and GroupedNotes below shows it. */
