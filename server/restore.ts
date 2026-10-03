@@ -216,9 +216,12 @@ function finishInterruptedSwap(vault: string): Finished {
     if (name === 'before') continue;
     const path = join(work, name);
     // A folder holding vault entries it was meant to hand on is kept and
-    // said: deleting it could only lose them.
+    // said: deleting it could only lose them. The restore's own note,
+    // written into `out` before the swap, is not one (a vault's dotfiles
+    // never move), and counting it kept every copy a restore had
+    // unpacked, for good, once that restore was put back.
     const out = join(path, 'out');
-    if (existsSync(out) && readdirSync(out).length > 0) {
+    if (existsSync(out) && readdirSync(out).some((entry) => entry !== '.restored.json')) {
       console.error(`[restore] ${RESTORE_DIR_NAME}/${name}/out still holds files; left in place`);
       continue;
     }

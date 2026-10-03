@@ -805,6 +805,42 @@ describe('restore from a copy', () => {
     expect(everything(target.vault)).toEqual(before);
   });
 
+  it('leaves nothing of a restore that stuck once it is put back, the copy it unpacked included', async () => {
+    const source = scratch('source');
+    fillSource(source.vault);
+    const copy = await download(source.vault);
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const before = everything(target.vault);
+    let calls = 0;
+    let copyDir = '';
+    const { restore, recover } = restorer(target.vault, {
+      move: (from, to) => {
+        // The vault's five folders out and three of the copy's entries
+        // in; the next fails, and a file where the copy's folder has to
+        // go back to stops the rollback, so the restore sticks.
+        if (++calls === 9) {
+          copyDir = dirname(from);
+          renameSync(copyDir, `${copyDir}-aside`);
+          writeFileSync(copyDir, '');
+          throw Object.assign(new Error('the disk said no'), { code: 'EIO' });
+        }
+        renameSync(from, to);
+      },
+    });
+    const stuck = await restore(copy);
+    expect(stuck.status).toBe(500);
+    expect((await stuck.json()).reason).toBe('stuck');
+    rmSync(copyDir);
+    renameSync(`${copyDir}-aside`, copyDir);
+
+    // Its `out` holds the restore's own note beside the vault's folders;
+    // once they are home, that note is no reason to keep the copy.
+    expect((await recover()).status).toBe(200);
+    expect(everything(target.vault)).toEqual(before);
+    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+  });
+
   it('puts a stuck vault back only for a signed-in client, one at a time, and not while a build reads its files', async () => {
     const target = scratch('target');
     fillTarget(target.vault);
