@@ -11,9 +11,10 @@ import {
   retryPrefersDownload,
   usePuzzleBuild,
 } from '@/puzzles/PuzzleDbSetup';
-import { api } from '@/lib/api';
+import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { formatAgo } from '@/lib/dates';
 import { t } from '@/lib/i18n';
+import { Feedback } from '@/settings/cards/shared';
 
 /** What /api/puzzles/meta says about the file itself, and about a dump
     in place beside it. */
@@ -50,12 +51,25 @@ interface Installed {
 export function PuzzleDatabaseCard() {
   /** null while it is read, 'unknown' if the read failed. */
   const [db, setDb] = useState<Installed | 'unknown' | null>(null);
+  /**
+   * The server's own sentence, when it refused to say for a reason it
+   * names: a vault part way through a restore refuses the puzzle record
+   * (it lives in the vault) until the vault is put back. Then nothing on
+   * the row is true but that, and Rebuild was offered over a database
+   * nobody could see, to be refused in its turn. A read that failed
+   * without one keeps the button, since "we do not know" is not "none".
+   */
+  const [refusal, setRefusal] = useState<string | null>(null);
   const read = useCallback(() => {
     void api<Installed>('/api/puzzles/meta')
-      .then((m) =>
-        setDb({ ready: m.ready, puzzles: m.puzzles, builtAt: m.builtAt ?? null, dumpInPlace: m.dumpInPlace === true }),
-      )
-      .catch(() => setDb('unknown'));
+      .then((m) => {
+        setRefusal(null);
+        setDb({ ready: m.ready, puzzles: m.puzzles, builtAt: m.builtAt ?? null, dumpInPlace: m.dumpInPlace === true });
+      })
+      .catch((e: unknown) => {
+        setRefusal(e instanceof ApiError && e.reason !== null ? apiErrorMessage(e) : null);
+        setDb('unknown');
+      });
   }, []);
   useEffect(() => read(), [read]);
 
@@ -113,7 +127,7 @@ export function PuzzleDatabaseCard() {
               <p className="text-muted-foreground shrink-0 type-row-sub tabular-nums">{figures}</p>
             )}
           </div>
-          {error ? (
+          {refusal !== null ? null : error ? (
             // Straight to the build: the question was asked before the
             // attempt that failed, and the reason is on the line below.
             // Unless a dump is in place, where the question is also the
@@ -178,6 +192,7 @@ export function PuzzleDatabaseCard() {
           own; it was the builder's last line passed through t(), which
           knew none of them. */}
       {error && <BuildProblemNote problem={error} source={status?.source} />}
+      <Feedback note={refusal === null ? null : { kind: 'error', text: refusal }} />
     </Card>
   );
 }

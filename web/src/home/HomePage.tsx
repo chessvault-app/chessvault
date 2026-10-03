@@ -1,4 +1,5 @@
 import {
+  ArchiveRestore,
   BookMarked,
   Check,
   ChevronRight,
@@ -9,6 +10,7 @@ import {
   NotebookPen,
   Puzzle,
   RotateCcw,
+  Settings,
   SlidersHorizontal,
   Unplug,
   X,
@@ -18,7 +20,7 @@ import { useEffect, useEffectEvent, useLayoutEffect, useState, useRef } from 're
 import { BrandMark, Wordmark } from '@/components/brand-mark';
 import { cn } from '@/lib/utils';
 import { navigate } from '@/lib/router';
-import { ApiError, api } from '@/lib/api';
+import { ApiError, api, apiErrorMessage } from '@/lib/api';
 import { formatAgo, formatUntil, locale } from '@/lib/dates';
 import { Button } from '@/components/ui/button';
 import { Figures } from '@/components/figures';
@@ -923,7 +925,10 @@ export function HomePage() {
   // Why there is no data, when the reason is the server and not the vault:
   // the sentence the card says. Null while the answer is in the air or has
   // landed. `attempt` counts Retry presses; both fetches key on it.
-  const [outage, setOutage] = useState<string | null>(null);
+  // `stuck`: the server answered, and refused the vault because a restore
+  // stopped part way (server/restore.ts), which the card says in its own
+  // words and with the way to Settings, Vault.
+  const [outage, setOutage] = useState<{ message: string; stuck: boolean } | null>(null);
   const [attempt, setAttempt] = useState(0);
   // The placeholders' condition. Not `data === null` alone: an unreachable
   // server leaves data null for good, and a page of bars over it would be
@@ -1058,15 +1063,25 @@ export function HomePage() {
         grab(`/api/activity?tz=${encodeURIComponent(tz)}`),
       ]);
       if (ctl.signal.aborted) return;
+      // A vault part way through a restore refuses every read but the
+      // settings, so the count below never saw "nothing answered", and
+      // the refusals read as a vault with nothing in it: the page offered
+      // to set up a vault that is only set aside (server/restore.ts).
+      const stuck = failures.find((e): e is ApiError => e instanceof ApiError && e.reason === 'stuck');
+      if (stuck) {
+        setOutage({ message: apiErrorMessage(stuck), stuck: true });
+        return;
+      }
       if (asked > 0 && failures.length === asked) {
         // The network's own sentence where the network failed (api.ts
         // tells "unreachable" from "no internet"); a server that answered
         // with a failure for everything is unreachable in every sense
         // that matters here.
         const first = failures[0];
-        setOutage(
-          first instanceof ApiError && first.status === 0 ? first.message : t('Vault server unreachable'),
-        );
+        setOutage({
+          message: first instanceof ApiError && first.status === 0 ? first.message : t('Vault server unreachable'),
+          stuck: false,
+        });
         return;
       }
       const docs = (v: unknown): number | undefined =>
@@ -1131,6 +1146,12 @@ export function HomePage() {
         .slice(0, 5);
       // Which tiles ended up with a figure, for next launch's reservation.
       writeFigures(counts);
+      // The vault answered, so whatever the card said is over. A kept Home
+      // asks again each time it is shown, and the stuck card has no Retry
+      // to clear it: with the vault put back from another device, or by a
+      // restart, it went on saying the restore had stopped part way above
+      // the vault it had just drawn.
+      setOutage(null);
       setData({
         counts,
         solvedToday: today,
@@ -1508,22 +1529,40 @@ export function HomePage() {
             toast: the whole page is what is missing. */}
         {outage !== null && (
           <div role="alert" className="bg-card mb-4 overflow-hidden rounded-xl ring-1 ring-card-ring">
-            <EmptyState
-              icon={Unplug}
-              title={outage}
-              body="Nothing could be read from the vault. The page fills itself once the server answers."
-              action={
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setOutage(null);
-                    setAttempt((n) => n + 1);
-                  }}
-                >
-                  {t('Retry')}
-                </Button>
-              }
-            />
+            {outage.stuck ? (
+              // The same card, for a server that answered and refused:
+              // its sentence says where the vault is put back, and the
+              // press goes there. A retry would only be refused again,
+              // and putting the vault back reloads every page anyway.
+              <EmptyState
+                icon={ArchiveRestore}
+                title="Could not read the vault"
+                body={outage.message}
+                action={
+                  <Button size="sm" onClick={() => navigate('settings', 'vault')}>
+                    <Settings className="glyph" data-icon="inline-start" />
+                    {t('Open Settings')}
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={Unplug}
+                title={outage.message}
+                body="Nothing could be read from the vault. The page fills itself once the server answers."
+                action={
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setOutage(null);
+                      setAttempt((n) => n + 1);
+                    }}
+                  >
+                    {t('Retry')}
+                  </Button>
+                }
+              />
+            )}
           </div>
         )}
         {/* Continue — the best retention surface on the page. A returning

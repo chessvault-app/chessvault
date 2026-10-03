@@ -87,14 +87,33 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   which a page shows wherever it shows an error, and nothing is written.
   The change history records nothing either until the vault is put back:
   it had saved the half vault, and the put-back then saved every document
-  set aside again, a duplicate version of each every time. Settings, the
-  Vault card and signing in work as before.
-- **The Studies shelf and the Games page's collection say why their list
-  did not load.** Both said “Vault server unreachable” whenever the list
-  failed, even when the server had answered with its reason, and the shelf
-  said it in English on a Korean shelf. Both now show the server's own
-  sentence, translated, and say the server is unreachable only when it did
-  not answer.
+  set aside again, a duplicate version of each every time. Home, whose
+  read of the settings still answered, drew a vault with nothing in it and
+  offered to set one up; it now says “Could not read the vault” with that
+  sentence and “Open Settings”, which goes to the Vault card. In Settings
+  the Puzzle database and Browsed games cards say it too: the first
+  offered Rebuild over a database it could not see and asked the server
+  about the build every second for as long as the page was open, and the
+  second held its loading row for good. Settings, the Vault card and
+  signing in work as before.
+- **A list that did not load says why, and is not drawn as an empty
+  one.** The Studies shelf and the Games page's collection said “Vault
+  server unreachable” whenever their list failed, even when the server had
+  answered with its reason, and the shelf said it in English on a Korean
+  shelf. Both now show the server's own sentence, translated, and say the
+  server is unreachable only when it did not answer, and so does the
+  explorer, which said the sentence in English on a Korean screen and
+  called a refused list of reference databases unreachable. Under that line
+  Notes, Studies, Books and Puzzle books also drew the empty shelf: “0
+  notes”, “No notes yet” and a New note button the server would have
+  refused as well. A shelf whose list never came back now shows the line
+  alone, and one already on screen stays. The collection drew rows still
+  loading under its line for good, and now draws nothing there until Try
+  again brings the list. Drill a study, in the repertoire trainer, said
+  “No studies yet” when the studies could not be listed at all, and now
+  says why. And the Databases page, which stood on its outline with no
+  word when the databases could not be read, now says “Could not load
+  reference games” with the reason and Try again.
 
 ## 0.12.1
 

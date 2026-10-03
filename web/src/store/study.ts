@@ -37,6 +37,10 @@ interface StudyState {
   studies: StudyMeta[];
   folders: string[];
   listLoaded: boolean;
+  /** Whether the list has come back at least once. `listLoaded` is also
+      true after a load that failed, and a shelf whose list never came
+      back has nothing to count and no empty shelf to offer. */
+  listArrived: boolean;
 
   /** The open study, or null on the list screen. */
   openId: string | null;
@@ -279,6 +283,7 @@ export const useStudy = create<StudyState>()((set, get) => {
     studies: [],
     folders: [],
     listLoaded: false,
+    listArrived: false,
     openId: null,
     openBase: 'studies',
     chapters: [],
@@ -295,7 +300,7 @@ export const useStudy = create<StudyState>()((set, get) => {
         // Landed once the page has stopped moving (lib/router): the kept
         // shelf asks again on the way back from a study.
         const body = await afterRouteSettled(api<{ studies: StudyMeta[]; folders?: string[] }>('/api/studies'));
-        set({ studies: body.studies, folders: body.folders ?? [], listLoaded: true, error: null });
+        set({ studies: body.studies, folders: body.folders ?? [], listLoaded: true, listArrived: true, error: null });
         // What each study's outline reserves for its player bars, from
         // the listing: without it a study never opened on this device is
         // a guess (studies/reservedPlayers).

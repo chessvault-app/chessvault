@@ -1,7 +1,7 @@
 import { Download, Hammer, RefreshCw, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PuzzleBuildFailure, PuzzleDumpSource } from '@shared/puzzleBuild';
-import { api, apiErrorMessage } from '@/lib/api';
+import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
@@ -351,6 +351,15 @@ export function usePuzzleBuild(onReady: () => void): {
   const [status, setStatus] = useState<BuildStatus | null>(null);
   const [starting, setStarting] = useState(false);
   const [failed, setFailed] = useState<BuildProblem | null>(null);
+  /** The server refused the status for a reason it names, and the poll
+      has stopped. A vault part way through a restore refuses it until
+      the vault is put back (server/restore.ts), and the poll asked it
+      every second for as long as the page was open (ten refusals in ten
+      seconds on Settings, measured), because a failure was only ever
+      read as the network's.
+      A start that the server takes polls again, and so does the page
+      when it is shown again. */
+  const [refused, setRefused] = useState(false);
   // So the finish is noticed once, rather than on every poll afterwards.
   const wasRunning = useRef(false);
 
@@ -358,8 +367,10 @@ export function usePuzzleBuild(onReady: () => void): {
     let next: BuildStatus | null = null;
     try {
       next = await api<BuildStatus>('/api/puzzles/build');
-    } catch {
-      // the server will be there on the next tick
+    } catch (e) {
+      // A dropped connection, or something in the middle with no answer
+      // of its own: the server will be there on the next tick.
+      if (e instanceof ApiError && e.reason !== null) setRefused(true);
     }
     if (!next) return false;
     setStatus(next);
@@ -380,10 +391,16 @@ export function usePuzzleBuild(onReady: () => void): {
   }, [onReady]);
 
   useEffect(() => {
+    if (refused) return;
     void poll();
     const timer = setInterval(() => void poll(), 1000);
     return () => clearInterval(timer);
-  }, [poll]);
+  }, [poll, refused]);
+  // And a page shown again asks again (lib/keep-alive runs its effects at
+  // every show): Settings is kept while another page is open, and the
+  // vault put back meanwhile, from another device or by a restart, left
+  // the poll stopped for good on a card that offered Rebuild again.
+  useEffect(() => () => setRefused(false), []);
 
   const start = async (download = false): Promise<void> => {
     setStarting(true);
@@ -391,6 +408,7 @@ export function usePuzzleBuild(onReady: () => void): {
     try {
       await api('/api/puzzles/build', { method: 'POST', json: { download } });
       wasRunning.current = true;
+      setRefused(false);
       await poll();
     } catch (e) {
       setFailed({ reason: 'refused', detail: apiErrorMessage(e) });

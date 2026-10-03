@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, apiErrorMessage } from '@/lib/api';
 import { t } from '@/lib/i18n';
 
 export interface ExplorerMove {
@@ -318,9 +318,13 @@ export const useExplorer = create<ExplorerState>()(
           if (fen !== latestFen) return;
           set({
             loading: false,
+            // The server's sentence in the reader's language (api.ts): a
+            // vault part way through a restore refuses My games and the
+            // reference databases with one, and a Korean pane said it in
+            // English.
             error:
               error instanceof ApiError && error.status !== 0
-                ? error.message
+                ? apiErrorMessage(error)
                 : t('explorer server unreachable'),
             offline: !(error instanceof ApiError) || error.offline,
           });
@@ -420,10 +424,17 @@ export const useExplorer = create<ExplorerState>()(
               error: null,
               offline: false,
             });
-          } catch {
-            // The vault's own server, not Lichess: unreachable is the only
-            // way this call fails, so it is always the amber reading.
-            set({ dbsLoaded: true, error: t('explorer server unreachable'), offline: true });
+          } catch (error) {
+            // The vault's own server, not Lichess, so usually unreachable,
+            // the amber reading. Not always: a vault part way through a
+            // restore answers with its reason (server/restore.ts), which
+            // is said as it is, in red, as the lookup above says it.
+            const answered = error instanceof ApiError && error.status !== 0;
+            set({
+              dbsLoaded: true,
+              error: answered ? apiErrorMessage(error) : t('explorer server unreachable'),
+              offline: !answered,
+            });
           }
         },
 

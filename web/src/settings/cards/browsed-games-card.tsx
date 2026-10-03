@@ -3,9 +3,9 @@ import { Skeleton } from '@/components/skeletons';
 import { HardDrive, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SETTINGS_LIST, SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
-import { api } from '@/lib/api';
+import { api, apiErrorMessage } from '@/lib/api';
 import { t } from '@/lib/i18n';
-import { size } from '@/settings/cards/shared';
+import { Feedback, size } from '@/settings/cards/shared';
 
 // --- Browsed games -----------------------------------------------------------
 
@@ -31,13 +31,20 @@ const PROVIDER_NAME: Record<string, string> = { chesscom: 'Chess.com', lichess: 
 export function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
   const [players, setPlayers] = useState<CachedPlayer[] | null>(null);
   const [busy, setBusy] = useState(false);
+  /** Why the inventory never came back, when it never has. The card drew
+      its placeholder row for good, so a vault part way through a restore,
+      which refuses this read (server/restore.ts), looked as if it were
+      still being counted. */
+  const [unread, setUnread] = useState<string | null>(null);
 
   const refresh = async (): Promise<void> => {
     try {
       setPlayers((await api<{ users: CachedPlayer[] }>('/api/games/cache')).users);
-    } catch {
+      setUnread(null);
+    } catch (e) {
       // The card stays on whatever it last knew — it is an inventory,
-      // not a health check.
+      // not a health check — and says why only when it knew nothing.
+      setUnread(apiErrorMessage(e));
     }
   };
   useEffect(() => {
@@ -75,7 +82,8 @@ export function BrowsedGamesCard({ onCleared }: { onCleared: () => void }) {
           'Months you have browsed are kept so they open instantly and work offline. Clearing them only means downloading a month again next time. Games you kept are copies and stay in your collection.',
         )}
       </p>
-      {players === null && (
+      {players === null && unread !== null && <Feedback note={{ kind: 'error', text: unread }} />}
+      {players === null && unread === null && (
         /* The list and its footer come from /api/games/cache, a different
            answer from the one that drew this page — so the card stood at
            its paragraph's height and then grew by a row and a total,

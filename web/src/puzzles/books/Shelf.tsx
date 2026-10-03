@@ -90,6 +90,13 @@ export function Shelf() {
   const undoable = useUndoable();
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  /** The last load failed. With no shelf ever in hand that is the whole
+      answer: the error line, and no count, no skeleton and no empty shelf
+      under it (a vault part way through a restore was told "No puzzle
+      books yet" beneath the sentence saying why it could not be read). A
+      shelf already drawn, or remembered from the last visit, stays. */
+  const [failed, setFailed] = useState(false);
+  const unread = failed && books === null;
   // Nothing at all for the first moment: a shelf that arrives in 30 ms
   // should not flash a skeleton on its way in.
   const shelfPending = useSlowLoad(books === null);
@@ -132,11 +139,13 @@ export function Shelf() {
       shelfMemory.books = fresh;
       setBooks(fresh);
       setError(null);
+      setFailed(false);
       void sweepCheckpoints(fresh);
     } catch (e) {
       // The skeleton must not spin forever on a blip: show the cached
-      // shelf (or an empty one) under a line that says what happened.
-      setBooks((prev) => prev ?? shelfMemory.books ?? []);
+      // shelf, or nothing, under a line that says what happened.
+      setBooks((prev) => prev ?? shelfMemory.books);
+      setFailed(true);
       setError(apiErrorMessage(e));
     }
   }, []);
@@ -250,7 +259,7 @@ export function Shelf() {
           title={t('Puzzle books')}
           back={() => navigate('puzzles', 'hub')}
           subtitle={
-            books === null ? <SkeletonSubtitle /> : books.length === 1 ? t('1 book') : t('{n} books', { n: books.length })
+            unread ? undefined : books === null ? <SkeletonSubtitle /> : books.length === 1 ? t('1 book') : t('{n} books', { n: books.length })
           }
           query={query}
           onQuery={setQuery}
@@ -275,7 +284,7 @@ export function Shelf() {
           </p>
         )}
 
-        {books === null ? (
+        {unread ? null : books === null ? (
           shelfPending && reservedCards > 0 ? <SkeletonBookCards cards={reservedCards} /> : null
         ) : visibleBooks.length === 0 ? (
           <EmptyState ground

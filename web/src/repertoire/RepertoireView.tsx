@@ -323,6 +323,11 @@ export function RepertoireView() {
   // Drill mode: which study is being drilled and where the drill stands.
   const [mode, setMode] = useState<Mode>(mapDrill ? 'drill' : 'spar');
   const [studyList, setStudyList] = useState<string[] | null>(null);
+  /** Why the studies list did not come back, in the reader's language.
+      It used to settle to an empty list, so a vault part way through a
+      restore was told "No studies yet" with no word of why. The list
+      stays unread, so choosing Drill a study again asks again. */
+  const [studyListError, setStudyListError] = useState<string | null>(null);
   const [drillStudy, setDrillStudy] = useState('');
   const [drillChapters, setDrillChapters] = useState<Chapter[] | null>(null);
   // 'all' drills the whole study as one repertoire; a number scopes to
@@ -366,7 +371,7 @@ export function RepertoireView() {
           (d) => d || (remembered && ids.includes(remembered.study) ? remembered.study : (ids[0] ?? '')),
         );
       })
-      .catch(() => setStudyList([]));
+      .catch((e: unknown) => setStudyListError(apiErrorMessage(e)));
   }, [mode, mapDrill, studyList]);
 
   // The chosen study's chapters, through the same codec the editor uses.
@@ -1322,7 +1327,13 @@ export function RepertoireView() {
           </Button>
         </div>
       ) : mode === 'drill' ? (
-        studyList !== null && studyList.length === 0 ? (
+        studyList === null && studyListError !== null ? (
+          // Drawn only while no list is in hand: an answer that lands on
+          // a later try replaces it without the error being cleared.
+          <p className="text-destructive text-sm leading-relaxed" role="alert">
+            {studyListError}
+          </p>
+        ) : studyList !== null && studyList.length === 0 ? (
           <p className="text-muted-foreground text-sm leading-relaxed">
             {t('No studies yet. Create one in Studies, or save a line you played.')}
           </p>
