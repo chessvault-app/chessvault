@@ -1944,6 +1944,28 @@ export const ko: Record<string, string> = {
   "Ends this device’s session on the server, so a copy of its cookie stops working too. Other devices stay signed in.":
     "이 기기의 세션을 서버에서 끝내므로 쿠키 사본도 더는 쓸 수 없습니다. 다른 기기는 로그인 상태로 남습니다.",
   "Signed out. Back to the lock screen…": "로그아웃했습니다. 잠금 화면으로 돌아갑니다…",
+  // Old credentials in the history (Security card, server/historyPurge.ts).
+  "Old secrets in the history": "변경 기록에 남은 옛 비밀 정보",
+  "Old files in the history": "변경 기록에 남은 옛 파일",
+  "Removes the old passwords, 2FA secrets and Lichess tokens that earlier saves left in the change history, which every downloaded copy carries. Every version of every document stays.":
+    "앞선 저장들이 변경 기록에 남겨 내려받은 사본마다 따라가는 옛 비밀번호, 2단계 인증 비밀키, Lichess 토큰을 제거합니다. 모든 문서의 모든 버전은 그대로 남습니다.",
+  "Removes the copy of the history’s own files that earlier saves left in it, which every downloaded copy carries. Every version of every document stays.":
+    "앞선 저장들이 변경 기록에 남겨 내려받은 사본마다 따라가는, 변경 기록 자신의 파일 사본을 제거합니다. 모든 문서의 모든 버전은 그대로 남습니다.",
+  "Remove old secrets": "옛 비밀 정보 제거",
+  "Remove old files": "옛 파일 제거",
+  "Removing…": "제거하는 중…",
+  "Every version of every document stays, and only the old passwords, 2FA secrets and Lichess tokens go. A copy downloaded before still holds them, so afterwards change the app password in this card and replace the token in the Lichess token card.":
+    "모든 문서의 모든 버전은 남고, 옛 비밀번호와 2단계 인증 비밀키와 Lichess 토큰만 사라집니다. 전에 내려받은 사본에는 그대로 남아 있으니, 끝나면 이 카드에서 앱 비밀번호를 바꾸고 Lichess 토큰 카드에서 토큰을 새로 넣으세요.",
+  "Every version of every document stays, and only the copy of the history’s own files goes. A copy downloaded before still holds it.":
+    "모든 문서의 모든 버전은 남고, 변경 기록 자신의 파일 사본만 사라집니다. 전에 내려받은 사본에는 그대로 남아 있습니다.",
+  "The history no longer holds a copy of its own files.": "변경 기록에서 자신의 파일 사본을 제거했습니다.",
+  "The old secrets are out of the history. Now change the app password below and replace the token in the Lichess token card.":
+    "변경 기록에서 옛 비밀 정보를 제거했습니다. 이제 아래에서 앱 비밀번호를 바꾸고, Lichess 토큰 카드에서 토큰을 새로 넣으세요.",
+  "The old secrets are out of the history. Now change the app password below.":
+    "변경 기록에서 옛 비밀 정보를 제거했습니다. 이제 아래에서 앱 비밀번호를 바꾸세요.",
+  "The old secrets are out of the history. Now replace the token in the Lichess token card.":
+    "변경 기록에서 옛 비밀 정보를 제거했습니다. 이제 Lichess 토큰 카드에서 토큰을 새로 넣으세요.",
+  "The old secrets are out of the history.": "변경 기록에서 옛 비밀 정보를 제거했습니다.",
   "Token saved.": "토큰을 저장했습니다.",
   "Token removed.": "토큰을 제거했습니다.",
   "Vault wiped. Reloading…": "보관함을 지웠습니다. 다시 불러옵니다…",
@@ -2023,6 +2045,10 @@ export const ko: Record<string, string> = {
   "The upload stopped.": "업로드가 멈췄습니다.",
   "The upload failed.": "업로드에 실패했습니다.",
   "Could not put the copy in place, so the vault is as it was.": "사본을 제자리에 넣지 못했으므로 보관함은 그대로입니다.",
+  "This vault keeps no history.": "이 보관함은 변경 기록을 남기지 않습니다.",
+  "Could not take them out, so the history is as it was.": "옛 비밀 정보를 제거하지 못했으므로 변경 기록은 그대로입니다.",
+  "Every save is written again without them, but their old copies could not be deleted yet. The server tries again when it next starts.":
+    "모든 저장을 옛 비밀 정보 없이 다시 썼지만, 예전 사본은 아직 삭제하지 못했습니다. 서버가 다음에 시작할 때 다시 시도합니다.",
   "Could not put the copy in place or put everything back. Restart the server to finish putting it back.":
     "사본을 제자리에 넣지 못했고 모두 되돌려 놓지도 못했습니다. 서버를 다시 시작하면 마저 되돌립니다.",
   "There is no restore to undo.": "되돌릴 복원이 없습니다.",

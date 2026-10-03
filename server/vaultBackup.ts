@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync, type FSWatcher } from 'node:fs';
 import { resolve } from 'node:path';
+import { finishInterruptedPurge, forgetHistoryLeaks, historyLeaks, purgeHistory, type HistoryLeaks, type PurgeOutcome } from './historyPurge.ts';
 import { VAULT } from './paths.ts';
 import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME, unsafeHistoryRepo } from './vaultGit.ts';
 
@@ -48,6 +49,11 @@ export interface VaultBackup {
    * one vault and half of the other.
    */
   exclusive: <T>(work: (commit: (message: string) => Promise<void>) => Promise<T>) => Promise<T>;
+  /** What the history holds of the credentials and its own folder, as
+      last counted (server/historyPurge.ts). */
+  leaks: () => Promise<HistoryLeaks>;
+  /** Write the history again without them, holding it to itself. */
+  purge: () => Promise<PurgeOutcome>;
 }
 
 /**
@@ -118,20 +124,14 @@ export async function prepareHistoryRepo(gitDir: string, dir: string): Promise<v
   // A history that carries an old config.json carries every password
   // hash, authenticator secret and Lichess token it ever held, and
   // scripts/backup-vault.sh copies the whole repo off-box. Said once,
-  // loudly, at boot: rewriting history is the owner's call, not this
-  // server's.
-  const leaked = await git(gitDir, dir, [
-    'log',
-    '--all',
-    '--format=%H',
-    '--',
-    'config.json',
-    'sessions.json',
-  ]).catch(() => '');
-  const commits = leaked.split('\n').filter(Boolean).length;
-  if (commits > 0) {
+  // loudly, at boot, and offered in Settings (server/historyPurge.ts):
+  // rewriting history is the owner's call, not this server's. Counted
+  // fresh here, which is also what Settings is answered from until the
+  // history next changes under a restore, a wipe or a purge.
+  const leaks = await historyLeaks(gitDir, dir, { fresh: true }).catch(() => null);
+  if (leaks && leaks.commits > 0) {
     console.warn(
-      `[vault-backup] ${commits} commit(s) in ${HISTORY_DIR_NAME} still carry config.json or sessions.json, from an older version or an earlier wipe. They hold past secrets; the paragraph on backups in README.md says how to purge them.`,
+      `[vault-backup] ${leaks.commits} save(s) in ${HISTORY_DIR_NAME} hold config.json, sessions.json or the history's own folder, from an older version or an earlier wipe. They hold past secrets: Settings, Security, "Remove old secrets" takes them out (the paragraph on backups in README.md does the same from a terminal).`,
     );
   }
 }
@@ -170,6 +170,13 @@ export async function startVaultBackup(
     // A bare git-dir plus --work-tree is only accepted with bare=false.
     await git(gitDir, dir, ['config', 'core.bare', 'false']);
   }
+
+  // A purge the server was stopped in the middle of has rewritten the
+  // history and not yet deleted the old saves; finished first, so the count
+  // below is of a history that holds none of them.
+  await finishInterruptedPurge(gitDir, dir).catch((error: Error) => {
+    console.error('[vault-backup] could not finish removing the old secrets:', error.message);
+  });
 
   // Run on EVERY startup, not just first init, so a repo created before a
   // given exclude existed is repaired on the next boot.
@@ -237,7 +244,10 @@ export async function startVaultBackup(
   const exclusive = <T>(work: (commit: (message: string) => Promise<void>) => Promise<T>): Promise<T> => {
     // On the same chain as the autosaves, so it waits for the one in
     // flight and the next one waits for it, whichever way it settles.
-    const result = running.then(() => work(commitRepairing));
+    // Whatever ran may have put another history in place (a restore takes
+    // a copy's), so the count is taken again when next asked; forgotten
+    // before the caller hears back, so its own next ask is a fresh one.
+    const result = running.then(() => work(commitRepairing)).finally(() => forgetHistoryLeaks(gitDir));
     running = result.then(
       () => undefined,
       () => undefined,
@@ -277,6 +287,8 @@ export async function startVaultBackup(
     schedule,
     commitNow,
     exclusive,
+    leaks: () => historyLeaks(gitDir, dir),
+    purge: () => exclusive(() => purgeHistory(gitDir, dir)),
     stop: () => {
       if (timer) clearTimeout(timer);
       watcher?.close();

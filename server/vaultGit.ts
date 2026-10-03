@@ -1,4 +1,4 @@
-import { execFile } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -146,23 +146,19 @@ export function unsafeHistoryRepo(gitDir: string): string | null {
   return null;
 }
 
+/** A history command's whole argument list: how the repo is addressed, then `args`. */
+function historyArgs(gitDir: string, workTree: string, args: string[]): string[] {
+  // --literal-pathspecs: a document id may hold `[`, which git reads as a
+  // glob, so `log -- studies/a[bc].pgn` listed another document's
+  // versions. Every path these helpers are handed is a real name.
+  return ['--literal-pathspecs', '--git-dir', gitDir, '--work-tree', workTree, ...IDENTITY, ...NO_EXEC, ...args];
+}
+
 export function git(gitDir: string, workTree: string, args: string[]): Promise<string> {
   return new Promise((resolvePromise, reject) => {
     execFile(
       'git',
-      // --literal-pathspecs: a document id may hold `[`, which git reads
-      // as a glob, so `log -- studies/a[bc].pgn` listed another document's
-      // versions. Every path this helper is handed is a real name.
-      [
-        '--literal-pathspecs',
-        '--git-dir',
-        gitDir,
-        '--work-tree',
-        workTree,
-        ...IDENTITY,
-        ...NO_EXEC,
-        ...args,
-      ],
+      historyArgs(gitDir, workTree, args),
       // 64 MB rather than execFile's 1 MB default. `git show` of a study
       // hands back a whole PGN, which the studies route caps at 20 MB, and
       // `status --porcelain` over a vault mid-import lists thousands of
@@ -174,5 +170,37 @@ export function git(gitDir: string, workTree: string, args: string[]): Promise<s
         else resolvePromise(stdout);
       },
     );
+  });
+}
+
+/**
+ * A history command fed `input` on its stdin, resolving to its whole
+ * output as bytes.
+ *
+ * For the commands that take a list rather than arguments: `cat-file
+ * --batch`, `fast-import` and `update-ref --stdin` (server/historyPurge.ts).
+ * Bytes, because what they read and write is objects, whose names and
+ * messages are whatever bytes a commit holds. No timeout, unlike git():
+ * its sixty seconds is a limit on one question, and these walk every save
+ * the history holds (a purge of 10,000 took 3.9 s on a Windows desktop,
+ * but a history that kept book PDFs from before their exclude has
+ * gigabytes of packs for `gc` to write again).
+ */
+export function gitPipe(gitDir: string, workTree: string, args: string[], input: Buffer | string = ''): Promise<Buffer> {
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn('git', historyArgs(gitDir, workTree, args), { env: gitEnv(), windowsHide: true });
+    const out: Buffer[] = [];
+    const err: Buffer[] = [];
+    child.stdout.on('data', (chunk: Buffer) => out.push(chunk));
+    child.stderr.on('data', (chunk: Buffer) => err.push(chunk));
+    // A git that stops reading early closes the pipe under the write; its
+    // exit status is what says why.
+    child.stdin.on('error', () => undefined);
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) resolvePromise(Buffer.concat(out));
+      else reject(new Error(Buffer.concat(err).toString('utf-8').trim() || `git ${args[0]} exited with ${code}`));
+    });
+    child.stdin.end(input);
   });
 }

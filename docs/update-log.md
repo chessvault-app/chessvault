@@ -37,6 +37,21 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   and Try again then asks with that answer chosen. The Puzzles page now
   keeps saying why after a reload, as Settings did. And an empty dump
   fails as one that cannot be read, where it built an empty database.
+- **Old secrets in the change history can be removed from Settings.** A
+  vault older than 0.4.x, or one wiped before 0.12.1, can hold
+  config.json and sessions.json in earlier saves, so every password hash,
+  authenticator secret and Lichess token it ever had rides along in each
+  downloaded copy, and until now taking them out meant the README's git
+  commands in a terminal. While the history holds any, Settings →
+  Security opens with “Old secrets in the history” and “Remove old
+  secrets”, which asks first, then writes every save again without them
+  (and without the history's own folder, which such a wipe saved too),
+  keeps every version of every document, and deletes the old copies. It
+  then says to change the app password and replace the Lichess token,
+  since a copy downloaded before keeps the old ones, and the server stops
+  warning about them. On generated histories a Windows desktop took 1.3 s
+  for 3,000 saves and 3.9 s for 10,000. Tried in a browser at a desktop's
+  and a phone's size in both languages, not yet on a device.
 
 ## 0.12.1
 

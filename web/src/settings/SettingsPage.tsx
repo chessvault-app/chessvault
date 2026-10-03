@@ -13,7 +13,7 @@ import { up } from '@/lib/router';
 import { scrollParent } from '@/lib/scroll';
 import { t } from '@/lib/i18n';
 import { isDemo } from '@/lib/demo';
-import { type Settings, type StorageReport } from '@/settings/cards/shared';
+import { type HistoryLeaks, type Settings, type StorageReport } from '@/settings/cards/shared';
 import { ProfileCard } from '@/settings/cards/profile-card';
 import { DemoVaultCard, VaultCard } from '@/settings/cards/vault-card';
 import { LagCard, VersionCard } from '@/settings/cards/version-card';
@@ -64,6 +64,18 @@ function useStorage(stamp: number): StorageReport | null {
   return report;
 }
 
+/**
+ * Whether the history still holds old secrets, asked with the settings
+ * themselves rather than after them: the answer adds a block to the top
+ * of the Security card, and asked second it would land on a page already
+ * drawn and push every card under it down. It is a count the server
+ * keeps, so asking costs the request and nothing more. Null where nobody
+ * can say: the demo, a vault with no history, a server older than the
+ * question.
+ */
+const readLeaks = (): Promise<HistoryLeaks | null> =>
+  isDemo() ? Promise.resolve(null) : api<HistoryLeaks>('/api/history/purge').catch(() => null);
+
 /** The licences page's chunk, fetched ahead (see the effect that calls
     this). A function of its own because the React Compiler cannot lower
     an import() expression inside a component yet. */
@@ -79,6 +91,7 @@ const warmLicensesPage = (): void => {
  */
 export function SettingsPage({ anchor }: { anchor?: string } = {}) {
   const [settings, setSettings] = useState<Settings | null>(null);
+  const [leaks, setLeaks] = useState<HistoryLeaks | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   /** Bumped whenever something on this page frees space, so the cards
       re-read instead of standing on the figures they loaded with. */
@@ -156,7 +169,9 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
     // and the skeleton only shows after a beat, so a fast failure showed
     // NOTHING at all.
     try {
-      setSettings(await api<Settings>('/api/settings'));
+      const [next, held] = await Promise.all([api<Settings>('/api/settings'), readLeaks()]);
+      setSettings(next);
+      setLeaks(held);
       setLoadError(null);
     } catch (e) {
       setLoadError(apiErrorMessage(e));
@@ -252,7 +267,14 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
             <ProfileCard settings={settings} onSaved={refresh} />
             <VaultCard settings={settings} onSaved={refresh} storage={storage} outlineShown={outlineShown} />
             <DocumentsCard />
-            <SecurityCard settings={settings} onChanged={refresh} />
+            {/* The history shrinks when old secrets are taken out of it,
+                and the Vault and Storage used cards are counting it. */}
+            <SecurityCard
+              settings={settings}
+              leaks={leaks}
+              onChanged={refresh}
+              onHistoryRewritten={() => setStorageStamp((n) => n + 1)}
+            />
             <LichessCard settings={settings} onChanged={refresh} />
             {/* Both of these empty a cache the Vault and Storage used
                 cards are counting, so both have to tell them. The

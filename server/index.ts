@@ -249,13 +249,19 @@ const vaultBackup = startVaultBackup().catch((error: Error) => {
 /**
  * Reading that safety net back out. NOT in mountVault: the demo shares
  * that list and has neither git nor node:child_process, so it answers 404
- * here and the recovery UI shows its unavailable state.
+ * here and the recovery UI shows its unavailable state. Handed the writer
+ * twice over: a restore commits the state it overwrites first, and taking
+ * old secrets out of the history holds the autosaves off while it runs.
  */
 app.route(
   '/api',
   vaultHistoryApi(undefined, {
     commitNow: async () => {
       await (await vaultBackup)?.commitNow();
+    },
+    purge: {
+      leaks: async () => (await (await vaultBackup)?.leaks()) ?? null,
+      run: async () => (await (await vaultBackup)?.purge()) ?? null,
     },
   }),
 );

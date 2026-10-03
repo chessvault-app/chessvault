@@ -328,6 +328,27 @@ command asked there fails loudly rather than returning something
 plausible. That seam is why the demo shows Earlier versions and Deleted
 documents at all, and why showing them cost this module nothing.
 
+`server/historyPurge.ts` takes out of that history what it must never
+have held: `config.json` and `sessions.json`, which a history older than
+its excludes or one a wipe made before 0.12.1 saved, and the repo's own
+folder, which such a wipe's saved too. It is Settings → Security's
+Remove old secrets (`GET` and `POST /api/history/purge`, handed in as
+`purge` beside `commitNow`, so the demo has no such route). The count of
+saves that wrote them is kept per repo, taken at boot and again after a
+restore, a wipe or a purge, the only things that can change it. The
+rewrite runs under `exclusive()`: two `cat-file --batch` runs read every
+commit and every root tree, one `fast-import` writes the new commits with
+the root tree less those three entries (every folder reused by id;
+author, committer, dates and message carried over byte for byte; the
+saves before the first that held them keep their ids), the result is
+checked before any ref moves, every ref then moves in one `update-ref
+--stdin`, and `reflog expire` with `gc --prune=now` deletes the old saves
+from the store. A marker in the repo spans the ref move and the prune, so
+a server stopped between them finishes the prune at its next start. No
+rewritten save keeps its old id, and nothing holds one across a purge:
+the history panel and Deleted documents ask for ids each time they open,
+and the restore's journal holds renames.
+
 ## Shared code
 
 `shared/` is the code more than one side runs (the server, the web app,

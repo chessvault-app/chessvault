@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { writeAtomic } from './atomic.ts';
 import { VAULT } from './paths.ts';
 import { validId } from '../shared/vaultNames.ts';
+import type { HistoryLeaks, PurgeOutcome } from './historyPurge.ts';
 import { git, historyGitDir, unsafeHistoryRepo } from './vaultGit.ts';
 
 /**
@@ -112,6 +113,18 @@ export function vaultHistoryApi(
      */
     run?: (args: string[]) => Promise<string>;
     available?: () => boolean;
+    /**
+     * Taking the old credentials and the repo's own folder out of the
+     * history (server/historyPurge.ts), through the running writer, which
+     * holds its autosaves off while the history is written again. Absent
+     * where there is no writer: the static demo, whose history is a record
+     * in the page and never held a credential.
+     */
+    purge?: {
+      /** What the history holds, as last counted; null with no writer. */
+      leaks: () => Promise<HistoryLeaks | null>;
+      run: () => Promise<PurgeOutcome | null>;
+    };
   } = {},
 ): Hono {
   const api = new Hono();
@@ -286,6 +299,44 @@ export function vaultHistoryApi(
       return c.json({ error: (error as Error).message }, 500);
     }
     return c.json({ ok: true });
+  });
+
+  /**
+   * Whether the history holds old credentials or its own folder, and how
+   * many saves wrote them. Answered from the count the writer keeps, so
+   * Settings can ask on every visit.
+   */
+  api.get('/history/purge', async (c) => {
+    if (!haveHistory() || !options.purge) return c.json(UNAVAILABLE);
+    const leaks = await options.purge.leaks().catch(() => null);
+    if (!leaks) return c.json(UNAVAILABLE);
+    return c.json({ available: true, ...leaks });
+  });
+
+  /**
+   * Take them out: every save written again without them, and the old
+   * saves deleted from git's store. Every reply is a sentence the
+   * Security card shows as it comes.
+   */
+  api.post('/history/purge', async (c) => {
+    if (!haveHistory() || !options.purge) return c.json({ error: 'This vault keeps no history.' }, 409);
+    let outcome: PurgeOutcome | null;
+    try {
+      outcome = await options.purge.run();
+    } catch (error) {
+      console.error('[vault-backup] could not remove the old secrets from the history:', (error as Error).message);
+      return c.json({ error: 'Could not take them out, so the history is as it was.' }, 500);
+    }
+    if (!outcome) return c.json({ error: 'This vault keeps no history.' }, 409);
+    if (!outcome.pruned) {
+      return c.json(
+        {
+          error: 'Every save is written again without them, but their old copies could not be deleted yet. The server tries again when it next starts.',
+        },
+        500,
+      );
+    }
+    return c.json({ ok: true, ...outcome });
   });
 
   return api;
