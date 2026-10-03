@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import { Hono } from 'hono';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { requireAuth } from './auth.ts';
+import { historyLeaks } from './historyPurge.ts';
+import { hashPassword } from './password.ts';
 import { prepareHistoryRepo, startVaultBackup, type VaultBackup } from './vaultBackup.ts';
 import { vaultHistoryApi } from './vaultHistory.ts';
 import { git } from './vaultGit.ts';
@@ -22,6 +24,13 @@ const PURGED_LINE = /\t(config\.json|sessions\.json|\.history\.git\/)/;
 /** A debounce no test outlives: every save here is one the test makes,
     so the counts it checks are not raced by the watcher's own. */
 const QUIET = 600_000;
+
+/** What a history holding no secret says of them. */
+const NO_SECRETS = {
+  password: { current: false, past: 0 },
+  totp: { current: false, past: 0 },
+  token: { current: false, past: 0 },
+};
 
 // Every test here builds a real history, restarts its writer and runs a
 // few dozen git processes, which took over vitest's five seconds once
@@ -134,10 +143,19 @@ describe('removing old secrets from the history', { timeout: 30_000 }, () => {
     // refs change with each one; the save that untracked all three at the
     // start counts as none.
     expect(leaks).toMatchObject({ credentials: 2, folder: 3, commits: 5, pending: false });
+    // config.json as it is now holds the second password and token, so
+    // those are in use and the first ones are past.
+    expect(leaks.secrets).toEqual({
+      password: { current: true, past: 1 },
+      totp: { current: false, past: 0 },
+      token: { current: true, past: 1 },
+    });
 
     const outcome = await backup!.purge();
     expect(outcome.pruned).toBe(true);
     expect(outcome.removed.commits).toBe(5);
+    // Counted without reading the secrets, which nothing after a purge uses.
+    expect(outcome.removed).not.toHaveProperty('secrets');
 
     // The same saves, each with its own author, committer, dates, message,
     // parents and every other file.
@@ -151,7 +169,7 @@ describe('removing old secrets from the history', { timeout: 30_000 }, () => {
     // The save before the first that held them keeps its id.
     expect(kept.has(oldCommits.at(-1)!)).toBe(true);
     expect(run(['reflog', 'show', '--all'])).toBe('');
-    expect(await backup!.leaks()).toEqual({ commits: 0, credentials: 0, folder: 0, pending: false });
+    expect(await backup!.leaks()).toEqual({ commits: 0, credentials: 0, folder: 0, pending: false, secrets: NO_SECRETS });
   });
 
   it('leaves the autosave working, the documents recoverable and the next start quiet', async () => {
@@ -177,7 +195,7 @@ describe('removing old secrets from the history', { timeout: 30_000 }, () => {
     const res = await app.request('/api/history/purge', { method: 'POST' });
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ ok: true, pruned: true });
-    expect(await json('/api/history/purge')).toEqual({ available: true, commits: 0, credentials: 0, folder: 0, pending: false });
+    expect(await json('/api/history/purge')).toEqual({ available: true, commits: 0, credentials: 0, folder: 0, pending: false, secrets: NO_SECRETS });
 
     // Every version of the study, read through the ids the history has now.
     expect(await contents()).toEqual(versionsBefore);
@@ -197,6 +215,54 @@ describe('removing old secrets from the history', { timeout: 30_000 }, () => {
     backup = await startVaultBackup(dir, QUIET);
     expect(warn.mock.calls.flat().join('\n')).not.toMatch(/save\(s\) in \.history\.git/);
     expect(await backup.leaks()).toMatchObject({ commits: 0 });
+  });
+
+  it('tells which secrets the history holds against the ones in use, and never a value', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'history-purge-'));
+    write('notes/Plans.md', '# Plans\n');
+    backup = await startVaultBackup(dir, QUIET);
+    // An older version's config.json: the password itself, from before the
+    // hashing, a 2FA secret and a token.
+    write('config.json', '{"appPassword":"correct horse battery","totpSecret":"JBSWY3DPEHPK3PXP","lichessToken":"lip_oldtoken"}\n');
+    await git(gitDir(), dir, ['add', '-f', 'config.json']);
+    await git(gitDir(), dir, ['commit', '-q', '-m', 'an older version']);
+    // Since then a login hashed the same password, 2FA was set up again and
+    // the token removed.
+    write('config.json', `${JSON.stringify({ appPassword: hashPassword('correct horse battery'), totpSecret: 'KRSXG5CTMVRXEZLU' })}\n`);
+    await backup.stop();
+    backup = await startVaultBackup(dir, QUIET);
+    const app = new Hono().route('/api', vaultHistoryApi(dir, { purge: { leaks: () => backup!.leaks(), run: () => backup!.purge() } }));
+    const answer = await (await app.request('/api/history/purge')).text();
+    expect(JSON.parse(answer).secrets).toEqual({
+      password: { current: true, past: 0 },
+      totp: { current: false, past: 1 },
+      token: { current: false, past: 1 },
+    });
+    for (const secret of ['correct horse', 'JBSWY3DPEHPK3PXP', 'lip_oldtoken', 'KRSXG5CTMVRXEZLU', 'scrypt:']) {
+      expect(answer).not.toContain(secret);
+    }
+    // The token put back in use: read again against config.json as it is
+    // now, though the history has not changed.
+    write('config.json', `${JSON.stringify({ lichessToken: 'lip_oldtoken' })}\n`);
+    expect((await backup.leaks()).secrets).toEqual({
+      password: { current: false, past: 1 },
+      totp: { current: false, past: 1 },
+      token: { current: true, past: 0 },
+    });
+  });
+
+  it('cannot tell the secrets from a config.json that is not JSON, or from a purge cut off', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'history-purge-'));
+    write('notes/Plans.md', '# Plans\n');
+    backup = await startVaultBackup(dir, QUIET);
+    write('config.json', '{"lichessToken":"lip_cut\n');
+    await git(gitDir(), dir, ['add', '-f', 'config.json']);
+    await git(gitDir(), dir, ['commit', '-q', '-m', 'a config cut short']);
+    write('config.json', '{}\n');
+    expect(await historyLeaks(gitDir(), dir, { fresh: true })).toMatchObject({ credentials: 1, secrets: null });
+    await backup.purge();
+    writeFileSync(join(gitDir(), 'chessvault-purging'), 'cut off\n');
+    expect(await historyLeaks(gitDir(), dir, { fresh: true })).toMatchObject({ commits: 0, pending: true, secrets: null });
   });
 
   it('says so at the start while the history holds them', async () => {

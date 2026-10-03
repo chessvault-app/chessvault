@@ -359,7 +359,12 @@ folder, which such a wipe's saved too. It is Settings → Security's
 Remove old secrets (`GET` and `POST /api/history/purge`, handed in as
 `purge` beside `commitNow`, so the demo has no such route). The count of
 saves that wrote them is kept per repo, taken at boot and again after a
-restore, a wipe or a purge, the only things that can change it. The
+restore, a wipe or a purge, the only things that can change it. The same
+walk lists every version of `config.json` those saves wrote, and the `GET`
+reads them in one `cat-file --batch` to say which of the app password, the
+2FA secret and the Lichess token they hold and whether each is the one in
+use now, so Settings can name what closes each: kinds and counts, never a
+value, read again when the secrets in use change. The
 rewrite runs under `exclusive()`: two `cat-file --batch` runs read every
 commit and every root tree, one `fast-import` writes the new commits with
 the root tree less those three entries (every folder reused by id;

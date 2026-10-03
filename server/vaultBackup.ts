@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync, type FSWatcher } from 'node:fs';
 import { resolve } from 'node:path';
-import { finishInterruptedPurge, forgetHistoryLeaks, historyLeaks, purgeHistory, type HistoryLeaks, type PurgeOutcome } from './historyPurge.ts';
+import { finishInterruptedPurge, forgetHistoryLeaks, historyCount, historyLeaks, purgeHistory, type HistoryLeaks, type PurgeOutcome } from './historyPurge.ts';
 import { VAULT } from './paths.ts';
 import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME, restoreJournalPath, unsafeHistoryRepo } from './vaultGit.ts';
 
@@ -128,8 +128,9 @@ export async function prepareHistoryRepo(gitDir: string, dir: string): Promise<v
   // loudly, at boot, and offered in Settings (server/historyPurge.ts):
   // rewriting history is the owner's call, not this server's. Counted
   // fresh here, which is also what Settings is answered from until the
-  // history next changes under a restore, a wipe or a purge.
-  const leaks = await historyLeaks(gitDir, dir, { fresh: true }).catch(() => null);
+  // history next changes under a restore, a wipe or a purge; which secrets
+  // it holds is read at Settings' first ask, not here.
+  const leaks = await historyCount(gitDir, dir, { fresh: true }).catch(() => null);
   if (leaks && leaks.commits > 0) {
     console.warn(
       `[vault-backup] ${leaks.commits} save(s) in ${HISTORY_DIR_NAME} hold config.json, sessions.json or the history's own folder, from an older version or an earlier wipe. They hold past secrets: Settings, Security, "Remove old secrets" takes them out (the paragraph on backups in README.md does the same from a terminal).`,

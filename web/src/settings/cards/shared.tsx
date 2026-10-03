@@ -36,6 +36,23 @@ export interface HistoryLeaks {
   credentials?: number;
   folder?: number;
   pending?: boolean;
+  /** Which secrets those saves hold, against the ones in use now: kinds
+      and numbers, never a value. Null (or absent, from an older server)
+      where the server cannot tell. */
+  secrets?: HeldSecrets | null;
+}
+
+/** One kind of secret in the history: whether the one in use now is in
+    an earlier save, and how many no longer in use are. */
+export interface HeldSecret {
+  current: boolean;
+  past: number;
+}
+
+export interface HeldSecrets {
+  password: HeldSecret;
+  totp: HeldSecret;
+  token: HeldSecret;
 }
 
 /** What /api/storage answers: a figure per area of disk, plus the vault

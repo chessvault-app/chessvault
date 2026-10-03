@@ -46,12 +46,18 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   Security opens with “Old secrets in the history” and “Remove old
   secrets”, which asks first, then writes every save again without them
   (and without the history's own folder, which such a wipe saved too),
-  keeps every version of every document, and deletes the old copies. It
-  then says to change the app password and replace the Lichess token,
-  since a copy downloaded before keeps the old ones, and the server stops
-  warning about them. On generated histories a Windows desktop took 1.3 s
-  for 3,000 saves and 3.9 s for 10,000. Tried in a browser at a desktop's
-  and a phone's size in both languages, not yet on a device.
+  keeps every version of every document, and deletes the old copies. A
+  copy downloaded before keeps them, so the question and the line after it
+  name the secrets the history holds and what closes each: the app
+  password or 2FA secret in use is changed in the same card, an old
+  password wherever it is still used, and every Lichess token in it is
+  deleted at Lichess, whose page the line links, since replacing a token
+  in the app does not revoke it. A history whose copies of the settings
+  hold no secret is told so instead. The server then stops warning about
+  them. On generated histories a Windows desktop took 1.3 s for 3,000
+  saves and 3.9 s for 10,000. Tried in a browser at a desktop's and a
+  phone's size in both languages, on vaults with no password or token,
+  with either, with both and with 2FA, not yet on a device.
 - **Settings → Vault can finish a restore that stopped part way.** When a
   restore or its undo failed part way and could not put the vault's
   folders back either, only a restart of the server finished it, and
