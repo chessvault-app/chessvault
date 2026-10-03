@@ -110,15 +110,13 @@ memory or disk; a put-back another program blocks needs the server's owner.
   which a page shows wherever it shows an error, and nothing is written.
   The change history records nothing either until the vault is put back:
   it had saved the half vault, and the put-back then saved every document
-  set aside again, a duplicate version of each every time. Home, whose
-  read of the settings still answered, drew a vault with nothing in it and
-  offered to set one up; it now says “Could not read the vault” with that
-  sentence and “Open Settings”, which goes to the Vault card. In Settings
-  the Puzzle database and Browsed games cards say it too: the first
-  offered Rebuild over a database it could not see and asked the server
-  about the build every second for as long as the page was open, and the
-  second held its loading row for good. Settings itself, signing in and
-  the Vault card's put-back still answer.
+  set aside again, a duplicate version of each every time. Home, which
+  drew what it could still read with no word of the restore, now says
+  “Could not read the vault” with that sentence and “Open Settings”, which
+  goes to the Vault card. In Settings the Puzzle database and Browsed
+  games cards say it too, and the first offers no build or rebuild until
+  then. Settings itself, signing in and the Vault card's put-back still
+  answer.
 - **A list that did not load says why, and is not drawn as an empty
   one.** The Studies shelf and the Games page's collection said “Vault
   server unreachable” whenever their list failed, even when the server had
