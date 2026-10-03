@@ -285,10 +285,25 @@ end marker. The swap is a list of renames journalled in
 `.restore/journal.json`: a failure part way puts back the ones made, and a
 server killed part way puts them back at its next start
 (`recoverInterruptedRestore`, before anything else touches the vault).
-Where putting them back fails too, the journal is left for that next
-start, and a restore, an undo and a keep are all refused until then: a
-second swap would write its journal over this one, and an undo would
-delete what the first had put back. A restore and its undo are also
+Where putting them back fails too, the journal stands until the same
+put-back (`finishInterruptedSwap`) runs again: from the Vault card's “Put
+the vault back” (`POST /api/storage/restore/recover`, under the history's
+`exclusive()` and the same busy guard, tried again after 1 s and 3 s), or
+at the next start. Until then a restore, an undo and a keep are refused,
+since a second swap would write its journal over this one and an undo
+would delete what the first had put back; and every other API route,
+but the few that touch nothing a restore moves, answers 503 with a
+sentence saying where to put the vault back (`stuckGuard`), so nothing
+reads the half vault or writes into it. A write was the danger: a note
+saved there made `notes/` again where the vault's own had to go back to,
+and the put-back, which skips a rename whose source is back, left the
+vault's own in `.restore`. What makes a put-back fail in a running
+server is a handle open under a folder it moves: on Windows a file open
+there, or a process working in it, refuses the folder's rename, and a
+watcher does not (measured). The server keeps nothing open there, so
+what is left is a request that was already reading and other processes
+(a scanner, an indexer, a sync client), and the retries wait for them
+rather than close anything. A restore and its undo are also
 refused while a reference database job runs (`refgamesBuildRunning`),
 since a build reads `sources/`, which both of them move.
 Nothing is deleted: the vault's folders move into `.restore/before/`
