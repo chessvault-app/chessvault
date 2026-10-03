@@ -1,6 +1,6 @@
 import { Download, Hammer, RefreshCw, TriangleAlert, type LucideIcon } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { PuzzleDumpSource } from '@shared/puzzleBuild';
+import type { PuzzleBuildFailure, PuzzleDumpSource } from '@shared/puzzleBuild';
 import { api, apiErrorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { t } from '@/lib/i18n';
@@ -33,7 +33,8 @@ export interface BuildStatus {
   rows?: number;
   puzzles?: number;
   seconds?: number;
-  error?: string | null;
+  /** Why the last build failed, kept by the server until the next one. */
+  error?: PuzzleBuildFailure | null;
   /** What the running or the last build reads. */
   source?: PuzzleDumpSource;
   /** A dump is in place beside the database, which the next build can
@@ -41,7 +42,85 @@ export interface BuildStatus {
   dumpInPlace?: boolean;
 }
 
+/** What went wrong last: a build that failed, or a start the server
+    refused, in its own words ("a build is already running"). */
+export type BuildProblem = PuzzleBuildFailure | { reason: 'refused'; detail: string };
+
 const mb = (bytes: number): string => (bytes / 1e6).toFixed(0);
+
+/**
+ * A failed build, said as a sentence in the reader's language.
+ *
+ * It was the builder's last line, shown as it was: "invalid zstd data",
+ * "database or disk is full", "terminated", English in either language
+ * and no help in any. Each reason the builder and the server can name
+ * has its sentence here, saying what failed and, where there is one, what
+ * to do about it in the app. The raw words go under it only where they
+ * add something the sentence cannot: an HTTP status, a signal, or a
+ * failure nobody named (`other`), where they are all there is. A refused
+ * start is the server's own sentence, which the dictionary knows.
+ */
+function problemSentence(problem: BuildProblem, source: PuzzleDumpSource | undefined): string {
+  switch (problem.reason) {
+    case 'unreachable':
+      return t('The puzzle dump could not be downloaded.');
+    case 'download':
+      return t('The download of the puzzle dump was cut off.');
+    case 'decode':
+      // The dump in place is the one that can be got past, with the
+      // retry's other answer, which it then starts on.
+      return source === 'dump'
+        ? t('The puzzle dump in its folder could not be read. Try again and download the newest instead.')
+        : t('The downloaded puzzle dump could not be read.');
+    case 'disk':
+      return t('The disk ran out of space. The build needs over 5 GB free.');
+    case 'memory':
+      return t('The build ran out of memory and was stopped.');
+    case 'stopped':
+      return t('The build was stopped.');
+    case 'swap':
+      return t('The new database was built but could not replace the old one. It takes its place when the server next starts.');
+    case 'other':
+      return t('The build failed.');
+    case 'refused':
+      return t(problem.detail);
+  }
+}
+
+const DETAIL_HELPS = new Set<BuildProblem['reason']>(['unreachable', 'stopped', 'swap', 'other']);
+
+/** The warning line a failed build leaves, the setup screen's and the card's. */
+export function BuildProblemNote({
+  problem,
+  source,
+  className,
+}: {
+  problem: BuildProblem;
+  source: PuzzleDumpSource | undefined;
+  className?: string;
+}) {
+  return (
+    <p className={cn('text-warn flex items-start gap-2 text-sm leading-relaxed', className)}>
+      <TriangleAlert className="mt-0.5 glyph shrink-0" />
+      <span>
+        {problemSentence(problem, source)}
+        {problem.detail && DETAIL_HELPS.has(problem.reason) && (
+          // The raw words, untranslated, quieter and under the sentence:
+          // evidence for whoever looks after the machine, not the message.
+          <span className="text-muted-foreground block text-xs break-words">{problem.detail}</span>
+        )}
+      </span>
+    </p>
+  );
+}
+
+/**
+ * Whether a retry starts on the download: when the download is what
+ * failed, and when the dump in place could not be read, which the
+ * download is the way past.
+ */
+export const retryPrefersDownload = (problem: BuildProblem | null, source: PuzzleDumpSource | undefined): boolean =>
+  problem !== null && problem.reason !== 'refused' && (source === 'download' || problem.reason === 'decode');
 
 /**
  * The card's own words, named once: the placeholder below holds their
@@ -265,13 +344,13 @@ export function PuzzleDbSetupPlaceholder() {
 export function usePuzzleBuild(onReady: () => void): {
   status: BuildStatus | null;
   starting: boolean;
-  failed: string | null;
+  failed: BuildProblem | null;
   /** `download`: the newest set, past a dump in place (PuzzleBuildButton). */
   start: (download?: boolean) => Promise<void>;
 } {
   const [status, setStatus] = useState<BuildStatus | null>(null);
   const [starting, setStarting] = useState(false);
-  const [failed, setFailed] = useState<string | null>(null);
+  const [failed, setFailed] = useState<BuildProblem | null>(null);
   // So the finish is noticed once, rather than on every poll afterwards.
   const wasRunning = useRef(false);
 
@@ -314,7 +393,7 @@ export function usePuzzleBuild(onReady: () => void): {
       wasRunning.current = true;
       await poll();
     } catch (e) {
-      setFailed(apiErrorMessage(e));
+      setFailed({ reason: 'refused', detail: apiErrorMessage(e) });
     }
     // Both arms fall through to here, which is what the finally used to do.
     setStarting(false);
@@ -399,6 +478,10 @@ export function PuzzleDbSetup({ onReady, dumpInPlace: metaDump = false }: { onRe
   const { status, starting, failed, start } = usePuzzleBuild(onReady);
   const running = status?.running === true;
   const dumpInPlace = status?.dumpInPlace ?? metaDump;
+  // What went wrong last, here or before this page was opened, as the
+  // card in Settings has it: the server keeps a failed build's reason
+  // until the next one starts, and a reload used to lose it here.
+  const error = running ? null : (failed ?? status?.error ?? null);
 
   return (
     <div className="optical-center h-full overflow-y-auto p-6">
@@ -413,26 +496,20 @@ export function PuzzleDbSetup({ onReady, dumpInPlace: metaDump = false }: { onRe
               {t(dumpInPlace ? SETUP_BLURB_DUMP : SETUP_BLURB)}
             </p>
 
-            {failed && (
-              <p className="text-warn flex items-start gap-2 text-left text-sm leading-relaxed">
-                <TriangleAlert className="mt-0.5 glyph shrink-0" />
-                <span>{failed}</span>
-              </p>
-            )}
+            {error && <BuildProblemNote problem={error} source={status?.source} className="text-left" />}
 
             <div className="flex justify-center">
               {/* With a dump in place the button asks which to build
                   from, and says "Build": nothing is downloaded unless
                   the answer is the newest set. */}
               <PuzzleBuildButton
-                label={failed ? 'Try again' : dumpInPlace ? 'Build' : 'Download and build'}
+                label={error ? 'Try again' : dumpInPlace ? 'Build' : 'Download and build'}
                 icon={dumpInPlace ? Hammer : Download}
                 variant="default"
                 size="default"
                 installed={false}
                 dumpInPlace={dumpInPlace}
-                // A retry of a download that failed asks for the download again.
-                preferDownload={failed !== null && status?.source === 'download'}
+                preferDownload={retryPrefersDownload(error, status?.source)}
                 busy={starting}
                 disabled={starting}
                 onStart={(download) => void start(download)}

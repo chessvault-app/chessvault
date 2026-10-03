@@ -6,7 +6,7 @@ import { dirname, resolve } from 'node:path';
 import { renameRetrying, writeAtomic } from './atomic.ts';
 import { DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD, PUZZLE_DUMP_PLACED, REPO_ROOT, VAULT } from './paths.ts';
 import { reviewDueAt, type ReviewAttempt } from '../shared/review.ts';
-import type { PuzzleDumpSource } from '../shared/puzzleBuild.ts';
+import type { PuzzleBuildFailure, PuzzleDumpSource } from '../shared/puzzleBuild.ts';
 
 /**
  * Puzzle trainer backed by the local Lichess dump (data/puzzles.sqlite,
@@ -117,21 +117,34 @@ export function sweepUnfinishedPuzzleBuild(
 }
 
 /**
- * What a failed build tells the user, from how its child ended.
+ * Why a build failed, from how its child ended. The app says it in a
+ * sentence of its own for each reason (PuzzleDbSetup.tsx); the detail is
+ * the raw words, which it shows only where they help.
  *
- * The last line the child wrote to stderr says it best when there is
- * one. A child the system killed wrote nothing, and was shown "the build
- * stopped unexpectedly (exit null)", which named neither the cause nor
- * the signal. The one failure of this build on record is running out of
- * memory on a 2 GB server (README), and on Linux the out-of-memory killer
- * ends a process with SIGKILL, so that signal says what it is. A signal
- * is read before stderr: a killed child's last line is whatever it was
- * saying before, not why it stopped.
+ * What the child reported (`reported`, its `failed` event) says it best,
+ * since the child knows which step it was on. A child the system killed
+ * reported nothing. The one failure of this build on record is running
+ * out of memory on a 2 GB server (README), and on Linux the out-of-memory
+ * killer ends a process with SIGKILL, so that signal is read as memory,
+ * and first: a killed child's last words are whatever it was saying
+ * before, not why it stopped. V8 running out of heap cannot be caught
+ * either: it prints "JavaScript heap out of memory" and aborts, so that
+ * is looked for in what the child wrote (`stderr`, its tail) before any
+ * other signal is taken at its word. Whatever is left is `other`, with
+ * the child's last line or its exit code.
  */
-export function buildFailure(code: number | null, signal: NodeJS.Signals | null, lastError: string): string {
-  if (signal === 'SIGKILL') return 'the build was killed (SIGKILL), which is how a system out of memory stops a process';
-  if (signal) return `the build was stopped (${signal})`;
-  return lastError || `the build stopped unexpectedly (exit ${code})`;
+export function buildFailure(
+  code: number | null,
+  signal: NodeJS.Signals | null,
+  reported: PuzzleBuildFailure | null,
+  stderr: string,
+): PuzzleBuildFailure {
+  if (signal === 'SIGKILL') return { reason: 'memory', detail: 'SIGKILL' };
+  if (reported) return reported;
+  const last = stderr.trim().split('\n').pop()?.trim() ?? '';
+  if (/out of memory/i.test(stderr)) return { reason: 'memory', detail: last || null };
+  if (signal) return { reason: 'stopped', detail: signal };
+  return { reason: 'other', detail: last || `exit ${code}` };
 }
 
 /**
@@ -805,7 +818,7 @@ export function puzzlesApi(
     /** What it reads, so the app can say which file failed. */
     source: PuzzleDumpSource;
     progress: BuildProgress;
-    error: string | null;
+    error: PuzzleBuildFailure | null;
   } | null = null;
 
   /**
@@ -838,8 +851,10 @@ export function puzzlesApi(
       progress: (source === 'dump'
         ? { phase: 'building', rows: 0 }
         : { phase: 'downloading', bytes: 0, total: 0 }) as BuildProgress,
-      error: null as string | null,
+      error: null as PuzzleBuildFailure | null,
     };
+    /** Why, in the child's own words, when it got to say (its `failed`). */
+    let reported: PuzzleBuildFailure | null = null;
     build = current;
 
     // A packaged build has no scripts/ and no tsx, so it ships the builder
@@ -862,28 +877,30 @@ export function puzzlesApi(
       for (const line of lines) {
         if (!line.startsWith('{')) continue;
         try {
-          current.progress = JSON.parse(line) as BuildProgress;
+          const event = JSON.parse(line) as BuildProgress | { phase: 'failed'; reason: PuzzleBuildFailure['reason']; detail: string };
+          // The bar keeps the step it failed on; the reason is kept apart.
+          if (event.phase === 'failed') reported = { reason: event.reason, detail: event.detail || null };
+          else current.progress = event;
         } catch {
           // A partial or unexpected line is not worth failing a build over.
         }
       }
     });
-    // Kept only to explain a failure: the last stderr line is what the user
-    // is shown when the child dies, and it beats "exit code 1".
-    let lastError = '';
+    // Kept only to explain a failure the child could not report: its tail,
+    // where V8 says it ran out of heap and where the last line is.
+    let stderr = '';
     child.stderr.on('data', (chunk: Buffer) => {
-      const text = chunk.toString().trim();
-      if (text) lastError = text.split('\n').pop() ?? text;
+      stderr = (stderr + chunk.toString()).slice(-4096);
     });
 
     child.on('error', (error) => {
       current.running = false;
-      current.error = error.message;
+      current.error = { reason: 'other', detail: error.message };
     });
     child.on('close', (code, signal) => {
       current.running = false;
       if (code !== 0) {
-        current.error = buildFailure(code, signal, lastError);
+        current.error = buildFailure(code, signal, reported, stderr);
         // Settle what it left now, as a restart would, rather than at the
         // next restart. A part-built database is gigabytes (a 5,000,000-row
         // build peaked at 2.14 GB of .building beside 2.14 GB of VACUUM
@@ -913,7 +930,9 @@ export function puzzlesApi(
         try {
           renameRetrying(building, dbPath);
         } catch (error) {
-          current.error = `the database was built but could not be swapped in (${(error as Error).message})`;
+          // Still whole beside the old one, so the next start swaps it in
+          // (sweepUnfinishedPuzzleBuild), which the app's sentence says.
+          current.error = { reason: 'swap', detail: (error as Error).message };
           return;
         }
       }

@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Download, Hammer, Puzzle, RefreshCw, RotateCcw, TriangleAlert } from 'lucide-react';
+import { Download, Hammer, Puzzle, RefreshCw, RotateCcw } from 'lucide-react';
 import { Skeleton } from '@/components/skeletons';
 import { SETTINGS_LIST, SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
 import {
+  BuildProblemNote,
   PuzzleBuildButton,
   PuzzleBuildProgress,
   SETUP_BLURB,
   SETUP_BLURB_DUMP,
+  retryPrefersDownload,
   usePuzzleBuild,
 } from '@/puzzles/PuzzleDbSetup';
 import { api } from '@/lib/api';
@@ -117,14 +119,14 @@ export function PuzzleDatabaseCard() {
             // Unless a dump is in place, where the question is also the
             // way past it: a retry of the same file would fail the same
             // way, so it asks again, on the download if that is what
-            // failed.
+            // failed or the dump could not be read.
             <PuzzleBuildButton
               label="Try again"
               icon={RotateCcw}
               className="shrink-0"
               installed={installed?.ready === true}
               dumpInPlace={dumpInPlace}
-              preferDownload={status?.source === 'download'}
+              preferDownload={retryPrefersDownload(error, status?.source)}
               disabled={starting}
               onStart={(download) => void start(download)}
             />
@@ -172,14 +174,10 @@ export function PuzzleDatabaseCard() {
           <PuzzleBuildProgress status={status} />
         </div>
       )}
-      {error && (
-        <p className="text-warn flex items-start gap-2 text-sm leading-relaxed">
-          <TriangleAlert className="mt-0.5 glyph shrink-0" />
-          {/* The server's own words, which the dictionary knows when they
-              are fixed ones and leaves as sent when they carry a detail. */}
-          <span>{t(error)}</span>
-        </p>
-      )}
+      {/* Said as a sentence in the reader's language, the setup screen's
+          own; it was the builder's last line passed through t(), which
+          knew none of them. */}
+      {error && <BuildProblemNote problem={error} source={status?.source} />}
     </Card>
   );
 }

@@ -641,14 +641,26 @@ describe('sweepUnfinishedPuzzleBuild', () => {
 });
 
 describe('buildFailure', () => {
-  it('names a kill by its signal, before anything the child last said', () => {
-    expect(buildFailure(null, 'SIGKILL', 'indexing…')).toMatch(/killed \(SIGKILL\).*out of memory/);
-    expect(buildFailure(null, 'SIGTERM', '')).toBe('the build was stopped (SIGTERM)');
+  const decode = { reason: 'decode', detail: 'invalid zstd data' } as const;
+
+  it('reads a kill as memory, before anything the child last said or reported', () => {
+    expect(buildFailure(null, 'SIGKILL', decode, 'indexing…')).toEqual({ reason: 'memory', detail: 'SIGKILL' });
   });
 
-  it('otherwise says what the child last wrote, or its exit code', () => {
-    expect(buildFailure(1, null, 'unexpected header: x')).toBe('unexpected header: x');
-    expect(buildFailure(3, null, '')).toBe('the build stopped unexpectedly (exit 3)');
+  it('takes the reason the child reported over its exit and its words', () => {
+    expect(buildFailure(1, null, decode, 'invalid zstd data')).toEqual(decode);
+  });
+
+  it('reads V8 running out of heap as memory, though it ends on another signal', () => {
+    const v8 = 'FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory\n 1: 0x7ff6 node::Abort\n';
+    expect(buildFailure(null, 'SIGABRT', null, v8)).toEqual({ reason: 'memory', detail: '1: 0x7ff6 node::Abort' });
+    expect(buildFailure(134, null, null, v8).reason).toBe('memory');
+  });
+
+  it('otherwise names the signal, or the last line, or the exit code', () => {
+    expect(buildFailure(null, 'SIGTERM', null, '')).toEqual({ reason: 'stopped', detail: 'SIGTERM' });
+    expect(buildFailure(1, null, null, 'first\nsomething odd\n')).toEqual({ reason: 'other', detail: 'something odd' });
+    expect(buildFailure(3, null, null, '')).toEqual({ reason: 'other', detail: 'exit 3' });
   });
 });
 
@@ -728,7 +740,7 @@ describe('puzzles api (rebuilding a working database)', () => {
 
   type Status = {
     running: boolean;
-    error?: string | null;
+    error?: { reason: string; detail: string | null } | null;
     source?: string;
     phase?: string;
     dumpInPlace?: boolean;
@@ -842,7 +854,8 @@ describe('puzzles api (rebuilding a working database)', () => {
     writeFileSync(dump, dumpOf([{ id: 'old0', rating: 1500 }]));
     await serveDump(null);
     const failed = await build({ download: true });
-    expect(failed.error).toBeTruthy();
+    // Lichess answered, and said no: the download never started.
+    expect(failed.error).toEqual({ reason: 'unreachable', detail: 'HTTP 503' });
     expect(failed.source).toBe('download');
     expect(readFileSync(dump)).toEqual(dumpOf([{ id: 'old0', rating: 1500 }]));
     expect(existsSync(join(data, 'puzzles.sqlite'))).toBe(false);
@@ -923,7 +936,7 @@ describe('puzzles api (rebuilding a working database)', () => {
     // the header is read from the stream, by which time the file exists.
     writeFileSync(dump, zstdCompressSync('not,a,puzzle,dump\n'));
     const failed = await build();
-    expect(failed.error).toMatch(/unexpected header/);
+    expect(failed.error).toMatchObject({ reason: 'decode', detail: expect.stringMatching(/not a Lichess puzzle dump/) });
     expect(existsSync(join(data, 'puzzles.sqlite.building'))).toBe(false);
 
     const meta = (await (await app.request('/api/puzzles/meta')).json()) as { ready: boolean; puzzles: number };
@@ -942,9 +955,53 @@ describe('puzzles api (rebuilding a working database)', () => {
       dumpOf([...Array.from({ length: 10 }, (_, i) => ({ id: `b${i}`, rating: 1500 })), { id: 'b0', rating: 1500 }]),
     );
     const failed = await build();
-    expect(failed.error).toBe('UNIQUE constraint failed: puzzles.id');
+    // A dump that decodes and still cannot be built is not one that cannot
+    // be read: it is said as it is.
+    expect(failed.error).toEqual({ reason: 'other', detail: 'UNIQUE constraint failed: puzzles.id' });
     expect(existsSync(join(data, 'puzzles.sqlite.building'))).toBe(false);
     expect((await draw('a0')).status).toBe(200);
+  }, 60_000);
+
+  /**
+   * Why a build failed, as a reason the app can say in either language
+   * rather than the builder's last line. Each is the real builder child
+   * on a fixture: no download reaches Lichess.
+   */
+  it('says a dump in place that does not decode cannot be read, and that it was the dump', async () => {
+    writeFileSync(dump, Buffer.from('this is not zstd data at all\n'.repeat(100)));
+    const failed = await build();
+    expect(failed.error).toEqual({ reason: 'decode', detail: 'invalid zstd data' });
+    expect(failed.source).toBe('dump');
+  }, 60_000);
+
+  it('says a dump cut short cannot be read', async () => {
+    const whole = dumpOf(Array.from({ length: 2000 }, (_, i) => ({ id: `a${i}`, rating: 1500 })));
+    writeFileSync(dump, whole.subarray(0, Math.floor(whole.length / 2)));
+    expect((await build()).error?.reason).toBe('decode');
+  }, 60_000);
+
+  it('says an empty dump cannot be read, rather than building nothing', async () => {
+    writeFileSync(dump, '');
+    expect((await build()).error?.reason).toBe('decode');
+    expect(existsSync(join(data, 'puzzles.sqlite'))).toBe(false);
+  }, 60_000);
+
+  it('says a download that never started could not be had, with why', async () => {
+    // No dump in place, and the download points at the closed port.
+    const failed = await build();
+    expect(failed.source).toBe('download');
+    expect(failed.error?.reason).toBe('unreachable');
+    expect(failed.error?.detail).toMatch(/fetch failed/);
+  }, 60_000);
+
+  it('says a download cut off half way was cut off, and leaves nothing of it', async () => {
+    const whole = dumpOf(Array.from({ length: 2000 }, (_, i) => ({ id: `a${i}`, rating: 1500 })));
+    await serveDump(whole, Math.floor(whole.length / 3));
+    const failed = await build();
+    expect(failed.error?.reason).toBe('download');
+    expect(existsSync(join(data, PUZZLE_DUMP_DOWNLOAD))).toBe(false);
+    expect(existsSync(join(data, `${PUZZLE_DUMP_DOWNLOAD}.part`))).toBe(false);
+    expect(existsSync(join(data, 'puzzles.sqlite'))).toBe(false);
   }, 60_000);
 
   it('reviews only the failed puzzles the new file still has', async () => {

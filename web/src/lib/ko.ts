@@ -947,6 +947,19 @@ export const ko: Record<string, string> = {
   'Download the newest puzzles': '최신 퍼즐 내려받기',
   'Downloads about 300 MB. The file in the folder is deleted once the new database is built.':
     '약 300MB를 내려받습니다. 폴더에 있던 파일은 새 데이터베이스를 다 만들면 삭제됩니다.',
+  // Why a build failed, one sentence per reason (PuzzleDbSetup's problemSentence).
+  'The puzzle dump could not be downloaded.': '퍼즐 덤프를 내려받지 못했습니다.',
+  'The download of the puzzle dump was cut off.': '퍼즐 덤프를 내려받는 도중에 끊겼습니다.',
+  'The puzzle dump in its folder could not be read. Try again and download the newest instead.':
+    '데이터베이스 폴더에 있는 퍼즐 덤프를 읽지 못했습니다. 다시 시도해서 대신 최신 퍼즐을 내려받으세요.',
+  'The downloaded puzzle dump could not be read.': '내려받은 퍼즐 덤프를 읽지 못했습니다.',
+  'The disk ran out of space. The build needs over 5 GB free.':
+    '디스크 공간이 모자랐습니다. 만들려면 여유 공간이 5GB 넘게 필요합니다.',
+  'The build ran out of memory and was stopped.': '메모리가 모자라 만들기가 중지되었습니다.',
+  'The new database was built but could not replace the old one. It takes its place when the server next starts.':
+    '새 데이터베이스를 만들었지만 기존 것을 바꾸지 못했습니다. 서버가 다음에 시작할 때 바뀝니다.',
+  // 'The build was stopped.' and 'The build failed.' are the reference
+  // database builds' too, and are translated there.
   Theme: '테마',
   Played: '플레이 횟수',
   'Finding a puzzle…': '퍼즐을 찾는 중…',
@@ -1945,7 +1958,6 @@ export const ko: Record<string, string> = {
   "a book needs a title": "책에는 제목이 필요합니다",
   "a book with that name exists": "같은 이름의 책이 이미 있습니다",
   "a build is already running": "이미 빌드가 진행 중입니다",
-  "the build was killed (SIGKILL), which is how a system out of memory stops a process": "빌드가 강제로 종료되었습니다(SIGKILL). 메모리가 바닥난 시스템이 프로세스를 멈추는 방식입니다",
   "a folder with that name exists": "같은 이름의 폴더가 이미 있습니다",
   "a file with that name is already here": "같은 이름의 파일이 이미 있습니다",
   "a study with that name exists": "같은 이름의 스터디가 이미 있습니다",
