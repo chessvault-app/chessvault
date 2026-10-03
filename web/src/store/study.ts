@@ -3,6 +3,7 @@ import { chaptersToPgn, pgnToChapters } from '@shared/pgn';
 import { createTree } from '@shared/tree';
 import type { Chapter } from '@shared/types';
 import { api, ApiError, apiErrorMessage } from '@/lib/api';
+import { t } from '@/lib/i18n';
 import { afterRouteSettled } from '@/lib/router';
 import { useAnalysis } from './analysis';
 import { usePrefs } from './prefs';
@@ -299,8 +300,11 @@ export const useStudy = create<StudyState>()((set, get) => {
         // the listing: without it a study never opened on this device is
         // a guess (studies/reservedPlayers).
         for (const s of body.studies) reservePlayers('study', s.id, s.players === true);
-      } catch {
-        set({ listLoaded: true, error: 'Vault server unreachable' });
+      } catch (e) {
+        // The server's own sentence where it answered (a vault part way
+        // through a restore says so, server/restore.ts), translated; the
+        // network's where it did not.
+        set({ listLoaded: true, error: e instanceof ApiError ? apiErrorMessage(e) : t('Vault server unreachable') });
       }
     },
 

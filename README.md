@@ -408,7 +408,9 @@ archive whole, leaves the credentials as they are, records the vault on
 both sides of the restore in the history, and keeps the vault it replaced
 until you keep or undo the restore. A vault whose history holds no more
 than its first save (a fresh install) takes the copy's history; any other
-keeps its own.
+keeps its own. A restore that stops part way and cannot put the vault back
+either is finished from the same card, “Put the vault back”, from any
+client; the server's next start does the same.
 
 That history leaves `config.json` and `sessions.json` out, and has since
 0.4.x. Two kinds of vault may still carry them: one older than that, in

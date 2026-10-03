@@ -52,6 +52,35 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   warning about them. On generated histories a Windows desktop took 1.3 s
   for 3,000 saves and 3.9 s for 10,000. Tried in a browser at a desktop's
   and a phone's size in both languages, not yet on a device.
+- **Settings → Vault can finish a restore that stopped part way.** When a
+  restore or its undo failed part way and could not put the vault's
+  folders back either, only a restart of the server finished it, and
+  nothing said so: the card went on offering “Restore from a copy” and
+  pages that read a moved folder failed. A phone, or the desktop app
+  pointed at a server, cannot restart one. The card now says “A restore
+  stopped part way through.” and offers “Put the vault back”, which runs
+  the same put-back as the server's next start, from any device; “Restore
+  from a copy” waits for it. Only when something still holds one of the
+  folders does the card say what else finishes it: quitting and reopening
+  the desktop app, or a restart by whoever runs the server. Tried in a
+  browser at a desktop's and an iPhone's size, in both languages, on a
+  vault stopped part way by hand; not yet after a real restore that
+  failed.
+- **While a restore is stopped part way, pages say so and leave the
+  vault alone.** A page that read a folder the restore had moved said
+  “Request failed (500)”, and a page that saved something wrote into a
+  vault that was half one and half the other: a note saved then made a
+  new notes folder where the vault's own had to go back to, and the
+  vault's own notes stayed set aside. Until the vault is put back,
+  everything that would read or write it is refused with “The vault is
+  still part way through a restore. Put it back under Settings, Vault.”,
+  which a page shows wherever it shows an error, and nothing is written.
+  Settings, the Vault card and signing in work as before.
+- **The Studies shelf says why its list did not load.** It said “Vault
+  server unreachable” whenever the list failed, even when the server had
+  answered with its reason, and said it in English on a Korean shelf. It
+  now shows the server's own sentence, translated, and says the server is
+  unreachable only when it did not answer.
 
 ## 0.12.1
 

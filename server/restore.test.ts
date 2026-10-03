@@ -3,9 +3,11 @@ import { Hono } from 'hono';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
+  closeSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
+  openSync,
   readdirSync,
   readFileSync,
   renameSync,
@@ -20,7 +22,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 import { requireAuth } from './auth.ts';
 import { backupApi } from './backup.ts';
-import { recoverInterruptedRestore, restoreApi, type RestoreOptions } from './restore.ts';
+import { recoverInterruptedRestore, restoreApi, stuckGuard, type RestoreOptions } from './restore.ts';
 import { studiesApi } from './studies.ts';
 import { startVaultBackup, type VaultBackup } from './vaultBackup.ts';
 import { vaultHistoryApi } from './vaultHistory.ts';
@@ -161,7 +163,27 @@ function restorer(vault: string, options: RestoreOptions = {}) {
     state: async (): Promise<any> => (await app.request('/api/storage/restore')).json(),
     undo: () => app.request('/api/storage/restore/undo', { method: 'POST' }),
     keep: () => app.request('/api/storage/restore/keep', { method: 'POST' }),
+    recover: () => app.request('/api/storage/restore/recover', { method: 'POST' }),
   };
+}
+
+/**
+ * A swap stopped part way with its put-back failed, made by hand as the
+ * 0.12.1 audit made it: the vault's notes/ moved into a work folder and
+ * the journal saying so. With `copyIn`, the copy's notes/ stands where
+ * the vault's was, as a swap that had got further leaves it.
+ */
+function stuckByHand(vault: string, copyIn = false): { work: string; journal: string } {
+  const id = 'c0ffee01';
+  const work = join(vault, '.restore', id);
+  mkdirSync(join(work, 'out'), { recursive: true });
+  const moves = [{ from: 'notes', to: join('.restore', id, 'out', 'notes') }];
+  if (copyIn) moves.push({ from: join('.restore', id, 'in', 'notes'), to: 'notes' });
+  const journal = join(vault, '.restore', 'journal.json');
+  writeFileSync(journal, JSON.stringify({ moves }));
+  renameSync(join(vault, 'notes'), join(work, 'out', 'notes'));
+  if (copyIn) put(vault, 'notes/Theirs.md', 'theirs\n');
+  return { work, journal };
 }
 
 // --- the writer before 0.12.0, as 87091e4e left it -----------------------
@@ -520,7 +542,7 @@ describe('restore from a copy', () => {
     expect(everything(target.vault)).toEqual(before);
   });
 
-  it('says when an undo could not be put back, and touches nothing more until a restart puts it back', async () => {
+  it('says when an undo could not be put back, and touches nothing more until it is put back', async () => {
     const source = scratch('source');
     fillSource(source.vault);
     const copy = await download(source.vault);
@@ -530,7 +552,7 @@ describe('restore from a copy', () => {
     const before = join(target.vault, '.restore', 'before');
     let sabotage = false;
     let calls = 0;
-    const { restore, undo, keep } = restorer(target.vault, {
+    const { restore, state, undo, keep } = restorer(target.vault, {
       move: (from, to) => {
         // The undo's eight renames out and the first one back are made;
         // the second fails, and putting the first back fails too, since
@@ -548,7 +570,10 @@ describe('restore from a copy', () => {
     sabotage = true;
     const stuck = await undo();
     expect(stuck.status).toBe(500);
-    expect((await stuck.json()).error).toBe('Could not undo the restore or put everything back. Restart the server to finish putting it back.');
+    expect(await stuck.json()).toEqual({
+      error: 'Could not undo the restore or put everything back. Put it back under Settings, Vault.',
+      reason: 'stuck',
+    });
     expect(existsSync(join(target.vault, '.restore', 'journal.json'))).toBe(true);
 
     // A second undo would write its journal over this one and delete what
@@ -557,9 +582,15 @@ describe('restore from a copy', () => {
     const journal = readFileSync(join(target.vault, '.restore', 'journal.json'), 'utf-8');
     for (const res of [await undo(), await keep(), await restore(copy)]) {
       expect(res.status).toBe(409);
-      expect((await res.json()).error).toBe('The vault is still part way through a restore. Restart the server to finish putting it back.');
+      expect(await res.json()).toEqual({
+        error: 'The vault is still part way through a restore. Put it back under Settings, Vault.',
+        reason: 'stuck',
+      });
     }
     expect(readFileSync(join(target.vault, '.restore', 'journal.json'), 'utf-8')).toBe(journal);
+    // Said apart from a pending restore, which nobody can be asked about
+    // until the vault is put back: the undo had moved some of it.
+    expect(await state()).toMatchObject({ stuck: true, pending: null });
 
     // What stood in the way is gone by the restart, which puts the vault
     // back as the restore left it; the undo then goes through.
@@ -635,6 +666,249 @@ describe('restore from a copy', () => {
     recoverInterruptedRestore(target.vault);
     expect(everything(target.vault)).toEqual(before);
     expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+  });
+
+  it('puts a stuck vault back from the app, byte for byte, and its pages answer again', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const backup = await startVaultBackup(target.vault, 50);
+    backups.push(backup);
+    const before = everything(target.vault);
+    // Built first, as the server's are, before anything is stuck.
+    const notes = new Hono().route('/api', studiesApi(join(target.vault, 'notes'), 'notes', '.md'));
+    const { state, undo, keep, recover } = restorer(target.vault, { history: async () => backup, sameMachine: false });
+    expect(await state()).toMatchObject({ stuck: false, pending: null, sameMachine: false });
+
+    stuckByHand(target.vault);
+    // A running server's autosave records the half vault it sees.
+    await backup.commitNow();
+    // What the 0.12.1 audit saw: the page that lists notes failed, and the
+    // card said nothing. The card's answer says it now.
+    expect((await notes.request('/api/notes')).status).toBe(500);
+    expect(await state()).toMatchObject({ stuck: true, pending: null });
+    for (const res of [await undo(), await keep()]) {
+      expect(res.status).toBe(409);
+      expect((await res.json()).reason).toBe('stuck');
+    }
+
+    const res = await recover();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    expect(everything(target.vault)).toEqual(before);
+    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+    expect(await state()).toMatchObject({ stuck: false, pending: null });
+    const listed = (await (await notes.request('/api/notes')).json()) as { studies: { id: string }[] };
+    expect(listed.studies.map((s) => s.id)).toEqual(['Gone']);
+    // Recorded in the history, which the put-back had to itself, so the
+    // note the half vault lacked is not left in Deleted documents.
+    const log = execFileSync('git', ['--git-dir', join(target.vault, '.history.git'), 'log', '--format=%s'], { encoding: 'utf-8' });
+    expect(log).toMatch(/^vault put back after a restore stopped part way .*\nvault autosave /);
+    const recovery = new Hono().route('/api', vaultHistoryApi(target.vault, { commitNow: () => backup.commitNow() }));
+    expect(((await (await recovery.request('/api/history/deleted')).json()) as { deleted: unknown[] }).deleted).toEqual([]);
+
+    // Nothing left to put back.
+    const again = await recover();
+    expect(again.status).toBe(409);
+    expect((await again.json()).error).toBe('The vault is not part way through a restore.');
+  });
+
+  it('answers every other route with the sentence while stuck, so nothing reads or writes the half vault', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const before = everything(target.vault);
+    // Mounted as server/index.ts mounts them: the session, the guard, then
+    // the routes, with the few the Vault card needs standing in.
+    const app = new Hono();
+    app.use('/api/*', requireAuth(() => null, join(target.vault, 'sessions.json')));
+    app.use('/api/*', stuckGuard(target.vault));
+    app.route('/api', studiesApi(join(target.vault, 'notes'), 'notes', '.md'));
+    app.get('/api/settings', (c) => c.json({ ok: true }));
+    app.get('/api/storage', (c) => c.json({ ok: true }));
+    app.get('/api/engine/nets', (c) => c.json({ ok: true }));
+    app.route('/api', restoreApi(target.vault, { free: async () => null }));
+    const note = async (): Promise<Response> =>
+      app.request('/api/notes', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ name: 'During' }) });
+    expect((await app.request('/api/notes')).status).toBe(200);
+
+    stuckByHand(target.vault);
+    const refused = await app.request('/api/notes');
+    expect(refused.status).toBe(503);
+    expect(await refused.json()).toEqual({
+      error: 'The vault is still part way through a restore. Put it back under Settings, Vault.',
+      reason: 'stuck',
+    });
+    // A note saved now would make notes/ again where the vault's own has
+    // to go back to; it is refused, and no folder appears.
+    expect((await note()).status).toBe(503);
+    expect(existsSync(join(target.vault, 'notes'))).toBe(false);
+    for (const path of ['/api/settings', '/api/storage', '/api/engine/nets', '/api/storage/restore']) {
+      expect((await app.request(path)).status, path).toBe(200);
+    }
+
+    expect((await app.request('/api/storage/restore/recover', { method: 'POST' })).status).toBe(200);
+    expect(everything(target.vault)).toEqual(before);
+    expect((await app.request('/api/notes')).status).toBe(200);
+    expect((await note()).status).toBe(200);
+  });
+
+  it('says so when a stuck vault still cannot be put back, and leaves the journal for the next try', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const before = everything(target.vault);
+    const { work, journal } = stuckByHand(target.vault, true);
+    // Where the copy's notes/ has to go back to, something else now is.
+    writeFileSync(join(work, 'in'), '');
+    const written = readFileSync(journal, 'utf-8');
+    const { state, recover } = restorer(target.vault, { recoverPauses: [1, 1] });
+
+    const res = await recover();
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({
+      error: 'Could not put the vault back yet. Every folder is still on the server.',
+      reason: 'stuck',
+    });
+    expect(readFileSync(journal, 'utf-8')).toBe(written);
+    expect(read(target.vault, 'notes/Theirs.md')).toBe('theirs\n');
+    expect(existsSync(join(work, 'out', 'notes', 'Gone.md'))).toBe(true);
+    expect((await state()).stuck).toBe(true);
+
+    // Out of the way, the next try puts it back.
+    rmSync(join(work, 'in'));
+    expect((await recover()).status).toBe(200);
+    expect(everything(target.vault)).toEqual(before);
+    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+  });
+
+  it('puts a stuck vault back once whatever held one of its folders lets go', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const before = everything(target.vault);
+    stuckByHand(target.vault, true);
+    // A file open under the folder the put-back has to move. On Windows
+    // that refuses the folder's rename (EPERM, measured on Windows 11), so
+    // the first try fails after its own retries and the second, after the
+    // file is closed in the pause between them, goes through; elsewhere
+    // the first does.
+    const fd = openSync(join(target.vault, 'notes', 'Theirs.md'), 'r');
+    let open = true;
+    const close = (): void => {
+      if (open) closeSync(fd);
+      open = false;
+    };
+    setTimeout(close, 10);
+    try {
+      const res = await restorer(target.vault, { recoverPauses: [200] }).recover();
+      expect(res.status).toBe(200);
+    } finally {
+      close();
+    }
+    expect(everything(target.vault)).toEqual(before);
+  });
+
+  it('leaves nothing of a restore that stuck once it is put back, the copy it unpacked included', async () => {
+    const source = scratch('source');
+    fillSource(source.vault);
+    const copy = await download(source.vault);
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const before = everything(target.vault);
+    let calls = 0;
+    let copyDir = '';
+    const { restore, recover } = restorer(target.vault, {
+      move: (from, to) => {
+        // The vault's five folders out and three of the copy's entries
+        // in; the next fails, and a file where the copy's folder has to
+        // go back to stops the rollback, so the restore sticks.
+        if (++calls === 9) {
+          copyDir = dirname(from);
+          renameSync(copyDir, `${copyDir}-aside`);
+          writeFileSync(copyDir, '');
+          throw Object.assign(new Error('the disk said no'), { code: 'EIO' });
+        }
+        renameSync(from, to);
+      },
+    });
+    const stuck = await restore(copy);
+    expect(stuck.status).toBe(500);
+    expect((await stuck.json()).reason).toBe('stuck');
+    rmSync(copyDir);
+    renameSync(`${copyDir}-aside`, copyDir);
+
+    // Its `out` holds the restore's own note beside the vault's folders;
+    // once they are home, that note is no reason to keep the copy.
+    expect((await recover()).status).toBe(200);
+    expect(everything(target.vault)).toEqual(before);
+    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+  });
+
+  it('keeps what an undo set aside when something has taken its place, and deletes none of it', async () => {
+    const source = scratch('source');
+    fillSource(source.vault);
+    const copy = await download(source.vault);
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const before = join(target.vault, '.restore', 'before');
+    let sabotage = false;
+    let calls = 0;
+    const { restore, undo, recover } = restorer(target.vault, {
+      move: (from, to) => {
+        // As in the undo above: its eight renames out and the first one
+        // back made, the next failing, and the rollback stopped.
+        if (sabotage && ++calls === 10) {
+          renameSync(before, `${before}-aside`);
+          writeFileSync(before, '');
+          throw Object.assign(new Error('the disk said no'), { code: 'EIO' });
+        }
+        renameSync(from, to);
+      },
+    });
+    expect((await restore(copy)).status).toBe(200);
+    put(target.vault, 'notes/Written since.md', 'work done after the restore\n');
+    sabotage = true;
+    expect((await undo()).status).toBe(500);
+    rmSync(before);
+    renameSync(`${before}-aside`, before);
+    // Something outside the server makes notes/ again, where the
+    // restored vault's notes, set aside by the undo, have to come back to.
+    expect(existsSync(join(target.vault, 'notes'))).toBe(false);
+    mkdirSync(join(target.vault, 'notes'));
+
+    expect((await recover()).status).toBe(200);
+    // They could not go home; they are kept where the undo put them, not
+    // swept away with the work folder.
+    const [work] = readdirSync(join(target.vault, '.restore')).filter((name) => name !== 'before');
+    expect(read(target.vault, `.restore/${work}/bin/notes/Written since.md`)).toBe('work done after the restore\n');
+    expect(read(target.vault, 'studies/Najdorf.pgn')).toBe('[Event "Najdorf"]\n\n1. e4 c5 *\n');
+  });
+
+  it('puts a stuck vault back only for a signed-in client, one at a time, and not while a build reads its files', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const { work, journal } = stuckByHand(target.vault, true);
+    writeFileSync(join(work, 'in'), '');
+    const written = readFileSync(journal, 'utf-8');
+
+    const gated = new Hono();
+    gated.use('/api/*', requireAuth(() => 'a password is set', join(target.vault, 'sessions.json')));
+    gated.use('/api/*', stuckGuard(target.vault));
+    gated.route('/api', restoreApi(target.vault));
+    expect((await gated.request('/api/storage/restore/recover', { method: 'POST' })).status).toBe(401);
+    // The lock screen first, as for any route: the guard is behind the session.
+    expect((await gated.request('/api/notes')).status).toBe(401);
+
+    const busy = await restorer(target.vault, { busy: () => 'A database build is reading the vault’s files.' }).recover();
+    expect(busy.status).toBe(409);
+    expect((await busy.json()).error).toBe('A database build is reading the vault’s files.');
+
+    // A second request while the first waits between its tries.
+    const { recover } = restorer(target.vault, { recoverPauses: [300] });
+    const trying = recover();
+    await new Promise((done) => setTimeout(done, 50));
+    const second = await recover();
+    expect(second.status).toBe(409);
+    expect((await second.json()).error).toBe('A restore is already running.');
+    expect((await trying).status).toBe(500);
+    expect(readFileSync(journal, 'utf-8')).toBe(written);
   });
 
   it('keeps the vault it replaced until asked, puts it back byte for byte, and deletes it only on keep', async () => {
