@@ -120,7 +120,8 @@ goes through only once that program lets go.
   goes to the Vault card. In Settings the Puzzle database and Browsed
   games cards say it too, and the first offers no build or rebuild until
   then. Settings itself, signing in and the Vault card's put-back still
-  answer.
+  answer, and so does “Wipe all data”, which deletes the folders set
+  aside with the rest.
 - **A list that did not load says why, and is not drawn as an empty
   one.** The Studies shelf and the Games page's collection said “Vault
   server unreachable” whenever their list failed, even when the server had
