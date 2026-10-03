@@ -63,9 +63,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   from a copy” waits for it. Only when something still holds one of the
   folders does the card say what else finishes it: quitting and reopening
   the desktop app, or a restart by whoever runs the server. Tried in a
-  browser at a desktop's and an iPhone's size, in both languages, on a
-  vault stopped part way by hand; not yet after a real restore that
-  failed.
+  browser at a desktop's and an iPhone's size, in both languages, after
+  a real restore that failed, twice: another program held a file open
+  during the swap. Pressed while it still held the file, the card said
+  “Could not put the vault back yet. Every folder is still on the
+  server.” and moved nothing; pressed after it let go, every file came
+  back byte for byte as it was before the restore.
 - **While a restore is stopped part way, pages say so and leave the
   vault alone.** A page that read a folder the restore had moved said
   “Request failed (500)”, and a page that saved something wrote into a
