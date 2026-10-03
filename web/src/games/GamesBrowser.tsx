@@ -242,6 +242,11 @@ export function GamesBrowser({
   // about what was typed.
   const shownQuery = useDeferredValue(query);
   const [error, setError] = useState<string | null>(null);
+  /** The collection's list never came back: the error line above it, with
+      its Try again, is the whole answer. The list under it drew its wait
+      for good, a column of placeholder rows under the sentence saying the
+      vault could not be read. A list already in hand stays drawn. */
+  const collectionUnread = !loaded && error !== null;
   const [bookmarks, setBookmarks] = useState<Set<string>>(new Set());
   const [markedOnly, setMarkedOnly] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
@@ -806,7 +811,7 @@ export function GamesBrowser({
             selectedKey={archSel?.key ?? null}
             refreshRef={refreshArchive}
           />
-        ) : (
+        ) : collectionUnread ? null : (
           <CollectionList
             lifted={lifted}
             shape={shape}
