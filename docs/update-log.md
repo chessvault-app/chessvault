@@ -76,12 +76,16 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   still part way through a restore. Put it back under Settings, Vault.”,
   which a page shows wherever it shows an error, and nothing is written.
   Settings, the Vault card and signing in work as before.
-- **The Studies shelf and the Games page's collection say why their list
-  did not load.** Both said “Vault server unreachable” whenever the list
-  failed, even when the server had answered with its reason, and the shelf
-  said it in English on a Korean shelf. Both now show the server's own
-  sentence, translated, and say the server is unreachable only when it did
-  not answer.
+- **A list that did not load says why, and is not drawn as an empty
+  one.** The Studies shelf and the Games page's collection said “Vault
+  server unreachable” whenever their list failed, even when the server had
+  answered with its reason, and the shelf said it in English on a Korean
+  shelf. Both now show the server's own sentence, translated, and say the
+  server is unreachable only when it did not answer. Under that line
+  Notes, Studies, Books and Puzzle books also drew the empty shelf: “0
+  notes”, “No notes yet” and a New note button the server would have
+  refused as well. A shelf whose list never came back now shows the line
+  alone, and one already on screen stays.
 
 ## 0.12.1
 
