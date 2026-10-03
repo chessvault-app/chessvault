@@ -2457,7 +2457,6 @@ export const ko: Record<string, string> = {
     '사본은 모든 문서와 변경 기록을 담은 tar 파일 하나입니다. 설정과 토큰은 서버에 남습니다.',
   // Restoring a copy: 복원 puts a state back, 되돌리기 undoes, 유지 keeps.
   'Restore from a copy': '사본에서 복원',
-  'Keep or undo the last restore first': '먼저 지난 복원을 유지하거나 되돌리세요',
   'That file is not a copy of a vault.': '그 파일은 보관함 사본이 아닙니다.',
   'This vault has no history of its own yet, so it takes the copy’s.':
     '이 보관함에는 아직 자체 기록이 없으므로 사본의 기록을 가져옵니다.',
@@ -2479,6 +2478,8 @@ export const ko: Record<string, string> = {
   'Undone. Reloading…': '되돌렸습니다. 다시 불러옵니다…',
   'Restored from a copy {when}. The vault as it was before still takes {size} on the server.':
     '{when} 사본에서 복원했습니다. 복원 전의 보관함이 아직 서버에서 {size}를 차지합니다.',
+  'Keep or undo this restore before restoring another copy.':
+    '다른 사본을 복원하기 전에 이 복원을 유지하거나 되돌리세요.',
   'Keep the restored vault': '복원한 보관함 유지',
   'Undo the restore': '복원 되돌리기',
   'This deletes the vault as it was before the restore and frees {size}. Its documents can still be brought back from their history; its book PDFs and PGN files cannot.':
