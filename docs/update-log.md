@@ -75,7 +75,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   everything that would read or write it is refused with “The vault is
   still part way through a restore. Put it back under Settings, Vault.”,
   which a page shows wherever it shows an error, and nothing is written.
-  Settings, the Vault card and signing in work as before.
+  Home, whose read of the settings still answered, drew a vault with
+  nothing in it and offered to set one up; it now says “Could not read
+  the vault” with that sentence and “Open Settings”, which goes to the
+  Vault card. Settings, the Vault card and signing in work as before.
 - **A list that did not load says why, and is not drawn as an empty
   one.** The Studies shelf and the Games page's collection said “Vault
   server unreachable” whenever their list failed, even when the server had

@@ -847,9 +847,11 @@
             </p>
             <h2 data-ko="홈">Home</h2>
             <p data-ko="홈의 구성 요소, 위에서부터:">What Home is made of, top to bottom:</p>
-            <p data-ko="서버가 응답하지 않으면 홈은 빈 보관함을 그리는 대신 «보관함 서버에 연결할 수 없습니다»(Vault server unreachable) 카드와 «다시 시도»(Retry) 버튼을 보여 줍니다.">
+            <p data-ko="서버가 응답하지 않으면 홈은 빈 보관함을 그리는 대신 «보관함 서버에 연결할 수 없습니다»(Vault server unreachable) 카드와 «다시 시도»(Retry) 버튼을 보여 줍니다. 보관함이 복원 도중에 멈춰 있을 때에는 «보관함을 읽지 못했습니다»(Could not read the vault) 카드가 그 이유를 말하고, «설정 열기»(Open Settings)가 보관함을 되돌려 놓는 보관함 카드로 갑니다.">
               When the server does not answer, Home shows a “Vault server unreachable” card with a
-              “Retry” button instead of drawing an empty vault.
+              “Retry” button instead of drawing an empty vault. When the vault is stopped part way
+              through a restore, a “Could not read the vault” card says so, and “Open Settings” goes
+              to the Vault card, where it is put back.
             </p>
             <div class="scroll-x">
               <table class="controls">
