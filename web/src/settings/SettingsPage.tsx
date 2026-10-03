@@ -69,9 +69,13 @@ function useStorage(stamp: number): StorageReport | null {
  * themselves rather than after them: the answer adds a block to the top
  * of the Security card, and asked second it would land on a page already
  * drawn and push every card under it down. It is a count the server
- * keeps, so asking costs the request and nothing more. Null where nobody
- * can say: the demo, a vault with no history, a server older than the
- * question.
+ * keeps, so asking costs the request and nothing more, but for the first
+ * ask after a start, a restore, a wipe or a purge, or after the secrets in
+ * use change, on a history that holds old ones: that one reads which
+ * secrets they are (server/historyPurge.ts measured 267-284 ms for a
+ * generated 10,000 saves each writing a different config.json), and the
+ * page waits for it. Null where nobody can say: the demo, a vault with no
+ * history, a server older than the question.
  */
 const readLeaks = (): Promise<HistoryLeaks | null> =>
   isDemo() ? Promise.resolve(null) : api<HistoryLeaks>('/api/history/purge').catch(() => null);
