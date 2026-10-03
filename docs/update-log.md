@@ -7,6 +7,13 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+The app now puts back a stopped restore, gets the newest puzzles past a dump
+in place and removes old secrets from the history, which 0.12.1 left to a
+shell. While one is stopped, pages say so and the history saves nothing;
+failed builds and lists say why. Untried on a real phone or Mac, in the
+desktop app, or out of memory or disk; a put-back another program blocks
+goes through only once that program lets go.
+
 - **With a puzzle dump in the data folder, the app can still get the
   newest puzzles.** A Lichess dump beside the puzzle database as
   `lichess_db_puzzle.csv.zst`, whether you put it there or an older
@@ -38,44 +45,64 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   keeps saying why after a reload, as Settings did. And an empty dump
   fails as one that cannot be read, where it built an empty database.
 - **Old secrets in the change history can be removed from Settings.** A
-  vault older than 0.4.x, or one wiped before 0.12.1, can hold
-  config.json and sessions.json in earlier saves, so every password hash,
+  vault older than 0.4.x, or one wiped before 0.12.1, can hold config.json
+  and sessions.json in earlier saves, so every password hash,
   authenticator secret and Lichess token it ever had rides along in each
   downloaded copy, and until now taking them out meant the README's git
-  commands in a terminal. While the history holds any, Settings →
-  Security opens with “Old secrets in the history” and “Remove old
-  secrets”, which asks first, then writes every save again without them
-  (and without the history's own folder, which such a wipe saved too),
-  keeps every version of every document, and deletes the old copies. A
-  copy downloaded before keeps them, so the question and the line after it
-  name the secrets the history holds and what closes each: the app
+  commands in a terminal. While the history holds any, Settings → Security
+  opens with “Old secrets in the history” and “Remove old secrets”, which
+  asks first, then writes again every save from the first that held them,
+  leaving them out (and the history's own folder, which such a wipe saved
+  too), keeps every version of every document, and deletes the old copies.
+  A copy downloaded before keeps them, so the question and the line after
+  it name the secrets the history holds and what closes each: the app
   password or 2FA secret in use is changed in the same card, an old
   password wherever it is still used, and every Lichess token in it is
   deleted at Lichess, whose page the line links, since replacing a token
-  in the app does not revoke it. A history whose copies of the settings
-  hold no secret is told so instead. The server then stops warning about
-  them. On generated histories a Windows desktop took 1.3 s for 3,000
-  saves and 3.9 s for 10,000. Tried in a browser at a desktop's and a
-  phone's size in both languages, on vaults with no password or token,
-  with either, with both and with 2FA, not yet on a device.
+  in the app does not revoke it. A history that holds only its own folder,
+  or copies of the settings with no secret in them, gets “Old files in the
+  history” and “Remove old files” instead. The server then stops warning
+  about them. On generated histories a Windows desktop took 1.3 and 1.6 s
+  in two runs for 3,000 saves (30 MB of history) and 3.9 s for 10,000
+  (114 MB). Tried in a browser at a desktop's and a phone's size in both
+  languages, on vaults with no password or token, with either, with both
+  and with 2FA, not yet on a device.
 - **Settings → Vault can finish a restore that stopped part way.** When a
   restore or its undo failed part way and could not put the vault's
   folders back either, only a restart of the server finished it, and
-  nothing said so: the card went on offering “Restore from a copy” and
-  pages that read a moved folder failed. A phone, or the desktop app
-  pointed at a server, cannot restart one. The card now says “A restore
-  stopped part way through.” and offers “Put the vault back”, which runs
-  the same put-back as the server's next start, from any device; “Restore
-  from a copy” waits for it. Only when something still holds one of the
-  folders does the card say what else finishes it: quitting and reopening
-  the desktop app, or a restart by whoever runs the server. Tried in a
-  browser at a desktop's and an iPhone's size, in both languages, after
-  a real restore that failed, twice: two other programs each held a file
-  open during the swap, so it could neither finish nor put the folders
-  back. Pressed while they still held them, the card said “Could not put
-  the vault back yet. Every folder is still on the server.” and moved
-  nothing; pressed after they let go, every file came back byte for byte
-  as it was before the restore.
+  nothing said so: the card went on offering “Restore from a copy”. A
+  phone, or the desktop app pointed at a server, cannot restart one. The
+  card now says “A restore stopped part way through.” and offers “Put the
+  vault back”, which runs the same put-back as the server's next start,
+  from any device. “Restore from a copy” waits for it, and so does
+  “Download a copy”, which packed the half vault without the folders set
+  aside. Only when the put-back fails too, as it does while another
+  program still holds a file in a folder it has to move, does the card say
+  what else can finish it: quitting and reopening the desktop app, or a
+  restart by whoever runs the server. Tried in a browser at a desktop's
+  and an iPhone's size, in both languages, after a real restore that
+  failed, twice: two other programs each held a file open during the swap,
+  so it could neither finish nor put the folders back. Pressed while they
+  still held them, the card said “Could not put the vault back yet. Every
+  folder is still on the server.” and moved nothing; pressed after they
+  let go, every file came back byte for byte as it was before the restore.
+  A restart, like the button, goes through only once the file is let go:
+  started while one was still held, a server run from this release
+  stopped at once, and started after, it put the vault back.
+- **Putting back a stopped restore keeps only what it could not move
+  home.** A put-back, at the server's next start or now from the Vault
+  card, kept the whole copy the restore had unpacked in the vault's
+  .restore folder for good, with a line in the server's log at every start
+  and nothing in the app that could delete it; it now leaves .restore
+  empty. And an undo put back after something outside the server had made
+  one of its folders again in the vault, as a sync client or an editor
+  can, deleted the restored vault's own copy of that folder, with whatever
+  had been written in it since the restore. That copy now stays in
+  .restore and the server's log names it; the card still says the vault is
+  back, and only the server's disk reaches the copy. Tried on a server run
+  from this release with each state made by hand: after “Put the vault
+  back” .restore was empty, and after the undo's put-back the restored
+  vault's notes were still in it.
 - **While a restore is stopped part way, pages say so and leave the
   vault alone.** A page that read a folder the restore had moved said
   “Request failed (500)”, and a page that saved something wrote into a
@@ -87,15 +114,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   which a page shows wherever it shows an error, and nothing is written.
   The change history records nothing either until the vault is put back:
   it had saved the half vault, and the put-back then saved every document
-  set aside again, a duplicate version of each every time. Home, whose
-  read of the settings still answered, drew a vault with nothing in it and
-  offered to set one up; it now says “Could not read the vault” with that
-  sentence and “Open Settings”, which goes to the Vault card. In Settings
-  the Puzzle database and Browsed games cards say it too: the first
-  offered Rebuild over a database it could not see and asked the server
-  about the build every second for as long as the page was open, and the
-  second held its loading row for good. Settings, the Vault card and
-  signing in work as before.
+  set aside again, a duplicate version of each every time. Home, which
+  drew what it could still read with no word of the restore, now says
+  “Could not read the vault” with that sentence and “Open Settings”, which
+  goes to the Vault card. In Settings the Puzzle database and Browsed
+  games cards say it too, and the first offers no build or rebuild until
+  then. Settings itself, signing in and the Vault card's put-back still
+  answer, and so does “Wipe all data”, which deletes the folders set
+  aside with the rest.
 - **A list that did not load says why, and is not drawn as an empty
   one.** The Studies shelf and the Games page's collection said “Vault
   server unreachable” whenever their list failed, even when the server had
@@ -114,6 +140,14 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   says why. And the Databases page, which stood on its outline with no
   word when the databases could not be read, now says “Could not load
   reference games” with the reason and Try again.
+- **Home's “Vault server unreachable” card goes once the server answers.**
+  Shown again after the server came back, Home drew the vault under the
+  card and kept the card, which says the page fills itself once the server
+  answers, until Retry was pressed. A load that brings the vault back now
+  takes the card away, as it does the one a stopped restore puts there.
+  Checked on the demo at a desktop's size in English and a phone's in
+  Korean, with every request failing and then answered again: 0.12.1 kept
+  the card above the vault it drew, and this release drops it.
 
 ## 0.12.1
 
