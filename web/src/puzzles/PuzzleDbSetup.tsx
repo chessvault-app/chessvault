@@ -357,7 +357,8 @@ export function usePuzzleBuild(onReady: () => void): {
       every second for as long as the page was open (ten refusals in ten
       seconds on Settings, measured), because a failure was only ever
       read as the network's.
-      A start that the server takes polls again. */
+      A start that the server takes polls again, and so does the page
+      when it is shown again. */
   const [refused, setRefused] = useState(false);
   // So the finish is noticed once, rather than on every poll afterwards.
   const wasRunning = useRef(false);
@@ -395,6 +396,11 @@ export function usePuzzleBuild(onReady: () => void): {
     const timer = setInterval(() => void poll(), 1000);
     return () => clearInterval(timer);
   }, [poll, refused]);
+  // And a page shown again asks again (lib/keep-alive runs its effects at
+  // every show): Settings is kept while another page is open, and the
+  // vault put back meanwhile, from another device or by a restart, left
+  // the poll stopped for good on a card that offered Rebuild again.
+  useEffect(() => () => setRefused(false), []);
 
   const start = async (download = false): Promise<void> => {
     setStarting(true);
