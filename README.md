@@ -421,9 +421,13 @@ ever held goes along with each backup and each downloaded copy. The
 server says so at boot when it finds any, and Settings → Security then
 opens with “Old secrets in the history”: **Remove old secrets** writes
 every save again without them, keeping every version of every document,
-and deletes the old copies from the history. Then change the app
-password, in the same card, and the Lichess token, in its own, since
-copies already downloaded or pulled off-box keep the old values.
+and deletes the old copies from the history. Copies already downloaded or
+pulled off-box keep the old values, so it then names the ones the history
+held and what closes each: the app password or 2FA secret still in use is
+changed in the same card, an old password wherever it is still used, and
+every Lichess token it names is deleted at
+[lichess.org/account/oauth/token](https://lichess.org/account/oauth/token),
+since replacing a token in the app does not revoke it.
 
 Where the app cannot do it (a server that will not start, say), the same
 from a terminal: stop the server and run this, with `h` naming the
@@ -443,8 +447,8 @@ git --git-dir=$h config core.bare false
 The rewrite alone is not the purge: filter-branch keeps the old commits
 under `refs/original`, and the reflog and the index still point at the
 old files, so the four lines after it drop those and delete what nothing
-reaches any more. Then change the password and the Lichess token, as
-above.
+reaches any more. Then change the password and 2FA, and delete the vault's
+Lichess tokens at Lichess, as above.
 
 That first layer is reachable from the app, not only from git. Every
 study, game and note has a clock in its header (on a phone, Earlier
