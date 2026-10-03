@@ -2069,9 +2069,11 @@ export const ko: Record<string, string> = {
   "The upload failed.": "업로드에 실패했습니다.",
   "Could not put the copy in place, so the vault is as it was.": "사본을 제자리에 넣지 못했으므로 보관함은 그대로입니다.",
   "This vault keeps no history.": "이 보관함은 변경 기록을 남기지 않습니다.",
-  "Could not take them out, so the history is as it was.": "옛 비밀 정보를 제거하지 못했으므로 변경 기록은 그대로입니다.",
-  "Every save is written again without them, but their old copies could not be deleted yet. The server tries again when it next starts.":
-    "모든 저장을 옛 비밀 정보 없이 다시 썼지만, 예전 사본은 아직 삭제하지 못했습니다. 서버가 다음에 시작할 때 다시 시도합니다.",
+  // "Them" is whatever the Security card offered to remove: old secrets,
+  // or only old files, so the Korean names neither.
+  "Could not take them out, so the history is as it was.": "제거하지 못했으므로 변경 기록은 그대로입니다.",
+  "Every save is written again without them, but their old copies could not be deleted yet. Try again to delete them, or the server does when it next starts.":
+    "모든 저장을 그것들 없이 다시 썼지만, 예전 사본은 아직 삭제하지 못했습니다. 다시 시도하면 삭제하고, 서버가 다음에 시작할 때도 삭제합니다.",
   "Could not put the copy in place or put everything back. Put it back under Settings, Vault.":
     "사본을 제자리에 넣지 못했고 모두 되돌려 놓지도 못했습니다. 설정의 보관함에서 되돌려 놓으세요.",
   "There is no restore to undo.": "되돌릴 복원이 없습니다.",

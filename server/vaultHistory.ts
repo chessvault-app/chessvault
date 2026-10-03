@@ -328,10 +328,14 @@ export function vaultHistoryApi(
       return c.json({ error: 'Could not take them out, so the history is as it was.' }, 500);
     }
     if (!outcome) return c.json({ error: 'This vault keeps no history.' }, 409);
+    // A purge asked again finishes what this one left (purgeHistory with
+    // nothing to write again prunes), and the Security card offers it
+    // again, so that is said first: a restart is not in every reader's
+    // reach.
     if (!outcome.pruned) {
       return c.json(
         {
-          error: 'Every save is written again without them, but their old copies could not be deleted yet. The server tries again when it next starts.',
+          error: 'Every save is written again without them, but their old copies could not be deleted yet. Try again to delete them, or the server does when it next starts.',
         },
         500,
       );
