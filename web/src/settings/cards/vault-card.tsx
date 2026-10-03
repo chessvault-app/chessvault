@@ -12,7 +12,7 @@ import { t } from '@/lib/i18n';
 import { BrandMark } from '@/components/brand-mark';
 import { setVaultName } from '@/lib/vaultName';
 import { Feedback, size, type Note, type Settings, type StorageReport } from '@/settings/cards/shared';
-import { RestoreButton, RestorePending, useRestoreState } from '@/settings/cards/restore-copy';
+import { RestoreButton, RestorePending, RestoreStuck, useRestoreState } from '@/settings/cards/restore-copy';
 
 // --- Vault name ----------------------------------------------------------------
 // Its own card, not a second name in Profile: "Display name" is the
@@ -195,6 +195,7 @@ export function VaultCard({
       </div>
       <p className="text-muted-foreground text-sm">{t(VAULT_COPY_NOTE)}</p>
       <RestorePending state={restore.state} reload={restore.reload} />
+      <RestoreStuck state={restore.state} />
     </Card>
   );
 }

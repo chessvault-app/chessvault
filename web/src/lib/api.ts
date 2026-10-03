@@ -210,8 +210,8 @@ export function apiUpload<T = unknown>(
     xhr.upload.onprogress = (e) => {
       if (e.lengthComputable) options.onProgress?.(e.loaded, e.total);
     };
-    const fail = (status: number, message: string, offline = false): void =>
-      reject(new ApiError(status, message, offline));
+    const fail = (status: number, message: string, offline = false, reason: string | null = null): void =>
+      reject(new ApiError(status, message, offline, reason));
     xhr.onerror = () =>
       fail(0, navigator.onLine ? t('Vault server unreachable') : t('No internet connection'), true);
     xhr.onabort = () => fail(0, t('Upload cancelled'));
@@ -224,11 +224,12 @@ export function apiUpload<T = unknown>(
         body = undefined;
       }
       if (xhr.status < 200 || xhr.status >= 300) {
-        const envelope = body as { error?: string; offline?: boolean } | undefined;
+        const envelope = body as { error?: string; offline?: boolean; reason?: unknown } | undefined;
         fail(
           xhr.status,
           envelope?.error ?? t('Request failed ({status})', { status: xhr.status }),
           envelope?.offline === true,
+          typeof envelope?.reason === 'string' ? envelope.reason : null,
         );
         return;
       }

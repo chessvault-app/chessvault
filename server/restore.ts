@@ -5,7 +5,7 @@ import { mkdir, open, rm, statfs, utimes, type FileHandle } from 'node:fs/promis
 import { dirname, join, relative, resolve } from 'node:path';
 import { Hono } from 'hono';
 import { readJson, renameRetrying, writeJson } from './atomic.ts';
-import { VAULT, VAULT_SKELETON } from './paths.ts';
+import { LOOPBACK_ONLY, VAULT, VAULT_SKELETON } from './paths.ts';
 import { walk } from './storage.ts';
 import { readTar, TarError, type TarFault } from './tarRead.ts';
 import { prepareHistoryRepo, type VaultBackup } from './vaultBackup.ts';
@@ -55,8 +55,10 @@ import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME } from './vaultG
  * before the first one and deleted after the last, inside the vault so
  * every rename is on one filesystem. A rename that fails part way puts
  * back the ones before it; a server killed part way puts them back on its
- * next start (recoverInterruptedRestore), so the vault is always one
- * whole vault or the other. The last rename is what makes a restore
+ * next start (recoverInterruptedRestore), and a put-back that failed too
+ * is finished from the Vault card ("Put the vault back") or at that next
+ * start, both by the same code, so the vault is always one whole vault
+ * or the other once it is done. The last rename is what makes a restore
  * pending, `.restore/<id>/out` becoming `.restore/before`, so the state
  * changes at one instant too.
  *
@@ -180,8 +182,9 @@ type Finished = 'nothing' | 'put-back' | 'unreadable';
  * Put back a swap whose journal still stands, then delete the work folders
  * of operations that never finished. The one put-back there is, so that
  * whatever runs it does the same thing: recoverInterruptedRestore at the
- * start. Throws StillSwapped, with the journal left standing, when a
- * rename cannot be undone.
+ * start, and "Put the vault back" (POST /storage/restore/recover) in a
+ * running server. Throws StillSwapped, with the journal left standing,
+ * when a rename cannot be undone.
  */
 function finishInterruptedSwap(vault: string): Finished {
   const work = workDir(vault);
@@ -365,11 +368,36 @@ const NO_SPACE = 'The server does not have enough free space for this copy.';
 
 const RUNNING = 'A restore is already running.';
 
-/** A swap that failed and could not be put back leaves its journal for
-    the next start, and the vault half one and half the other until then.
-    Nothing may build on that: a second swap would write its own journal
-    over this one, and an undo would delete what the first had put back. */
-const STUCK = 'The vault is still part way through a restore. Restart the server to finish putting it back.';
+/** A swap that failed and could not be put back leaves its journal, and
+    the vault half one and half the other until something puts it back:
+    "Put the vault back" on the Vault card (POST /storage/restore/recover),
+    or the next start. Nothing may build on that: a second swap would
+    write its own journal over this one, and an undo would delete what the
+    first had put back. Every such answer carries `reason: 'stuck'`, which
+    the card reads to show the way out. */
+const STUCK = 'The vault is still part way through a restore. Put it back under Settings, Vault.';
+
+/**
+ * The pauses between tries at putting a stuck vault back, in milliseconds.
+ *
+ * Each try already gives every rename SWAP_TRIES attempts over about a
+ * second and a half; these give whatever held a folder a few seconds
+ * more to let go. What holds one is, by measurement on Windows 11
+ * (NTFS, Node 24): a handle open on any file under the folder (a plain
+ * read, a read stream, a SQLite database) or a process whose working
+ * directory is under it, each refusing the folder's rename with EPERM
+ * until it is closed; a watcher on the folder or on the vault, and a
+ * SQLite database or a process beside the folder rather than in it, do
+ * not. Nothing this server keeps open sits under a folder a restore
+ * moves: its databases are in the data folder, outside the vault or in
+ * its `.data`, which stays in place. What is left is a request that was
+ * already reading (a book's PDF, a download), and processes outside this
+ * one: a scanner or indexer opening files it has just seen renamed, a
+ * sync client, an editor or a terminal in a vault folder. Those let go
+ * in their own time, which is all a restart had over a running server,
+ * besides closing what the old process had open.
+ */
+const RECOVER_PAUSES_MS = [1_000, 3_000];
 
 export interface RestoreOptions {
   /** The running history writer, or null where there is none. */
@@ -383,6 +411,14 @@ export interface RestoreOptions {
   move?: (from: string, to: string) => void;
   /** How long the upload may go quiet; IDLE_MS unless a test is waiting. */
   idleMs?: number;
+  /** Whether the client is on the machine the server runs on
+      (LOOPBACK_ONLY in server/paths.ts). With the desktop app's bridge
+      in the page, that makes this server the app's own, which quitting
+      the app restarts; the Vault card says so when a put-back fails. */
+  sameMachine?: boolean;
+  /** The pauses between tries at putting a stuck vault back;
+      RECOVER_PAUSES_MS unless a test is waiting. */
+  recoverPauses?: number[];
 }
 
 /** A reply, built away from the route so the restore can return early. */
@@ -428,11 +464,15 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
 
   /**
    * What the Vault card asks before it offers anything: a restore waiting
-   * to be kept or undone, what the history would do, and the free space.
+   * to be kept or undone, one stuck part way, what the history would do,
+   * and the free space. A stuck restore is said apart and alone: until it
+   * is put back, which restore is pending (an undo that stuck had moved
+   * some of the one before) is not a thing anybody can be asked about.
    */
   api.get('/storage/restore', async (c) => {
+    const stuck = existsSync(journalPath(vault));
     let pending: (Restored & { bytes: number }) | null = null;
-    if (existsSync(beforeDir(vault))) {
+    if (!stuck && existsSync(beforeDir(vault))) {
       const meta = readJson<Partial<Restored>>(restoredPath(vault), {});
       pending = {
         at: typeof meta.at === 'string' ? meta.at : '',
@@ -440,12 +480,88 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
         bytes: (await walk(beforeDir(vault))).bytes,
       };
     }
-    return c.json({ pending, history: await plan(await history()), free: await free() });
+    return c.json({
+      pending,
+      stuck,
+      history: await plan(await history()),
+      free: await free(),
+      sameMachine: options.sameMachine ?? LOOPBACK_ONLY,
+    });
+  });
+
+  /**
+   * Put back a restore, or its undo, that stopped part way and could not
+   * put itself back: the put-back the next start would run
+   * (finishInterruptedSwap), run now, so a phone or a desktop app pointed
+   * at a server somebody else runs is not left waiting on a restart. It
+   * takes what a restore takes: the history to itself, so no autosave
+   * runs its `add -A` across the renames, and no database build reading
+   * `sources/`, which it moves. A rename that will not undo yet is tried
+   * again after each of RECOVER_PAUSES_MS; one that still will not leaves
+   * the journal standing, says so, and the next start tries again.
+   */
+  api.post('/storage/restore/recover', async (c) => {
+    if (running) return c.json({ error: RUNNING }, 409);
+    if (!existsSync(journalPath(vault))) return c.json({ error: 'The vault is not part way through a restore.' }, 409);
+    const reason = options.busy?.();
+    if (reason) return c.json({ error: reason }, 409);
+    running = true;
+    try {
+      const backup = await history();
+      const at = new Date().toISOString();
+      const pauses = options.recoverPauses ?? RECOVER_PAUSES_MS;
+      const putBack = async (commit: ((message: string) => Promise<void>) | null): Promise<Finished> => {
+        let outcome: Finished;
+        for (let attempt = 0; ; attempt += 1) {
+          try {
+            outcome = finishInterruptedSwap(vault);
+            break;
+          } catch (error) {
+            // Put back, and only the sweep after it failed: what it left
+            // the next start or the next put-back sweeps.
+            if (!existsSync(journalPath(vault))) {
+              console.error(`[restore] put the vault back, but could not clear the work folders: ${(error as Error).message}`);
+              outcome = 'put-back';
+              break;
+            }
+            if (attempt >= pauses.length) throw error;
+            console.error(`[restore] could not put the vault back yet, trying again: ${(error as Error).message}`);
+            await new Promise((done) => setTimeout(done, pauses[attempt]));
+          }
+        }
+        if (outcome === 'put-back') {
+          vaultReplaced();
+          await commit?.(`vault put back after a restore stopped part way ${at}`).catch((error: Error) => {
+            console.error('[restore] could not record the vault put back:', error.message);
+          });
+        }
+        return outcome;
+      };
+      let outcome: Finished;
+      try {
+        outcome = await (backup ? backup.exclusive((commit) => putBack(commit)) : putBack(null));
+      } catch (error) {
+        console.error(`[restore] could not put the vault back: ${(error as Error).message}`);
+        return c.json({ error: 'Could not put the vault back yet. Every folder is still on the server.', reason: 'stuck' }, 500);
+      }
+      if (outcome === 'unreadable') {
+        return c.json(
+          {
+            error: 'The record of what the restore moved cannot be read, so nothing was moved. Every folder is still on the server.',
+            reason: 'unreadable',
+          },
+          500,
+        );
+      }
+      return c.json({ ok: true });
+    } finally {
+      running = false;
+    }
   });
 
   api.post('/storage/restore', async (c) => {
     if (running) return c.json({ error: RUNNING }, 409);
-    if (existsSync(journalPath(vault))) return c.json({ error: STUCK }, 409);
+    if (existsSync(journalPath(vault))) return c.json({ error: STUCK, reason: 'stuck' }, 409);
     // Taken before the first await, so two uploads cannot both get past it.
     running = true;
     try {
@@ -628,11 +744,9 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
       const stuck = existsSync(journalPath(vault));
       if (!stuck) await rm(work.dir, { recursive: true, force: true }).catch(() => undefined);
       return reply(
-        {
-          error: stuck
-            ? 'Could not put the copy in place or put everything back. Restart the server to finish putting it back.'
-            : 'Could not put the copy in place, so the vault is as it was.',
-        },
+        stuck
+          ? { error: 'Could not put the copy in place or put everything back. Put it back under Settings, Vault.', reason: 'stuck' }
+          : { error: 'Could not put the copy in place, so the vault is as it was.' },
         500,
       );
     }
@@ -647,7 +761,7 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
    */
   api.post('/storage/restore/undo', async (c) => {
     if (running) return c.json({ error: RUNNING }, 409);
-    if (existsSync(journalPath(vault))) return c.json({ error: STUCK }, 409);
+    if (existsSync(journalPath(vault))) return c.json({ error: STUCK, reason: 'stuck' }, 409);
     if (!existsSync(beforeDir(vault))) return c.json({ error: 'There is no restore to undo.' }, 409);
     // An undo moves sources/ as a restore does.
     const reason = options.busy?.();
@@ -681,11 +795,9 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
         const stuck = existsSync(journalPath(vault));
         if (!stuck) await rm(work.dir, { recursive: true, force: true }).catch(() => undefined);
         return c.json(
-          {
-            error: stuck
-              ? 'Could not undo the restore or put everything back. Restart the server to finish putting it back.'
-              : 'Could not undo the restore, so the vault is as it was.',
-          },
+          stuck
+            ? { error: 'Could not undo the restore or put everything back. Put it back under Settings, Vault.', reason: 'stuck' }
+            : { error: 'Could not undo the restore, so the vault is as it was.' },
           500,
         );
       }
@@ -699,7 +811,7 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
   /** Keep the restored vault: what it replaced is deleted, for good. */
   api.post('/storage/restore/keep', async (c) => {
     if (running) return c.json({ error: RUNNING }, 409);
-    if (existsSync(journalPath(vault))) return c.json({ error: STUCK }, 409);
+    if (existsSync(journalPath(vault))) return c.json({ error: STUCK, reason: 'stuck' }, 409);
     if (!existsSync(beforeDir(vault))) return c.json({ error: 'There is no restore to keep.' }, 409);
     running = true;
     try {

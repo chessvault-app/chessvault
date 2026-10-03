@@ -1997,15 +1997,20 @@ export const ko: Record<string, string> = {
   "The upload stopped.": "업로드가 멈췄습니다.",
   "The upload failed.": "업로드에 실패했습니다.",
   "Could not put the copy in place, so the vault is as it was.": "사본을 제자리에 넣지 못했으므로 보관함은 그대로입니다.",
-  "Could not put the copy in place or put everything back. Restart the server to finish putting it back.":
-    "사본을 제자리에 넣지 못했고 모두 되돌려 놓지도 못했습니다. 서버를 다시 시작하면 마저 되돌립니다.",
+  "Could not put the copy in place or put everything back. Put it back under Settings, Vault.":
+    "사본을 제자리에 넣지 못했고 모두 되돌려 놓지도 못했습니다. 설정의 보관함에서 되돌려 놓으세요.",
   "There is no restore to undo.": "되돌릴 복원이 없습니다.",
   "There is no restore to keep.": "유지할 복원이 없습니다.",
   "Could not undo the restore, so the vault is as it was.": "복원을 되돌리지 못했으므로 보관함은 그대로입니다.",
-  "Could not undo the restore or put everything back. Restart the server to finish putting it back.":
-    "복원을 되돌리지 못했고 모두 되돌려 놓지도 못했습니다. 서버를 다시 시작하면 마저 되돌립니다.",
-  "The vault is still part way through a restore. Restart the server to finish putting it back.":
-    "보관함이 아직 복원 도중에 멈춰 있습니다. 서버를 다시 시작하면 마저 되돌립니다.",
+  "Could not undo the restore or put everything back. Put it back under Settings, Vault.":
+    "복원을 되돌리지 못했고 모두 되돌려 놓지도 못했습니다. 설정의 보관함에서 되돌려 놓으세요.",
+  "The vault is still part way through a restore. Put it back under Settings, Vault.":
+    "보관함이 아직 복원 도중에 멈춰 있습니다. 설정의 보관함에서 되돌려 놓으세요.",
+  "The vault is not part way through a restore.": "보관함은 복원 도중에 멈춰 있지 않습니다.",
+  "Could not put the vault back yet. Every folder is still on the server.":
+    "아직 보관함을 되돌려 놓지 못했습니다. 모든 폴더는 서버에 그대로 있습니다.",
+  "The record of what the restore moved cannot be read, so nothing was moved. Every folder is still on the server.":
+    "복원이 옮긴 것을 적은 목록을 읽을 수 없어 아무것도 옮기지 않았습니다. 모든 폴더는 서버에 그대로 있습니다.",
   "Could not keep the restored vault, so the restore can still be undone.":
     "복원한 보관함을 유지하지 못했으므로 복원은 아직 되돌릴 수 있습니다.",
 
@@ -2481,6 +2486,16 @@ export const ko: Record<string, string> = {
     '{when} 사본에서 복원했습니다. 복원 전의 보관함이 아직 서버에서 {size}를 차지합니다.',
   'Keep the restored vault': '복원한 보관함 유지',
   'Undo the restore': '복원 되돌리기',
+  // A restore or its undo that stopped part way: 되돌려 놓기 puts the
+  // vault's folders back where they were, as the server's sentences say.
+  'A restore stopped part way through. Some of the vault’s folders are set aside until it is put back.':
+    '복원이 도중에 멈췄습니다. 되돌려 놓을 때까지 보관함의 폴더 일부가 옆에 비켜 있습니다.',
+  'Put the vault back': '보관함 되돌려 놓기',
+  'Put the vault back first': '먼저 보관함을 되돌려 놓으세요',
+  'The vault is back. Reloading…': '보관함을 되돌려 놓았습니다. 다시 불러옵니다…',
+  'Quit and reopen the app to finish putting it back.': '앱을 종료했다가 다시 열면 마저 되돌려 놓습니다.',
+  'Restart the server to finish putting it back, or ask whoever runs it to.':
+    '서버를 다시 시작하면 마저 되돌려 놓습니다. 직접 운영하는 서버가 아니라면 운영하는 사람에게 부탁하세요.',
   'This deletes the vault as it was before the restore and frees {size}. Its documents can still be brought back from their history; its book PDFs and PGN files cannot.':
     '복원 전의 보관함을 삭제하고 {size}를 비웁니다. 그 문서들은 기록에서 되살릴 수 있지만, 책 PDF와 PGN 파일은 되살릴 수 없습니다.',
   'This deletes the vault as it was before the restore and frees {size}. Nothing of it can be brought back.':

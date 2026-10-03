@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArchiveRestore } from 'lucide-react';
+import { ArchiveRestore, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { FilePicker } from '@/components/file-picker';
@@ -21,10 +21,16 @@ import { Feedback, size, type Note } from '@/settings/cards/shared';
 export interface RestoreState {
   /** A restore waiting to be kept or undone, and what the vault it replaced takes. */
   pending: { at: string; bytes: number; history: 'adopted' | 'kept' | 'none' } | null;
+  /** A restore or its undo stopped part way and could not put itself
+      back: the vault is half of one and half of another until it is put
+      back, and `pending` is null until then. */
+  stuck: boolean;
   /** What a restore would do with the history, said before it starts. */
   history: 'adopt' | 'keep' | 'none';
   /** Free bytes where the vault is, or null when the server cannot say. */
   free: number | null;
+  /** Whether this client runs on the server's own machine; see RestoreStuck. */
+  sameMachine: boolean;
 }
 
 /** The restore's state, read once the card mounts, and how to read it again. */
@@ -82,14 +88,20 @@ export function RestoreButton({ state, reload }: { state: RestoreState | null; r
     <>
       <FilePicker
         accept=".tar,application/x-tar"
-        disabled={state?.pending != null}
-        title={state?.pending ? t('Keep or undo the last restore first') : undefined}
+        disabled={state?.pending != null || state?.stuck === true}
+        title={
+          state?.stuck
+            ? t('Put the vault back first')
+            : state?.pending
+              ? t('Keep or undo the last restore first')
+              : undefined
+        }
         onFiles={([picked]) => void pick(picked!)}
         render={<Button variant="secondary" />}
       >
         {t('Restore from a copy')}
       </FilePicker>
-      {file && <RestoreDialog file={file} state={state} onClose={() => setFile(null)} />}
+      {file && <RestoreDialog file={file} state={state} reload={reload} onClose={() => setFile(null)} />}
     </>
   );
 }
@@ -102,11 +114,15 @@ export function RestoreButton({ state, reload }: { state: RestoreState | null; r
 function RestoreDialog({
   file,
   state,
+  reload,
   onClose,
 }: {
   file: File;
   /** Null when the server would not say (its upload then answers for itself). */
   state: RestoreState | null;
+  /** Reads the card's state again: a copy that stuck part way leaves the
+      card a vault to put back. */
+  reload: () => Promise<void>;
   onClose: () => void;
 }) {
   /** Percent sent while uploading; 100 while the server puts the copy in place. */
@@ -115,10 +131,12 @@ function RestoreDialog({
   const [note, setNote] = useState<Note>(null);
   /**
    * The server refused this file for what it holds, or has no room for
-   * it. Sending it again gets the same answer, so it is not offered
-   * again, as the book importer drops a file it cannot read; Close is
-   * what is left, and the Vault card picks another. A dropped connection,
-   * a stalled upload or a busy server leaves Restore to try again.
+   * it, or the vault is left part way through a restore. Sending it again
+   * gets the same answer, so it is not offered again, as the book
+   * importer drops a file it cannot read; Close is what is left, and the
+   * Vault card picks another or puts the vault back. A dropped
+   * connection, a stalled upload or a busy server leaves Restore to try
+   * again.
    */
   const [refused, setRefused] = useState(false);
   const free = state?.free ?? null;
@@ -144,7 +162,11 @@ function RestoreDialog({
       setProgress(null);
       if (controller.signal.aborted) return;
       setNote({ kind: 'error', text: apiErrorMessage(error) });
-      setRefused(error instanceof ApiError && (error.status === 400 || error.status === 507));
+      // A vault left part way through a restore takes no other copy until
+      // it is put back, which the card offers once this window closes.
+      const stuck = error instanceof ApiError && error.reason === 'stuck';
+      setRefused(stuck || (error instanceof ApiError && (error.status === 400 || error.status === 507)));
+      if (stuck) void reload();
       return;
     }
     // One state at a time: the bar and "Putting the copy in place…" give
@@ -237,6 +259,7 @@ export function RestorePending({ state, reload }: { state: RestoreState | null; 
     } catch (error) {
       setNote({ kind: 'error', text: apiErrorMessage(error) });
       setBusy(false);
+      if (error instanceof ApiError && error.reason === 'stuck') await reload();
       return;
     }
     setNote({ kind: 'ok', text: t('Kept. {size} freed.', { size: size(freed) }) });
@@ -251,6 +274,8 @@ export function RestorePending({ state, reload }: { state: RestoreState | null; 
     } catch (error) {
       setNote({ kind: 'error', text: apiErrorMessage(error) });
       setBusy(false);
+      // An undo that stuck part way: the card has a vault to put back now.
+      if (error instanceof ApiError && error.reason === 'stuck') await reload();
       return;
     }
     setNote({ kind: 'ok', text: t('Undone. Reloading…') });
@@ -299,6 +324,67 @@ export function RestorePending({ state, reload }: { state: RestoreState | null; 
         confirmLabel="Undo the restore"
         onConfirm={() => void undo()}
       />
+    </div>
+  );
+}
+
+/** Whether the page is in the desktop app's window (desktop/preload.cjs). */
+const inDesktopApp = (): boolean => 'vaultShell' in window;
+
+/**
+ * A restore, or its undo, that stopped part way and could not put itself
+ * back (server/restore.ts): what happened, and the button that finishes
+ * putting the vault back on the server, from any device. Only when that
+ * fails too does the card say what else does it, a restart, in the words
+ * of whoever can make one: the desktop app's own server restarts with the
+ * app, and any other has somebody who runs it. Nothing while nothing is
+ * stuck.
+ */
+export function RestoreStuck({ state }: { state: RestoreState | null }) {
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<Note>(null);
+  /** The put-back failed in a way a restart can still finish. */
+  const [failed, setFailed] = useState(false);
+  if (!state?.stuck) return null;
+  /** Put back, with the page about to reload. */
+  const done = note?.kind === 'ok';
+
+  const putBack = async (): Promise<void> => {
+    setBusy(true);
+    setNote(null);
+    try {
+      await api('/api/storage/restore/recover', { method: 'POST' });
+    } catch (error) {
+      setNote({ kind: 'error', text: apiErrorMessage(error) });
+      setFailed(error instanceof ApiError && error.reason === 'stuck');
+      setBusy(false);
+      return;
+    }
+    setNote({ kind: 'ok', text: t('The vault is back. Reloading…') });
+    // Every page reads the vault again, as after an undo.
+    setTimeout(() => window.location.reload(), 900);
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-warn flex items-start gap-2 text-sm leading-relaxed">
+        <TriangleAlert className="mt-0.5 glyph shrink-0" />
+        <span>{t('A restore stopped part way through. Some of the vault’s folders are set aside until it is put back.')}</span>
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="secondary" disabled={busy || done} onClick={() => void putBack()}>
+          {busy && <Spinner className="glyph" data-icon="inline-start" />}
+          {t('Put the vault back')}
+        </Button>
+      </div>
+      <Feedback note={note} />
+      {failed && (
+        <p className="text-muted-foreground text-sm">
+          {state.sameMachine && inDesktopApp()
+            ? t('Quit and reopen the app to finish putting it back.')
+            : t('Restart the server to finish putting it back, or ask whoever runs it to.')}
+        </p>
+      )}
     </div>
   );
 }
