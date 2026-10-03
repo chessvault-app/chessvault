@@ -63,10 +63,14 @@ export function SecurityCard({
  * way out was git in a terminal (server/historyPurge.ts does it now).
  *
  * In Security rather than Deleted documents: what it guards is the
- * credentials, and the two things to do after it, a new password and a
- * new token, are this card and the one under it. Shown only while the
- * history holds them; a history that holds only the folder (a wipe of a
- * vault with no config.json yet) is told so, with nothing to change after.
+ * credentials, and what closes each one afterwards is in this card, in
+ * the Lichess token card under it, or at Lichess. Shown only while the
+ * history holds them. The server says which secrets it holds and whether
+ * each is still the one in use, so the question and the line after it
+ * name only those; a history whose copies of config.json hold none (a
+ * wipe of a vault with no password and no token), or that holds only the
+ * folder (a wipe of a vault with no config.json yet), is told so, with
+ * nothing to change after.
  */
 function HistorySecretsBlock({
   leaks,
@@ -80,9 +84,10 @@ function HistorySecretsBlock({
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<Note>(null);
-  /** Credentials, rather than only the folder. A purge cut off part way
-      cannot say which it was, so it is taken for the worse. */
-  const secrets = (leaks.credentials ?? 0) > 0 || leaks.pending === true;
+  /** Whether the line after it points at Lichess, where a token is deleted. */
+  const [atLichess, setAtLichess] = useState(false);
+  const held = heldOf(leaks);
+  const after = afterwards(leaks, settings);
 
   const purge = async (): Promise<void> => {
     setBusy(true);
@@ -97,63 +102,134 @@ function HistorySecretsBlock({
       return;
     }
     setBusy(false);
-    setNote({ kind: 'ok', text: purgedLine(secrets, settings) });
+    setNote({ kind: 'ok', text: purgedLine(held, after.lines) });
+    setAtLichess(held === 'secrets' && after.lichess);
     onRewritten();
   };
 
   // Done: what is left to do, in the block's place, until the page is
-  // read again. The heading and the offer are not true any more.
-  if (note?.kind === 'ok') return <Feedback note={note} />;
+  // read again. The heading and the offer are not true any more. A token
+  // is deleted at Lichess, so the line carries the page that does it,
+  // drawn as the Lichess token card draws its own link there.
+  if (note?.kind === 'ok') {
+    return (
+      <div className="flex flex-col gap-2">
+        <Feedback note={note} />
+        {atLichess && (
+          <a
+            className="text-primary text-sm underline underline-offset-2"
+            href="https://lichess.org/account/oauth/token"
+            target="_blank"
+            rel="noreferrer"
+          >
+            lichess.org/account/oauth/token
+          </a>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3">
       <span className="text-base font-medium">
-        {secrets ? t('Old secrets in the history') : t('Old files in the history')}
+        {held === 'secrets' ? t('Old secrets in the history') : t('Old files in the history')}
       </span>
       <p className="text-muted-foreground text-sm">
-        {secrets
-          ? t('Removes the old passwords, 2FA secrets and Lichess tokens that earlier saves left in the change history, which every downloaded copy carries. Every version of every document stays.')
-          : t('Removes the copy of the history’s own files that earlier saves left in it, which every downloaded copy carries. Every version of every document stays.')}
+        {held === 'secrets'
+          ? t('Removes the old secrets that earlier saves left in the change history, which every downloaded copy carries. Every version of every document stays.')
+          : held === 'settings'
+            ? t('Removes the old copies of the vault’s settings that earlier saves left in the change history, which every downloaded copy carries. They hold no password, 2FA secret or token.')
+            : t('Removes the copy of the history’s own files that earlier saves left in it, which every downloaded copy carries. Every version of every document stays.')}
       </p>
       <div className="flex items-center gap-3">
         <Button variant="secondary" disabled={busy} onClick={() => setAsking(true)}>
-          {busy ? t('Removing…') : secrets ? t('Remove old secrets') : t('Remove old files')}
+          {busy ? t('Removing…') : held === 'secrets' ? t('Remove old secrets') : t('Remove old files')}
         </Button>
         <Feedback note={note} />
       </div>
       {/* The default tone: nothing the owner wants is lost, which is what
           the question says first. The label is the window's title and its
           button too, and "Remove them from the history" was cut to
-          "emove them from the histor" in that button at 1280 wide. */}
+          "emove them from the histor" in that button at 1280 wide. Whole
+          sentences, each its own string, so a translation never has to
+          mend a sentence assembled from parts. */}
       <ConfirmDialog
         icon={Eraser}
         tone="default"
         open={asking}
         onOpenChange={setAsking}
         question={
-          secrets
-            ? t('Every version of every document stays, and only the old passwords, 2FA secrets and Lichess tokens go. A copy downloaded before still holds them, so afterwards change the app password in this card and replace the token in the Lichess token card.')
-            : t('Every version of every document stays, and only the copy of the history’s own files goes. A copy downloaded before still holds it.')
+          held === 'secrets'
+            ? [t('Every version of every document stays, and only old secrets go. A copy downloaded before still holds them.'), ...after.lines].join(' ')
+            : held === 'settings'
+              ? t('Every version of every document stays, and only the old copies of the vault’s settings go. A copy downloaded before still holds them.')
+              : t('Every version of every document stays, and only the copy of the history’s own files goes. A copy downloaded before still holds it.')
         }
-        confirmLabel={secrets ? 'Remove old secrets' : 'Remove old files'}
+        confirmLabel={held === 'secrets' ? 'Remove old secrets' : 'Remove old files'}
         onConfirm={() => void purge()}
       />
     </div>
   );
 }
 
-/** What is left to do once the history no longer holds them: the
-    credentials this vault has now, each named where it is changed. */
-function purgedLine(secrets: boolean, settings: Settings): string {
-  if (!secrets) return t('The history no longer holds a copy of its own files.');
-  if (settings.gate && settings.lichess.configured) {
-    return t('The old secrets are out of the history. Now change the app password below and replace the token in the Lichess token card.');
+/** What the history holds, as the block words it: secrets; copies of
+    config.json with none in them; or only the history's own folder. */
+type Held = 'secrets' | 'settings' | 'files';
+
+function heldOf(leaks: HistoryLeaks): Held {
+  const kinds = leaks.secrets;
+  // Where the server cannot tell (a purge cut off part way, an older
+  // server), credentials are taken for secrets: the worse case.
+  if (!kinds) return (leaks.credentials ?? 0) > 0 || leaks.pending === true ? 'secrets' : 'files';
+  if ([kinds.password, kinds.totp, kinds.token].some((kind) => kind.current || kind.past > 0)) return 'secrets';
+  return (leaks.credentials ?? 0) > 0 ? 'settings' : 'files';
+}
+
+/**
+ * What a copy downloaded before still holds that is worth acting on, one
+ * whole sentence each, saying what closes it and where.
+ *
+ * A secret matters only while it still works. The password and the 2FA
+ * secret in use are changed in this card, which makes the copies in the
+ * history worthless. A password no longer in use works wherever it still
+ * is in use, which only its owner knows. A Lichess token works at Lichess
+ * until it is deleted there, and saving or removing one in the Lichess
+ * token card does not delete it (server/settings.ts only writes
+ * config.json), so every token the history holds is deleted at Lichess.
+ * A 2FA secret no longer in use works nowhere, and is not named.
+ *
+ * Where the server cannot tell which it holds, what is set now is named,
+ * as what may be among them.
+ */
+function afterwards(leaks: HistoryLeaks, settings: Settings): { lines: string[]; lichess: boolean } {
+  const kinds = leaks.secrets;
+  const lines: string[] = [];
+  if (!kinds) {
+    if (settings.gate) lines.push(t('The app password in use may be among them: change it in this card.'));
+    if (settings.totp) lines.push(t('The 2FA secret in use may be among them: turn 2FA off and set it up again in this card.'));
+    if (settings.lichess.configured) {
+      lines.push(t('The Lichess token in use may be among them: delete it at Lichess and save a new one in the Lichess token card.'));
+    }
+    return { lines, lichess: settings.lichess.configured };
   }
-  if (settings.gate) return t('The old secrets are out of the history. Now change the app password below.');
-  if (settings.lichess.configured) {
-    return t('The old secrets are out of the history. Now replace the token in the Lichess token card.');
-  }
-  return t('The old secrets are out of the history.');
+  const { password, totp, token } = kinds;
+  if (password.current) lines.push(t('The app password in use is among them: change it in this card.'));
+  if (password.past === 1) lines.push(t('An app password this vault no longer uses is among them: change it wherever you still use it.'));
+  if (password.past > 1) lines.push(t('App passwords this vault no longer uses are among them: change them wherever you still use them.'));
+  if (totp.current) lines.push(t('The 2FA secret in use is among them: turn 2FA off and set it up again in this card.'));
+  if (token.current) lines.push(t('The Lichess token in use is among them: delete it at Lichess and save a new one in the Lichess token card.'));
+  if (token.past === 1) lines.push(t('A Lichess token this vault no longer uses is among them: delete it at Lichess.'));
+  if (token.past > 1) lines.push(t('Lichess tokens this vault no longer uses are among them: delete them at Lichess.'));
+  return { lines, lichess: token.current || token.past > 0 };
+}
+
+/** What is left to do once the history no longer holds them: the same
+    sentences the question gave, after what is done. */
+function purgedLine(held: Held, lines: string[]): string {
+  if (held === 'files') return t('The history no longer holds a copy of its own files.');
+  if (held === 'settings') return t('The history no longer holds old copies of the vault’s settings.');
+  if (lines.length === 0) return t('The old secrets are out of the history.');
+  return [t('The old secrets are out of the history.'), t('A copy downloaded before still holds them.'), ...lines].join(' ');
 }
 
 /**

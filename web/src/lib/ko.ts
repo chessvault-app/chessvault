@@ -1947,25 +1947,47 @@ export const ko: Record<string, string> = {
   // Old credentials in the history (Security card, server/historyPurge.ts).
   "Old secrets in the history": "변경 기록에 남은 옛 비밀 정보",
   "Old files in the history": "변경 기록에 남은 옛 파일",
-  "Removes the old passwords, 2FA secrets and Lichess tokens that earlier saves left in the change history, which every downloaded copy carries. Every version of every document stays.":
-    "앞선 저장들이 변경 기록에 남겨 내려받은 사본마다 따라가는 옛 비밀번호, 2단계 인증 비밀키, Lichess 토큰을 제거합니다. 모든 문서의 모든 버전은 그대로 남습니다.",
   "Removes the copy of the history’s own files that earlier saves left in it, which every downloaded copy carries. Every version of every document stays.":
     "앞선 저장들이 변경 기록에 남겨 내려받은 사본마다 따라가는, 변경 기록 자신의 파일 사본을 제거합니다. 모든 문서의 모든 버전은 그대로 남습니다.",
   "Remove old secrets": "옛 비밀 정보 제거",
   "Remove old files": "옛 파일 제거",
   "Removing…": "제거하는 중…",
-  "Every version of every document stays, and only the old passwords, 2FA secrets and Lichess tokens go. A copy downloaded before still holds them, so afterwards change the app password in this card and replace the token in the Lichess token card.":
-    "모든 문서의 모든 버전은 남고, 옛 비밀번호와 2단계 인증 비밀키와 Lichess 토큰만 사라집니다. 전에 내려받은 사본에는 그대로 남아 있으니, 끝나면 이 카드에서 앱 비밀번호를 바꾸고 Lichess 토큰 카드에서 토큰을 새로 넣으세요.",
   "Every version of every document stays, and only the copy of the history’s own files goes. A copy downloaded before still holds it.":
     "모든 문서의 모든 버전은 남고, 변경 기록 자신의 파일 사본만 사라집니다. 전에 내려받은 사본에는 그대로 남아 있습니다.",
   "The history no longer holds a copy of its own files.": "변경 기록에서 자신의 파일 사본을 제거했습니다.",
-  "The old secrets are out of the history. Now change the app password below and replace the token in the Lichess token card.":
-    "변경 기록에서 옛 비밀 정보를 제거했습니다. 이제 아래에서 앱 비밀번호를 바꾸고, Lichess 토큰 카드에서 토큰을 새로 넣으세요.",
-  "The old secrets are out of the history. Now change the app password below.":
-    "변경 기록에서 옛 비밀 정보를 제거했습니다. 이제 아래에서 앱 비밀번호를 바꾸세요.",
-  "The old secrets are out of the history. Now replace the token in the Lichess token card.":
-    "변경 기록에서 옛 비밀 정보를 제거했습니다. 이제 Lichess 토큰 카드에서 토큰을 새로 넣으세요.",
   "The old secrets are out of the history.": "변경 기록에서 옛 비밀 정보를 제거했습니다.",
+  "Removes the old secrets that earlier saves left in the change history, which every downloaded copy carries. Every version of every document stays.":
+    "앞선 저장들이 변경 기록에 남겨 내려받은 사본마다 따라가는 옛 비밀 정보를 제거합니다. 모든 문서의 모든 버전은 그대로 남습니다.",
+  "Removes the old copies of the vault’s settings that earlier saves left in the change history, which every downloaded copy carries. They hold no password, 2FA secret or token.":
+    "앞선 저장들이 변경 기록에 남겨 내려받은 사본마다 따라가는 보관함 설정의 옛 사본을 제거합니다. 비밀번호, 2단계 인증 비밀키, 토큰은 들어 있지 않습니다.",
+  "Every version of every document stays, and only old secrets go. A copy downloaded before still holds them.":
+    "모든 문서의 모든 버전은 남고, 옛 비밀 정보만 사라집니다. 전에 내려받은 사본에는 그대로 남아 있습니다.",
+  "Every version of every document stays, and only the old copies of the vault’s settings go. A copy downloaded before still holds them.":
+    "모든 문서의 모든 버전은 남고, 보관함 설정의 옛 사본만 사라집니다. 전에 내려받은 사본에는 그대로 남아 있습니다.",
+  "The history no longer holds old copies of the vault’s settings.":
+    "변경 기록에서 보관함 설정의 옛 사본을 제거했습니다.",
+  "A copy downloaded before still holds them.":
+    "전에 내려받은 사본에는 그대로 남아 있습니다.",
+  "The app password in use is among them: change it in this card.":
+    "지금 쓰는 앱 비밀번호가 그중에 있으니 이 카드에서 바꾸세요.",
+  "An app password this vault no longer uses is among them: change it wherever you still use it.":
+    "이 보관함이 더는 쓰지 않는 앱 비밀번호가 그중에 있으니, 그 비밀번호를 아직 쓰는 곳이 있으면 거기서 바꾸세요.",
+  "App passwords this vault no longer uses are among them: change them wherever you still use them.":
+    "이 보관함이 더는 쓰지 않는 앱 비밀번호 여러 개가 그중에 있으니, 아직 쓰는 곳이 있으면 거기서 바꾸세요.",
+  "The 2FA secret in use is among them: turn 2FA off and set it up again in this card.":
+    "지금 쓰는 2단계 인증 비밀키가 그중에 있으니 이 카드에서 2단계 인증을 끄고 다시 설정하세요.",
+  "The Lichess token in use is among them: delete it at Lichess and save a new one in the Lichess token card.":
+    "지금 쓰는 Lichess 토큰이 그중에 있으니 Lichess에서 삭제하고, 새 토큰을 Lichess 토큰 카드에 저장하세요.",
+  "A Lichess token this vault no longer uses is among them: delete it at Lichess.":
+    "이 보관함이 더는 쓰지 않는 Lichess 토큰이 그중에 있으니 Lichess에서 삭제하세요.",
+  "Lichess tokens this vault no longer uses are among them: delete them at Lichess.":
+    "이 보관함이 더는 쓰지 않는 Lichess 토큰 여러 개가 그중에 있으니 Lichess에서 모두 삭제하세요.",
+  "The app password in use may be among them: change it in this card.":
+    "지금 쓰는 앱 비밀번호가 그중에 있을 수 있으니 이 카드에서 바꾸세요.",
+  "The 2FA secret in use may be among them: turn 2FA off and set it up again in this card.":
+    "지금 쓰는 2단계 인증 비밀키가 그중에 있을 수 있으니 이 카드에서 2단계 인증을 끄고 다시 설정하세요.",
+  "The Lichess token in use may be among them: delete it at Lichess and save a new one in the Lichess token card.":
+    "지금 쓰는 Lichess 토큰이 그중에 있을 수 있으니 Lichess에서 삭제하고, 새 토큰을 Lichess 토큰 카드에 저장하세요.",
   "Token saved.": "토큰을 저장했습니다.",
   "Token removed.": "토큰을 제거했습니다.",
   "Vault wiped. Reloading…": "보관함을 지웠습니다. 다시 불러옵니다…",
