@@ -13,14 +13,19 @@ import { vaultHistoryApi } from './vaultHistory.ts';
 import { git } from './vaultGit.ts';
 
 /**
- * Taking the old credentials and the repo's own folder out of a vault's
- * history (server/historyPurge.ts), against a real repo built the way the
- * two kinds of affected vault got that way: an older version that tracked
+ * Taking out of a vault's history what it should never have held
+ * (server/historyPurge.ts), against a real repo built the way the two
+ * kinds of affected vault got that way: an older version that tracked
  * config.json and sessions.json, and a wipe before 0.12.1 that let the
- * autosave track the repo's own folder.
+ * autosave track everything, the repo's own folder, book PDFs, the
+ * databases' PGN files and leftovers in folders included.
  */
 
-const PURGED_LINE = /\t(config\.json|sessions\.json|\.history\.git\/)/;
+/** An `ls-tree -r` line for a path the history never holds, as the tests
+    plant them: written out by hand rather than asked of the list's
+    matcher, which is what is under test. A top-level sources/ only: a
+    notes folder of that name is a document's. */
+const PURGED_LINE = /\t(config\.json|sessions\.json|\.history\.git\/|\.restore\/|sources\/|books\/[^/]+\/(book\.pdf|open\.bin)$|.*\.part$|.*\.swp$)/;
 
 /** A debounce no test outlives: every save here is one the test makes,
     so the counts it checks are not raced by the watcher's own. */
@@ -31,6 +36,18 @@ const NO_SECRETS = {
   password: { current: false, past: 0 },
   totp: { current: false, past: 0 },
   token: { current: false, past: 0 },
+};
+
+/** What a history holding none of them says. */
+const NOTHING = {
+  commits: 0,
+  credentials: 0,
+  folder: 0,
+  books: 0,
+  sources: 0,
+  other: 0,
+  bytes: { folder: 0, books: 0, sources: 0, other: 0 },
+  pending: false,
 };
 
 // Every test here builds a real history, restarts its writer and runs a
@@ -80,7 +97,7 @@ describe('removing old secrets from the history', { timeout: 30_000 }, () => {
       return {
         meta: meta.join('\0'),
         parents: graph.split(' ').slice(1).map((parent) => ids.indexOf(parent)),
-        files: run(['ls-tree', '-r', '--full-tree', graph.slice(0, 40)])
+        files: run(['-c', 'core.quotePath=false', 'ls-tree', '-r', '--full-tree', graph.slice(0, 40)])
           .split('\n')
           .filter((line) => line && !PURGED_LINE.test(line))
           .join('\n'),
@@ -170,7 +187,216 @@ describe('removing old secrets from the history', { timeout: 30_000 }, () => {
     // The save before the first that held them keeps its id.
     expect(kept.has(oldCommits.at(-1)!)).toBe(true);
     expect(run(['reflog', 'show', '--all'])).toBe('');
-    expect(await backup!.leaks()).toEqual({ commits: 0, credentials: 0, folder: 0, pending: false, secrets: NO_SECRETS });
+    expect(await backup!.leaks()).toEqual({ ...NOTHING, secrets: NO_SECRETS });
+  });
+
+  /**
+   * A vault wiped before 0.12.1 whose new history took in everything until
+   * the restart: every kind of path the list names, each at the depth it
+   * really sits, beside documents that only look like them.
+   */
+  const PLANTED = {
+    'config.json': '{"lichessToken":"lip_planted"}\n',
+    'sessions.json': '[{"hash":"planted-session"}]\n',
+    'books/Endgames/book.pdf': `%PDF-1.4 ${'a commercial book '.repeat(400)}`,
+    'books/Endgames/open.bin': 'warm'.repeat(300),
+    'books/Endgames/book.pdf.part': '%PDF-1.4 half an upload',
+    'sources/twic1500.pgn': `[Event "TWIC"]\n\n${'1. e4 e5 2. Nf3 Nc6 '.repeat(500)}1-0\n`,
+    'sources/lichess/elite.pgn': '[Event "Elite"]\n\n1. d4 d5 1/2-1/2\n',
+    'notes/Openings/.Najdorf.md.swp': 'unsaved keystrokes',
+    'notes/한글/.메모.md.swp': '저장 안 된 글',
+    'studies/Openings/.Najdorf.pgn.swp': '1. e4 c5 2. Nf3',
+    '.restore/before/notes/Plans.md': '# Plans, set aside by a restore\n',
+    'download.part': 'an engine net on its way',
+  };
+  const KEPT = {
+    'studies/Openings/Najdorf.pgn': '1. e4 c5 *\n',
+    'notes/Plans.md': '# Plans\n',
+    'notes/sources/Reading list.md': '# Reading list\n',
+    'notes/한글/메모.md': '# 메모\n',
+    'books/Endgames/book.json': '{"title":"Endgames"}\n',
+  };
+
+  const plantedVault = async (): Promise<string> => {
+    dir = mkdtempSync(join(tmpdir(), 'history-purge-'));
+    for (const [path, content] of Object.entries(KEPT)) write(path, content);
+    backup = await startVaultBackup(dir, QUIET);
+    const first = run(['rev-parse', 'HEAD']).trim();
+    // The wipe's autosave, which had no exclude: everything at once.
+    for (const [path, content] of Object.entries(PLANTED)) write(path, content);
+    await git(gitDir(), dir, ['add', '-f', '--', ...Object.keys(PLANTED)]);
+    await git(gitDir(), dir, ['commit', '-q', '-m', 'vault autosave after a wipe']);
+    // Then saves that changed documents and the planted files alike, the
+    // repo's own folder among them, and a new version of the PDF.
+    write('studies/Openings/Najdorf.pgn', '1. e4 c5 2. Nf3 d6 *\n');
+    write('books/Endgames/book.pdf', `%PDF-1.4 ${'a second printing '.repeat(400)}`);
+    write('sources/twic1500.pgn', `[Event "TWIC"]\n\n${'1. d4 d5 2. c4 e6 '.repeat(500)}1-0\n`);
+    await git(gitDir(), dir, ['add', '-f', '--', 'studies/Openings/Najdorf.pgn', 'books/Endgames/book.pdf', 'sources/twic1500.pgn', '.history.git']);
+    await git(gitDir(), dir, ['commit', '-q', '-m', 'vault autosave']);
+    write('notes/sources/Reading list.md', '# Reading list\n\nDvoretsky.\n');
+    write('notes/한글/메모.md', '# 메모\n\n둘째 줄\n');
+    await git(gitDir(), dir, ['add', '-f', '--', 'notes', '.history.git']);
+    await git(gitDir(), dir, ['commit', '-q', '-m', 'vault autosave']);
+    // The restart: the start untracks them all, and the autosave goes on.
+    await backup!.stop();
+    backup = await startVaultBackup(dir, QUIET);
+    write('studies/Openings/Najdorf.pgn', '1. e4 c5 2. Nf3 d6 3. d4 cxd4 *\n');
+    await backup.commitNow();
+    return first;
+  };
+
+  /** Every path every save's tree holds, folders included, with its id. */
+  const everyPath = (): { commit: string; type: string; id: string; path: string }[] =>
+    run(['rev-list', '--all']).split('\n').filter(Boolean).flatMap((commit) =>
+      run(['-c', 'core.quotePath=false', 'ls-tree', '-r', '-t', '--full-tree', commit])
+        .split('\n')
+        .filter(Boolean)
+        .map((line) => {
+          const [meta = '', path = ''] = line.split('\t');
+          const [, type = '', id = ''] = meta.split(' ');
+          return { commit, type, id, path };
+        }),
+    );
+  /** A path the list names, or one inside a folder it names. */
+  const isPlanted = (path: string): boolean =>
+    Object.keys(PLANTED).includes(path) || /^(sources|\.restore|\.history\.git)(\/|$)/.test(path) || /\.(part|swp)$/.test(path) || /^books\/[^/]+\/(book\.pdf|open\.bin)$/.test(path);
+
+  it('takes out every kind the list names at its own depth, and nothing else', async () => {
+    const first = await plantedVault();
+    const before = saves();
+    const oldCommits = run(['rev-list', '--all']).split('\n').filter(Boolean);
+    const planted = everyPath().filter(({ path }) => isPlanted(path));
+    // Every planted file is in some save, each PDF version among them.
+    for (const path of Object.keys(PLANTED)) expect(planted.map((p) => p.path)).toContain(path);
+    const oldIds = [...new Set(planted.map(({ id }) => id))];
+    const pdfVersions = new Set(planted.filter(({ path }) => path === 'books/Endgames/book.pdf').map(({ id }) => id));
+    expect(pdfVersions.size).toBe(2);
+
+    const leaks = await backup!.leaks();
+    expect(leaks).toMatchObject({ commits: 3, credentials: 1, folder: 2, books: 2, sources: 2, other: 1, pending: false });
+    for (const kind of ['folder', 'books', 'sources', 'other'] as const) expect(leaks.bytes[kind]).toBeGreaterThan(0);
+
+    const outcome = await backup!.purge();
+    // Every save but the first: the rest held them or follow one that did.
+    expect(outcome).toMatchObject({ pruned: true, rewritten: oldCommits.length - 1 });
+
+    // No save holds any of them, at any depth, as a file or as a folder.
+    const after = everyPath();
+    expect(after.filter(({ path }) => isPlanted(path))).toEqual([]);
+    // Every other path, every version of it, as it was: the same saves,
+    // each with its own author, committer, dates, message and parents.
+    expect(saves()).toEqual(before);
+    for (const path of Object.keys(KEPT)) expect(after.map((p) => p.path)).toContain(path);
+    // The save before the first that held them keeps its id; the old ones
+    // and every planted version are gone from git's store.
+    const kept = new Set(run(['rev-list', '--all']).split('\n').filter(Boolean));
+    expect(kept.has(first)).toBe(true);
+    expect(present(oldCommits.filter((commit) => !kept.has(commit)))).toEqual([]);
+    expect(present(oldIds)).toEqual([]);
+    expect(await backup!.leaks()).toEqual({ ...NOTHING, secrets: NO_SECRETS });
+
+    // The autosave goes on, holding none of them, and the files are on disk.
+    write('notes/After.md', 'written after the purge\n');
+    await backup!.commitNow();
+    expect(run(['show', 'HEAD:notes/After.md'])).toBe('written after the purge\n');
+    expect(run(['-c', 'core.quotePath=false', 'ls-tree', '-r', '--name-only', 'HEAD']).split('\n').filter(isPlanted)).toEqual([]);
+    expect((await git(gitDir(), dir, ['status', '--porcelain'])).trim()).toBe('');
+    for (const path of Object.keys(PLANTED)) expect(existsSync(join(dir, path))).toBe(true);
+  });
+
+  it('keeps a merge a merge, with both sides written again without them', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'history-purge-'));
+    write('notes/Plans.md', '# Plans\n');
+    write('studies/Openings/Najdorf.pgn', '1. e4 c5 *\n');
+    backup = await startVaultBackup(dir, QUIET);
+    // A side branch that held a swap file deep in a folder and a PDF, merged
+    // back after the main line held config.json.
+    await git(gitDir(), dir, ['branch', 'side']);
+    write('config.json', '{"lichessToken":"lip_main"}\n');
+    write('notes/Plans.md', '# Plans\n\nMain line.\n');
+    await git(gitDir(), dir, ['add', '-f', 'config.json', 'notes/Plans.md']);
+    await git(gitDir(), dir, ['commit', '-q', '-m', 'main']);
+    await git(gitDir(), dir, ['checkout', '-q', 'side']);
+    write('studies/Openings/.Najdorf.pgn.swp', 'unsaved');
+    write('books/Endgames/book.pdf', '%PDF-1.4 side');
+    write('books/Endgames/book.json', '{"title":"Endgames"}\n');
+    await git(gitDir(), dir, ['add', '-f', 'studies', 'books']);
+    await git(gitDir(), dir, ['commit', '-q', '-m', 'side']);
+    await git(gitDir(), dir, ['checkout', '-q', 'master']);
+    await git(gitDir(), dir, ['merge', '-q', '--no-ff', '-m', 'merge side', 'side']);
+    const before = saves();
+    expect(before.at(-1)!.parents).toHaveLength(2);
+
+    await backup.purge();
+    expect(saves()).toEqual(before);
+    expect(everyPath().filter(({ path }) => isPlanted(path))).toEqual([]);
+    expect(run(['show', 'HEAD:books/Endgames/book.json'])).toBe('{"title":"Endgames"}\n');
+    expect(run(['show', 'HEAD:notes/Plans.md'])).toBe('# Plans\n\nMain line.\n');
+  });
+
+  it('keeps every name in its own case where the repo folds case', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'history-purge-'));
+    write('notes/Plans.md', '# Plans\n');
+    backup = await startVaultBackup(dir, QUIET);
+    // Saves made where names keep their case (a server on Linux) and taken
+    // in by a repo that folds them, as `git init` makes one on Windows and
+    // macOS: a study renamed from najdorf to Najdorf, and two notes whose
+    // names differ only in case, while a swap file sat beside them, so each
+    // save is written as its changes.
+    const branch = run(['symbolic-ref', 'HEAD']).trim();
+    const saved = (message: string, changes: [string, string | null][]): string =>
+      `commit ${branch}\ncommitter Chess Vault <vault@localhost> 1700000000 +0000\ndata ${message.length}\n${message}\n` +
+      changes.map(([path, text]) => (text === null ? `D ${path}\n` : `M 100644 inline ${path}\ndata ${Buffer.byteLength(text)}\n${text}\n`)).join('') +
+      '\n';
+    run(
+      ['-c', 'core.ignorecase=false', 'fast-import', '--quiet', '--done'],
+      `reset ${branch}\nfrom ${run(['rev-parse', 'HEAD']).trim()}\n\n` +
+        saved('older version', [
+          ['studies/najdorf.pgn', '1. e4 c5 *\n'],
+          ['notes/a.md', 'lower\n'],
+          ['notes/A.md', 'UPPER\n'],
+          ['notes/.a.md.swp', 'unsaved\n'],
+        ]) +
+        saved('renamed', [
+          ['studies/najdorf.pgn', null],
+          ['studies/Najdorf.pgn', '1. e4 c5 *\n'],
+          ['notes/A.md', 'UPPER, twice\n'],
+          ['notes/.a.md.swp', 'unsaved, twice\n'],
+        ]) +
+        'done\n',
+    );
+    run(['config', 'core.ignorecase', 'true']);
+    const before = saves();
+
+    await backup.purge();
+    expect(saves()).toEqual(before);
+    expect(everyPath().filter(({ path }) => isPlanted(path))).toEqual([]);
+    expect(run(['show', 'HEAD:studies/Najdorf.pgn'])).toBe('1. e4 c5 *\n');
+    expect(run(['show', 'HEAD:notes/a.md'])).toBe('lower\n');
+    expect(run(['show', 'HEAD:notes/A.md'])).toBe('UPPER, twice\n');
+  });
+
+  it('looks everywhere once, then at the saves made since, and again from scratch when a save it kept is gone', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'history-purge-'));
+    write('notes/Plans.md', '# Plans\n');
+    backup = await startVaultBackup(dir, QUIET);
+    const scanned = (): { tips: string[]; found: string[] } => JSON.parse(readFileSync(join(gitDir(), 'chessvault-scanned'), 'latin1'));
+    // The start counted before its first save; this is the first look.
+    expect(await historyLeaks(gitDir(), dir, { fresh: true })).toMatchObject({ commits: 0 });
+    expect(scanned()).toEqual({ tips: [run(['rev-parse', 'HEAD']).trim()], found: [] });
+    // A swap file deep in a folder, saved after that look.
+    write('notes/Openings/Sicilian/.Najdorf.md.swp', 'unsaved');
+    await git(gitDir(), dir, ['add', '-f', 'notes/Openings/Sicilian/.Najdorf.md.swp']);
+    await git(gitDir(), dir, ['commit', '-q', '-m', 'an older version']);
+    expect(await historyLeaks(gitDir(), dir, { fresh: true })).toMatchObject({ commits: 1, other: 1 });
+    expect(scanned()).toEqual({ tips: [run(['rev-parse', 'HEAD']).trim()], found: ['notes/Openings/Sicilian/.Najdorf.md.swp'] });
+    // What it kept names a save that is no longer there: it looks again.
+    writeFileSync(join(gitDir(), 'chessvault-scanned'), JSON.stringify({ tips: ['0123456789abcdef0123456789abcdef01234567'], found: [] }));
+    expect(await historyLeaks(gitDir(), dir, { fresh: true })).toMatchObject({ commits: 1, other: 1 });
+    // And a purge leaves it saying the new history holds none.
+    await backup.purge();
+    expect(scanned()).toEqual({ tips: [run(['rev-parse', 'HEAD']).trim()], found: [] });
+    expect(await historyLeaks(gitDir(), dir, { fresh: true })).toMatchObject({ commits: 0, other: 0 });
   });
 
   it('leaves the autosave working, the documents recoverable and the next start quiet', async () => {
@@ -196,7 +422,7 @@ describe('removing old secrets from the history', { timeout: 30_000 }, () => {
     const res = await app.request('/api/history/purge', { method: 'POST' });
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ ok: true, pruned: true });
-    expect(await json('/api/history/purge')).toEqual({ available: true, commits: 0, credentials: 0, folder: 0, pending: false, secrets: NO_SECRETS });
+    expect(await json('/api/history/purge')).toEqual({ available: true, ...NOTHING, secrets: NO_SECRETS });
 
     // Every version of the study, read through the ids the history has now.
     expect(await contents()).toEqual(versionsBefore);
@@ -271,7 +497,9 @@ describe('removing old secrets from the history', { timeout: 30_000 }, () => {
     await backup!.stop();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     backup = await startVaultBackup(dir, QUIET);
-    expect(warn.mock.calls.flat().join('\n')).toMatch(/5 save\(s\) in \.history\.git hold config\.json/);
+    const said = warn.mock.calls.flat().join('\n');
+    expect(said).toMatch(/5 save\(s\) in \.history\.git hold what the history never keeps/);
+    expect(said).toMatch(/config\.json or sessions\.json \(2, which may hold past secrets\); its own folder \(3\)/);
   });
 
   it('counts again after a write that can change the history', async () => {

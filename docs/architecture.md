@@ -396,33 +396,47 @@ command asked there fails loudly rather than returning something
 plausible. That seam is why the demo shows Earlier versions and Deleted
 documents at all, and why showing them cost this module nothing.
 
-`server/historyPurge.ts` takes out of that history what it must never
-have held: `config.json` and `sessions.json`, which a history older than
-its excludes or one a wipe made before 0.12.1 saved, and the repo's own
-folder, which such a wipe's saved too. It is Settings → Security's
-Remove old secrets (`GET` and `POST /api/history/purge`, handed in as
-`purge` beside `commitNow`; the demo hands in none, so there the `GET`
-answers `{ available: false }` and the `POST` refuses with a 409, and
-its Settings has no Security card to ask). The count of saves that
-wrote them is kept per repo, taken at boot and again after a restore, a
-wipe or a purge, the only things that can change it. The same walk
-lists every version of `config.json` those saves wrote, and the `GET`
-reads them in one `cat-file --batch` to say which of the app password, the
-2FA secret and the Lichess token they hold and whether each is the one in
-use now, so Settings can name what closes each: kinds and counts, never a
-value, read again when the secrets in use change. The
-rewrite runs under `exclusive()`: two `cat-file --batch` runs read every
-commit and every root tree, one `fast-import` writes the new commits with
-the root tree less those three entries (every folder reused by id;
-author, committer, dates and message carried over byte for byte; the
-saves before the first that held them keep their ids), the result is
-checked before any ref moves, every ref then moves in one `update-ref
---stdin`, and `reflog expire` with `gc --prune=now` deletes the old saves
-from the store. A marker in the repo spans the ref move and the prune, so
-a server stopped between them finishes the prune at its next start. No
-rewritten save keeps its old id, and nothing holds one across a purge:
-the history panel and Deleted documents ask for ids each time they open,
-and the restore's journal holds renames.
+`server/historyPurge.ts` takes out of that history what it must never have
+held: the list in `server/historyExcludes.ts`, which is `config.json` and
+`sessions.json`, the repo's own folder, each book's PDF and open cache,
+the PGN files in `sources/`, a restore's work folder and `.part` and
+`.swp` files at any depth. The same list writes the history's exclude file
+and tells the start which tracked paths to untrack, and a test holds its
+matcher to git's own reading of that file, so the three cannot drift. A
+history older than an exclude, or one a wipe made before 0.12.1 (which
+saved everything until the server restarted), can hold them. It is
+Settings → Security's Remove old secrets, or Remove old files where no
+secret is held (`GET` and `POST /api/history/purge`, handed in as `purge`
+beside `commitNow`; the demo hands in none, so there the `GET` answers
+`{ available: false }` and the `POST` refuses with a 409, and its Settings
+has no Security card to ask). The count of saves that wrote each kind, and
+what the files take in git's store, is kept per repo, taken at boot and
+again after a restore, a wipe or a purge, the only things that can change
+it. It walks by name under the places the top-level entries are, where git
+prunes every other folder, and finds what matches at any depth from the
+paths each save added; that look is kept in the repo
+(`chessvault-scanned`, never taken from a copy), so a count looks only at
+the saves made since. The same walk lists every version of `config.json`
+those saves wrote, and the `GET` reads them in one `cat-file --batch` to
+say which of the app password, the 2FA secret and the Lichess token they
+hold and whether each is the one in use now, so Settings can name what
+closes each: kinds and counts, never a value, read again when the secrets
+in use change. The rewrite runs under `exclusive()`: `cat-file --batch`
+reads every commit, a walk by name says which saves hold a named path in a
+folder, and one `fast-import` writes the new commits, those as their own
+changes to their first parent less the named paths (one `diff-tree
+--stdin`, so only the folders that changed are built again, each as a
+change to the parent's) and the rest as their root tree less the named
+entries there, every folder reused by id. Author, committer, dates and
+message are carried over byte for byte, and the saves before the first
+that held them keep their ids. The result is checked before any ref moves,
+every ref then moves in one `update-ref --stdin`, and `reflog expire` with
+`gc --prune=now` deletes the old saves from the store. A marker in the
+repo spans the ref move and the prune, so a server stopped between them
+finishes the prune at its next start. No rewritten save keeps its old id,
+and nothing holds one across a purge: the history panel and Deleted
+documents ask for ids each time they open, and the restore's journal holds
+renames.
 
 A `POST` whose body says `{ revokeTokens: { past, current } }` also
 revokes at Lichess the tokens those versions of `config.json` hold: the

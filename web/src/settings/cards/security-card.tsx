@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { api, apiErrorMessage } from '@/lib/api';
 import { t } from '@/lib/i18n';
-import { Feedback, reauth, type HistoryLeaks, type Note, type Settings } from '@/settings/cards/shared';
+import { Feedback, reauth, size, type HistoryLeaks, type Note, type Settings } from '@/settings/cards/shared';
 
 // --- Security ----------------------------------------------------------------
 
@@ -57,28 +57,32 @@ export function SecurityCard({
 }
 
 /**
- * Old credentials in the history, and the way to take them out.
+ * Old secrets and old files in the history, and the way to take them out.
  *
  * A vault older than the history's excludes, or one wiped before 0.12.1,
- * holds config.json and sessions.json in earlier saves, and a wipe's may
- * hold the repo's own folder: every password hash, authenticator secret and
- * Lichess token they ever held rides along in each downloaded copy. The
- * way out was git in a terminal (server/historyPurge.ts does it now).
+ * holds in earlier saves what the history never keeps
+ * (server/historyExcludes.ts): config.json and sessions.json, with every
+ * password hash, authenticator secret and Lichess token they ever held;
+ * and, from such a wipe, the repo's own folder, every book's PDF, the
+ * databases' PGN files and other leftovers. Each rides along in every
+ * downloaded copy. The way out was git in a terminal
+ * (server/historyPurge.ts does it now).
  *
- * In Security rather than Deleted documents: what it guards is the
+ * In Security rather than Deleted documents: what it guards first is the
  * credentials, and what closes each one afterwards is in this card, in
  * the Lichess token card under it, or at Lichess. Shown only while the
  * history holds them. The server says which secrets it holds and whether
  * each is still the one in use, so the question and the line after it
- * name only those; a history whose copies of config.json hold none (a
- * wipe of a vault with no password and no token), or that holds only the
- * folder (a wipe of a vault with no config.json yet), is told so, with
- * nothing to change after.
+ * name only those; and which files it holds and what they take, which the
+ * block and the question list. A history whose copies of config.json hold
+ * no secret (a wipe of a vault with no password and no token) is told it
+ * holds old files, with nothing to change after.
  *
- * Of those, a Lichess token is the one nothing in this vault closes, so
- * where the history holds any the question also offers to delete them at
- * Lichess (TokenChoice). Off until ticked: it is a request to a third party
- * on the user's account, and the user is who decides to send it.
+ * Of the secrets, a Lichess token is the one nothing in this vault
+ * closes, so where the history holds any the question also offers to
+ * delete them at Lichess (TokenChoice). Off until ticked: it is a
+ * request to a third party on the user's account, and the user is who
+ * decides to send it.
  */
 function HistorySecretsBlock({
   leaks,
@@ -97,6 +101,7 @@ function HistorySecretsBlock({
   /** Which tokens the user chose to have deleted at Lichess. */
   const [chosen, setChosen] = useState<TokenAsk>(NONE);
   const held = heldOf(leaks);
+  const files = filesOf(leaks, held);
   const offer = tokenOffer(leaks, held);
   const after = afterwards(leaks, settings, offer ? 'offered' : 'advise');
 
@@ -119,7 +124,7 @@ function HistorySecretsBlock({
     // (an older server), each token keeps the advice to delete it there.
     const done = afterwards(leaks, settings, { asked, answered: reply?.tokens ?? null });
     setBusy(false);
-    setNote({ kind: 'ok', text: purgedLine(held, done) });
+    setNote({ kind: 'ok', text: purgedLine(held, files.length > 0, done) });
     setAtLichess(held === 'secrets' && done.lichess);
     onRewritten(asked.current);
   };
@@ -152,12 +157,13 @@ function HistorySecretsBlock({
         {held === 'secrets' ? t('Old secrets in the history') : t('Old files in the history')}
       </span>
       <p className="text-muted-foreground text-sm">
-        {held === 'secrets'
-          ? t('Removes the old secrets that earlier saves left in the change history, which every downloaded copy carries. Every version of every document stays.')
-          : held === 'settings'
-            ? t('Removes the old copies of the vault’s settings that earlier saves left in the change history, which every downloaded copy carries. They hold no password, 2FA secret or token.')
-            : t('Removes the copy of the history’s own files that earlier saves left in it, which every downloaded copy carries. Every version of every document stays.')}
+        {held === 'files'
+          ? t('Removes the old files that earlier saves left in the change history, which every downloaded copy carries. Every version of every document stays.')
+          : files.length > 0
+            ? t('Removes the old secrets and old files that earlier saves left in the change history, which every downloaded copy carries. Every version of every document stays.')
+            : t('Removes the old secrets that earlier saves left in the change history, which every downloaded copy carries. Every version of every document stays.')}
       </p>
+      <HeldFilesList files={files} />
       <div className="flex items-center gap-3">
         <Button
           variant="secondary"
@@ -177,23 +183,29 @@ function HistorySecretsBlock({
           button too, and "Remove them from the history" was cut to
           "emove them from the histor" in that button at 1280 wide. Whole
           sentences, each its own string, so a translation never has to
-          mend a sentence assembled from parts. A token offered below is
-          left out of the question: its row says what happens to it. */}
+          mend a sentence assembled from parts. What goes of the files is
+          the same list the block shows, under the question; a token
+          offered below that list is left out of the question, since its
+          row says what happens to it. */}
       <ConfirmDialog
         icon={Eraser}
         tone="default"
         open={asking}
         onOpenChange={setAsking}
         question={
-          held === 'secrets'
-            ? [t('Every version of every document stays, and only old secrets go. A copy downloaded before still holds them.'), ...after.lines].join(' ')
-            : held === 'settings'
-              ? t('Every version of every document stays, and only the old copies of the vault’s settings go. A copy downloaded before still holds them.')
-              : t('Every version of every document stays, and only the copy of the history’s own files goes. A copy downloaded before still holds it.')
+          held === 'files'
+            ? t('Every version of every document stays, and only the old files below go. A copy downloaded before still holds them.')
+            : [
+                files.length > 0
+                  ? t('Every version of every document stays, and only old secrets and the old files below go. A copy downloaded before still holds them.')
+                  : t('Every version of every document stays, and only old secrets go. A copy downloaded before still holds them.'),
+                ...after.lines,
+              ].join(' ')
         }
         confirmLabel={held === 'secrets' ? 'Remove old secrets' : 'Remove old files'}
         onConfirm={() => void purge()}
       >
+        <HeldFilesList files={files} />
         {offer && <TokenChoice offer={offer} value={chosen} onChange={setChosen} />}
       </ConfirmDialog>
     </div>
@@ -300,17 +312,57 @@ function TokenChoice({
   );
 }
 
-/** What the history holds, as the block words it: secrets; copies of
-    config.json with none in them; or only the history's own folder. */
-type Held = 'secrets' | 'settings' | 'files';
+/** What the history holds, as the block words it: secrets, or only old
+    files (copies of config.json with no secret in them among them). */
+type Held = 'secrets' | 'files';
 
 function heldOf(leaks: HistoryLeaks): Held {
   const kinds = leaks.secrets;
   // Where the server cannot tell (a purge cut off part way, an older
   // server), credentials are taken for secrets: the worse case.
   if (!kinds) return (leaks.credentials ?? 0) > 0 || leaks.pending === true ? 'secrets' : 'files';
-  if ([kinds.password, kinds.totp, kinds.token].some((kind) => kind.current || kind.past > 0)) return 'secrets';
-  return (leaks.credentials ?? 0) > 0 ? 'settings' : 'files';
+  return [kinds.password, kinds.totp, kinds.token].some((kind) => kind.current || kind.past > 0) ? 'secrets' : 'files';
+}
+
+/** One kind of old file the history holds: what the block calls it, and
+    what it takes there, where the server says. */
+interface HeldFile {
+  label: string;
+  bytes: number | null;
+}
+
+/**
+ * The old files the history holds, one line a kind, in the order that
+ * matters most to the owner: what is not theirs to pass on (a book's PDF)
+ * and what is biggest (the databases' PGN files) first. The copies of
+ * config.json are old files only where they hold no secret; where they
+ * hold one, they are the secrets the heading names.
+ */
+function filesOf(leaks: HistoryLeaks, held: Held): HeldFile[] {
+  const bytes = leaks.bytes ?? {};
+  const files: HeldFile[] = [];
+  if ((leaks.books ?? 0) > 0) files.push({ label: 'Book PDFs and their caches', bytes: bytes.books ?? null });
+  if ((leaks.sources ?? 0) > 0) files.push({ label: 'PGN files for the databases', bytes: bytes.sources ?? null });
+  if ((leaks.folder ?? 0) > 0) files.push({ label: 'A copy of the history’s own files', bytes: bytes.folder ?? null });
+  if ((leaks.other ?? 0) > 0) files.push({ label: 'Other leftover files', bytes: bytes.other ?? null });
+  if (held === 'files' && (leaks.credentials ?? 0) > 0) files.push({ label: 'Copies of the vault’s settings, with no secret in them', bytes: null });
+  return files;
+}
+
+/** The old files, each with its size beside it: the block's list, and the
+    question's. Nothing for a history that holds only secrets. */
+function HeldFilesList({ files }: { files: HeldFile[] }) {
+  if (files.length === 0) return null;
+  return (
+    <ul className="text-muted-foreground flex flex-col gap-1 text-left text-sm">
+      {files.map(({ label, bytes }) => (
+        <li key={label} className="flex items-baseline justify-between gap-3">
+          <span className="min-w-0">{t(label)}</span>
+          {bytes !== null && <span className="shrink-0 tabular-nums">{size(bytes)}</span>}
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 /**
@@ -412,11 +464,11 @@ function afterwards(
     copy still holds: after "Lichess deleted 2 old tokens.", the "them" of
     "A copy downloaded before still holds them." read as those two, and
     the token in use as one of them. */
-function purgedLine(held: Held, { done, lines }: { done: string[]; lines: string[] }): string {
-  if (held === 'files') return t('The history no longer holds a copy of its own files.');
-  if (held === 'settings') return t('The history no longer holds old copies of the vault’s settings.');
+function purgedLine(held: Held, withFiles: boolean, { done, lines }: { done: string[]; lines: string[] }): string {
+  if (held === 'files') return t('The old files are out of the history.');
+  const out = withFiles ? t('The old secrets and old files are out of the history.') : t('The old secrets are out of the history.');
   const left = lines.length === 0 ? [] : [t('A copy downloaded before still holds them.'), ...lines];
-  return [t('The old secrets are out of the history.'), ...left, ...done].join(' ');
+  return [out, ...left, ...done].join(' ');
 }
 
 /**

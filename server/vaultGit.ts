@@ -156,19 +156,34 @@ export function unsafeHistoryRepo(gitDir: string): string | null {
   return null;
 }
 
+/**
+ * How a command reads the paths it is handed. 'literal', the default: as
+ * names. 'glob' and 'glob-icase' are for the list of what the history
+ * never holds (server/historyExcludes.ts), whose patterns are globs, the
+ * second for a repo whose `core.ignorecase` makes its exclude file match
+ * in any case.
+ */
+export type Pathspecs = 'literal' | 'glob' | 'glob-icase';
+
+const PATHSPECS: Record<Pathspecs, string[]> = {
+  // A document id may hold `[`, which git reads as a glob, so `log --
+  // studies/a[bc].pgn` listed another document's versions. Every path the
+  // helpers are handed by default is a real name.
+  literal: ['--literal-pathspecs'],
+  glob: ['--glob-pathspecs'],
+  'glob-icase': ['--glob-pathspecs', '--icase-pathspecs'],
+};
+
 /** A history command's whole argument list: how the repo is addressed, then `args`. */
-function historyArgs(gitDir: string, workTree: string, args: string[]): string[] {
-  // --literal-pathspecs: a document id may hold `[`, which git reads as a
-  // glob, so `log -- studies/a[bc].pgn` listed another document's
-  // versions. Every path these helpers are handed is a real name.
-  return ['--literal-pathspecs', '--git-dir', gitDir, '--work-tree', workTree, ...IDENTITY, ...NO_EXEC, ...args];
+function historyArgs(gitDir: string, workTree: string, args: string[], pathspecs: Pathspecs): string[] {
+  return [...PATHSPECS[pathspecs], '--git-dir', gitDir, '--work-tree', workTree, ...IDENTITY, ...NO_EXEC, ...args];
 }
 
-export function git(gitDir: string, workTree: string, args: string[]): Promise<string> {
+export function git(gitDir: string, workTree: string, args: string[], pathspecs: Pathspecs = 'literal'): Promise<string> {
   return new Promise((resolvePromise, reject) => {
     execFile(
       'git',
-      historyArgs(gitDir, workTree, args),
+      historyArgs(gitDir, workTree, args, pathspecs),
       // 64 MB rather than execFile's 1 MB default. `git show` of a study
       // hands back a whole PGN, which the studies route caps at 20 MB, and
       // `status --porcelain` over a vault mid-import lists thousands of
@@ -188,17 +203,25 @@ export function git(gitDir: string, workTree: string, args: string[]): Promise<s
  * output as bytes.
  *
  * For the commands that take a list rather than arguments: `cat-file
- * --batch`, `fast-import` and `update-ref --stdin` (server/historyPurge.ts).
- * Bytes, because what they read and write is objects, whose names and
- * messages are whatever bytes a commit holds. No timeout, unlike git():
- * its sixty seconds is a limit on one question, and these walk every save
- * the history holds (a purge of 10,000 took 3.9 s on a Windows desktop,
- * but a history that kept book PDFs from before their exclude has
- * gigabytes of packs for `gc` to write again).
+ * --batch`, `diff-tree --stdin`, `log --stdin`, `fast-import` and
+ * `update-ref --stdin` (server/historyPurge.ts). Bytes, because what they
+ * read and write is objects, whose names and messages are whatever bytes a
+ * commit holds. No timeout, unlike git(): its sixty seconds is a limit on
+ * one question, and these walk every save the history holds (a purge of
+ * 10,000 saves took 1.3 to 2.4 s on a Windows desktop, 6 s with a swap
+ * file in a folder of 2,000 games, and a history that kept book PDFs
+ * from before their exclude has gigabytes of packs for `gc` to write
+ * again).
  */
-export function gitPipe(gitDir: string, workTree: string, args: string[], input: Buffer | string = ''): Promise<Buffer> {
+export function gitPipe(
+  gitDir: string,
+  workTree: string,
+  args: string[],
+  input: Buffer | string = '',
+  pathspecs: Pathspecs = 'literal',
+): Promise<Buffer> {
   return new Promise((resolvePromise, reject) => {
-    const child = spawn('git', historyArgs(gitDir, workTree, args), { env: gitEnv(), windowsHide: true });
+    const child = spawn('git', historyArgs(gitDir, workTree, args, pathspecs), { env: gitEnv(), windowsHide: true });
     const out: Buffer[] = [];
     const err: Buffer[] = [];
     child.stdout.on('data', (chunk: Buffer) => out.push(chunk));

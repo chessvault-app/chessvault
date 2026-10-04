@@ -114,8 +114,9 @@ export function vaultHistoryApi(
     run?: (args: string[]) => Promise<string>;
     available?: () => boolean;
     /**
-     * Taking the old credentials and the repo's own folder out of the
-     * history (server/historyPurge.ts), through the running writer, which
+     * Taking out of the history what it should never have held, old
+     * credentials, its own folder, book files, the databases' PGN files and
+     * other leftovers (server/historyPurge.ts), through the running writer, which
      * holds its autosaves off while the history is written again. Absent
      * where there is no writer: the static demo, whose history is a record
      * in the page and never held a credential.
@@ -304,9 +305,9 @@ export function vaultHistoryApi(
   });
 
   /**
-   * Whether the history holds old credentials or its own folder, and how
-   * many saves wrote them. Answered from the count the writer keeps, so
-   * Settings can ask on every visit.
+   * Whether the history holds what it never should, how many saves wrote
+   * each kind and what the files take. Answered from the count the writer
+   * keeps, so Settings can ask on every visit.
    */
   api.get('/history/purge', async (c) => {
     if (!haveHistory() || !options.purge) return c.json(UNAVAILABLE);

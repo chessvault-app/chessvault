@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync, type FSWatcher } from 'node:fs';
 import { resolve } from 'node:path';
+import { historyExcludeFile, historyMatcherFor } from './historyExcludes.ts';
 import { finishInterruptedPurge, forgetHistoryLeaks, historyCount, historyLeaks, purgeHistory, type HistoryLeaks, type PurgeOutcome, type TokenRevoke } from './historyPurge.ts';
 import { VAULT } from './paths.ts';
 import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME, restoreJournalPath, unsafeHistoryRepo } from './vaultGit.ts';
@@ -50,8 +51,8 @@ export interface VaultBackup {
    * one vault and half of the other.
    */
   exclusive: <T>(work: (commit: (message: string) => Promise<void>) => Promise<T>) => Promise<T>;
-  /** What the history holds of the credentials and its own folder, as
-      last counted (server/historyPurge.ts). */
+  /** What the history holds that it never should (the list in
+      server/historyExcludes.ts), as last counted (server/historyPurge.ts). */
   leaks: () => Promise<HistoryLeaks>;
   /** Write the history again without them, holding it to itself; with
       `tokens`, revoking the Lichess tokens chosen first. */
@@ -65,76 +66,52 @@ export interface VaultBackup {
  * startup, and one taken over from a copy being restored
  * (server/restore.ts), which was made by whatever version wrote the copy.
  *
- * Repo-side excludes (never a file in the vault): the history repo must
- * not swallow its own git-dir (`.history.git` is not a magic name like
- * `.git`, so `add -A` would track it), the giant source PGN dumps are
- * rebuild inputs, the unsaved-changes swap files are a live buffer rather
- * than a version of anything (a history of every keystroke somebody had
- * not committed is exactly what this repo is not for), each book's
- * open.bin is a cache the server records from that book's PDF and
- * records again when the PDF changes (server/pdfWarm.ts), worth nothing
- * beside a PDF this repo does not hold (611 KB for a 448-page scan, and a
- * new copy each time the file is replaced), and — critically —
- * config.json holds the app password, TOTP secret and Lichess token,
- * which must never enter a repo that scripts/backup-vault.sh pulls
- * off-box (git would retain every past value). sessions.json sits under
- * the same rule: live session hashes are secrets-adjacent, and it churns
- * on every login, which is not a version of anything. A restore's work
- * folder holds a copy being unpacked and the vault it replaced, which the
- * history records as the vault on either side of the restore, not as files
- * of its own.
+ * Repo-side excludes (never a file in the vault): what the history never
+ * holds, and why each, is the list in server/historyExcludes.ts.
  */
 export async function prepareHistoryRepo(gitDir: string, dir: string): Promise<void> {
-  writeFileSync(
-    resolve(gitDir, 'info', 'exclude'),
-    `${HISTORY_DIR_NAME}/\n${RESTORE_DIR_NAME}/\nsources/\nbooks/*/book.pdf\nbooks/*/open.bin\n*.part\nconfig.json\nsessions.json\n*.swp\n`,
-  );
-  // Untrack them if an earlier version committed any; --ignore-unmatch
-  // makes this a no-op once clean. Leaves the working files intact. The
-  // per-book files are listed first and then named one by one: the
-  // helper passes --literal-pathspecs, which turns off pathspec magic
-  // as well as globs, so the `:(glob)books/*/book.pdf` this once passed
-  // named a file of that literal name and untracked nothing.
-  // In batches: a path is about 35 characters, and Windows refuses a
-  // command line past 32,767, which a long shelf would otherwise reach.
-  const perBook = (await git(gitDir, dir, ['ls-files', '-z', '--', 'books']).catch(() => ''))
-    .split('\0')
-    .filter((path) => /^books\/[^/]+\/(book\.pdf|open\.bin)$/.test(path));
-  const untrack = ['config.json', 'sessions.json', ...perBook];
+  writeFileSync(resolve(gitDir, 'info', 'exclude'), historyExcludeFile());
+  // Untrack whatever of the list the index holds, which an exclude never
+  // does: an older version committed some of it, and a wipe before the
+  // one that writes this exclude at once (server/settings.ts) let the
+  // autosave track everything, the repo's own folder, book PDFs and the
+  // databases' PGN files included, and every save after a restart went on
+  // committing them. Leaves the working files intact. git lists what the
+  // list's globs reach, and the list's own matcher says which part of
+  // each path it names, so a folder goes as one `-r` path however many
+  // files it holds; the paths go back to git by name (the helper's
+  // default --literal-pathspecs), in batches, since a path is about 35
+  // characters and Windows refuses a command line past 32,767.
+  const matcher = await historyMatcherFor(gitDir, dir, { fresh: true });
+  const listed = (await git(gitDir, dir, ['ls-files', '-z', '--', ...matcher.pathspecs], matcher.mode).catch(() => '')).split('\0');
+  const untrack = [...new Set(listed.flatMap((path) => matcher.within(path)?.at ?? []))];
   for (let at = 0; at < untrack.length; at += 200) {
     const batch = untrack.slice(at, at + 200);
-    await git(gitDir, dir, ['rm', '--cached', '--quiet', '--ignore-unmatch', ...batch]).catch(() => undefined);
+    await git(gitDir, dir, ['rm', '-r', '--cached', '--quiet', '--ignore-unmatch', '--', ...batch]).catch(() => undefined);
   }
-  // The repo's own folder and a restore's work folder, which are folders,
-  // hence -r. A wipe before the one that writes this exclude at once
-  // (server/settings.ts) let the autosave track .history.git itself, and
-  // an exclude never untracks what the index already holds: every save
-  // after a restart went on committing the repo's own index and refs.
-  await git(gitDir, dir, [
-    'rm',
-    '-r',
-    '--cached',
-    '--quiet',
-    '--ignore-unmatch',
-    HISTORY_DIR_NAME,
-    RESTORE_DIR_NAME,
-  ]).catch(() => undefined);
   // Untracking stops here; it does not reach into commits already made.
-  // The open caches an earlier version committed stay in the repo's
-  // objects until its history is rewritten: dead weight rather than a
-  // secret, so nothing is said about them at boot.
   // A history that carries an old config.json carries every password
-  // hash, authenticator secret and Lichess token it ever held, and
-  // scripts/backup-vault.sh copies the whole repo off-box. Said once,
-  // loudly, at boot, and offered in Settings (server/historyPurge.ts):
-  // rewriting history is the owner's call, not this server's. Counted
-  // fresh here, which is also what Settings is answered from until the
-  // history next changes under a restore, a wipe or a purge; which secrets
-  // it holds is read at Settings' first ask, not here.
+  // hash, authenticator secret and Lichess token it ever held, and one
+  // that took in a book's PDF carries a copy of the book, and
+  // scripts/backup-vault.sh copies the whole repo off-box and "Download a
+  // copy" packs it. Said once, loudly, at boot, and offered in Settings
+  // (server/historyPurge.ts): rewriting history is the owner's call, not
+  // this server's. Counted fresh here, which is also what Settings is
+  // answered from until the history next changes under a restore, a wipe
+  // or a purge; which secrets it holds is read at Settings' first ask, not
+  // here.
   const leaks = await historyCount(gitDir, dir, { fresh: true }).catch(() => null);
   if (leaks && leaks.commits > 0) {
+    const mb = (bytes: number): string => (bytes >= 1024 * 1024 ? `, ${(bytes / (1024 * 1024)).toFixed(1)} MB` : '');
+    const held = [
+      leaks.credentials > 0 && `config.json or sessions.json (${leaks.credentials}, which may hold past secrets)`,
+      leaks.folder > 0 && `its own folder (${leaks.folder}${mb(leaks.bytes.folder)})`,
+      leaks.books > 0 && `book PDFs or open caches (${leaks.books}${mb(leaks.bytes.books)})`,
+      leaks.sources > 0 && `the databases' PGN files (${leaks.sources}${mb(leaks.bytes.sources)})`,
+      leaks.other > 0 && `.part, .swp or restore files (${leaks.other}${mb(leaks.bytes.other)})`,
+    ].filter(Boolean);
     console.warn(
-      `[vault-backup] ${leaks.commits} save(s) in ${HISTORY_DIR_NAME} hold config.json, sessions.json or the history's own folder, from an older version or an earlier wipe, and may hold past secrets. Settings, Security takes them out: "Remove old secrets", or "Remove old files" where they hold none (the paragraph on backups in README.md does the same from a terminal).`,
+      `[vault-backup] ${leaks.commits} save(s) in ${HISTORY_DIR_NAME} hold what the history never keeps, from an older version or an earlier wipe: ${held.join('; ')}. Settings, Security takes them out: "Remove old secrets", or "Remove old files" where they hold no secret (the paragraph on backups in README.md does the same from a terminal).`,
     );
   }
 }

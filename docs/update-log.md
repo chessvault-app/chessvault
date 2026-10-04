@@ -163,6 +163,33 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   holds it about 10 s, the requests' limit. Tried in a browser at a
   desktop's and a phone's size in both languages, not against Lichess
   itself or on a device.
+- **Settings → Security takes book PDFs, the databases' PGN files and
+  other leftovers out of the change history too.** A vault wiped before
+  0.12.1 saved everything into its new history until the server restarted:
+  each book's PDF and open cache, the PGN files the databases are built
+  from, a restore's work folder, and the unfinished uploads and unsaved
+  changes kept beside documents. Every downloaded copy carried them, and
+  removing old secrets took out only the credentials and the history's own
+  folder. The block now lists the old files the history holds and what
+  each takes there (book PDFs and their caches, PGN files for the
+  databases, a copy of the history's own files, other leftover files),
+  under “Old files in the history” where it holds no secret, and the
+  question lists them as what goes. “Remove old files”, or “Remove old
+  secrets”, takes each of them out of every save however deep in a folder
+  it sits, and every version of every document stays; the server's start
+  also stops saving the PGN files and leftovers such a history still
+  tracked. On a generated history of 10,000 saves holding six book PDFs
+  and two PGN files, a Windows desktop took 2.3 to 2.4 s and the history
+  went from 257.6 MB to 6.9 MB. Counting what a history holds at a start
+  took 0.05 to 0.2 s on generated histories of 10,000 saves once each had
+  been looked through once (0.03 to 0.1 s before), and that first look up
+  to 1 s on one with a folder of 2,000 games. Tried in a browser at a
+  desktop's and a phone's size in both languages, not on a device.
+- **Notes and studies in a folder named sources are saved to the change
+  history.** The history left out every folder of that name, where it
+  meant only the databases' `sources/` at the top of the vault, so such
+  notes and studies had no earlier versions and could not be brought back
+  once deleted.
 
 ## 0.12.2
 
