@@ -74,7 +74,7 @@ describe('what the history never holds', () => {
     for (const ignoreCase of ['false', 'true']) {
       run(['config', 'core.ignorecase', ignoreCase]);
       const byGit = run(['ls-files', '-z', '--cached', '--ignored', `--exclude-from=${join(gitDir, 'info', 'exclude')}`]).split('\0').filter(Boolean);
-      const matcher = await historyMatcherFor(gitDir, dir);
+      const matcher = await historyMatcherFor(gitDir, dir, { fresh: true });
       const named = PATHS.filter((path) => matcher.within(path) !== null);
       expect(named.sort(), `core.ignorecase=${ignoreCase}`).toEqual(byGit.sort());
       // And the pathspecs git narrows a walk by reach every one of them.

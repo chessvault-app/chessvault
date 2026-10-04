@@ -1,3 +1,4 @@
+import { resolve } from 'node:path';
 import { git, HISTORY_DIR_NAME, RESTORE_DIR_NAME, type Pathspecs } from './vaultGit.ts';
 
 /**
@@ -160,13 +161,25 @@ export function historyMatcher(ignoreCase: boolean): HistoryMatcher {
   return { self, within, pathspecs, mode: ignoreCase ? 'glob-icase' : 'glob' };
 }
 
+/** The matcher per history repo, as last read. */
+const matchers = new Map<string, Promise<HistoryMatcher>>();
+
 /**
  * The matcher for the history at `gitDir`: in any case where the repo's
  * `core.ignorecase` is on, as git's `git init` sets it on a filesystem that
  * folds case (Windows, macOS), since git then reads the exclude file the
- * same way.
+ * same way. Read once per repo and remembered, and read afresh when asked
+ * (`fresh`), which prepareHistoryRepo does whenever a repo is made or
+ * taken over: nothing else here changes a repo's config. One git process
+ * less in every count.
  */
-export async function historyMatcherFor(gitDir: string, dir: string): Promise<HistoryMatcher> {
-  const ignoreCase = (await git(gitDir, dir, ['config', '--bool', 'core.ignorecase']).catch(() => '')).trim() === 'true';
-  return historyMatcher(ignoreCase);
+export function historyMatcherFor(gitDir: string, dir: string, { fresh = false } = {}): Promise<HistoryMatcher> {
+  const key = resolve(gitDir);
+  const known = fresh ? undefined : matchers.get(key);
+  if (known) return known;
+  const reading = git(gitDir, dir, ['config', '--bool', 'core.ignorecase'])
+    .catch(() => '')
+    .then((out) => historyMatcher(out.trim() === 'true'));
+  matchers.set(key, reading);
+  return reading;
 }

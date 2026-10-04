@@ -81,7 +81,7 @@ export async function prepareHistoryRepo(gitDir: string, dir: string): Promise<v
   // files it holds; the paths go back to git by name (the helper's
   // default --literal-pathspecs), in batches, since a path is about 35
   // characters and Windows refuses a command line past 32,767.
-  const matcher = await historyMatcherFor(gitDir, dir);
+  const matcher = await historyMatcherFor(gitDir, dir, { fresh: true });
   const listed = (await git(gitDir, dir, ['ls-files', '-z', '--', ...matcher.pathspecs], matcher.mode).catch(() => '')).split('\0');
   const untrack = [...new Set(listed.flatMap((path) => matcher.within(path)?.at ?? []))];
   for (let at = 0; at < untrack.length; at += 200) {

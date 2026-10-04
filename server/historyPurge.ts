@@ -267,6 +267,8 @@ async function elsewhere(gitDir: string, dir: string, matching: Promise<HistoryM
   const added = (since: string[]): Promise<Buffer> =>
     gitPipe(gitDir, dir, ['log', '--stdin', ...WALK, '--diff-filter=A', '--format=', '--name-only'], `${[...tips, ...since.map((tip) => `^${tip}`)].join('\n')}\n`);
   const known = readScanned(gitDir);
+  // Nothing saved since the last look: nothing to look at.
+  if (known && known.tips.length === tips.length && tips.every((tip) => known.tips.includes(tip))) return known.found;
   let found = new Set(known?.found ?? []);
   let out: Buffer;
   try {
