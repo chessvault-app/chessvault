@@ -37,6 +37,20 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   in both languages: 0.12.2 drew no line and named Drill by the reason, and
   the panel now draws the line, in view as the sheet opens, and names Drill
   by what it does.
+- **The Databases panel's buttons keep their names while a job runs.**
+  During a build, an Optimise or an index pass, a database's Add games and
+  Optimise icons and a PGN file's Delete wait for it, and the reason they
+  carried then was also their name: a screen reader heard two buttons side
+  by side both called “Wait for the running job to finish”, and a Delete
+  called “Wait for the build to finish”, with nothing saying what any of
+  them does. They are now “Add games to this database”, “Optimise this
+  database” and “Delete this PGN file” in every state, and while a job runs
+  each is described by the band's own line above the list, such as
+  “Optimising {name}…”, which is what the screen already said. Nothing on
+  screen changes, and below tablet width a database row's ⋯ menu already
+  named its two. Checked at a desktop's size in both languages, with a
+  running Optimise stood in by the test, from the names and descriptions in
+  Chromium's accessibility tree; not tried with a screen reader itself.
 
 ## 0.12.2
 
