@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { Chess } from 'chessops/chess';
 import { INITIAL_FEN, makeFen, parseFen } from 'chessops/fen';
-import { cachePath, lichessExplorerApi, normalizeLichess, type LichessExplorerResponse } from './lichess.ts';
+import { cachePath, lichessExplorerApi, normalizeLichess, revokeLichessToken, type LichessExplorerResponse } from './lichess.ts';
 import { VAULT_CONFIG } from './paths.ts';
 
 const SAMPLE: LichessExplorerResponse = {
@@ -227,4 +227,54 @@ describe('explorer proxy', () => {
       }
     },
   );
+});
+
+/**
+ * Revoking a token at Lichess, against a stand-in: no test sends a token
+ * to Lichess itself. server/historyPurge.test.ts tries it through the purge.
+ */
+describe('revokeLichessToken', () => {
+  const answering = (reply: () => Response | Promise<Response>) => {
+    const sent: { url: string; init: RequestInit | undefined }[] = [];
+    const fetcher: typeof fetch = async (input, init) => {
+      sent.push({ url: String(input), init });
+      return reply();
+    };
+    return { sent, fetcher };
+  };
+
+  it('sends the token as the Bearer of a DELETE to /api/token, and nowhere else', async () => {
+    const lichess = answering(() => new Response(null, { status: 204 }));
+    expect(await revokeLichessToken('lip_sometoken', lichess.fetcher)).toBe('revoked');
+    expect(lichess.sent).toHaveLength(1);
+    const [{ url, init }] = lichess.sent as [{ url: string; init: RequestInit }];
+    expect(url).toBe('https://lichess.org/api/token');
+    expect(init.method).toBe('DELETE');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer lip_sometoken');
+    // A redirect is a failure, so the token is never sent on to another address.
+    expect(init.redirect).toBe('error');
+  });
+
+  it('tells a token already of no use from one that may still work', async () => {
+    const status = (code: number) => answering(() => new Response('{"error":"No such token"}', { status: code })).fetcher;
+    expect(await revokeLichessToken('lip_gone', status(401))).toBe('invalid');
+    for (const code of [403, 429, 500, 503]) expect(await revokeLichessToken('lip_maybe', status(code))).toBe('failed');
+    const unreachable: typeof fetch = async () => {
+      throw new TypeError('fetch failed');
+    };
+    expect(await revokeLichessToken('lip_maybe', unreachable)).toBe('failed');
+  });
+
+  it('goes to the stand-in named by the test-only address', async () => {
+    const saved = process.env.CHESS_TEST_LICHESS_TOKEN_URL;
+    process.env.CHESS_TEST_LICHESS_TOKEN_URL = 'http://127.0.0.1:9/api/token';
+    try {
+      const lichess = answering(() => new Response(null, { status: 204 }));
+      await revokeLichessToken('lip_sometoken', lichess.fetcher);
+      expect(lichess.sent[0]?.url).toBe('http://127.0.0.1:9/api/token');
+    } finally {
+      if (saved === undefined) delete process.env.CHESS_TEST_LICHESS_TOKEN_URL;
+      else process.env.CHESS_TEST_LICHESS_TOKEN_URL = saved;
+    }
+  });
 });

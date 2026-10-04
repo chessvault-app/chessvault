@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { writeAtomic } from './atomic.ts';
 import { VAULT } from './paths.ts';
 import { validId } from '../shared/vaultNames.ts';
-import type { HistoryLeaks, PurgeOutcome } from './historyPurge.ts';
+import type { HistoryLeaks, PurgeOutcome, TokenRevoke } from './historyPurge.ts';
 import { git, historyGitDir, unsafeHistoryRepo } from './vaultGit.ts';
 
 /**
@@ -123,7 +123,9 @@ export function vaultHistoryApi(
     purge?: {
       /** What the history holds, as last counted; null with no writer. */
       leaks: () => Promise<HistoryLeaks | null>;
-      run: () => Promise<PurgeOutcome | null>;
+      /** `tokens`: which Lichess tokens the user chose to revoke at
+          Lichess first, or null for none; the caller says how. */
+      run: (tokens: Pick<TokenRevoke, 'past' | 'current'> | null) => Promise<PurgeOutcome | null>;
     };
   } = {},
 ): Hono {
@@ -315,14 +317,24 @@ export function vaultHistoryApi(
 
   /**
    * Take them out: every save written again without them, and the old
-   * saves deleted from git's store. Every reply is a sentence the
+   * saves deleted from git's store. Every refusal is a sentence the
    * Security card shows as it comes.
+   *
+   * `{ revokeTokens: { past, current } }` revokes at Lichess first the
+   * tokens the old saves hold that the vault no longer uses, and the one
+   * it does, each only when it is `true`: a request to Lichess on the
+   * user's account is sent only when the user asked for it, so an
+   * empty body, or anything else, sends none. The answer says how many of
+   * each Lichess revoked (`tokens`), never which.
    */
   api.post('/history/purge', async (c) => {
     if (!haveHistory() || !options.purge) return c.json({ error: 'This vault keeps no history.' }, 409);
+    const body = (await c.req.json().catch(() => null)) as { revokeTokens?: { past?: unknown; current?: unknown } } | null;
+    const asked = body?.revokeTokens;
+    const tokens = asked && typeof asked === 'object' ? { past: asked.past === true, current: asked.current === true } : null;
     let outcome: PurgeOutcome | null;
     try {
-      outcome = await options.purge.run();
+      outcome = await options.purge.run(tokens && (tokens.past || tokens.current) ? tokens : null);
     } catch (error) {
       console.error('[vault-backup] could not remove the old secrets from the history:', (error as Error).message);
       return c.json({ error: 'Could not take them out, so the history is as it was.' }, 500);

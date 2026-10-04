@@ -14,7 +14,7 @@ import { booksApi } from './books.ts';
 import { bootBanner } from './bootBanner.ts';
 import { recordActivity } from './activity.ts';
 import { crossSiteGuard, isRawBodyPath } from './crossSite.ts';
-import { lichessExplorerApi, lichessStudiesApi } from './lichess.ts';
+import { lichessExplorerApi, lichessStudiesApi, revokeLichessToken } from './lichess.ts';
 import { mountVault } from './mountVault.ts';
 import { openVault } from './openVault.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
@@ -262,7 +262,9 @@ app.route(
     },
     purge: {
       leaks: async () => (await (await vaultBackup)?.leaks()) ?? null,
-      run: async () => (await (await vaultBackup)?.purge()) ?? null,
+      // The tokens chosen are revoked at Lichess itself (server/lichess.ts).
+      run: async (tokens) =>
+        (await (await vaultBackup)?.purge(tokens ? { ...tokens, revoke: (token) => revokeLichessToken(token) } : undefined)) ?? null,
     },
   }),
 );

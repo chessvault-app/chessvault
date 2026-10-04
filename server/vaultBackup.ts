@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync, type FSWatcher } from 'node:fs';
 import { resolve } from 'node:path';
-import { finishInterruptedPurge, forgetHistoryLeaks, historyCount, historyLeaks, purgeHistory, type HistoryLeaks, type PurgeOutcome } from './historyPurge.ts';
+import { finishInterruptedPurge, forgetHistoryLeaks, historyCount, historyLeaks, purgeHistory, type HistoryLeaks, type PurgeOutcome, type TokenRevoke } from './historyPurge.ts';
 import { VAULT } from './paths.ts';
 import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME, restoreJournalPath, unsafeHistoryRepo } from './vaultGit.ts';
 
@@ -53,8 +53,9 @@ export interface VaultBackup {
   /** What the history holds of the credentials and its own folder, as
       last counted (server/historyPurge.ts). */
   leaks: () => Promise<HistoryLeaks>;
-  /** Write the history again without them, holding it to itself. */
-  purge: () => Promise<PurgeOutcome>;
+  /** Write the history again without them, holding it to itself; with
+      `tokens`, revoking the Lichess tokens chosen first. */
+  purge: (tokens?: TokenRevoke) => Promise<PurgeOutcome>;
 }
 
 /**
@@ -348,10 +349,10 @@ export async function startVaultBackup(
     commitNow,
     exclusive,
     leaks: () => historyLeaks(gitDir, dir),
-    purge: () =>
+    purge: (tokens) =>
       exclusive(async () => {
         await open();
-        return purgeHistory(gitDir, dir);
+        return purgeHistory(gitDir, dir, tokens);
       }),
     stop: () => {
       if (timer) clearTimeout(timer);
