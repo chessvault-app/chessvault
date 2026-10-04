@@ -68,7 +68,9 @@ function header(name: string, size: number, mode: number, mtime: number, type: '
 
 const pad = (size: number): Buffer => Buffer.alloc((512 - (size % 512)) % 512);
 
-async function* entries(root: string, rel: string[]): AsyncGenerator<Buffer> {
+/** What the folder at `rel` under `root` holds, but at the top level
+    the dotfiles (the history aside) and the credentials. */
+async function* entries(root: string, rel: string[], prefix: string[] = []): AsyncGenerator<Buffer> {
   const dir = resolve(root, ...rel);
   let names: import('node:fs').Dirent[];
   try {
@@ -81,49 +83,59 @@ async function* entries(root: string, rel: string[]): AsyncGenerator<Buffer> {
     if (rel.length === 0 && entry.name.startsWith('.') && entry.name !== HISTORY) continue;
     if (rel.length === 0 && SKIP_FILES.has(entry.name)) continue;
     if (entry.isFile() && openCache(rel, entry.name)) continue;
-    const path = [...rel, entry.name];
-    const name = path.join('/');
-    const full = resolve(root, ...path);
-    if (entry.isDirectory()) {
-      let mtime = Date.now();
-      try {
-        mtime = (await stat(full)).mtimeMs;
-      } catch {
-        continue;
-      }
-      yield* paxPath(`${name}/`);
-      yield header(`${name}/`, 0, 0o755, mtime, '5');
-      yield* entries(root, path);
-    } else if (entry.isFile()) {
-      let handle: import('node:fs/promises').FileHandle;
-      try {
-        handle = await open(full, 'r');
-      } catch {
-        continue;
-      }
-      try {
-        // The size in the header is the size that is written, so it is
-        // read from the open handle, not from a stat that a save could
-        // have outdated; a file that grows while it is read is cut at
-        // the size announced.
-        const info = await handle.stat();
-        yield* paxPath(name);
-        yield header(name, info.size, 0o644, info.mtimeMs, '0');
-        let left = info.size;
-        const chunk = Buffer.alloc(Math.min(left, 1 << 16) || 1);
-        while (left > 0) {
-          const { bytesRead } = await handle.read(chunk, 0, Math.min(chunk.length, left));
-          if (bytesRead === 0) {
-            yield Buffer.alloc(left);
-            break;
-          }
-          yield Buffer.from(chunk.subarray(0, bytesRead));
-          left -= bytesRead;
+    yield* one(root, [...rel, entry.name], entry, prefix);
+  }
+}
+
+/** A file, or a folder and everything in it, at `path` under `root`,
+    named in the archive by `prefix` and `path` joined. */
+async function* one(
+  root: string,
+  path: string[],
+  kind: { isDirectory(): boolean; isFile(): boolean },
+  prefix: string[],
+): AsyncGenerator<Buffer> {
+  const name = [...prefix, ...path].join('/');
+  const full = resolve(root, ...path);
+  if (kind.isDirectory()) {
+    let mtime = Date.now();
+    try {
+      mtime = (await stat(full)).mtimeMs;
+    } catch {
+      return;
+    }
+    yield* paxPath(`${name}/`);
+    yield header(`${name}/`, 0, 0o755, mtime, '5');
+    yield* entries(root, path, prefix);
+  } else if (kind.isFile()) {
+    let handle: import('node:fs/promises').FileHandle;
+    try {
+      handle = await open(full, 'r');
+    } catch {
+      return;
+    }
+    try {
+      // The size in the header is the size that is written, so it is
+      // read from the open handle, not from a stat that a save could
+      // have outdated; a file that grows while it is read is cut at
+      // the size announced.
+      const info = await handle.stat();
+      yield* paxPath(name);
+      yield header(name, info.size, 0o644, info.mtimeMs, '0');
+      let left = info.size;
+      const chunk = Buffer.alloc(Math.min(left, 1 << 16) || 1);
+      while (left > 0) {
+        const { bytesRead } = await handle.read(chunk, 0, Math.min(chunk.length, left));
+        if (bytesRead === 0) {
+          yield Buffer.alloc(left);
+          break;
         }
-        yield pad(info.size);
-      } finally {
-        await handle.close();
+        yield Buffer.from(chunk.subarray(0, bytesRead));
+        left -= bytesRead;
       }
+      yield pad(info.size);
+    } finally {
+      await handle.close();
     }
   }
 }
