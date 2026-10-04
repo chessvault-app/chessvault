@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, rmdirSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdir, open, rm, statfs, utimes, type FileHandle } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { Hono, type MiddlewareHandler } from 'hono';
@@ -184,6 +184,20 @@ function swap(vault: string, moves: Move[], move: (from: string, to: string) => 
 type Finished = 'nothing' | 'put-back' | 'unreadable';
 
 /**
+ * `.restore` itself once nothing is left in it. Every put-back, keep and
+ * undo emptied it and left the folder in the vault (the 0.12.2 manual
+ * audit found it after a put-back), where a vault that has never been
+ * restored has none. Not there, or not empty, is nothing to do.
+ */
+function tidy(vault: string): void {
+  try {
+    rmdirSync(workDir(vault));
+  } catch {
+    // Something is still in it, or it is gone already.
+  }
+}
+
+/**
  * Put back a swap whose journal still stands, then delete the work folders
  * of operations that never finished. The one put-back there is, so that
  * whatever runs it does the same thing: recoverInterruptedRestore at the
@@ -244,6 +258,7 @@ function finishInterruptedSwap(vault: string, rename?: Rename): Finished {
     }
     rmSync(path, { recursive: true, force: true });
   }
+  tidy(vault);
   return outcome;
 }
 
@@ -660,6 +675,7 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
       }
       return c.json({ ok: true });
     } finally {
+      tidy(vault);
       running = false;
     }
   });
@@ -683,6 +699,7 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
       const { body: answer, status } = await restore(body);
       return c.json(answer, status);
     } finally {
+      tidy(vault);
       running = false;
     }
   });
@@ -909,6 +926,7 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
       await rm(work.dir, { recursive: true, force: true }).catch(() => undefined);
       return c.json({ ok: true });
     } finally {
+      tidy(vault);
       running = false;
     }
   });
@@ -935,6 +953,7 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
       await rm(work.dir, { recursive: true, force: true }).catch(() => undefined);
       return c.json({ ok: true, freed });
     } finally {
+      tidy(vault);
       running = false;
     }
   });

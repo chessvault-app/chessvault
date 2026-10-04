@@ -140,10 +140,14 @@ const everything = (dir: string): Record<string, string> => tree(dir, ['.history
 
 const read = (vault: string, path: string): string => readFileSync(join(vault, ...path.split('/')), 'utf-8');
 
-/** What `.restore` holds besides a pending restore: nothing, after any request. */
+/** What `.restore` holds besides a pending restore: nothing, after any
+    request, and no empty `.restore` either, which every put-back, keep
+    and undo used to leave in the vault. */
 function leftovers(vault: string): string[] {
   const work = join(vault, '.restore');
-  return existsSync(work) ? readdirSync(work).filter((name) => name !== 'before') : [];
+  if (!existsSync(work)) return [];
+  const names = readdirSync(work);
+  return names.length === 0 ? ['(an empty .restore)'] : names.filter((name) => name !== 'before');
 }
 
 async function download(vault: string): Promise<Buffer> {
@@ -672,7 +676,7 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
 
     recoverInterruptedRestore(target.vault);
     expect(everything(target.vault)).toEqual(before);
-    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
   });
 
   it('puts a stuck vault back from the app, byte for byte, and its pages answer again', async () => {
@@ -702,7 +706,7 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ ok: true });
     expect(everything(target.vault)).toEqual(before);
-    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
     expect(await state()).toMatchObject({ stuck: false, pending: null });
     const listed = (await (await notes.request('/api/notes')).json()) as { studies: { id: string }[] };
     expect(listed.studies.map((s) => s.id)).toEqual(['Gone']);
@@ -792,7 +796,7 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     rmSync(join(work, 'in'));
     expect((await recover()).status).toBe(200);
     expect(everything(target.vault)).toEqual(before);
-    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
   });
 
   it('puts a stuck vault back once whatever held one of its folders lets go', async () => {
@@ -911,7 +915,7 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     // every folder home, the history included, with nothing new in it.
     expect((await app.request('/api/storage/restore/recover', { method: 'POST' })).status).toBe(200);
     expect(everything(target.vault)).toEqual(before);
-    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
     expect(inHistory(['rev-parse', 'HEAD']).trim()).toBe(head);
     const listed = (await (await app.request('/api/notes')).json()) as { studies: { id: string }[] };
     expect(listed.studies.map((s) => s.id)).toEqual(['Gone']);
@@ -959,7 +963,7 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     // once they are home, that note is no reason to keep the copy.
     expect((await recover()).status).toBe(200);
     expect(everything(target.vault)).toEqual(before);
-    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
   });
 
   it('saves nothing to the history while a restore stands part way, so no document gains a version from it', async () => {
@@ -1123,7 +1127,8 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     const kept = await keep();
     expect(kept.status).toBe(200);
     expect((await kept.json()).freed).toBeGreaterThan(PDF.length);
-    expect(existsSync(join(target.vault, '.restore', 'before'))).toBe(false);
+    // Nothing of the restore is left, not even its folder.
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
     expect(tree(target.vault)).toEqual(tree(source.vault));
     expect(read(target.vault, 'config.json')).toBe('{"appPassword":"target-secret"}\n');
     expect((await restore(copy)).status).toBe(200);
