@@ -55,20 +55,22 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   the sample games, such as the explorer's My games and Insights, counted
   only the games indexed by the moment they asked, so what they said
   depended on how fast the machine was just then. On 0.12.2's demo the
-  Workspace's explorer counted 36 or 37 of the 46 games at the starting
-  position on seven of eight loads and 29 on the eighth, and 18 with the CPU
-  slowed four times, and kept that count, since it asks once per position,
-  with Recent games all from one month; Insights opened on 16 of its 31
-  games and reached 31 two seconds later. Now the first such question waits
-  until every game is indexed, and indexing takes a sixth to an eighth of
-  the time, since the demo's database layer writes each file's games in one
-  transaction: a full index took 65 ms where it took 402 ms, and 341 ms
-  where it took 2.7 s with the CPU slowed (medians of five loads). Over
-  eight loads the explorer counted 46 every time and Insights 31 from its
-  first answer, as they did over five with the CPU slowed, with Recent
-  games across four months, and that first answer still came sooner than
-  0.12.2's partial one: on the Workspace, 150 to 213 ms after it was asked,
-  against 424 to 459. The app on a server is unchanged.
+  Workspace's explorer counted anywhere from 24 to 37 of the 46 games at
+  the starting position over sixteen loads in two runs, and 18 with the
+  CPU slowed four times, and kept that count, since it asks once per
+  position, with Recent games all from one month; Insights opened on 16 of
+  its 31 games and reached 31 about a second later. Now the first such
+  question waits until every game is indexed, and indexing takes a sixth
+  to an eighth of the time, since the demo's database layer writes each
+  file's games in one transaction: a full index took 65 ms where it took
+  402 ms, and 341 ms where it took 2.7 s with the CPU slowed (medians of
+  five loads). Over sixteen loads in two runs the explorer counted 46
+  every time and Insights 31 from its first answer, as they did over ten
+  with the CPU slowed, with Recent games across four months, and that
+  first answer still came sooner than 0.12.2's partial one: on the
+  Workspace, 150 to 213 ms after it was asked against 424 to 459 in one
+  run, and 48 to 63 against 167 to 229 in the other. The app on a server
+  is unchanged.
 
 ## 0.12.2
 
