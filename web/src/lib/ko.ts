@@ -2001,6 +2001,10 @@ export const ko: Record<string, string> = {
   "a book needs a title": "책에는 제목이 필요합니다",
   "a book with that name exists": "같은 이름의 책이 이미 있습니다",
   "a build is already running": "이미 빌드가 진행 중입니다",
+  'The puzzle dump cannot be deleted while a build is running.':
+    '데이터베이스를 만드는 동안에는 퍼즐 덤프를 삭제할 수 없습니다.',
+  'There is no puzzle dump in the folder.': '데이터베이스 폴더에 퍼즐 덤프가 없습니다.',
+  'The puzzle dump could not be deleted.': '퍼즐 덤프를 삭제하지 못했습니다.',
   "a folder with that name exists": "같은 이름의 폴더가 이미 있습니다",
   "a file with that name is already here": "같은 이름의 파일이 이미 있습니다",
   "a study with that name exists": "같은 이름의 스터디가 이미 있습니다",

@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { Hono } from 'hono';
 import { spawn } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { renameRetrying, writeAtomic } from './atomic.ts';
 import { DATA_PUZZLES, PUZZLE_DUMP_DOWNLOAD, PUZZLE_DUMP_PLACED, REPO_ROOT, VAULT } from './paths.ts';
@@ -75,7 +75,8 @@ function isFinishedPuzzleBuild(path: string): boolean {
  * A dump somebody PUT there (PUZZLE_DUMP_PLACED) is left alone:
  * it is theirs, and a build uses it rather than downloading, unless it
  * was asked for the newest set, which deletes it only once a database is
- * built (scripts/build-puzzles.ts). That name
+ * built (scripts/build-puzzles.ts); Settings deletes it when asked to
+ * (DELETE /puzzles/dump, below), and nothing else does. That name
  * used to be the download's as well, so a download a dead build left
  * could not be told from it and stayed for good; the download has a name
  * of its own now (PUZZLE_DUMP_DOWNLOAD). Only the `.part` older versions
@@ -822,11 +823,28 @@ export function puzzlesApi(
   } | null = null;
 
   /**
-   * Whether a dump somebody put beside the database is there, which a
-   * build uses instead of downloading unless it is asked for the newest
-   * set (scripts/build-puzzles.ts, the same name in the same directory).
+   * A dump somebody put beside the database, which a build uses instead
+   * of downloading unless it is asked for the newest set (scripts/
+   * build-puzzles.ts, the same name in the same directory), and how big
+   * it is: null where there is none. One stat, the cost the existence
+   * check had already, so every status poll and every meta can say it.
+   * A throw, not `throwIfNoEntry`: the demo's filesystem (nodeShim/fs)
+   * has the plain signature, and its meta must still answer.
    */
-  const dumpInPlace = (): boolean => existsSync(resolve(dirname(dbPath), PUZZLE_DUMP_PLACED));
+  const placedDumpPath = resolve(dirname(dbPath), PUZZLE_DUMP_PLACED);
+  const placedDump = (): { bytes: number } | null => {
+    try {
+      return { bytes: statSync(placedDumpPath).size };
+    } catch {
+      return null;
+    }
+  };
+  const dumpInPlace = (): boolean => placedDump() !== null;
+  /** What a status and a meta say about it: whether, and how big. */
+  const dumpFields = (): { dumpInPlace: boolean; dumpBytes: number | null } => {
+    const placed = placedDump();
+    return { dumpInPlace: placed !== null, dumpBytes: placed?.bytes ?? null };
+  };
 
   /**
    * `download`: fetch the newest set even with a dump in place, which the
@@ -956,8 +974,9 @@ export function puzzlesApi(
       // with a dump in place it can build from it and download nothing,
       // and the question said "It downloads about 300 MB" all the same.
       // Read on every poll, so a dump put there while the page is open is
-      // answered for too.
-      dumpInPlace: dumpInPlace(),
+      // answered for too, and one deleted from another device goes. Its
+      // size is what Settings' delete question names.
+      ...dumpFields(),
     }),
   );
 
@@ -968,6 +987,41 @@ export function puzzlesApi(
     if (build?.running) return c.json({ error: 'a build is already running' }, 409);
     startBuild(body.download === true);
     return c.json({ running: true });
+  });
+
+  /**
+   * Delete the dump in place, from the app.
+   *
+   * A build keeps it, and only a build asked for the newest set deletes
+   * it, once the new database is built. So somebody whose database was
+   * built and who wanted the 300 MB back without rebuilding, or who
+   * wanted the first build to download rather than read a stale file,
+   * could only delete it on the server's disk: a user action that needed
+   * file access. Settings' Puzzle database card asks this, naming the
+   * file and its size.
+   *
+   * Only that name, in the database's folder: never the download a
+   * running build is working from (PUZZLE_DUMP_DOWNLOAD), which is the
+   * app's and swept by name. And never while a build of this server
+   * runs, whichever it reads: one from the dump is reading it, and one
+   * downloading past it deletes it itself when it is done. Synchronous
+   * from the check to the delete, so a build cannot start in between.
+   */
+  api.delete('/puzzles/dump', (c) => {
+    if (build?.running) {
+      return c.json({ error: 'The puzzle dump cannot be deleted while a build is running.' }, 409);
+    }
+    const placed = placedDump();
+    if (!placed) return c.json({ error: 'There is no puzzle dump in the folder.' }, 404);
+    try {
+      rmSync(placedDumpPath);
+    } catch (error) {
+      // A folder by that name, or a file another program holds with no
+      // sharing on Windows. Said, and left as it is.
+      console.warn(`puzzles: could not delete the puzzle dump (${(error as Error).message})`);
+      return c.json({ error: 'The puzzle dump could not be deleted.' }, 500);
+    }
+    return c.json({ bytes: placed.bytes });
   });
 
   // Theme counts never change while one file is served (a rebuild's swap
@@ -999,7 +1053,7 @@ export function puzzlesApi(
     // a rebuild would do: said here as well as in the build's status, so
     // the setup screen and Settings, which wait for this answer, start on
     // the right words rather than correcting them a poll later.
-    if (!db) return c.json({ ready: false as const, user: publicState(user), dumpInPlace: dumpInPlace() });
+    if (!db) return c.json({ ready: false as const, user: publicState(user), ...dumpFields() });
     const meta = Object.fromEntries(
       (db.prepare('SELECT key, value FROM meta').all() as { key: string; value: string }[]).map(
         (r) => [r.key, r.value],
@@ -1016,7 +1070,7 @@ export function puzzlesApi(
       // When this file was built, which is how old its puzzles are: the
       // one thing to know before rebuilding it (Settings, Puzzle database).
       builtAt: meta.built_at ?? null,
-      dumpInPlace: dumpInPlace(),
+      ...dumpFields(),
       themes: themeCounts(db),
       failed: pool.length,
       // What the ladder says: how many are due now, and when the next
