@@ -97,8 +97,9 @@ export const DATA_PUZZLES = resolve(DATA, 'puzzles.sqlite');
  * build uses it rather than downloading, and keeps it: it is theirs. Only
  * a build asked for the newest set instead (the build question's second
  * answer) passes it over, and deletes it once the new database is built.
+ * The name itself is shared/puzzleBuild.ts's, where the app can read it.
  */
-export const PUZZLE_DUMP_PLACED = 'lichess_db_puzzle.csv.zst';
+export { PUZZLE_DUMP_PLACED } from '../shared/puzzleBuild.ts';
 /**
  * The name a puzzle build gives the Lichess dump it downloads itself,
  * beside DATA_PUZZLES. Not PUZZLE_DUMP_PLACED, which is the name

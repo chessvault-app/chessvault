@@ -19,6 +19,14 @@
 export type PuzzleDumpSource = 'dump' | 'download';
 
 /**
+ * The name of that dump in the database's folder. What a build does with
+ * it is server/paths.ts's to say, which exports it from here; it is
+ * stated here so that the app can name the file too, without a second
+ * copy of the string to drift from the one the server reads.
+ */
+export const PUZZLE_DUMP_PLACED = 'lichess_db_puzzle.csv.zst';
+
+/**
  * Why a build failed.
  *
  * - `unreachable`: the download never started (no connection, or Lichess
