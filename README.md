@@ -429,9 +429,16 @@ and deletes the old copies from the history. Copies already downloaded or
 pulled off-box keep the old values, so it then names the ones the history
 held and what closes each: the app password or 2FA secret still in use is
 changed in the same card, an old password wherever it is still used, and
-every Lichess token it names is deleted at
+every Lichess token it names is deleted at Lichess, since replacing a
+token in the app does not revoke it. The question can do that last part
+itself: ticked, the server asks Lichess to delete the old tokens, and, in
+a row of its own, the token in use, which then also leaves the vault, so
+the online explorer and private study imports stop until a new one is
+saved. Both start unticked, and nothing is sent to Lichess unless one is
+ticked. The line after it says what Lichess deleted; a token it could not
+reach is left to delete at
 [lichess.org/account/oauth/token](https://lichess.org/account/oauth/token),
-since replacing a token in the app does not revoke it.
+which the line links.
 
 Where the app cannot do it (a server that will not start, say), the same
 from a terminal: stop the server and run this, with `h` naming the
@@ -606,7 +613,9 @@ optional Lichess explorer augmentation, which you can leave off; and the
 endgame tablebase, which is on from the start and asks Lichess's public
 server unless you give it tables of your own
 ([below](#lichess-token-optional)). Settings → Tablebase turns it off.
-The desktop app also asks GitHub for a newer release when it starts.
+Removing old secrets from the history asks Lichess to delete old tokens
+only where you tick that in its question. The desktop app also asks
+GitHub for a newer release when it starts.
 
 **With no network at all: yes.** That is the default arrangement — the
 app and the vault both on your device — and nothing about it needs the

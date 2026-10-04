@@ -106,7 +106,8 @@ flowchart LR
   owns the optional auth gate (password + authenticator 2FA/TOTP,
   `server/auth.ts` + `server/totp.ts`), the settings API
   (`server/settings.ts`), and outbound proxies to the Lichess explorer
-  and study-export endpoints (`server/lichess.ts`) and to the endgame
+  and study-export endpoints (`server/lichess.ts`, which also deletes old
+  tokens at Lichess when the owner ticks that) and to the endgame
   tablebase (`server/tablebase.ts`, behind a `TablebaseProbe` interface,
   pointed by the vault's `tablebaseUrl` at Lichess's public Syzygy
   server or at one of your own — or answered with no server at all,
@@ -397,6 +398,21 @@ a server stopped between them finishes the prune at its next start. No
 rewritten save keeps its old id, and nothing holds one across a purge:
 the history panel and Deleted documents ask for ids each time they open,
 and the restore's journal holds renames.
+
+A `POST` whose body says `{ revokeTokens: { past, current } }` also
+revokes at Lichess the tokens those versions of `config.json` hold: the
+ones the vault no longer uses and the one in use, each only when it is
+`true`, since a request to Lichess on the owner's account goes only when
+the owner ticked it in the question. They are read in one `cat-file
+--batch` over the versions the count listed, after the rewrite is checked
+and before any ref moves (after the move the values are gone), each sent
+once as the Bearer of `DELETE https://lichess.org/api/token` and let go.
+That is `revokeLichessToken` in `server/lichess.ts`, which takes a
+fetcher as the explorer proxy does, so the tests serve a stand-in. What
+comes back is counts per kind (revoked, already invalid at a 401, not
+revoked), never a value; the purge goes on whatever Lichess answers, and
+the token in use, once Lichess no longer takes it, leaves `config.json`
+too.
 
 ## Shared code
 
