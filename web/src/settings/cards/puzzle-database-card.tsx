@@ -146,6 +146,15 @@ export function PuzzleDatabaseCard() {
     if (document.activeElement && document.activeElement !== document.body) return;
     listRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
   }, [dumpInPlace]);
+  // A refusal is about the moment it was given, and a build ending ends
+  // it: asked while a build ran, "cannot be deleted while a build is
+  // running" stayed under the card once it was over, beside a bin that
+  // could delete again or under no row at all (a download past the dump
+  // deletes it itself). So the note goes when a build does.
+  useEffect(() => {
+    if (!running) return;
+    return () => setNote(null);
+  }, [running]);
 
   // How many, and how old: the age is what a rebuild is for. An em dash
   // for a read that failed, as Storage used draws an area it could not
