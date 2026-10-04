@@ -851,9 +851,10 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
    * was drawn from): a put-back on another device, or at a start, while
    * the question stood open set more aside, and the delete took those
    * too, unnamed. One rename per set ends it, so a file another program
-   * holds refuses before anything is deleted; the delete after it can
-   * take its time, and what it leaves the next start or put-back sweeps,
-   * as after a keep.
+   * holds refuses that set before any of it is deleted; sets renamed
+   * before it are deleted, as asked, and the card then draws what is
+   * left. The delete after the renames can take its time, and what it
+   * leaves the next start or put-back sweeps, as after a keep.
    */
   api.delete('/storage/restore/kept', async (c) => {
     // Read before the checks, so nothing awaits between them and `running`.
