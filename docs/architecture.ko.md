@@ -382,7 +382,10 @@ Tailscale만 쓸 수도 있습니다. 둘 다 같은 서버로 가는 HTTP일 �
 Lichess에 보내는 요청은 소유자가 확인 질문에서 고른 때에만 보내기 때문입니다.
 토큰은 개수를 셀 때 적어 둔 버전들을 `cat-file --batch` 한 번으로 읽어, 다시 쓴
 결과를 검사한 뒤 ref가 움직이기 전에(움직인 뒤에는 값이 없습니다) 각각 한 번씩
-`DELETE https://lichess.org/api/token`의 Bearer로 보내고 버립니다. 이 일은
+`DELETE https://lichess.org/api/token`의 Bearer로 보내고 버립니다. 어느 것이
+지금 쓰는 토큰인지는 그때의 `config.json`에서 읽으며, 그 파일이 있는데 읽거나
+해석할 수 없으면 아무것도 보내지 않습니다. 지금 쓰는 토큰이 없다고 읽으면 지금
+쓰는 토큰을 옛 토큰으로 보내게 되기 때문입니다. 이 일은
 `server/lichess.ts`의 `revokeLichessToken`이 하며, 탐색기 프록시처럼 fetcher를
 받으므로 테스트는 가짜 Lichess를 씁니다. 돌아오는 것은 종류별 개수(삭제됨,
 401로 이미 무효, 삭제 못 함)뿐이고 값은 없습니다. 제거는 Lichess가 무엇이라

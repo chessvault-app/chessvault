@@ -407,8 +407,11 @@ the owner ticked it in the question. They are read in one `cat-file
 --batch` over the versions the count listed, after the rewrite is checked
 and before any ref moves (after the move the values are gone), each sent
 once as the Bearer of `DELETE https://lichess.org/api/token` and let go.
-That is `revokeLichessToken` in `server/lichess.ts`, which takes a
-fetcher as the explorer proxy does, so the tests serve a stand-in. What
+Which one is in use is read from `config.json` at that moment, and where
+that file is there but cannot be read or parsed, nothing is sent: read
+as no token in use, it would send the token in use as an old one. That
+is `revokeLichessToken` in `server/lichess.ts`, which takes a fetcher as
+the explorer proxy does, so the tests serve a stand-in. What
 comes back is counts per kind (revoked, already invalid at a 401, not
 revoked), never a value; the purge goes on whatever Lichess answers, and
 the token in use, once Lichess no longer takes it, leaves `config.json`
