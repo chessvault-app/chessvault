@@ -416,20 +416,25 @@ nothing the restore moved, and refuses every page that would read the
 vault until it is put back. Until then the history saves nothing, so it
 never records a vault that is half one and half the other.
 
-That history leaves `config.json` and `sessions.json` out, and has since
-0.4.x. Two kinds of vault may still carry them: one older than that, in
+That history leaves out `config.json` and `sessions.json`, as it has since
+0.4.x, and its own folder, each book's PDF and `open.bin`, the PGN files
+in `sources/`, a restore's work folder and `.part` and `.swp` files. Two
+kinds of vault may still carry some of them: one older than an exclude, in
 its early commits, and one wiped with “Wipe all data” before 0.12.1, whose
-new history committed them after the wipe, along with its own folder.
-Then every password hash, authenticator secret and Lichess token they
-ever held goes along with each backup and each downloaded copy. The
-server says so at boot when it finds any, and Settings → Security then
-opens with “Old secrets in the history”: **Remove old secrets** writes
-every save again without them, keeping every version of every document,
-and deletes the old copies from the history. Copies already downloaded or
-pulled off-box keep the old values, so it then names the ones the history
-held and what closes each: the app password or 2FA secret still in use is
-changed in the same card, an old password wherever it is still used, and
-every Lichess token it names is deleted at
+new history committed everything after the wipe until the server
+restarted. Then every password hash, authenticator secret and Lichess
+token they ever held, every book's PDF and the gigabytes of PGN files go
+along with each backup and each downloaded copy. The server says so at
+boot when it finds any, and Settings → Security then opens with “Old
+secrets in the history”, or “Old files in the history” where no secret is
+among them, listing the files and what they take: **Remove old secrets**
+(or **Remove old files**) writes every save again without any of them,
+however deep in a folder, keeping every version of every document, and
+deletes the old copies from the history. Copies already downloaded or
+pulled off-box keep the old values, so it then names the secrets the
+history held and what closes each: the app password or 2FA secret still in
+use is changed in the same card, an old password wherever it is still
+used, and every Lichess token it names is deleted at
 [lichess.org/account/oauth/token](https://lichess.org/account/oauth/token),
 since replacing a token in the app does not revoke it.
 
@@ -440,7 +445,7 @@ from a terminal: stop the server and run this, with `h` naming the
 ```bash
 h=vault/.history.git
 git --git-dir=$h config core.bare true    # so filter-branch needs no work tree
-git --git-dir=$h filter-branch --index-filter 'git rm -r -q --cached --ignore-unmatch config.json sessions.json .history.git' -- --all
+git --git-dir=$h filter-branch --index-filter 'git rm -r -q --cached --ignore-unmatch -- config.json sessions.json .history.git .restore sources "books/*/book.pdf" "books/*/open.bin" "*.part" "*.swp"' -- --all
 git --git-dir=$h for-each-ref --format='delete %(refname)' refs/original | git --git-dir=$h update-ref --stdin
 git --git-dir=$h read-tree HEAD
 git --git-dir=$h reflog expire --expire=now --all

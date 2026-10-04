@@ -397,15 +397,19 @@ SSH는 공개 인터넷에 두지 마세요. `deploy.sh`가 네트워크에 바�
 히스토리는 아무것도 저장하지 않으므로, 반은 이쪽이고 반은 저쪽인 보관함을
 기록하는 일은 없습니다.
 
-그 히스토리는 `config.json`과 `sessions.json`을 빼놓고, 0.4.x부터 그래
-왔습니다. 그래도 둘을 담고 있을 수 있는 보관함이 두 가지 있습니다. 그보다
-오래된 보관함은 초기 커밋에, 0.12.1 이전에 «모든 데이터 지우기»로 지운
-보관함은 지운 뒤 새 히스토리가 자기 폴더와 함께 커밋한 데에 담고 있습니다.
-그러면 그동안의 비밀번호 해시와 인증 앱 비밀키와 Lichess 토큰이 백업마다,
-내려받은 사본마다 따라갑니다. 서버가 그런 커밋을 찾으면 시작할 때 알리고,
-설정 → 보안 맨 위에 «변경 기록에 남은 옛 비밀 정보»가 나타납니다. **옛 비밀
-정보 제거**가 모든 문서의 모든 버전은 그대로 둔 채 모든 저장을 그것들 없이
-다시 쓰고, 옛 사본을 히스토리에서 삭제합니다. 이미 내려받았거나 다른
+그 히스토리는 0.4.x부터 그래 왔듯 `config.json`과 `sessions.json`을
+빼놓고, 자기 폴더, 책마다의 PDF와 `open.bin`, `sources/`의 PGN 파일, 복원의
+작업 폴더, `.part`와 `.swp` 파일도 빼놓습니다. 그래도 그중 일부를 담고 있을
+수 있는 보관함이 두 가지 있습니다. 제외 목록보다 오래된 보관함은 초기 커밋에,
+0.12.1 이전에 «모든 데이터 지우기»로 지운 보관함은 지운 뒤 서버가 다시 시작할
+때까지 새 히스토리가 모든 것을 커밋한 데에 담고 있습니다. 그러면 그동안의
+비밀번호 해시와 인증 앱 비밀키와 Lichess 토큰, 책마다의 PDF, 수 GB의 PGN
+파일이 백업마다, 내려받은 사본마다 따라갑니다. 서버가 그런 커밋을 찾으면
+시작할 때 알리고, 설정 → 보안 맨 위에 «변경 기록에 남은 옛 비밀 정보»가(비밀
+정보가 없으면 «변경 기록에 남은 옛 파일»이) 그 파일과 크기를 보여 주며
+나타납니다. **옛 비밀 정보 제거**(또는 **옛 파일 제거**)가 모든 문서의 모든
+버전은 그대로 둔 채 모든 저장을 폴더 안 어느 깊이에 있든 그것들 없이 다시
+쓰고, 옛 사본을 히스토리에서 삭제합니다. 이미 내려받았거나 다른
 기계로 가져간 사본은 옛 값을 그대로 갖고 있으므로, 그다음 히스토리에
 있던 것과 각각을 막는 방법을 알려 줍니다. 아직 쓰는 앱 비밀번호나 2단계
 인증 비밀키는 같은 카드에서 바꾸고, 옛 비밀번호는 아직 쓰는 곳에서
@@ -420,7 +424,7 @@ SSH는 공개 인터넷에 두지 마세요. `deploy.sh`가 네트워크에 바�
 ```bash
 h=vault/.history.git
 git --git-dir=$h config core.bare true    # filter-branch가 작업 트리 없이 돌도록
-git --git-dir=$h filter-branch --index-filter 'git rm -r -q --cached --ignore-unmatch config.json sessions.json .history.git' -- --all
+git --git-dir=$h filter-branch --index-filter 'git rm -r -q --cached --ignore-unmatch -- config.json sessions.json .history.git .restore sources "books/*/book.pdf" "books/*/open.bin" "*.part" "*.swp"' -- --all
 git --git-dir=$h for-each-ref --format='delete %(refname)' refs/original | git --git-dir=$h update-ref --stdin
 git --git-dir=$h read-tree HEAD
 git --git-dir=$h reflog expire --expire=now --all
