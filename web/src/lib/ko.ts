@@ -2094,6 +2094,8 @@ export const ko: Record<string, string> = {
     "복원한 보관함을 유지하지 못했으므로 복원은 아직 되돌릴 수 있습니다.",
   "Nothing is set aside.": "비켜 둔 것이 없습니다.",
   "Could not delete the set-aside folders yet.": "아직 비켜 둔 폴더를 삭제하지 못했습니다.",
+  "A download of the set-aside folders is still running. Try again once it finishes.":
+    "비켜 둔 폴더를 아직 내려받는 중입니다. 내려받기가 끝나면 다시 시도하세요.",
 
   // --- puzzle themes and panel labels --------------------------------------
   "New study": "새 스터디",

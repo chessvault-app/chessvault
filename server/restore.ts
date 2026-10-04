@@ -594,6 +594,8 @@ const STUCK = 'The vault is still part way through a restore. Put it back under 
 
 const NOTHING_KEPT = 'Nothing is set aside.';
 
+const DOWNLOADING = 'A download of the set-aside folders is still running. Try again once it finishes.';
+
 /**
  * The folder a set is unpacked into, in the server's own time: when the
  * put-back set it aside, and what it is. In English, as the vault's own
@@ -734,6 +736,14 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
     });
   /** One restore, undo, keep, put-back or delete of set-aside folders at a time. */
   let running = false;
+  /**
+   * Downloads of what a put-back set aside still being streamed. The
+   * delete waits for them: it took the folders from under one part way,
+   * and the download then ended as a tar that read as whole, end marker
+   * and all, without what came after that point (measured on a server
+   * run from source: 150 of 1,200 files, with the delete answering 200).
+   */
+  let downloading = 0;
 
   const newWork = (): { id: string; dir: string } => {
     // Never a folder a put-back set aside, which stays beside a later restore.
@@ -793,9 +803,10 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
    * apart and nothing unpacks onto the vault's own folders. Streamed as
    * "Download a copy" is, with the same writer. Not while a restore, an
    * undo, a put-back or a delete is moving folders; otherwise it holds
-   * nothing back, since what it reads is in no folder an autosave, a
-   * build or a put-back writes, and a stream a sleeping phone stalls
-   * must not hold up "Put the vault back".
+   * nothing back but the delete of these same folders, since what it
+   * reads is in no folder an autosave, a build or a put-back writes, and
+   * a stream a sleeping phone stalls must not hold up "Put the vault
+   * back".
    */
   api.get('/storage/restore/kept', (c) => {
     if (running) return c.json({ error: RUNNING }, 409);
@@ -812,21 +823,35 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
     c.header('Content-Type', 'application/x-tar');
     c.header('Content-Disposition', attachment(backupFilename(vault, options.name?.() ?? null, new Date(), 'set aside')));
     c.header('Cache-Control', 'no-store');
-    return c.body(Readable.toWeb(tarPaths(items)) as ReadableStream);
+    // The headers alone for a HEAD, whose stream nobody would read or
+    // close, and which would hold the delete off until a restart.
+    if (c.req.method === 'HEAD') return c.body(null);
+    const tar = tarPaths(items);
+    downloading += 1;
+    // Closed once read to its end or given up part way, whichever.
+    tar.once('close', () => {
+      downloading -= 1;
+    });
+    // A client gone before its first byte was written never reads the
+    // stream nor cancels it, which would keep it, and a file, open.
+    c.req.raw.signal.addEventListener('abort', () => tar.destroy(), { once: true });
+    return c.body(Readable.toWeb(tar) as ReadableStream);
   });
 
   /**
    * Delete what a put-back set aside, which the card asks first. Under
    * what a put-back takes (one at a time, no database build, the history
    * to itself), and never while a restore stands part way, whose own
-   * folders are set aside beside these. One rename per set ends it, so a
-   * file another program holds refuses before anything is deleted; the
-   * delete after it can take its time, and what it leaves the next start
-   * or put-back sweeps, as after a keep.
+   * folders are set aside beside these, nor while a download of them is
+   * still being read, which it would cut short. One rename per set ends
+   * it, so a file another program holds refuses before anything is
+   * deleted; the delete after it can take its time, and what it leaves
+   * the next start or put-back sweeps, as after a keep.
    */
   api.delete('/storage/restore/kept', async (c) => {
     if (running) return c.json({ error: RUNNING }, 409);
     if (existsSync(journalPath(vault))) return c.json({ error: STUCK, reason: 'stuck' }, 409);
+    if (downloading > 0) return c.json({ error: DOWNLOADING }, 409);
     const sets = keptSets(vault);
     if (sets.length === 0) return c.json({ error: NOTHING_KEPT }, 409);
     const reason = options.busy?.();

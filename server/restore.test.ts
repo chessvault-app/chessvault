@@ -1255,6 +1255,45 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     expect(read(target.vault, '.restore/a0000001/out/notes/Mine.md')).toBe('mine\n');
   });
 
+  it('deletes nothing set aside while a download of it is still being read, so the download holds all of it', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    // Laid out as a vault's books are, a folder per book, and big enough
+    // that the download is still being read when Delete is pressed. A
+    // delete let through here took the folders from under the stream,
+    // which then ended as a whole-looking tar without the rest.
+    for (let i = 0; i < 200; i += 1) {
+      const book = `.restore/a0000001/out/books/b${String(i).padStart(4, '0')}`;
+      put(target.vault, `${book}/book.json`, `{"title":"Book ${i}"}\n`);
+      put(target.vault, `${book}/book.pdf`, Buffer.alloc(20_000, i));
+    }
+    recoverInterruptedRestore(target.vault);
+    const { app, state, dropKept } = restorer(target.vault);
+    expect((await state()).kept).toMatchObject({ folders: ['books'], files: 400 });
+
+    const reader = (await app.request('/api/storage/restore/kept')).body!.getReader();
+    const pieces: Uint8Array[] = [(await reader.read()).value!];
+    const early = await dropKept();
+    expect(early.status).toBe(409);
+    expect((await early.json()).error).toBe('A download of the set-aside folders is still running. Try again once it finishes.');
+    for (let next = await reader.read(); !next.done; next = await reader.read()) pieces.push(next.value);
+    const files = Object.keys(await unpack(Buffer.concat(pieces))).filter((path) => !path.endsWith('/'));
+    expect(files).toHaveLength(400);
+
+    // Neither a HEAD nor a download given up part way holds it off.
+    expect((await app.request('/api/storage/restore/kept', { method: 'HEAD' })).status).toBe(200);
+    const abandoned = (await app.request('/api/storage/restore/kept')).body!.getReader();
+    await abandoned.read();
+    await abandoned.cancel();
+    let dropped = await dropKept();
+    for (let tries = 0; dropped.status === 409 && tries < 40; tries += 1) {
+      await new Promise((done) => setTimeout(done, 25));
+      dropped = await dropKept();
+    }
+    expect(dropped.status).toBe(200);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
+  });
+
   it('puts a stuck vault back only for a signed-in client, one at a time, and not while a build reads its files', async () => {
     const target = scratch('target');
     fillTarget(target.vault);
