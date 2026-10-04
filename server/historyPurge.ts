@@ -38,8 +38,9 @@ import { git, gitPipe } from './vaultGit.ts';
  * of them) less the named paths, so fast-import builds only the folders
  * that changed, each as a change to the parent's; every other save as its
  * root less what the list names there (a second `cat-file --batch`), with
- * every folder under it reused by id. The obvious plumbing, `ls-tree`, `mktree` and `commit-tree` per save, is
- * three processes a save, and one measured 28 ms on a Windows desktop
+ * every folder under it reused by id. The obvious plumbing, `ls-tree`,
+ * `mktree` and `commit-tree` per save, is three processes a save, and one
+ * measured 28 ms on a Windows desktop
  * (200 `commit-tree`s in 5.6 s): about four minutes for 3,000 saves.
  */
 
