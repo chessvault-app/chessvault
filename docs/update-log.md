@@ -7,6 +7,23 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Settings can delete a puzzle dump in the data folder.** A Lichess
+  dump beside the puzzle database as `lichess_db_puzzle.csv.zst` was
+  kept by every build, and only a build asked for the newest puzzles
+  deleted it, once it had built. So the 300 MB stayed on a server whose
+  database was built, and getting it back, or having the first build
+  download instead of reading a stale file, meant deleting it on the
+  server's disk. Wherever a dump is in place, Settings → **Puzzle
+  database** now shows it on a row of its own with its size, and the
+  bin beside it asks first, naming the file and its size and saying
+  what changes: the database keeps working, and the next build or
+  rebuild downloads the newest puzzles, about 300 MB. After it, the
+  card, the Puzzles page, the phone's puzzle hub and Themes and the
+  rebuild question all read as with no dump. It waits while a build
+  runs. The Puzzles page's setup screen does not offer it: its
+  question's "Download the newest puzzles" already gets past a stale
+  dump, and keeps it until the new database is built.
+
 ## 0.12.2
 
 The app now puts back a stopped restore, gets the newest puzzles past a dump
