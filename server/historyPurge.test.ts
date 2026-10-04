@@ -333,6 +333,48 @@ describe('removing old secrets from the history', { timeout: 30_000 }, () => {
     expect(run(['show', 'HEAD:notes/Plans.md'])).toBe('# Plans\n\nMain line.\n');
   });
 
+  it('keeps every name in its own case where the repo folds case', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'history-purge-'));
+    write('notes/Plans.md', '# Plans\n');
+    backup = await startVaultBackup(dir, QUIET);
+    // Saves made where names keep their case (a server on Linux) and taken
+    // in by a repo that folds them, as `git init` makes one on Windows and
+    // macOS: a study renamed from najdorf to Najdorf, and two notes whose
+    // names differ only in case, while a swap file sat beside them, so each
+    // save is written as its changes.
+    const branch = run(['symbolic-ref', 'HEAD']).trim();
+    const saved = (message: string, changes: [string, string | null][]): string =>
+      `commit ${branch}\ncommitter Chess Vault <vault@localhost> 1700000000 +0000\ndata ${message.length}\n${message}\n` +
+      changes.map(([path, text]) => (text === null ? `D ${path}\n` : `M 100644 inline ${path}\ndata ${Buffer.byteLength(text)}\n${text}\n`)).join('') +
+      '\n';
+    run(
+      ['-c', 'core.ignorecase=false', 'fast-import', '--quiet', '--done'],
+      `reset ${branch}\nfrom ${run(['rev-parse', 'HEAD']).trim()}\n\n` +
+        saved('older version', [
+          ['studies/najdorf.pgn', '1. e4 c5 *\n'],
+          ['notes/a.md', 'lower\n'],
+          ['notes/A.md', 'UPPER\n'],
+          ['notes/.a.md.swp', 'unsaved\n'],
+        ]) +
+        saved('renamed', [
+          ['studies/najdorf.pgn', null],
+          ['studies/Najdorf.pgn', '1. e4 c5 *\n'],
+          ['notes/A.md', 'UPPER, twice\n'],
+          ['notes/.a.md.swp', 'unsaved, twice\n'],
+        ]) +
+        'done\n',
+    );
+    run(['config', 'core.ignorecase', 'true']);
+    const before = saves();
+
+    await backup.purge();
+    expect(saves()).toEqual(before);
+    expect(everyPath().filter(({ path }) => isPlanted(path))).toEqual([]);
+    expect(run(['show', 'HEAD:studies/Najdorf.pgn'])).toBe('1. e4 c5 *\n');
+    expect(run(['show', 'HEAD:notes/a.md'])).toBe('lower\n');
+    expect(run(['show', 'HEAD:notes/A.md'])).toBe('UPPER, twice\n');
+  });
+
   it('looks everywhere once, then at the saves made since, and again from scratch when a save it kept is gone', async () => {
     dir = mkdtempSync(join(tmpdir(), 'history-purge-'));
     write('notes/Plans.md', '# Plans\n');

@@ -903,7 +903,19 @@ export async function purgeHistory(gitDir: string, dir: string): Promise<PurgeOu
   let rewritten: Map<string, string>;
   try {
     // The 'done' feature: a stream cut short is an error, not a short history.
-    await gitPipe(gitDir, dir, ['fast-import', '--quiet', '--done', '--force', `--export-marks=${marksFile}`], Buffer.concat(parts));
+    // Case kept: under core.ignorecase, which `git init` sets on Windows and
+    // macOS, fast-import takes a path for any entry spelled the same in
+    // another case, so a save written as its changes lost a study renamed
+    // from `najdorf` to `Najdorf`, and of `a.md` and `A.md` beside each
+    // other kept one name with the other's content. A history made on a
+    // case-sensitive server and restored here holds both shapes; every path
+    // in this stream is spelled as the tree it came from spells it.
+    await gitPipe(
+      gitDir,
+      dir,
+      ['-c', 'core.ignorecase=false', 'fast-import', '--quiet', '--done', '--force', `--export-marks=${marksFile}`],
+      Buffer.concat(parts),
+    );
     const byMark = new Map<number, string>();
     for (const line of readFileSync(marksFile, 'latin1').split('\n').filter(Boolean)) {
       const [mark = '', id = ''] = line.split(' ');
