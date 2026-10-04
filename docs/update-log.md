@@ -7,6 +7,22 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Settings → Vault says why Download a copy and Restore from a copy are
+  off.** While a restore waits to be kept or undone, “Restore from a copy”
+  cannot be pressed, and while one is stopped part way, neither it nor
+  Download a copy can. The only word on why was each button's tooltip,
+  which a disabled button never shows, to a mouse, a key or a finger. The
+  card now says it: a waiting restore's line ends “Keep or undo this restore
+  before restoring another copy.”, and a stopped one's warning ends “Put the
+  vault back before downloading or restoring a copy.” Each button that waits
+  is described by that sentence, so a screen reader reads it with the button.
+  Tried on a server with each state made by hand, in a browser at a
+  desktop's and an iPhone's size in both languages: 0.12.2's card said
+  nothing about the buttons, gave them no description and showed no tooltip
+  when Restore from a copy was hovered or tapped, and the card now shows the
+  sentence and describes the buttons by it. Not tried on a device or with a
+  screen reader itself.
+
 ## 0.12.2
 
 The app now puts back a stopped restore, gets the newest puzzles past a dump
