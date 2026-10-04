@@ -173,7 +173,15 @@ function restorer(vault: string, options: RestoreOptions = {}) {
     keep: () => app.request('/api/storage/restore/keep', { method: 'POST' }),
     recover: () => app.request('/api/storage/restore/recover', { method: 'POST' }),
     keptCopy: () => app.request('/api/storage/restore/kept'),
-    dropKept: () => app.request('/api/storage/restore/kept', { method: 'DELETE' }),
+    /** As the card asks: for the sets GET says are there, unless told which. */
+    dropKept: async (sets?: string[]) =>
+      app.request('/api/storage/restore/kept', {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          sets: sets ?? ((await (await app.request('/api/storage/restore')).json()) as { kept: { sets: string[] } | null }).kept?.sets ?? [],
+        }),
+      }),
   };
 }
 
@@ -1093,7 +1101,7 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     // that the vault was back.
     const res = await recover();
     expect(res.status).toBe(200);
-    const kept = { folders: ['notes'], files: 5, bytes: expect.any(Number) };
+    const kept = { folders: ['notes'], files: 5, bytes: expect.any(Number), sets: [expect.any(String)] };
     expect(await res.json()).toEqual({ ok: true, kept });
     // They are kept where the undo put them, not swept away with the work
     // folder, and the restore it stopped is still pending.
@@ -1161,7 +1169,7 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     // Put back at a start: the vault's own notes cannot go home.
     expect(recoverInterruptedRestore(target.vault)).toBe('whole');
     const { restore, state, undo, keep, keptCopy, dropKept } = restorer(target.vault);
-    const kept = { folders: ['notes'], files: 1, bytes: Buffer.byteLength(gone) };
+    const kept = { folders: ['notes'], files: 1, bytes: Buffer.byteLength(gone), sets: ['c0ffee01'] };
     expect(await state()).toMatchObject({ stuck: false, pending: null, kept });
 
     const files = await unpack(Buffer.from(await (await keptCopy()).arrayBuffer()));
@@ -1220,7 +1228,8 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     recoverInterruptedRestore(target.vault);
     expect(readdirSync(work).sort()).toEqual(['a0000001', 'a0000002']);
     const { state, keptCopy } = restorer(target.vault);
-    expect((await state()).kept).toEqual({ folders: ['notes'], files: 2, bytes: 11 });
+    expect((await state()).kept).toMatchObject({ folders: ['notes'], files: 2, bytes: 11 });
+    expect((await state()).kept.sets.sort()).toEqual(['a0000001', 'a0000002']);
     const files = await unpack(Buffer.from(await (await keptCopy()).arrayBuffer()));
     const paths = Object.keys(files).filter((path) => !path.endsWith('/'));
     expect(paths).toHaveLength(2);
@@ -1292,6 +1301,35 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     }
     expect(dropped.status).toBe(200);
     expect(existsSync(join(target.vault, '.restore'))).toBe(false);
+  });
+
+  it('deletes only the set-aside folders its question named, not what a put-back set aside since', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    put(target.vault, '.restore/a0000001/out/notes/Mine.md', 'mine\n');
+    recoverInterruptedRestore(target.vault);
+    const { app, state, dropKept } = restorer(target.vault);
+    const asked = (await state()).kept;
+    expect(asked).toEqual({ folders: ['notes'], files: 1, bytes: 5, sets: ['a0000001'] });
+    // While the question stands open, another device puts back a stopped
+    // restore and sets the vault's studies aside, as finishInterruptedSwap
+    // records it. The delete took that too, though nothing had named it.
+    put(target.vault, '.restore/b0000002/out/studies/Mine.pgn', 'mine too\n');
+    put(target.vault, '.restore/b0000002/kept.json', `${JSON.stringify({ at: new Date().toISOString(), from: 'restore', entries: ['out/studies'] })}\n`);
+
+    const dropped = await dropKept(asked.sets);
+    expect(dropped.status).toBe(200);
+    expect(await dropped.json()).toEqual({ ok: true, freed: 5 });
+    expect(read(target.vault, '.restore/b0000002/out/studies/Mine.pgn')).toBe('mine too\n');
+    expect((await state()).kept).toEqual({ folders: ['studies'], files: 1, bytes: 9, sets: ['b0000002'] });
+    // Handed nothing, or only sets that are gone, it deletes nothing.
+    for (const sets of [[], ['a0000001']]) {
+      const res = await dropKept(sets);
+      expect(res.status).toBe(409);
+      expect((await res.json()).error).toBe('Nothing is set aside.');
+    }
+    expect((await app.request('/api/storage/restore/kept', { method: 'DELETE' })).status).toBe(409);
+    expect(read(target.vault, '.restore/b0000002/out/studies/Mine.pgn')).toBe('mine too\n');
   });
 
   it('puts a stuck vault back only for a signed-in client, one at a time, and not while a build reads its files', async () => {

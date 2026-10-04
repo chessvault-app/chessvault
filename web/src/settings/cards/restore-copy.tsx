@@ -23,6 +23,9 @@ export interface SetAside {
   folders: string[];
   files: number;
   bytes: number;
+  /** Which sets these are, handed back to the delete so that it takes
+      only what its question named. */
+  sets: string[];
 }
 
 /** What GET /api/storage/restore answers. */
@@ -369,11 +372,14 @@ export function RestoreKept({ state, reload }: { state: RestoreState | null; rel
   if (!kept) return note ? <Feedback note={note} /> : null;
   const folders = kept.folders.join(', ');
 
+  // The sets the question was drawn from: what another device's put-back
+  // sets aside while it is open is not among them, and stays.
+  const sets = kept.sets;
   const drop = async (): Promise<void> => {
     setBusy(true);
     let freed: number;
     try {
-      freed = (await api<{ freed: number }>('/api/storage/restore/kept', { method: 'DELETE' })).freed;
+      freed = (await api<{ freed: number }>('/api/storage/restore/kept', { method: 'DELETE', json: { sets } })).freed;
     } catch (error) {
       setNote({ kind: 'error', text: apiErrorMessage(error) });
       setBusy(false);

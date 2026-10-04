@@ -220,6 +220,9 @@ interface KeptSummary {
   folders: string[];
   files: number;
   bytes: number;
+  /** The work folders these are in, which the delete is handed back so
+      it takes only what the card said it would. */
+  sets: string[];
 }
 
 /** An entry a record may name: one or two plain names under its work folder. */
@@ -312,7 +315,7 @@ async function keptSummary(vault: string, sets: KeptSet[]): Promise<KeptSummary 
       }
     }
   }
-  return { folders, files, bytes };
+  return { folders, files, bytes, sets: sets.map((set) => set.id) };
 }
 
 /**
@@ -843,16 +846,23 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
    * what a put-back takes (one at a time, no database build, the history
    * to itself), and never while a restore stands part way, whose own
    * folders are set aside beside these, nor while a download of them is
-   * still being read, which it would cut short. One rename per set ends
-   * it, so a file another program holds refuses before anything is
-   * deleted; the delete after it can take its time, and what it leaves
-   * the next start or put-back sweeps, as after a keep.
+   * still being read, which it would cut short. It takes only the sets
+   * it is handed (`sets` from GET's `kept`, which the card's question
+   * was drawn from): a put-back on another device, or at a start, while
+   * the question stood open set more aside, and the delete took those
+   * too, unnamed. One rename per set ends it, so a file another program
+   * holds refuses before anything is deleted; the delete after it can
+   * take its time, and what it leaves the next start or put-back sweeps,
+   * as after a keep.
    */
   api.delete('/storage/restore/kept', async (c) => {
+    // Read before the checks, so nothing awaits between them and `running`.
+    const asked = await c.req.json<{ sets?: unknown }>().catch(() => null);
+    const named = new Set(Array.isArray(asked?.sets) ? asked.sets.filter((id): id is string => typeof id === 'string') : []);
     if (running) return c.json({ error: RUNNING }, 409);
     if (existsSync(journalPath(vault))) return c.json({ error: STUCK, reason: 'stuck' }, 409);
     if (downloading > 0) return c.json({ error: DOWNLOADING }, 409);
-    const sets = keptSets(vault);
+    const sets = keptSets(vault).filter((set) => named.has(set.id));
     if (sets.length === 0) return c.json({ error: NOTHING_KEPT }, 409);
     const reason = options.busy?.();
     if (reason) return c.json({ error: reason }, 409);
