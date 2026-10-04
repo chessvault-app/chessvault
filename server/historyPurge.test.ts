@@ -490,6 +490,24 @@ describe('removing old secrets from the history', { timeout: 30_000 }, () => {
     expect(configNow()).not.toHaveProperty('lichessToken');
   });
 
+  it('sends nothing where config.json cannot say which token is in use', async () => {
+    await tokenVault();
+    const app = purgeApp(fakeLichess().fetcher);
+    // Asked while config.json could be read: the token in use is its own row.
+    expect(JSON.parse(await (await app.request('/api/history/purge')).text()).secrets.token).toEqual({ current: true, past: 2 });
+    // Then, by the time of the purge, it cannot: read as no token in use,
+    // the one in use would go to Lichess on a choice that left it out.
+    write('config.json', `{"lichessToken": "${IN_USE}",`);
+    const lichess = fakeLichess();
+    const { status, text, logged } = await purgeWith(purgeApp(lichess.fetcher), { revokeTokens: { past: true, current: false } });
+    expect(status).toBe(200);
+    expect(JSON.parse(text)).toMatchObject({ ok: true, pruned: true, tokens: null });
+    expect(lichess.sent).toEqual([]);
+    expect(run(['log', '--all', '--full-history', '--format=%H', '--', 'config.json'])).toBe('');
+    expect(logged).toContain('no token was sent');
+    holdsNoToken(text, logged);
+  });
+
   it('finishes the purge when Lichess cannot be reached, and says so', async () => {
     await tokenVault();
     const lichess = fakeLichess((token) => (token === OLD_ONE ? 500 : 'unreachable'));

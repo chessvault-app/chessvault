@@ -414,12 +414,12 @@ async function heldSecrets(gitDir: string, dir: string, configs: string[], now: 
  * config.json still holds that one, so a token saved since is kept.
  */
 async function revokeHeld(gitDir: string, dir: string, configs: string[], ask: TokenRevoke): Promise<TokensRevoked> {
+  const inUse = tokenInUse(dir);
   const held = new Set<string>();
   for (const version of await readObjects(gitDir, dir, configs)) {
     const token = secretsIn(version)?.token;
     if (token) held.add(token);
   }
-  const inUse = secretsInUse(dir)?.token ?? null;
   const count = (): RevokeCount => ({ revoked: 0, invalid: 0, failed: 0 });
   const tokens: TokensRevoked = { past: count(), current: count() };
   await Promise.all(
@@ -435,6 +435,28 @@ async function revokeHeld(gitDir: string, dir: string, configs: string[], ask: T
   const said = (kind: RevokeCount): string => `${kind.revoked} revoked, ${kind.invalid} already invalid, ${kind.failed} not revoked`;
   console.log(`[vault-backup] Lichess tokens the vault no longer uses: ${said(tokens.past)}; the token in use: ${said(tokens.current)}`);
   return tokens;
+}
+
+/**
+ * The Lichess token in use, as the revoke must know it: none where there
+ * is no config.json, and a throw where there is one that cannot be read
+ * or is not a JSON object. Either, read as no token in use (as
+ * secretsInUse reads a failed read), would make the token in use one the
+ * vault no longer uses, and send it to Lichess on a choice that left it
+ * out. So nothing is sent, and the line after the purge gives the old
+ * advice for every token.
+ */
+function tokenInUse(dir: string): string | null {
+  let raw: Buffer;
+  try {
+    raw = readFileSync(resolve(dir, 'config.json'));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw new Error(`config.json could not be read (${(error as NodeJS.ErrnoException).code ?? 'unknown'}), so no token was sent`);
+  }
+  const now = secretsIn(raw);
+  if (now === null) throw new Error('config.json is not a settings object, so no token was sent');
+  return now.token;
 }
 
 /** Take `token` out of config.json, if it is still the one there. */
