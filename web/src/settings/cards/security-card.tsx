@@ -406,13 +406,17 @@ function afterwards(
   return { done, lines, lichess };
 }
 
-/** What is left to do once the history no longer holds them: what was
-    done at Lichess, then the question's sentences for what is not. */
+/** What is left to do once the history no longer holds them: the
+    question's sentences for what is not done, then what was done at
+    Lichess. In that order because each "among them" means the secrets a
+    copy still holds: after "Lichess deleted 2 old tokens.", the "them" of
+    "A copy downloaded before still holds them." read as those two, and
+    the token in use as one of them. */
 function purgedLine(held: Held, { done, lines }: { done: string[]; lines: string[] }): string {
   if (held === 'files') return t('The history no longer holds a copy of its own files.');
   if (held === 'settings') return t('The history no longer holds old copies of the vault’s settings.');
   const left = lines.length === 0 ? [] : [t('A copy downloaded before still holds them.'), ...lines];
-  return [t('The old secrets are out of the history.'), ...done, ...left].join(' ');
+  return [t('The old secrets are out of the history.'), ...left, ...done].join(' ');
 }
 
 /**
