@@ -1,7 +1,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync, type FSWatcher } from 'node:fs';
 import { resolve } from 'node:path';
-import { historyExcludeFile } from './historyExcludes.ts';
+import { historyExcludeFile, historyMatcherFor } from './historyExcludes.ts';
 import { finishInterruptedPurge, forgetHistoryLeaks, historyCount, historyLeaks, purgeHistory, type HistoryLeaks, type PurgeOutcome } from './historyPurge.ts';
 import { VAULT } from './paths.ts';
 import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME, restoreJournalPath, unsafeHistoryRepo } from './vaultGit.ts';
@@ -70,36 +70,24 @@ export interface VaultBackup {
  */
 export async function prepareHistoryRepo(gitDir: string, dir: string): Promise<void> {
   writeFileSync(resolve(gitDir, 'info', 'exclude'), historyExcludeFile());
-  // Untrack them if an earlier version committed any; --ignore-unmatch
-  // makes this a no-op once clean. Leaves the working files intact. The
-  // per-book files are listed first and then named one by one: the
-  // helper passes --literal-pathspecs, which turns off pathspec magic
-  // as well as globs, so the `:(glob)books/*/book.pdf` this once passed
-  // named a file of that literal name and untracked nothing.
-  // In batches: a path is about 35 characters, and Windows refuses a
-  // command line past 32,767, which a long shelf would otherwise reach.
-  const perBook = (await git(gitDir, dir, ['ls-files', '-z', '--', 'books']).catch(() => ''))
-    .split('\0')
-    .filter((path) => /^books\/[^/]+\/(book\.pdf|open\.bin)$/.test(path));
-  const untrack = ['config.json', 'sessions.json', ...perBook];
+  // Untrack whatever of the list the index holds, which an exclude never
+  // does: an older version committed some of it, and a wipe before the
+  // one that writes this exclude at once (server/settings.ts) let the
+  // autosave track everything, the repo's own folder, book PDFs and the
+  // databases' PGN files included, and every save after a restart went on
+  // committing them. Leaves the working files intact. git lists what the
+  // list's globs reach, and the list's own matcher says which part of
+  // each path it names, so a folder goes as one `-r` path however many
+  // files it holds; the paths go back to git by name (the helper's
+  // default --literal-pathspecs), in batches, since a path is about 35
+  // characters and Windows refuses a command line past 32,767.
+  const matcher = await historyMatcherFor(gitDir, dir);
+  const listed = (await git(gitDir, dir, ['ls-files', '-z', '--', ...matcher.pathspecs], matcher.mode).catch(() => '')).split('\0');
+  const untrack = [...new Set(listed.flatMap((path) => matcher.within(path)?.at ?? []))];
   for (let at = 0; at < untrack.length; at += 200) {
     const batch = untrack.slice(at, at + 200);
-    await git(gitDir, dir, ['rm', '--cached', '--quiet', '--ignore-unmatch', ...batch]).catch(() => undefined);
+    await git(gitDir, dir, ['rm', '-r', '--cached', '--quiet', '--ignore-unmatch', '--', ...batch]).catch(() => undefined);
   }
-  // The repo's own folder and a restore's work folder, which are folders,
-  // hence -r. A wipe before the one that writes this exclude at once
-  // (server/settings.ts) let the autosave track .history.git itself, and
-  // an exclude never untracks what the index already holds: every save
-  // after a restart went on committing the repo's own index and refs.
-  await git(gitDir, dir, [
-    'rm',
-    '-r',
-    '--cached',
-    '--quiet',
-    '--ignore-unmatch',
-    HISTORY_DIR_NAME,
-    RESTORE_DIR_NAME,
-  ]).catch(() => undefined);
   // Untracking stops here; it does not reach into commits already made.
   // The open caches an earlier version committed stay in the repo's
   // objects until its history is rewritten: dead weight rather than a

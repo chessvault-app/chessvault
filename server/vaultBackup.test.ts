@@ -137,6 +137,35 @@ describe('vault backup', () => {
     expect(existsSync(join(book, 'open.bin'))).toBe(true);
   });
 
+  it('untracks everything else of the list a wipe let the autosave commit, at its depth', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'vault-backup-'));
+    const files = {
+      'sources/twic1500.pgn': '[Event "x"]\n\n1. e4 *\n',
+      'notes/Plans.md.part': 'half an upload',
+      'notes/Openings/.Najdorf.md.swp': 'unsaved',
+      '.restore/before/notes/Plans.md': 'a vault set aside',
+      'notes/sources/Reading list.md': '# Reading list\n',
+      'notes/Plans.md': '# Plans\n',
+    };
+    for (const [path, content] of Object.entries(files)) {
+      mkdirSync(join(dir, path, '..'), { recursive: true });
+      writeFileSync(join(dir, path), content);
+    }
+    backup = await startVaultBackup(dir, 50);
+    // What the autosave committed after a wipe that re-made the repo with
+    // no exclude list, by force now that the exclude is there.
+    const gitDir = join(dir, '.history.git');
+    await git(gitDir, dir, ['add', '-f', ...Object.keys(files)]);
+    await git(gitDir, dir, ['commit', '-q', '-m', 'after a wipe']);
+    expect(tracked(dir).split('\n')).toEqual(expect.arrayContaining(Object.keys(files)));
+    await backup.stop();
+
+    backup = await startVaultBackup(dir, 50);
+    const after = tracked(dir).split('\n').filter(Boolean);
+    expect(after.sort()).toEqual(['notes/Plans.md', 'notes/sources/Reading list.md']);
+    for (const path of Object.keys(files)) expect(existsSync(join(dir, path))).toBe(true);
+  });
+
   it('untracks the history repo\'s own folder a wipe let the autosave commit', async () => {
     dir = mkdtempSync(join(tmpdir(), 'vault-backup-'));
     writeFileSync(join(dir, 'games.json'), '{"a":1}\n');
