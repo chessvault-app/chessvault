@@ -28,8 +28,10 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   are there, whether the card or a start put the vault back, it says which
   they are and how big, with “Download the folders”, one tar file of only
   those, each set inside a folder named for when it was set aside and
-  what it is, and “Delete the folders”, which asks first. A later restore
-  goes ahead beside them, and folders an older version set aside are
+  what it is, and “Delete the folders”, which asks first, deletes only
+  what it asked about, and is refused while a download of them is still
+  running. A later restore goes ahead beside them, and folders an older
+  version set aside are
   offered the same way. Tried on a server run from source, at a desktop's
   and an iPhone's size in both languages: after a real restore stopped by
   two other programs holding files open and notes made again meanwhile,
