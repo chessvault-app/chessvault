@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArchiveRestore, TriangleAlert } from 'lucide-react';
+import { ArchiveRestore, Trash2, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { FilePicker } from '@/components/file-picker';
@@ -17,6 +17,14 @@ import { Feedback, size, type Note } from '@/settings/cards/shared';
 // draws the button beside the download and, while a restore waits to be
 // kept or undone, the line that says so with its two verbs.
 
+/** What a put-back had to set aside, as the server says it. */
+export interface SetAside {
+  /** The vault folders (or files) set aside, by name: `notes`. */
+  folders: string[];
+  files: number;
+  bytes: number;
+}
+
 /** What GET /api/storage/restore answers. */
 export interface RestoreState {
   /** A restore waiting to be kept or undone, and what the vault it replaced takes. */
@@ -25,6 +33,10 @@ export interface RestoreState {
       back: the vault is half of one and half of another until it is put
       back, and `pending` is null until then. */
   stuck: boolean;
+  /** What a put-back could not move home, because something else had
+      made one of the vault's folders again, and kept on the server until
+      it is downloaded and deleted. Absent from a server before it. */
+  kept?: SetAside | null;
   /** What a restore would do with the history, said before it starts. */
   history: 'adopt' | 'keep' | 'none';
   /** Free bytes where the vault is, or null when the server cannot say. */
@@ -339,6 +351,80 @@ export function RestorePending({ state, reload }: { state: RestoreState | null; 
   );
 }
 
+/**
+ * What a put-back could not move home (server/restore.ts): a folder the
+ * restore or its undo had set aside, whose place in the vault something
+ * outside the server had taken by then, such as a sync client making the
+ * folder again. It is in no folder of the vault, so no page and no
+ * downloaded copy reaches it: the card says what it is and offers it to
+ * download and to delete, for as long as it is there, whichever put-back
+ * set it aside, this card's or a start's. Nothing while there is none, and
+ * nothing while a restore stands part way, whose warning is said alone.
+ */
+export function RestoreKept({ state, reload }: { state: RestoreState | null; reload: () => Promise<void> }) {
+  const [asking, setAsking] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<Note>(null);
+  const kept = state?.stuck ? null : state?.kept;
+  if (!kept) return note ? <Feedback note={note} /> : null;
+  const folders = kept.folders.join(', ');
+
+  const drop = async (): Promise<void> => {
+    setBusy(true);
+    let freed: number;
+    try {
+      freed = (await api<{ freed: number }>('/api/storage/restore/kept', { method: 'DELETE' })).freed;
+    } catch (error) {
+      setNote({ kind: 'error', text: apiErrorMessage(error) });
+      setBusy(false);
+      // A delete that took some of them, or a restore that stuck since:
+      // the card draws what is there now.
+      await reload();
+      return;
+    }
+    setNote({ kind: 'ok', text: t('Deleted. {size} freed.', { size: size(freed) }) });
+    setBusy(false);
+    await reload();
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-sm">
+        {t('The server keeps {folders} set aside, {size}, because something else had taken their place when the vault was put back.', {
+          folders,
+          size: size(kept.bytes),
+        })}{' '}
+        {t('They are not in the vault or in a downloaded copy.')}
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        {/* A plain link, as "Download a copy" is: the browser's own
+            download streams it. */}
+        <Button variant="secondary" render={<a href="/api/storage/restore/kept" download />} nativeButton={false}>
+          {t('Download the folders')}
+        </Button>
+        <Button variant="secondary" disabled={busy} onClick={() => setAsking(true)}>
+          {t('Delete the folders')}
+        </Button>
+      </div>
+      <Feedback note={note} />
+      <ConfirmDialog
+        icon={Trash2}
+        open={asking}
+        onOpenChange={setAsking}
+        question={t('This deletes {folders} from the server for good and frees {size}. Download them first to keep a copy.', {
+          folders,
+          size: size(kept.bytes),
+        })}
+        // Short, since it is the action's own label too, which a phone
+        // draws in a row beside Cancel: "Delete the set-aside folders"
+        // ran past the window's edge at 375px.
+        confirmLabel="Delete the folders"
+        onConfirm={() => void drop()}
+      />
+    </div>
+  );
+}
+
 /** Whether the page is in the desktop app's window (desktop/preload.cjs). */
 const inDesktopApp = (): boolean => 'vaultShell' in window;
 
@@ -366,15 +452,23 @@ export function RestoreStuck({ state }: { state: RestoreState | null }) {
   const putBack = async (): Promise<void> => {
     setBusy(true);
     setNote(null);
+    let kept: SetAside | null | undefined;
     try {
-      await api('/api/storage/restore/recover', { method: 'POST' });
+      kept = (await api<{ kept?: SetAside | null }>('/api/storage/restore/recover', { method: 'POST' })).kept;
     } catch (error) {
       setNote({ kind: 'error', text: apiErrorMessage(error) });
       setFailed(error instanceof ApiError && error.reason === 'stuck');
       setBusy(false);
       return;
     }
-    setNote({ kind: 'ok', text: t('The vault is back. Reloading…') });
+    // A folder something else had made again could not go home; it is on
+    // the server, which the card offers once the page is back.
+    setNote({
+      kind: 'ok',
+      text: kept
+        ? t('The vault is back, apart from {folders}, set aside on the server. Reloading…', { folders: kept.folders.join(', ') })
+        : t('The vault is back. Reloading…'),
+    });
     // Every page reads the vault again, as after an undo.
     setTimeout(() => window.location.reload(), 900);
   };

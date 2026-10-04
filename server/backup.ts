@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { open, readdir, stat } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { lstat, open, readdir, stat } from 'node:fs/promises';
+import { basename, dirname, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { VAULT } from './paths.ts';
 
@@ -175,23 +175,58 @@ function tarVault(vault: string): Readable {
   return Readable.from(gen);
 }
 
+/**
+ * Files and folders from anywhere, each in the archive inside a folder
+ * named `under`: what a stopped restore's put-back had to set aside
+ * (server/restore.ts), each set under a name that says what it is, so
+ * none lands on a vault folder of the same name when it is unpacked and a
+ * restore does not take it for a copy of a vault. Each folder is walked as
+ * the vault's own are, `books/<id>/open.bin` left out.
+ */
+export function tarPaths(items: { path: string; under: string }[]): Readable {
+  const gen = (async function* () {
+    const made = new Set<string>();
+    for (const item of items) {
+      let kind: import('node:fs').Stats;
+      try {
+        kind = await lstat(item.path);
+      } catch {
+        continue;
+      }
+      if (!made.has(item.under)) {
+        made.add(item.under);
+        yield* paxPath(`${item.under}/`);
+        yield header(`${item.under}/`, 0, 0o755, Date.now(), '5');
+      }
+      yield* one(dirname(item.path), [basename(item.path)], kind, [item.under]);
+    }
+    yield Buffer.alloc(1024);
+  })();
+  return Readable.from(gen);
+}
+
 /** The name the file is offered under: the vault's name, else its
-    folder's, and the day, so two copies sort themselves. */
-export function backupFilename(vault: string, name: string | null, today = new Date()): string {
+    folder's, what it holds when it is not the vault, and the day, so two
+    copies sort themselves. */
+export function backupFilename(vault: string, name: string | null, today = new Date(), what = ''): string {
   const folder = vault.split(/[\\/]/).filter(Boolean).pop() ?? 'vault';
   const base = (name?.trim() || folder).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
-  return `${base} ${today.toISOString().slice(0, 10)}.tar`;
+  return `${base}${what ? ` ${what}` : ''} ${today.toISOString().slice(0, 10)}.tar`;
+}
+
+/** The Content-Disposition for a download named `filename`: the plain
+    form for what cannot read RFC 5987, the encoded one so a Korean vault
+    name survives. */
+export function attachment(filename: string): string {
+  const ascii = filename.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
 }
 
 export function backupApi(vault: string = VAULT, vaultName: () => string | null = () => null): Hono {
   const api = new Hono();
   api.get('/storage/backup', (c) => {
-    const filename = backupFilename(vault, vaultName());
-    const ascii = filename.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
     c.header('Content-Type', 'application/x-tar');
-    // Both forms: the plain one for what cannot read RFC 5987, the
-    // encoded one so a Korean vault name survives.
-    c.header('Content-Disposition', `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    c.header('Content-Disposition', attachment(backupFilename(vault, vaultName())));
     c.header('Cache-Control', 'no-store');
     return c.body(Readable.toWeb(tarVault(vault)) as ReadableStream);
   });

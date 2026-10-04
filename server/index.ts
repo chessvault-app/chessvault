@@ -299,19 +299,18 @@ app.route('/api', storageApi());
 // The engine's full network, fetched once on request and served to the
 // worker from the server, since the browser cannot fetch it itself.
 app.route('/api', engineNetsApi());
+/** The vault's name from its config, which names its downloads. */
+const vaultName = (): string | null => {
+  try {
+    const { name } = JSON.parse(readFileSync(VAULT_CONFIG, 'utf-8')) as { name?: unknown };
+    return typeof name === 'string' ? name : null;
+  } catch {
+    return null;
+  }
+};
 // The vault as one file, named after the vault. Not in mountVault: the
 // demo's vault is a tab, and a download of it would be the seed.
-app.route(
-  '/api',
-  backupApi(undefined, () => {
-    try {
-      const { name } = JSON.parse(readFileSync(VAULT_CONFIG, 'utf-8')) as { name?: unknown };
-      return typeof name === 'string' ? name : null;
-    } catch {
-      return null;
-    }
-  }),
-);
+app.route('/api', backupApi(undefined, vaultName));
 // And the copy put back. Handed the history writer, which records the
 // vault on either side of the swap and holds its autosaves off during it;
 // a restore and its undo are refused while a database build is reading
@@ -321,6 +320,7 @@ app.route(
   restoreApi(undefined, {
     history: () => vaultBackup,
     busy: () => (refgamesBuildRunning() ? 'A database build is reading the vault’s files. Try again when it finishes.' : null),
+    name: vaultName,
   }),
 );
 app.route('/api', settingsApi());

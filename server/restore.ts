@@ -3,8 +3,10 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, renameSync, rmdirSync, rmSync, writeFileSync } from 'node:fs';
 import { mkdir, open, rm, statfs, utimes, type FileHandle } from 'node:fs/promises';
 import { dirname, join, relative, resolve, sep } from 'node:path';
+import { Readable } from 'node:stream';
 import { Hono, type MiddlewareHandler } from 'hono';
 import { readJson, renameRetrying, writeJson } from './atomic.ts';
+import { attachment, backupFilename, tarPaths } from './backup.ts';
 import { LOOPBACK_ONLY, VAULT, VAULT_SKELETON } from './paths.ts';
 import { walk } from './storage.ts';
 import { readTar, TarError, type TarFault } from './tarRead.ts';
@@ -60,6 +62,10 @@ import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME, restoreJournalP
  * start, both by the same code, so the vault is always one whole vault
  * or the other once it is done. A start whose put-back fails as well
  * comes up guarded rather than not at all, so the card is there to press.
+ * A folder the put-back cannot move home, because something outside the
+ * server made it again in the vault, stays in its work folder with a
+ * record saying so (KEPT_NAME), and the card offers it to download and to
+ * delete for as long as it is there.
  * Until then the history saves nothing either: the autosave holds off
  * while the journal stands (server/vaultBackup.ts). The last rename is what makes a restore
  * pending, `.restore/<id>/out` becoming `.restore/before`, so the state
@@ -184,6 +190,132 @@ function swap(vault: string, moves: Move[], move: (from: string, to: string) => 
 type Finished = 'nothing' | 'put-back' | 'unreadable';
 
 /**
+ * The record a put-back leaves in a work folder whose vault entries could
+ * not go home, because something outside the server (a sync client, an
+ * editor) had made one of them again in the vault. While it stands the
+ * folder is kept, at every start too, and the Vault card offers what it
+ * names to download and to delete (GET and DELETE /storage/restore/kept).
+ */
+const KEPT_NAME = 'kept.json';
+
+interface KeptRecord {
+  /** When the put-back set them aside. */
+  at: string;
+  /** What was stopped: a restore's entries are the vault as it was before
+      it, an undo's the restored vault, with whatever was written since. */
+  from: 'restore' | 'undo';
+  /** Each entry set aside, `/`-joined under its work folder: `out/notes`. */
+  entries: string[];
+}
+
+/** One work folder's set-aside entries, as GET and the download read them. */
+interface KeptSet {
+  id: string;
+  record: KeptRecord;
+}
+
+/** What GET /storage/restore and the put-back say is set aside. */
+interface KeptSummary {
+  /** The vault entries set aside, by name: `notes`, `activity.jsonl`. */
+  folders: string[];
+  files: number;
+  bytes: number;
+}
+
+/** An entry a record may name: one or two plain names under its work folder. */
+const keptEntry = (entry: unknown): entry is string =>
+  typeof entry === 'string' &&
+  entry.split('/').length <= 2 &&
+  entry.split('/').every((part) => part !== '' && part !== '.' && part !== '..' && !/[\\:]/.test(part));
+
+/** A work folder's record with the entries still there, or null when it
+    has none or nothing it names is left. */
+function readKept(folder: string): KeptRecord | null {
+  const record = readJson<Partial<KeptRecord> | null>(join(folder, KEPT_NAME), null);
+  if (!record || !Array.isArray(record.entries)) return null;
+  const entries = record.entries.filter(keptEntry).filter((entry) => exists(join(folder, ...entry.split('/'))));
+  if (entries.length === 0) return null;
+  return {
+    at: typeof record.at === 'string' ? record.at : '',
+    from: record.from === 'undo' ? 'undo' : 'restore',
+    entries,
+  };
+}
+
+/**
+ * The record for a folder an older version kept without one. 0.12.2 kept
+ * a restore's `out` while it held a vault entry, which this reads as it
+ * did; and kept an undo's `bin` only until the next start, which then
+ * deleted it with the restored vault's files in it. An undo's folder that
+ * holds nothing but entries in `bin` is one of those: a finished undo has
+ * moved its `before` in beside them, and a restore's has its `in`.
+ */
+function legacyKept(folder: string): KeptRecord | null {
+  const listed = (sub: string): string[] => {
+    try {
+      return readdirSync(join(folder, sub)).filter((name) => name !== '.restored.json');
+    } catch {
+      return [];
+    }
+  };
+  let at = '';
+  try {
+    at = lstatSync(folder).mtime.toISOString();
+  } catch {
+    return null;
+  }
+  const out = listed('out');
+  if (out.length > 0) return { at, from: 'restore', entries: out.map((name) => `out/${name}`) };
+  const bin = listed('bin');
+  if (bin.length > 0 && !exists(join(folder, 'in')) && !exists(join(folder, 'out')) && !exists(join(folder, 'before'))) {
+    return { at, from: 'undo', entries: bin.map((name) => `bin/${name}`) };
+  }
+  return null;
+}
+
+/** Every work folder holding something a put-back set aside, oldest first. */
+function keptSets(vault: string): KeptSet[] {
+  let names: string[];
+  try {
+    names = readdirSync(workDir(vault));
+  } catch {
+    return [];
+  }
+  const sets: KeptSet[] = [];
+  for (const id of names) {
+    if (id === 'before') continue;
+    const record = readKept(join(workDir(vault), id));
+    if (record) sets.push({ id, record });
+  }
+  return sets.sort((a, b) => (a.record.at < b.record.at ? -1 : a.record.at > b.record.at ? 1 : 0));
+}
+
+/** What the sets hold, or null when they hold nothing. */
+async function keptSummary(vault: string, sets: KeptSet[]): Promise<KeptSummary | null> {
+  if (sets.length === 0) return null;
+  const folders: string[] = [];
+  let files = 0;
+  let bytes = 0;
+  for (const { id, record } of sets) {
+    for (const entry of record.entries) {
+      const path = join(workDir(vault), id, ...entry.split('/'));
+      const name = entry.split('/').pop()!;
+      if (!folders.includes(name)) folders.push(name);
+      const stat = lstatSync(path, { throwIfNoEntry: false });
+      if (stat?.isDirectory()) {
+        const inside = await walk(path);
+        files += inside.files;
+        bytes += inside.bytes;
+      } else if (stat?.isFile()) {
+        files += 1;
+        bytes += stat.size;
+      }
+    }
+  }
+  return { folders, files, bytes };
+}
+
+/**
  * `.restore` itself once nothing is left in it. Every put-back, keep and
  * undo emptied it and left the folder in the vault (the 0.12.2 manual
  * audit found it after a put-back), where a vault that has never been
@@ -209,9 +341,6 @@ function finishInterruptedSwap(vault: string, rename?: Rename): Finished {
   const work = workDir(vault);
   if (!existsSync(work)) return 'nothing';
   let outcome: Finished = 'nothing';
-  /** Work folders still holding a vault entry the put-back could not
-      move home, because something has made its place again. */
-  const stranded = new Set<string>();
   if (existsSync(journalPath(vault))) {
     let journal: { moves?: Move[] } | null = null;
     try {
@@ -228,12 +357,31 @@ function finishInterruptedSwap(vault: string, rename?: Rename): Finished {
     rollBack(vault, journal.moves, rename);
     // rollBack skips a rename whose source is there again. When the
     // target is in a work folder, what it skipped is a vault entry set
-    // aside there, kept below: the vault's own for a restore, in `out`,
-    // or the restored vault's for an undo, in `bin`, which the `out`
-    // check alone would delete with its folder.
+    // aside there: the vault's own for a restore, in `out`, or the
+    // restored vault's for an undo, in `bin`. Each such folder gets a
+    // record naming them, written before the journal goes, so a crash
+    // between the two writes it again, and kept until the user downloads
+    // and deletes them: 0.12.2 kept an undo's only until the next start.
+    const stranded = new Map<string, string[]>();
     for (const move of journal.moves) {
-      const [owner] = relative(work, resolve(vault, move.to)).split(sep);
-      if (owner && owner !== '..' && owner !== 'before' && exists(resolve(vault, move.to))) stranded.add(owner);
+      const to = resolve(vault, move.to);
+      const [owner] = relative(work, to).split(sep);
+      if (!owner || owner === '..' || owner === 'before' || !exists(to)) continue;
+      const entry = relative(join(work, owner), to).split(sep).join('/');
+      if (keptEntry(entry)) stranded.set(owner, [...(stranded.get(owner) ?? []), entry]);
+    }
+    const at = new Date().toISOString();
+    for (const [owner, entries] of stranded) {
+      const folder = join(work, owner);
+      const had = readKept(folder)?.entries ?? [];
+      // A restore unpacks into `in` and sets the vault aside in `out`; an
+      // undo has neither, only its `bin`.
+      const record: KeptRecord = {
+        at,
+        from: existsSync(join(folder, 'in')) || existsSync(join(folder, 'out')) ? 'restore' : 'undo',
+        entries: [...new Set([...had, ...entries])],
+      };
+      writeJson(join(folder, KEPT_NAME), record);
     }
     rmSync(journalPath(vault), { force: true });
     console.warn('[restore] a restore was cut off part way; the vault is back as it was before it');
@@ -242,18 +390,19 @@ function finishInterruptedSwap(vault: string, rename?: Rename): Finished {
   for (const name of readdirSync(work)) {
     if (name === 'before') continue;
     const path = join(work, name);
-    if (stranded.has(name)) {
-      console.error(`[restore] ${RESTORE_DIR_NAME}/${name} holds vault files whose place something else has taken; left in place`);
-      continue;
-    }
     // A folder holding vault entries it was meant to hand on is kept and
     // said: deleting it could only lose them. The restore's own note,
     // written into `out` before the swap, is not one (a vault's dotfiles
     // never move), and counting it kept every copy a restore had
     // unpacked, for good, once that restore was put back.
-    const out = join(path, 'out');
-    if (existsSync(out) && readdirSync(out).some((entry) => entry !== '.restored.json')) {
-      console.error(`[restore] ${RESTORE_DIR_NAME}/${name}/out still holds files; left in place`);
+    let record = readKept(path);
+    if (!record) {
+      record = legacyKept(path);
+      if (record) writeJson(join(path, KEPT_NAME), record);
+    }
+    if (record) {
+      const names = record.entries.map((entry) => entry.split('/').pop()).join(', ');
+      console.warn(`[restore] ${RESTORE_DIR_NAME}/${name} holds ${names}, set aside when the vault was put back because something else had taken their place; download or delete them under Settings, Vault`);
       continue;
     }
     rmSync(path, { recursive: true, force: true });
@@ -443,6 +592,21 @@ const RUNNING = 'A restore is already running.';
     the card reads to show the way out. */
 const STUCK = 'The vault is still part way through a restore. Put it back under Settings, Vault.';
 
+const NOTHING_KEPT = 'Nothing is set aside.';
+
+/**
+ * The folder a set is unpacked into, in the server's own time: when the
+ * put-back set it aside, and what it is. In English, as the vault's own
+ * folders are named.
+ */
+function keptLabel(record: KeptRecord): string {
+  const what = record.from === 'undo' ? 'restored vault' : 'vault before the restore';
+  const when = new Date(record.at);
+  if (Number.isNaN(when.getTime())) return what;
+  const two = (n: number): string => String(n).padStart(2, '0');
+  return `${when.getFullYear()}-${two(when.getMonth() + 1)}-${two(when.getDate())} ${two(when.getHours())}.${two(when.getMinutes())} ${what}`;
+}
+
 /**
  * The pauses between tries at putting a stuck vault back, in milliseconds.
  *
@@ -539,6 +703,9 @@ export interface RestoreOptions {
   /** The pauses between tries at putting a stuck vault back;
       RECOVER_PAUSES_MS unless a test is waiting. */
   recoverPauses?: number[];
+  /** The vault's name, for the download of what a put-back set aside,
+      named as "Download a copy" names its file. */
+  name?: () => string | null;
 }
 
 /** A reply, built away from the route so the restore can return early. */
@@ -564,14 +731,18 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
         return null;
       }
     });
-  /** One restore, undo or keep at a time. */
+  /** One restore, undo, keep, put-back or delete of set-aside folders at a time. */
   let running = false;
 
   const newWork = (): { id: string; dir: string } => {
-    const id = randomBytes(4).toString('hex');
-    const dir = join(workDir(vault), id);
-    mkdirSync(dir, { recursive: true });
-    return { id, dir };
+    // Never a folder a put-back set aside, which stays beside a later restore.
+    for (;;) {
+      const id = randomBytes(4).toString('hex');
+      const dir = join(workDir(vault), id);
+      if (exists(dir)) continue;
+      mkdirSync(dir, { recursive: true });
+      return { id, dir };
+    }
   };
 
   /** Root entries of `dir` that a restore moves: everything but what stays in place. */
@@ -584,10 +755,14 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
 
   /**
    * What the Vault card asks before it offers anything: a restore waiting
-   * to be kept or undone, one stuck part way, what the history would do,
-   * and the free space. A stuck restore is said apart and alone: until it
-   * is put back, which restore is pending (an undo that stuck had moved
-   * some of the one before) is not a thing anybody can be asked about.
+   * to be kept or undone, one stuck part way, what a put-back had to set
+   * aside, what the history would do, and the free space. A stuck restore
+   * is said apart and alone: until it is put back, which restore is
+   * pending (an undo that stuck had moved some of the one before) is not a
+   * thing anybody can be asked about. What was set aside is said for as
+   * long as it is there, by whichever put-back set it aside, the card's or
+   * a start's: it is in no folder of the vault, so neither the vault's
+   * pages nor "Download a copy" reach it.
    */
   api.get('/storage/restore', async (c) => {
     const stuck = existsSync(journalPath(vault));
@@ -603,10 +778,82 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
     return c.json({
       pending,
       stuck,
+      kept: await keptSummary(vault, keptSets(vault)),
       history: await plan(await history()),
       free: await free(),
       sameMachine: options.sameMachine ?? LOOPBACK_ONLY,
     });
+  });
+
+  /**
+   * What a put-back set aside, as one tar: each set in a folder named for
+   * when it was set aside and what it is ("2026-10-04 12.30 vault before
+   * the restore", "… restored vault"), so two sets holding `notes` stay
+   * apart and nothing unpacks onto the vault's own folders. Streamed as
+   * "Download a copy" is, with the same writer. Not while a restore, an
+   * undo, a put-back or a delete is moving folders; otherwise it holds
+   * nothing back, since what it reads is in no folder an autosave, a
+   * build or a put-back writes, and a stream a sleeping phone stalls
+   * must not hold up "Put the vault back".
+   */
+  api.get('/storage/restore/kept', (c) => {
+    if (running) return c.json({ error: RUNNING }, 409);
+    const sets = keptSets(vault);
+    if (sets.length === 0) return c.json({ error: NOTHING_KEPT }, 409);
+    const names = new Map<string, number>();
+    const items = sets.flatMap(({ id, record }) => {
+      let under = keptLabel(record);
+      const seen = names.get(under) ?? 0;
+      names.set(under, seen + 1);
+      if (seen > 0) under = `${under} (${seen + 1})`;
+      return record.entries.map((entry) => ({ path: join(workDir(vault), id, ...entry.split('/')), under }));
+    });
+    c.header('Content-Type', 'application/x-tar');
+    c.header('Content-Disposition', attachment(backupFilename(vault, options.name?.() ?? null, new Date(), 'set aside')));
+    c.header('Cache-Control', 'no-store');
+    return c.body(Readable.toWeb(tarPaths(items)) as ReadableStream);
+  });
+
+  /**
+   * Delete what a put-back set aside, which the card asks first. Under
+   * what a put-back takes (one at a time, no database build, the history
+   * to itself), and never while a restore stands part way, whose own
+   * folders are set aside beside these. One rename per set ends it, so a
+   * file another program holds refuses before anything is deleted; the
+   * delete after it can take its time, and what it leaves the next start
+   * or put-back sweeps, as after a keep.
+   */
+  api.delete('/storage/restore/kept', async (c) => {
+    if (running) return c.json({ error: RUNNING }, 409);
+    if (existsSync(journalPath(vault))) return c.json({ error: STUCK, reason: 'stuck' }, 409);
+    const sets = keptSets(vault);
+    if (sets.length === 0) return c.json({ error: NOTHING_KEPT }, 409);
+    const reason = options.busy?.();
+    if (reason) return c.json({ error: reason }, 409);
+    running = true;
+    try {
+      const freed = (await keptSummary(vault, sets))?.bytes ?? 0;
+      const backup = await history();
+      const work = newWork();
+      const drop = async (): Promise<boolean> => {
+        for (const set of sets) {
+          try {
+            move(join(workDir(vault), set.id), join(work.dir, set.id));
+          } catch (error) {
+            console.error(`[restore] could not delete ${RESTORE_DIR_NAME}/${set.id}: ${(error as Error).message}`);
+            return false;
+          }
+        }
+        return true;
+      };
+      const dropped = await (backup ? backup.exclusive(() => drop()) : drop());
+      await rm(work.dir, { recursive: true, force: true }).catch(() => undefined);
+      if (!dropped) return c.json({ error: 'Could not delete the set-aside folders yet.' }, 500);
+      return c.json({ ok: true, freed });
+    } finally {
+      tidy(vault);
+      running = false;
+    }
   });
 
   /**
@@ -673,7 +920,10 @@ export function restoreApi(vaultDir: string = VAULT, options: RestoreOptions = {
           500,
         );
       }
-      return c.json({ ok: true });
+      // What this put-back had to set aside, if anything: a card that said
+      // only "The vault is back." left those files to the server's disk.
+      const kept = await keptSummary(vault, keptSets(vault).filter((set) => set.record.at >= at));
+      return c.json({ ok: true, kept });
     } finally {
       tidy(vault);
       running = false;
