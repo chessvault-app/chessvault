@@ -822,7 +822,7 @@ export const ko: Record<string, string> = {
     '한 번 누르면 기물을, 두 번 누르면 수를 알려줍니다 (실패로 세지 않음)',
   'First move': '첫 수',
   'No puzzle database yet': '아직 퍼즐 데이터베이스가 없습니다',
-  'Download and build it to start training.': '내려받아 빌드하면 훈련을 시작할 수 있습니다.',
+  'Download and build it to start training.': '내려받아 만들면 훈련을 시작할 수 있습니다.',
   'No puzzle to draw': '뽑을 퍼즐 없음',
   'The pool answered with nothing. Try again in a moment.': '풀이 아무것도 돌려주지 않았습니다. 잠시 후 다시 시도하세요.',
   'No puzzle book yet': '아직 퍼즐 책 없음',
