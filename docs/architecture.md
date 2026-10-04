@@ -344,14 +344,18 @@ in that folder naming each, and every sweep after keeps a folder with
 one, as it keeps what an older version left without one (a restore's
 `out/` holding entries, an undo's lone `bin/`, which 0.12.2's next start
 deleted). `GET /api/storage/restore` reports them as `kept` (names,
-files, bytes) and the put-back's answer says what it set aside; `GET
+files, bytes, and the `sets` they are in) and the put-back's answer
+says what it set aside; `GET
 /api/storage/restore/kept` streams them as one tar through the copy's
 writer (`tarPaths` in `server/backup.ts`), each set inside a folder named
 for when it was set aside and what it is, so nothing unpacks onto the
-vault and a restore refuses it as no copy of one; and `DELETE` renames
-each set into a fresh work folder and deletes that, under the put-back's
-guards and never while a journal stands. A later restore goes ahead
-beside them. A restore and its undo are also
+vault and a restore refuses it as no copy of one; and `DELETE` takes
+only the `sets` the card's question was drawn from, renames each into a
+fresh work folder and deletes that, under the put-back's guards, never
+while a journal stands, and never while a download of them is still
+streaming, which it would cut short into a tar that reads as whole (the
+route counts its open streams, released when each closes). A later
+restore goes ahead beside them. A restore and its undo are also
 refused while a reference database job runs (`refgamesBuildRunning`),
 since a build reads `sources/`, which both of them move.
 Nothing is deleted: the vault's folders move into `.restore/before/`
