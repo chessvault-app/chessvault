@@ -23,6 +23,12 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   runs. The Puzzles page's setup screen does not offer it: its
   question's "Download the newest puzzles" already gets past a stale
   dump, and keeps it until the new database is built.
+- **The Korean hub and Themes say 만들면, not 빌드하면.** With no puzzle
+  database and no dump in the folder, the phone's puzzle hub and Themes
+  said 내려받아 빌드하면, where the sentence for a dump in place says
+  만들면 and the button they lead to says 내려받아 만들기. Deleting a
+  dump in Settings turns the one sentence into the other, and the verb
+  changed with it. Both now say 만들면.
 
 ## 0.12.2
 
