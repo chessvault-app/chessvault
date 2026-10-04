@@ -757,6 +757,80 @@ describe('removing old secrets from the history', { timeout: 30_000 }, () => {
     holdsNoToken(text, logged);
   });
 
+  it('revokes the old tokens and takes out every file the list names in one purge, where the repo folds case', async () => {
+    // A wipe's history in a repo that folds case, as `git init` makes one
+    // on Windows and macOS: the three tokens in config.json beside book
+    // PDFs, the databases' PGN files and a .part in a notes folder, and
+    // documents, one of them in a notes folder named sources, around them.
+    dir = mkdtempSync(join(tmpdir(), 'history-purge-'));
+    write('studies/Openings/Najdorf.pgn', '1. e4 c5 *\n');
+    write('notes/sources/Reading list.md', '# Reading list\n');
+    backup = await startVaultBackup(dir, QUIET);
+    run(['config', 'core.ignorecase', 'true']);
+    const plant = async (files: Record<string, string>, message: string): Promise<void> => {
+      for (const [path, content] of Object.entries(files)) write(path, content);
+      await git(gitDir(), dir, ['add', '-f', '--', ...Object.keys(files)]);
+      await git(gitDir(), dir, ['commit', '-q', '-m', message]);
+    };
+    const pdf = (printing: string): string => `%PDF-1.4 ${`a commercial book, ${printing} `.repeat(200)}`;
+    await plant(
+      {
+        'config.json': `${JSON.stringify({ lichessToken: OLD_ONE })}\n`,
+        'books/Endgames/book.pdf': pdf('first printing'),
+        'sources/twic1500.pgn': `[Event "TWIC"]\n\n${'1. e4 e5 2. Nf3 Nc6 '.repeat(300)}1-0\n`,
+      },
+      'vault autosave after a wipe',
+    );
+    await plant(
+      {
+        'config.json': `${JSON.stringify({ lichessToken: OLD_TWO, name: 'Club' })}\n`,
+        'notes/Openings/Najdorf.md.part': 'half an upload',
+        'studies/Openings/Najdorf.pgn': '1. e4 c5 2. Nf3 d6 *\n',
+      },
+      'vault autosave',
+    );
+    await plant(
+      {
+        'config.json': `${JSON.stringify({ lichessToken: IN_USE, name: 'Club' })}\n`,
+        'books/Endgames/book.pdf': pdf('second printing'),
+        'sources/lichess/elite.pgn': '[Event "Elite"]\n\n1. d4 d5 1/2-1/2\n',
+        'notes/sources/Reading list.md': '# Reading list\n\nDvoretsky.\n',
+      },
+      'vault autosave',
+    );
+    // The restart: the start untracks them and counts what the history holds.
+    await backup.stop();
+    backup = await startVaultBackup(dir, QUIET);
+    const before = saves();
+    const oldIds = [...new Set(everyPath().filter(({ path }) => isPlanted(path)).map(({ id }) => id))];
+    const lichess = fakeLichess();
+    const app = purgeApp(lichess.fetcher);
+    const asked = await (await app.request('/api/history/purge')).text();
+    expect(JSON.parse(asked)).toMatchObject({ commits: 3, credentials: 3, books: 2, sources: 2, other: 1, secrets: { token: { current: true, past: 2 } } });
+
+    const { status, text, logged } = await purgeWith(app, { revokeTokens: { past: true, current: false } });
+    expect(status).toBe(200);
+    expect(JSON.parse(text)).toMatchObject({
+      ok: true,
+      pruned: true,
+      tokens: { past: { revoked: 2, invalid: 0, failed: 0 }, current: { revoked: 0, invalid: 0, failed: 0 } },
+    });
+    // Each old token once, and not the one in use, which stays in use.
+    expect(lichess.sent.map(({ authorization }) => authorization).sort()).toEqual([`Bearer ${OLD_ONE}`, `Bearer ${OLD_TWO}`]);
+    expect(configNow()).toEqual({ lichessToken: IN_USE, name: 'Club' });
+    // No save holds a listed path at any depth, every other path and save
+    // is as it was, the notes folder named sources among them, and nothing
+    // git's store holds carries a token or a book.
+    expect(everyPath().filter(({ path }) => isPlanted(path))).toEqual([]);
+    expect(saves()).toEqual(before);
+    expect(run(['show', 'HEAD:notes/sources/Reading list.md'])).toBe('# Reading list\n\nDvoretsky.\n');
+    expect(present(oldIds)).toEqual([]);
+    const store = run(['cat-file', '--batch-all-objects', '--batch']);
+    expect(store).not.toContain('a commercial book');
+    holdsNoToken(asked, text, logged, store);
+    expect(await backup!.leaks()).toEqual({ ...NOTHING, secrets: NO_SECRETS });
+  });
+
   it('says plainly when there is no history to purge', async () => {
     dir = mkdtempSync(join(tmpdir(), 'history-purge-'));
     const app = new Hono().route('/api', vaultHistoryApi(dir));
