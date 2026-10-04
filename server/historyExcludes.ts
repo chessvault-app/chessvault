@@ -106,6 +106,23 @@ const RULES: Rule[] = NEVER_IN_HISTORY.map(({ pattern, kind }) => {
   return { kind, folder, anchored, levels: (body.startsWith('/') ? body.slice(1) : body).split('/') };
 });
 
+/**
+ * Where the entries tied to the top of the vault are: each one's path up
+ * to its first `*` (`books` for books/<id>/book.pdf). A walk by these, as
+ * plain names, reaches everything those entries name while git skips the
+ * rest of every tree; the entries that match at any depth (`*.part`) have
+ * no such place, and a walk for them has to look everywhere.
+ */
+export const HISTORY_ROOTS: readonly string[] = (() => {
+  const roots = RULES.filter((rule) => rule.anchored).map((rule) => {
+    const wild = rule.levels.findIndex((level) => level.includes('*'));
+    const plain = wild < 0 ? rule.levels : rule.levels.slice(0, wild);
+    if (plain.length === 0) throw new Error(`the history's exclude list ties ${rule.levels.join('/')} to the top with no name to start from`);
+    return plain.join('/');
+  });
+  return [...new Set(roots)].filter((root) => !roots.some((other) => root.startsWith(`${other}/`)));
+})();
+
 const escape = (text: string): string => text.replace(/[.+^${}()|[\]\\]/g, '\\$&');
 
 /** The list's matcher, matching names in any case where `ignoreCase`. */

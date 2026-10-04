@@ -51,8 +51,8 @@ export interface VaultBackup {
    * one vault and half of the other.
    */
   exclusive: <T>(work: (commit: (message: string) => Promise<void>) => Promise<T>) => Promise<T>;
-  /** What the history holds of the credentials and its own folder, as
-      last counted (server/historyPurge.ts). */
+  /** What the history holds that it never should (the list in
+      server/historyExcludes.ts), as last counted (server/historyPurge.ts). */
   leaks: () => Promise<HistoryLeaks>;
   /** Write the history again without them, holding it to itself. */
   purge: () => Promise<PurgeOutcome>;
@@ -89,21 +89,28 @@ export async function prepareHistoryRepo(gitDir: string, dir: string): Promise<v
     await git(gitDir, dir, ['rm', '-r', '--cached', '--quiet', '--ignore-unmatch', '--', ...batch]).catch(() => undefined);
   }
   // Untracking stops here; it does not reach into commits already made.
-  // The open caches an earlier version committed stay in the repo's
-  // objects until its history is rewritten: dead weight rather than a
-  // secret, so nothing is said about them at boot.
   // A history that carries an old config.json carries every password
-  // hash, authenticator secret and Lichess token it ever held, and
-  // scripts/backup-vault.sh copies the whole repo off-box. Said once,
-  // loudly, at boot, and offered in Settings (server/historyPurge.ts):
-  // rewriting history is the owner's call, not this server's. Counted
-  // fresh here, which is also what Settings is answered from until the
-  // history next changes under a restore, a wipe or a purge; which secrets
-  // it holds is read at Settings' first ask, not here.
+  // hash, authenticator secret and Lichess token it ever held, and one
+  // that took in a book's PDF carries a copy of the book, and
+  // scripts/backup-vault.sh copies the whole repo off-box and "Download a
+  // copy" packs it. Said once, loudly, at boot, and offered in Settings
+  // (server/historyPurge.ts): rewriting history is the owner's call, not
+  // this server's. Counted fresh here, which is also what Settings is
+  // answered from until the history next changes under a restore, a wipe
+  // or a purge; which secrets it holds is read at Settings' first ask, not
+  // here.
   const leaks = await historyCount(gitDir, dir, { fresh: true }).catch(() => null);
   if (leaks && leaks.commits > 0) {
+    const mb = (bytes: number): string => (bytes >= 1024 * 1024 ? `, ${(bytes / (1024 * 1024)).toFixed(1)} MB` : '');
+    const held = [
+      leaks.credentials > 0 && `config.json or sessions.json (${leaks.credentials}, which may hold past secrets)`,
+      leaks.folder > 0 && `its own folder (${leaks.folder}${mb(leaks.bytes.folder)})`,
+      leaks.books > 0 && `book PDFs or open caches (${leaks.books}${mb(leaks.bytes.books)})`,
+      leaks.sources > 0 && `the databases' PGN files (${leaks.sources}${mb(leaks.bytes.sources)})`,
+      leaks.other > 0 && `.part, .swp or restore files (${leaks.other}${mb(leaks.bytes.other)})`,
+    ].filter(Boolean);
     console.warn(
-      `[vault-backup] ${leaks.commits} save(s) in ${HISTORY_DIR_NAME} hold config.json, sessions.json or the history's own folder, from an older version or an earlier wipe, and may hold past secrets. Settings, Security takes them out: "Remove old secrets", or "Remove old files" where they hold none (the paragraph on backups in README.md does the same from a terminal).`,
+      `[vault-backup] ${leaks.commits} save(s) in ${HISTORY_DIR_NAME} hold what the history never keeps, from an older version or an earlier wipe: ${held.join('; ')}. Settings, Security takes them out: "Remove old secrets", or "Remove old files" where they hold no secret (the paragraph on backups in README.md does the same from a terminal).`,
     );
   }
 }

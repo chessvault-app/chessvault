@@ -203,13 +203,15 @@ export function git(gitDir: string, workTree: string, args: string[], pathspecs:
  * output as bytes.
  *
  * For the commands that take a list rather than arguments: `cat-file
- * --batch`, `fast-import` and `update-ref --stdin` (server/historyPurge.ts).
- * Bytes, because what they read and write is objects, whose names and
- * messages are whatever bytes a commit holds. No timeout, unlike git():
- * its sixty seconds is a limit on one question, and these walk every save
- * the history holds (a purge of 10,000 took 3.9 s on a Windows desktop,
- * but a history that kept book PDFs from before their exclude has
- * gigabytes of packs for `gc` to write again).
+ * --batch`, `diff-tree --stdin`, `log --stdin`, `fast-import` and
+ * `update-ref --stdin` (server/historyPurge.ts). Bytes, because what they
+ * read and write is objects, whose names and messages are whatever bytes a
+ * commit holds. No timeout, unlike git(): its sixty seconds is a limit on
+ * one question, and these walk every save the history holds (a purge of
+ * 10,000 saves took 1.3 to 2.4 s on a Windows desktop, 6 s with a swap
+ * file in a folder of 2,000 games, and a history that kept book PDFs
+ * from before their exclude has gigabytes of packs for `gc` to write
+ * again).
  */
 export function gitPipe(
   gitDir: string,
