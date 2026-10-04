@@ -46,6 +46,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   folders a put-back set aside, that those go too and that a downloaded
   copy does not hold them. Tried on a server run from source with a real
   stopped restore, at a desktop's and an iPhone's size in both languages.
+- **A Games page left open stops saying the vault is part way through a
+  restore once it is put back.** Shown while a restore stood part way,
+  the Games page's collection said so with Try again above its list, and
+  kept saying it after the vault was put back from another device and
+  the list had loaded again, until Try again was pressed. A load that
+  brings the list back now clears its own failure, and a rename the
+  server refused still stays above the list after the reload that
+  follows it. Tried on a server run from source with a real stopped
+  restore, at a desktop's size in English.
 
 ## 0.12.2
 
