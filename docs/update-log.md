@@ -7,6 +7,71 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **Settings → Vault says why Download a copy and Restore from a copy are
+  off.** While a restore waits to be kept or undone, “Restore from a copy”
+  cannot be pressed, and while one is stopped part way, neither it nor
+  Download a copy can. The only word on why was each button's tooltip,
+  which a disabled button never shows, to a mouse, a key or a finger. The
+  card now says it: a waiting restore's line ends “Keep or undo this restore
+  before restoring another copy.”, and a stopped one's warning ends “Put the
+  vault back before downloading or restoring a copy.” Each button that waits
+  is described by that sentence, so a screen reader reads it with the button.
+  Tried on a server with each state made by hand, in a browser at a
+  desktop's and an iPhone's size in both languages: 0.12.2's card said
+  nothing about the buttons, gave them no description and showed no tooltip
+  when Restore from a copy was hovered or tapped, and the card now shows the
+  sentence and describes the buttons by it. Not tried on a device or with a
+  screen reader itself.
+- **The opening map's panel says why Drill is off, and says it truly.** On
+  a position no linked study holds, Drill at the panel's foot cannot be
+  pressed, and the only reason given was its tooltip, “Link a study first.
+  A drill needs prepared moves.”, which a disabled button never shows. A
+  screen reader heard that sentence in place of Drill's name, and it was
+  wrong on any map with studies already linked elsewhere, such as the
+  demo's white map: what a drill needs is a linked study that holds this
+  position. The panel now says “Not prepared. A drill needs a linked study
+  that holds this position.” under the opening's name, where a prepared
+  position says how deep it is prepared, and Drill keeps the name “Drill
+  from here”, described by that line. Checked on the demo with 3...Bb4 in
+  the French selected, at a desktop's size and in the sheet at an iPhone's,
+  in both languages: 0.12.2 drew no line and named Drill by the reason, and
+  the panel now draws the line, in view as the sheet opens, and names Drill
+  by what it does.
+- **The Databases panel's buttons keep their names while a job runs.**
+  During a build, an Optimise or an index pass, a database's Add games and
+  Optimise icons and a PGN file's Delete wait for it, and the reason they
+  carried then was also their name: a screen reader heard two buttons side
+  by side both called “Wait for the running job to finish”, and a Delete
+  called “Wait for the build to finish”, with nothing saying what any of
+  them does. They are now “Add games to this database”, “Optimise this
+  database” and “Delete this PGN file” in every state, and while a job runs
+  each is described by the band's own line above the list, such as
+  “Optimising {name}…”, which is what the screen already said. Nothing on
+  screen changes, and below tablet width a database row's ⋯ menu already
+  named its two. Checked at a desktop's size in both languages, with a
+  running Optimise stood in by the test, from the names and descriptions in
+  Chromium's accessibility tree; not tried with a screen reader itself.
+- **The demo counts all of its games on every load.** Its pages that read
+  the sample games, such as the explorer's My games and Insights, counted
+  only the games indexed by the moment they asked, so what they said
+  depended on how fast the machine was just then. On 0.12.2's demo the
+  Workspace's explorer counted anywhere from 24 to 37 of the 46 games at
+  the starting position over sixteen loads in two runs, and 18 with the
+  CPU slowed four times, and kept that count, since it asks once per
+  position, with Recent games all from one month; Insights opened on 16 of
+  its 31 games and reached 31 about a second later. Now the first such
+  question waits until every game is indexed, and indexing takes a sixth
+  to an eighth of the time, since the demo's database layer writes each
+  file's games in one transaction: a full index took 65 ms where it took
+  402 ms, and 341 ms where it took 2.7 s with the CPU slowed (medians of
+  five loads). Over sixteen loads in two runs the explorer counted 46
+  every time and Insights 31 from its first answer, as they did over ten
+  with the CPU slowed, with Recent games across four months, and that
+  first answer still came sooner than 0.12.2's partial one: on the
+  Workspace, 150 to 213 ms after it was asked against 424 to 459 in one
+  run, and 48 to 63 against 167 to 229 in the other. The app on a server
+  is unchanged.
+
 ## 0.12.2
 
 The app now puts back a stopped restore, gets the newest puzzles past a dump
