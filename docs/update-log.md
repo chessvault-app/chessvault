@@ -22,6 +22,21 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   when Restore from a copy was hovered or tapped, and the card now shows the
   sentence and describes the buttons by it. Not tried on a device or with a
   screen reader itself.
+- **The opening map's panel says why Drill is off, and says it truly.** On
+  a position no linked study holds, Drill at the panel's foot cannot be
+  pressed, and the only reason given was its tooltip, “Link a study first.
+  A drill needs prepared moves.”, which a disabled button never shows. A
+  screen reader heard that sentence in place of Drill's name, and it was
+  wrong on any map with studies already linked elsewhere, such as the
+  demo's white map: what a drill needs is a linked study that holds this
+  position. The panel now says “Not prepared. A drill needs a linked study
+  that holds this position.” under the opening's name, where a prepared
+  position says how deep it is prepared, and Drill keeps the name “Drill
+  from here”, described by that line. Checked on the demo with 3...Bb4 in
+  the French selected, at a desktop's size and in the sheet at an iPhone's,
+  in both languages: 0.12.2 drew no line and named Drill by the reason, and
+  the panel now draws the line, in view as the sheet opens, and names Drill
+  by what it does.
 
 ## 0.12.2
 
