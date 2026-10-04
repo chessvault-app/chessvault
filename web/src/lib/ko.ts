@@ -822,7 +822,7 @@ export const ko: Record<string, string> = {
     '한 번 누르면 기물을, 두 번 누르면 수를 알려줍니다 (실패로 세지 않음)',
   'First move': '첫 수',
   'No puzzle database yet': '아직 퍼즐 데이터베이스가 없습니다',
-  'Download and build it to start training.': '내려받아 빌드하면 훈련을 시작할 수 있습니다.',
+  'Download and build it to start training.': '내려받아 만들면 훈련을 시작할 수 있습니다.',
   'No puzzle to draw': '뽑을 퍼즐 없음',
   'The pool answered with nothing. Try again in a moment.': '풀이 아무것도 돌려주지 않았습니다. 잠시 후 다시 시도하세요.',
   'No puzzle book yet': '아직 퍼즐 책 없음',
@@ -947,6 +947,14 @@ export const ko: Record<string, string> = {
   'Download the newest puzzles': '최신 퍼즐 내려받기',
   'Downloads about 300 MB. The file in the folder is deleted once the new database is built.':
     '약 300MB를 내려받습니다. 폴더에 있던 파일은 새 데이터베이스를 다 만들면 삭제됩니다.',
+  // The dump in place, on its own row of the card, and its delete.
+  'Puzzle dump': '퍼즐 덤프',
+  'Delete the puzzle dump': '퍼즐 덤프 삭제',
+  'Delete the puzzle dump {file} ({size})? The puzzle database keeps working, and the next rebuild downloads the newest puzzles, about 300 MB.':
+    '{file}({size}) 퍼즐 덤프를 삭제할까요? 퍼즐 데이터베이스는 그대로 쓸 수 있고, 다음에 다시 만들 때 최신 퍼즐 약 300MB를 내려받습니다.',
+  'Delete the puzzle dump {file} ({size})? Building the database then downloads the newest puzzles, about 300 MB.':
+    '{file}({size}) 퍼즐 덤프를 삭제할까요? 그러면 데이터베이스를 만들 때 최신 퍼즐 약 300MB를 내려받습니다.',
+  'Puzzle dump deleted.': '퍼즐 덤프를 삭제했습니다.',
   // Why a build failed, one sentence per reason (PuzzleDbSetup's problemSentence).
   'The puzzle dump could not be downloaded.': '퍼즐 덤프를 내려받지 못했습니다.',
   'The download of the puzzle dump was cut off.': '퍼즐 덤프를 내려받는 도중에 끊겼습니다.',
@@ -2001,6 +2009,10 @@ export const ko: Record<string, string> = {
   "a book needs a title": "책에는 제목이 필요합니다",
   "a book with that name exists": "같은 이름의 책이 이미 있습니다",
   "a build is already running": "이미 빌드가 진행 중입니다",
+  'The puzzle dump cannot be deleted while a build is running.':
+    '데이터베이스를 만드는 동안에는 퍼즐 덤프를 삭제할 수 없습니다.',
+  'There is no puzzle dump in the folder.': '데이터베이스 폴더에 퍼즐 덤프가 없습니다.',
+  'The puzzle dump could not be deleted.': '퍼즐 덤프를 삭제하지 못했습니다.',
   "a folder with that name exists": "같은 이름의 폴더가 이미 있습니다",
   "a file with that name is already here": "같은 이름의 파일이 이미 있습니다",
   "a study with that name exists": "같은 이름의 스터디가 이미 있습니다",

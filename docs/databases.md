@@ -93,7 +93,12 @@ the first build, Rebuild and Try again ask whether to build from it
 (nothing to download, over 5 GB of free disk) or download the newest
 puzzles, and the question says the dump is deleted after. That is also
 the way past a dump an older version left behind after a build that
-died, which every build would otherwise read for good.
+died, which every build would otherwise read for good. To delete a dump
+without building, Settings → **Puzzle database** shows it on a row of
+its own with its size, and its bin deletes it after a question that
+names the file and says the next build downloads (`DELETE
+/api/puzzles/dump`). Only that file goes, never the download a running
+build works from, and the server refuses while a build runs.
 
 Attempt history lives in the vault and is keyed by puzzle id, so it
 survives a rebuild.

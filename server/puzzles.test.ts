@@ -16,6 +16,7 @@ import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { zstdCompressSync } from 'node:zlib';
+import { authApi, requireAuth } from './auth.ts';
 import { PUZZLE_DUMP_DOWNLOAD, REPO_ROOT } from './paths.ts';
 import { buildFailure, puzzlesApi, ratingBound, sweepUnfinishedPuzzleBuild } from './puzzles.ts';
 
@@ -744,6 +745,7 @@ describe('puzzles api (rebuilding a working database)', () => {
     source?: string;
     phase?: string;
     dumpInPlace?: boolean;
+    dumpBytes?: number | null;
   };
   const status = async (): Promise<Status> =>
     (await (await app.request('/api/puzzles/build')).json()) as Status;
@@ -859,6 +861,96 @@ describe('puzzles api (rebuilding a working database)', () => {
     expect(failed.source).toBe('download');
     expect(readFileSync(dump)).toEqual(dumpOf([{ id: 'old0', rating: 1500 }]));
     expect(existsSync(join(data, 'puzzles.sqlite'))).toBe(false);
+  }, 60_000);
+
+  /** Settings' delete, as the card sends it. */
+  const deleteDump = async (on: Hono = app, cookie?: string): Promise<{ status: number; body: unknown }> => {
+    const res = await on.request('/api/puzzles/dump', { method: 'DELETE', ...(cookie && { headers: { cookie } }) });
+    return { status: res.status, body: await res.json() };
+  };
+
+  it('says how big the dump in place is, wherever it says there is one', async () => {
+    const meta = async (): Promise<Status> => (await (await app.request('/api/puzzles/meta')).json()) as Status;
+    expect(await status()).toMatchObject({ dumpInPlace: false, dumpBytes: null });
+    expect(await meta()).toMatchObject({ dumpInPlace: false, dumpBytes: null });
+    const bytes = dumpOf([{ id: 'a0', rating: 1500 }]);
+    writeFileSync(dump, bytes);
+    expect(await status()).toMatchObject({ dumpInPlace: true, dumpBytes: bytes.length });
+    // With no database, and with one built from it.
+    expect(await meta()).toMatchObject({ ready: false, dumpInPlace: true, dumpBytes: bytes.length });
+    expect((await build()).error ?? null).toBeNull();
+    expect(await meta()).toMatchObject({ ready: true, dumpInPlace: true, dumpBytes: bytes.length });
+  }, 60_000);
+
+  it('deletes the dump in place and nothing else beside it', async () => {
+    const bytes = dumpOf(Array.from({ length: 10 }, (_, i) => ({ id: `a${i}`, rating: 1500 })));
+    writeFileSync(dump, bytes);
+    expect((await build()).error ?? null).toBeNull();
+    // What else the folder can hold: the app's own download (a build's
+    // working copy, which only a sweep removes) and that of an older version.
+    writeFileSync(join(data, PUZZLE_DUMP_DOWNLOAD), 'the app’s own download');
+    writeFileSync(join(data, 'lichess_db_puzzle.csv.zst.part'), 'an older version’s part');
+    const database = readFileSync(join(data, 'puzzles.sqlite'));
+
+    expect(await deleteDump()).toEqual({ status: 200, body: { bytes: bytes.length } });
+    expect(existsSync(dump)).toBe(false);
+    expect(readFileSync(join(data, PUZZLE_DUMP_DOWNLOAD), 'utf-8')).toBe('the app’s own download');
+    expect(existsSync(join(data, 'lichess_db_puzzle.csv.zst.part'))).toBe(true);
+    expect(readFileSync(join(data, 'puzzles.sqlite'))).toEqual(database);
+    // Every place that adapts to it reads as with none, and the database serves on.
+    expect(await status()).toMatchObject({ dumpInPlace: false, dumpBytes: null });
+    const meta = (await (await app.request('/api/puzzles/meta')).json()) as Status & { ready: boolean; puzzles: number };
+    expect(meta).toMatchObject({ ready: true, puzzles: 10, dumpInPlace: false, dumpBytes: null });
+    expect((await draw('')).status).toBe(200);
+
+    // Gone is gone: a second delete says so rather than pretending.
+    expect(await deleteDump()).toEqual({ status: 404, body: { error: 'There is no puzzle dump in the folder.' } });
+  }, 60_000);
+
+  it('refuses to delete the dump while a build runs, whichever it reads', async () => {
+    const bytes = dumpOf(Array.from({ length: 300 }, (_, i) => ({ id: `a${i}`, rating: 1500 })));
+    writeFileSync(dump, bytes);
+    const refused = { status: 409, body: { error: 'The puzzle dump cannot be deleted while a build is running.' } };
+    // A build from the dump, which is reading it. The status says running
+    // from the moment the start is answered until the child has closed.
+    await start();
+    expect(await deleteDump()).toEqual(refused);
+    expect((await settle()).error ?? null).toBeNull();
+    expect(readFileSync(dump)).toEqual(bytes);
+    // And one downloading past it, which deletes it itself once it has
+    // built (here its download fails: the closed port, beforeEach).
+    await start({ download: true });
+    expect(await deleteDump()).toEqual(refused);
+    expect((await settle()).error?.reason).toBe('unreachable');
+    expect(readFileSync(dump)).toEqual(bytes);
+    // Once it is over, the same request goes through.
+    expect((await deleteDump()).status).toBe(200);
+    expect(existsSync(dump)).toBe(false);
+  }, 60_000);
+
+  it('deletes the dump only for a signed-in session where the vault has a password', async () => {
+    writeFileSync(dump, dumpOf([{ id: 'a0', rating: 1500 }]));
+    // The server's own order (server/index.ts): the auth routes, then the
+    // session check over every /api route, then the vault's routes.
+    const sessions = join(data, 'sessions.json');
+    const gated = new Hono();
+    gated.route('/api', authApi(() => 'hunter2', () => null, sessions));
+    gated.use('/api/*', requireAuth(() => 'hunter2', sessions));
+    gated.route('/api', puzzles);
+
+    expect((await deleteDump(gated)).status).toBe(401);
+    expect((await deleteDump(gated, 'vault_session=' + 'a'.repeat(64))).status).toBe(401);
+    expect(existsSync(dump)).toBe(true);
+
+    const login = await gated.request('/api/auth/login', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': '10.0.0.1' },
+      body: JSON.stringify({ password: 'hunter2' }),
+    });
+    expect(login.status).toBe(200);
+    const cookie = login.headers.get('set-cookie')!.split(';')[0]!;
+    expect((await deleteDump(gated, cookie)).status).toBe(200);
+    expect(existsSync(dump)).toBe(false);
   }, 60_000);
 
   it('has the builder say it is building as it starts, and count every 10,000 rows', async () => {

@@ -71,6 +71,28 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   Workspace, 150 to 213 ms after it was asked against 424 to 459 in one
   run, and 48 to 63 against 167 to 229 in the other. The app on a server
   is unchanged.
+- **Settings can delete a puzzle dump in the data folder.** A Lichess
+  dump beside the puzzle database as `lichess_db_puzzle.csv.zst` was
+  kept by every build, and only a build asked for the newest puzzles
+  deleted it, once it had built. So the 300 MB stayed on a server whose
+  database was built, and getting it back, or having the first build
+  download instead of reading a stale file, meant deleting it on the
+  server's disk. Wherever a dump is in place, Settings → **Puzzle
+  database** now shows it on a row of its own with its size, and the
+  bin beside it asks first, naming the file and its size and saying
+  what changes: the database keeps working, and the next build or
+  rebuild downloads the newest puzzles, about 300 MB. After it, the
+  card, the Puzzles page, the phone's puzzle hub and Themes and the
+  rebuild question all read as with no dump. It waits while a build
+  runs. The Puzzles page's setup screen does not offer it: its
+  question's "Download the newest puzzles" already gets past a stale
+  dump, and keeps it until the new database is built.
+- **The Korean hub and Themes say 만들면, not 빌드하면.** With no puzzle
+  database and no dump in the folder, the phone's puzzle hub and Themes
+  said 내려받아 빌드하면, where the sentence for a dump in place says
+  만들면 and the button they lead to says 내려받아 만들기. Deleting a
+  dump in Settings turns the one sentence into the other, and the verb
+  changed with it. Both now say 만들면.
 
 ## 0.12.2
 

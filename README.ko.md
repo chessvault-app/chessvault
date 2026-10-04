@@ -527,7 +527,8 @@ npm run build:refgames -- lichess_elite_2025-11.pgn
 바꿔 넣습니다. `data/`에 `lichess_db_puzzle.csv.zst`로 둔 덤프가 있으면
 아무것도 내려받지 않고 그것으로 만듭니다. 덤프가 있는 동안 빌드는 그것을
 쓸지, 최신 세트를 내려받을지 묻고, 내려받으면 새 데이터베이스를 다 만든 뒤
-그 덤프를 삭제합니다([docs/databases.ko.md](docs/databases.ko.md#직접-손봐야-할-때)).
+그 덤프를 삭제하며, 같은 설정 카드에서 덤프만 따로 삭제할 수도 있습니다
+([docs/databases.ko.md](docs/databases.ko.md#직접-손봐야-할-때)).
 
 **참고 게임도 앱 안에서 만들고, 하나가 아니라 여럿입니다.** 데스크톱은 설치
 프로그램의 시작용 세트가 데이터베이스 하나로 자리 잡은 채 시작하고,
