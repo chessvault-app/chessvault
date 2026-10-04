@@ -15,6 +15,28 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   with a real restore stopped by two other programs holding files open:
   .restore was there and empty after the put-back, after a keep and after
   an undo, and is now gone after each.
+- **Settings → Vault offers what a put-back could not move home.** When
+  something outside the server, such as a sync client, had made one of
+  the vault's folders again while a restore stood part way, putting the
+  vault back could not move the vault's own folder home, nor, after an
+  undo, the restored vault's with whatever had been written in it since.
+  The folder stayed in the vault's .restore folder, but the card said
+  only “The vault is back.”, the server's log was the one place that
+  named it, and only the server's disk reached it; an undo's was deleted
+  at the server's next start. Now the card says “The vault is back, apart
+  from notes, set aside on the server.”, and for as long as such folders
+  are there, whether the card or a start put the vault back, it says which
+  they are and how big, with “Download the folders”, one tar file of only
+  those, each set inside a folder named for when it was set aside and
+  what it is, and “Delete the folders”, which asks first. A later restore
+  goes ahead beside them, and folders an older version set aside are
+  offered the same way. Tried on a server run from source, at a desktop's
+  and an iPhone's size in both languages: after a real restore stopped by
+  two other programs holding files open and notes made again meanwhile,
+  the put-back said so, the download held the vault's four notes byte for
+  byte, and the delete left nothing; and after an undo stopped and put
+  back at a start, the note written since the restore was on the card,
+  survived another restart, and was deleted only when asked.
 
 ## 0.12.2
 
