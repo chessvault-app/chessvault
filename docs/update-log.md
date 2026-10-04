@@ -143,6 +143,26 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   server refused still stays above the list after the reload that
   follows it. Tried on a server run from source with a real stopped
   restore, at a desktop's size in English.
+- **Remove old secrets can delete the old Lichess tokens at Lichess too.**
+  A token works at Lichess until it is deleted there, and a copy
+  downloaded before the purge still holds every one the history had, so
+  the line after it left each to delete at Lichess by hand. Where the
+  history holds tokens, the question now has a row, “Delete the old
+  Lichess tokens at Lichess”, that has the server ask Lichess to delete
+  the ones the vault no longer uses, and where the token in use is among
+  them a row of its own for that one, which also takes it out of the
+  vault, so the online explorer and private study imports stop until a
+  new one is saved. Both start unticked, and nothing is sent to Lichess
+  unless one is ticked; each token goes once, to Lichess only, and never
+  into a log or to the page. The line after it says how many Lichess
+  deleted and how many it no longer had, and a token it could not be
+  reached for keeps the advice to delete it there, with the link. The
+  history is cleaned whatever Lichess answers. Against a stand-in for
+  Lichess on a real server the purge took as long with the requests as
+  without (0.59 to 0.70 s, against 0.67 s before); one that never answers
+  holds it about 10 s, the requests' limit. Tried in a browser at a
+  desktop's and a phone's size in both languages, not against Lichess
+  itself or on a device.
 
 ## 0.12.2
 

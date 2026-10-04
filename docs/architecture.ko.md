@@ -106,7 +106,8 @@ flowchart LR
   웹 앱의 정적 서빙을 담당합니다. 단순한 보관함 입출력 외에 선택적 인증
   게이트(비밀번호 + 인증 앱 2FA/TOTP, `server/auth.ts` + `server/totp.ts`),
   설정 API(`server/settings.ts`), 그리고 Lichess 탐색기와 스터디 내보내기
-  엔드포인트로 나가는 프록시(`server/lichess.ts`), 그리고 엔드게임
+  엔드포인트로 나가는 프록시(`server/lichess.ts`. 소유자가 고르면 옛 토큰을
+  Lichess에서 삭제하는 일도 합니다), 그리고 엔드게임
   테이블베이스로 나가는 프록시(`server/tablebase.ts`)를 소유합니다.
   테이블베이스 프록시는 `TablebaseProbe` 인터페이스 뒤에 있고, 보관함의
   `tablebaseUrl`이 Lichess의 공개 Syzygy 서버나 직접 띄운 서버를
@@ -396,6 +397,22 @@ Tailscale만 쓸 수도 있습니다. 둘 다 같은 서버로 가는 HTTP일 �
 쓴 저장의 옛 id는 남지 않고, 제거를 넘어 id를 들고 있는 것도 없습니다. 히스토리
 패널과 삭제된 문서는 열릴 때마다 id를 묻고, 복원의 저널은 이름 바꾸기만
 담습니다.
+
+본문에 `{ revokeTokens: { past, current } }`를 담은 `POST`는 그 `config.json`
+버전들에 든 Lichess 토큰도 Lichess에서 삭제(revoke)합니다. 보관함이 더는 쓰지
+않는 토큰과 지금 쓰는 토큰을 각각 `true`일 때만 삭제하는데, 소유자의 계정으로
+Lichess에 보내는 요청은 소유자가 확인 질문에서 고른 때에만 보내기 때문입니다.
+토큰은 개수를 셀 때 적어 둔 버전들을 `cat-file --batch` 한 번으로 읽어, 다시 쓴
+결과를 검사한 뒤 ref가 움직이기 전에(움직인 뒤에는 값이 없습니다) 각각 한 번씩
+`DELETE https://lichess.org/api/token`의 Bearer로 보내고 버립니다. 어느 것이
+지금 쓰는 토큰인지는 그때의 `config.json`에서 읽으며, 그 파일이 있는데 읽거나
+해석할 수 없으면 아무것도 보내지 않습니다. 지금 쓰는 토큰이 없다고 읽으면 지금
+쓰는 토큰을 옛 토큰으로 보내게 되기 때문입니다. 이 일은
+`server/lichess.ts`의 `revokeLichessToken`이 하며, 탐색기 프록시처럼 fetcher를
+받으므로 테스트는 가짜 Lichess를 씁니다. 돌아오는 것은 종류별 개수(삭제됨,
+401로 이미 무효, 삭제 못 함)뿐이고 값은 없습니다. 제거는 Lichess가 무엇이라
+답하든 계속되고, 지금 쓰는 토큰은 Lichess가 더 받지 않으면 `config.json`에서도
+빠집니다.
 
 ## 공유 코드
 

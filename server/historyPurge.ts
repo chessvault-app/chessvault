@@ -1,6 +1,8 @@
 import { createHmac, randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { writeAtomic } from './atomic.ts';
+import type { TokenRevoked } from './lichess.ts';
 import { isHashedPassword, verifyPassword } from './password.ts';
 import { git, gitPipe, HISTORY_DIR_NAME } from './vaultGit.ts';
 
@@ -24,6 +26,11 @@ import { git, gitPipe, HISTORY_DIR_NAME } from './vaultGit.ts';
  * Then the old saves are made unreachable and deleted from git's store,
  * which is the half that matters: rewritten saves alone leave the old
  * ones in the packs that a copy carries.
+ *
+ * A copy downloaded before still holds them, and of the three a Lichess
+ * token is the one nothing in this vault can close: it works until it is
+ * revoked at Lichess. So where the user chooses it in the question, the
+ * tokens are revoked there before they go (revokeHeld).
  *
  * How: one `cat-file --batch` reads every commit and a second every
  * top-level tree, and one `fast-import` writes the new ones. The purged
@@ -107,8 +114,46 @@ export interface PurgeOutcome {
   /** Whether the old saves are gone from git's store too. False leaves
       the marker, and the next start (or the next purge) deletes them. */
   pruned: boolean;
+  /** What Lichess said to the tokens the purge was asked to revoke;
+      null where it was asked none, or none could be read. */
+  tokens: TokensRevoked | null;
   /** How long it took, in milliseconds. */
   ms: number;
+}
+
+/**
+ * Which of the Lichess tokens the old saves hold a purge revokes at
+ * Lichess before they go, as the user chose them in Settings, and how.
+ *
+ * A token works at Lichess until it is revoked there, whatever this vault
+ * does with it, and a copy downloaded before the purge still holds every
+ * one; replacing it in the Lichess token card only writes config.json. So
+ * the question offers this, and nothing is sent to Lichess unless it was
+ * chosen. The token in use is its own choice: revoked, the explorer and
+ * the imports stop until a new one is saved.
+ */
+export interface TokenRevoke {
+  /** The tokens this vault no longer uses. */
+  past: boolean;
+  /** The token in use, where the old saves hold it. */
+  current: boolean;
+  /** Asks Lichess to revoke one (server/lichess.ts, revokeLichessToken). */
+  revoke: (token: string) => Promise<TokenRevoked>;
+}
+
+/** What Lichess said to the tokens of one kind: numbers, never a value. */
+export interface RevokeCount {
+  /** Revoked now. */
+  revoked: number;
+  /** Already of no use at Lichess (a 401): nothing left to do. */
+  invalid: number;
+  /** No answer, or one that was neither: still to delete at Lichess. */
+  failed: number;
+}
+
+export interface TokensRevoked {
+  past: RevokeCount;
+  current: RevokeCount;
 }
 
 /**
@@ -353,6 +398,90 @@ async function heldSecrets(gitDir: string, dir: string, configs: string[], now: 
   };
 }
 
+/**
+ * Revoke at Lichess the tokens `ask` chose from those the versions of
+ * config.json in `configs` hold: the versions the count read, so what is
+ * revoked is what the question counted. Read in one `cat-file --batch`,
+ * each token sent once however many saves hold it, all at once (each
+ * request has its own time limit, server/lichess.ts), and let go: only
+ * numbers come back. Whatever Lichess answers, the purge goes on; a
+ * failure is a number the line after the purge turns into the old advice.
+ *
+ * The token in use is set against config.json as it is now, as the
+ * question set it. Once Lichess no longer takes it, revoked now or a 401,
+ * it is taken out of config.json too, so the Lichess token card says
+ * there is none instead of naming one that only fails; only if
+ * config.json still holds that one, so a token saved since is kept.
+ */
+async function revokeHeld(gitDir: string, dir: string, configs: string[], ask: TokenRevoke): Promise<TokensRevoked> {
+  const inUse = tokenInUse(dir);
+  const held = new Set<string>();
+  for (const version of await readObjects(gitDir, dir, configs)) {
+    const token = secretsIn(version)?.token;
+    if (token) held.add(token);
+  }
+  const count = (): RevokeCount => ({ revoked: 0, invalid: 0, failed: 0 });
+  const tokens: TokensRevoked = { past: count(), current: count() };
+  await Promise.all(
+    [...held].map(async (token) => {
+      const current = token === inUse;
+      if (!(current ? ask.current : ask.past)) return;
+      const answer = await ask.revoke(token).catch((): TokenRevoked => 'failed');
+      tokens[current ? 'current' : 'past'][answer] += 1;
+      if (current && answer !== 'failed') forgetToken(dir, token);
+    }),
+  );
+  // Numbers only, as the page is told.
+  const said = (kind: RevokeCount): string => `${kind.revoked} revoked, ${kind.invalid} already invalid, ${kind.failed} not revoked`;
+  console.log(`[vault-backup] Lichess tokens the vault no longer uses: ${said(tokens.past)}; the token in use: ${said(tokens.current)}`);
+  return tokens;
+}
+
+/**
+ * The Lichess token in use, as the revoke must know it: none where there
+ * is no config.json, and a throw where there is one that cannot be read
+ * or is not a JSON object. Either, read as no token in use (as
+ * secretsInUse reads a failed read), would make the token in use one the
+ * vault no longer uses, and send it to Lichess on a choice that left it
+ * out. So nothing is sent, and the line after the purge gives the old
+ * advice for every token.
+ */
+function tokenInUse(dir: string): string | null {
+  let raw: Buffer;
+  try {
+    raw = readFileSync(resolve(dir, 'config.json'));
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw new Error(`config.json could not be read (${(error as NodeJS.ErrnoException).code ?? 'unknown'}), so no token was sent`);
+  }
+  const now = secretsIn(raw);
+  if (now === null) throw new Error('config.json is not a settings object, so no token was sent');
+  return now.token;
+}
+
+/** Take `token` out of config.json, if it is still the one there. */
+function forgetToken(dir: string, token: string): void {
+  const path = resolve(dir, 'config.json');
+  let config: unknown;
+  try {
+    config = JSON.parse(readFileSync(path, 'utf-8').replace(/^﻿/, ''));
+  } catch {
+    return;
+  }
+  if (!config || typeof config !== 'object' || Array.isArray(config)) return;
+  const settings = config as Record<string, unknown>;
+  if (typeof settings.lichessToken !== 'string' || settings.lichessToken.trim() !== token) return;
+  delete settings.lichessToken;
+  try {
+    // As server/settings.ts writes it: owner-only, since it holds secrets.
+    writeAtomic(path, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600 });
+  } catch (error) {
+    // Not fatal: the token is revoked either way, and the card goes on
+    // naming it until it is replaced or removed there.
+    console.error('[vault-backup] could not take the revoked Lichess token out of config.json:', (error as Error).message);
+  }
+}
+
 // --- Reading objects ----------------------------------------------------------
 
 /** Every object in `ids`, read in one `cat-file --batch`, in order. */
@@ -529,15 +658,19 @@ async function pruned(gitDir: string, dir: string): Promise<boolean> {
  * new history does not have. Nothing moves until the new history is
  * written and checked, so a failure before then leaves the history as it
  * was; a failure after it leaves the marker, and the next start prunes.
+ *
+ * With `tokens`, the Lichess tokens chosen are revoked at Lichess first
+ * (revokeHeld), between the check and the move: after it the values are
+ * gone, and before it a purge that fails its check has sent nothing.
  */
-export async function purgeHistory(gitDir: string, dir: string): Promise<PurgeOutcome> {
+export async function purgeHistory(gitDir: string, dir: string, tokens?: TokenRevoke): Promise<PurgeOutcome> {
   const started = Date.now();
-  const removed = await historyCount(gitDir, dir, { fresh: true });
+  const { leaks: removed, configs } = await countFor(gitDir, dir, true);
   if (removed.commits === 0) {
     // Nothing to write again; only what a cut-off purge left to delete.
     const done = !removed.pending || (await pruned(gitDir, dir));
     forgetHistoryLeaks(gitDir);
-    return { rewritten: 0, removed, pruned: done, ms: Date.now() - started };
+    return { rewritten: 0, removed, pruned: done, tokens: null, ms: Date.now() - started };
   }
 
   const { keep, drop, detached } = await readRefs(gitDir, dir);
@@ -621,6 +754,17 @@ export async function purgeHistory(gitDir: string, dir: string): Promise<PurgeOu
     throw new Error(`the rewritten history does not match (${before.trim()} saves before, ${after.trim()} after, ${still.split('\n').filter(Boolean).length} still holding them)`);
   }
 
+  // The tokens chosen, revoked while the old saves still hold them. A
+  // version that cannot be read is no reason to keep the secrets in the
+  // history: the purge goes on, and with no numbers to report the line
+  // after it gives the old advice for every token.
+  const revoked = tokens
+    ? await revokeHeld(gitDir, dir, configs, tokens).catch((error: Error) => {
+        console.error('[vault-backup] could not read the old Lichess tokens to revoke them:', error.message);
+        return null;
+      })
+    : null;
+
   // Every ref at once or none: update-ref --stdin locks them all first.
   writeFileSync(resolve(gitDir, MARKER), `${new Date().toISOString()}\n`);
   const moves = [
@@ -649,5 +793,5 @@ export async function purgeHistory(gitDir: string, dir: string): Promise<PurgeOu
   });
   const done = await pruned(gitDir, dir);
   forgetHistoryLeaks(gitDir);
-  return { rewritten: rewritten.size, removed, pruned: done, ms: Date.now() - started };
+  return { rewritten: rewritten.size, removed, pruned: done, tokens: revoked, ms: Date.now() - started };
 }

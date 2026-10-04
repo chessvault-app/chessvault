@@ -451,3 +451,52 @@ export function lichessStudiesApi(studiesDir = VAULT_STUDIES, fetcher: typeof fe
 
   return api;
 }
+
+// --- Revoking a token -------------------------------------------------------
+
+/** What became of a token sent to Lichess to be revoked. */
+export type TokenRevoked = 'revoked' | 'invalid' | 'failed';
+
+/**
+ * Ask Lichess to revoke `token`.
+ *
+ * Lichess revokes the token a request carries: `DELETE /api/token` with it
+ * as the Bearer (lila's conf/routes, `DELETE /api/token
+ * controllers.OAuth.tokenRevoke`; "Revoke access token" in its API
+ * reference), open to any valid token whatever its scopes. 204 is
+ * revoked. 401 is a token Lichess no longer takes (deleted there already,
+ * or never one), which is where a revoke means to leave it, so it is
+ * counted apart and not as a failure. Anything else, and no answer in
+ * time, is a failure: the token may still work, and is deleted at Lichess
+ * by hand. A redirect is one too, so the token goes to this address and
+ * nowhere else.
+ *
+ * For Settings, Security's removal of old secrets (server/historyPurge.ts),
+ * and only when the user chooses it there. The value goes nowhere but the
+ * header: no log line, error or answer to the page carries it, and what
+ * fetch throws names the address, not the headers. Every value sent here
+ * was this vault's Lichess token, which the explorer already sent to
+ * Lichess with each request it made.
+ *
+ * `CHESS_TEST_LICHESS_TOKEN_URL` is for tests only and is not a setting:
+ * it points the request at a stand-in for Lichess, so the app can be tried
+ * end to end against a server that records what it is sent, and no real
+ * token is ever revoked by a test.
+ */
+export async function revokeLichessToken(token: string, fetcher: typeof fetch = fetch): Promise<TokenRevoked> {
+  const url = process.env.CHESS_TEST_LICHESS_TOKEN_URL || 'https://lichess.org/api/token';
+  try {
+    const res = await fetcher(url, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` },
+      redirect: 'error',
+      signal: AbortSignal.timeout(10_000),
+    });
+    // Nothing in the body is needed, and an unread one holds the socket.
+    await res.body?.cancel().catch(() => undefined);
+    if (res.ok) return 'revoked';
+    return res.status === 401 ? 'invalid' : 'failed';
+  } catch {
+    return 'failed';
+  }
+}

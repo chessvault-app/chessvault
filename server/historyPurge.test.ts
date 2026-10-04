@@ -1,11 +1,12 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Hono } from 'hono';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { requireAuth } from './auth.ts';
 import { historyLeaks } from './historyPurge.ts';
+import { revokeLichessToken } from './lichess.ts';
 import { hashPassword } from './password.ts';
 import { prepareHistoryRepo, startVaultBackup, type VaultBackup } from './vaultBackup.ts';
 import { vaultHistoryApi } from './vaultHistory.ts';
@@ -328,6 +329,204 @@ describe('removing old secrets from the history', { timeout: 30_000 }, () => {
     expect((await app.request('/api/history/purge', { method: 'POST' })).status).toBe(401);
     expect(run(['rev-parse', 'HEAD']).trim()).toBe(head);
     expect((await backup!.leaks()).commits).toBe(5);
+  });
+
+  // --- Revoking the old Lichess tokens at Lichess ------------------------------
+
+  /** The tokens tokenVault plants: two the vault no longer uses, and the
+      one in use. */
+  const OLD_ONE = 'lip_oldtokenone';
+  const OLD_TWO = 'lip_oldtokentwo';
+  const IN_USE = 'lip_tokeninuse';
+  const TOKENS = [OLD_ONE, OLD_TWO, IN_USE];
+
+  /**
+   * A vault whose history holds three Lichess tokens: an older version's
+   * config.json tracked by force, the first token in two saves (a later
+   * save changed another setting beside it), then a second, then the one
+   * in use now, which config.json still holds with a password and a name.
+   */
+  const tokenVault = async (): Promise<void> => {
+    dir = mkdtempSync(join(tmpdir(), 'history-purge-'));
+    write('notes/Plans.md', '# Plans\n');
+    backup = await startVaultBackup(dir, QUIET);
+    const plant = async (config: Record<string, unknown>, message: string): Promise<void> => {
+      write('config.json', `${JSON.stringify(config)}\n`);
+      await git(gitDir(), dir, ['add', '-f', 'config.json']);
+      await git(gitDir(), dir, ['commit', '-q', '-m', message]);
+    };
+    await plant({ lichessToken: OLD_ONE }, 'an older version');
+    await plant({ lichessToken: OLD_ONE, name: 'Club' }, 'a name beside it');
+    await plant({ lichessToken: OLD_TWO, name: 'Club' }, 'a new token');
+    await plant({ lichessToken: IN_USE, name: 'Club' }, 'the token in use');
+    write('config.json', `${JSON.stringify({ appPassword: 'scrypt$hash-in-use', lichessToken: IN_USE, name: 'Club' })}\n`);
+    await backup.stop();
+    backup = await startVaultBackup(dir, QUIET);
+  };
+
+  /**
+   * A stand-in for Lichess, through the fetcher revokeLichessToken takes:
+   * every request it is sent, with its Authorization header, answered by
+   * `answer` (204 unless it says otherwise; a throw is a network failure).
+   */
+  const fakeLichess = (answer: (token: string) => number | 'unreachable' = () => 204) => {
+    const sent: { url: string; method: string; authorization: string | null }[] = [];
+    const fetcher: typeof fetch = async (input, init) => {
+      const authorization = new Headers(init?.headers).get('authorization');
+      sent.push({ url: String(input), method: init?.method ?? 'GET', authorization });
+      const status = answer(authorization?.replace(/^Bearer /, '') ?? '');
+      if (status === 'unreachable') throw new TypeError('fetch failed');
+      return new Response(status === 204 ? null : '{"error":"No such token"}', { status });
+    };
+    return { sent, fetcher };
+  };
+
+  /** The purge routes, wired to the stand-in as server/index.ts wires them
+      to Lichess. */
+  const purgeApp = (fetcher: typeof fetch): Hono =>
+    new Hono().route(
+      '/api',
+      vaultHistoryApi(dir, {
+        purge: {
+          leaks: () => backup!.leaks(),
+          run: (tokens) => backup!.purge(tokens ? { ...tokens, revoke: (token) => revokeLichessToken(token, fetcher) } : undefined),
+        },
+      }),
+    );
+
+  /** POST the purge with `body`, recording every console line it makes. */
+  const purgeWith = async (app: Hono, body?: unknown): Promise<{ status: number; text: string; logged: string }> => {
+    const lines: unknown[][] = [];
+    for (const level of ['log', 'info', 'warn', 'error', 'debug'] as const) {
+      vi.spyOn(console, level).mockImplementation((...args: unknown[]) => {
+        lines.push(args);
+      });
+    }
+    const res = await app.request('/api/history/purge', {
+      method: 'POST',
+      ...(body === undefined ? {} : { headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) }),
+    });
+    const text = await res.text();
+    vi.restoreAllMocks();
+    return { status: res.status, text, logged: lines.map((args) => args.map(String).join(' ')).join('\n') };
+  };
+
+  /** Every token, as a value or a header, in none of `texts`. */
+  const holdsNoToken = (...texts: string[]): void => {
+    for (const text of texts) for (const token of TOKENS) expect(text).not.toContain(token);
+  };
+
+  const configNow = (): Record<string, unknown> => JSON.parse(readFileSync(join(dir, 'config.json'), 'utf-8')) as Record<string, unknown>;
+
+  it('revokes at Lichess, once each, the old tokens chosen, and not the one in use', async () => {
+    await tokenVault();
+    const lichess = fakeLichess();
+    const app = purgeApp(lichess.fetcher);
+    const asked = await (await app.request('/api/history/purge')).text();
+    expect(JSON.parse(asked).secrets.token).toEqual({ current: true, past: 2 });
+
+    const { status, text, logged } = await purgeWith(app, { revokeTokens: { past: true, current: false } });
+    expect(status).toBe(200);
+    expect(JSON.parse(text)).toMatchObject({
+      ok: true,
+      pruned: true,
+      tokens: { past: { revoked: 2, invalid: 0, failed: 0 }, current: { revoked: 0, invalid: 0, failed: 0 } },
+    });
+    expect(lichess.sent.map(({ authorization }) => authorization).sort()).toEqual([`Bearer ${OLD_ONE}`, `Bearer ${OLD_TWO}`]);
+    for (const request of lichess.sent) expect(request).toMatchObject({ url: 'https://lichess.org/api/token', method: 'DELETE' });
+    // The token in use stays in use, and the history holds none of them.
+    expect(configNow()).toMatchObject({ lichessToken: IN_USE, name: 'Club' });
+    expect(run(['log', '--all', '--full-history', '--format=%H', '--', 'config.json'])).toBe('');
+    holdsNoToken(asked, text, logged);
+  });
+
+  it('revokes the token in use only when that is chosen too, and takes it out of config.json', async () => {
+    await tokenVault();
+    const lichess = fakeLichess();
+    const { status, text, logged } = await purgeWith(purgeApp(lichess.fetcher), { revokeTokens: { past: true, current: true } });
+    expect(status).toBe(200);
+    expect(JSON.parse(text).tokens).toEqual({
+      past: { revoked: 2, invalid: 0, failed: 0 },
+      current: { revoked: 1, invalid: 0, failed: 0 },
+    });
+    expect(lichess.sent.map(({ authorization }) => authorization).sort()).toEqual([OLD_ONE, OLD_TWO, IN_USE].map((token) => `Bearer ${token}`).sort());
+    // Revoked, it is of no use to the explorer: gone from config.json, and
+    // everything else there kept.
+    expect(configNow()).toEqual({ appPassword: 'scrypt$hash-in-use', name: 'Club' });
+    holdsNoToken(text, logged);
+  });
+
+  it('sends nothing to Lichess unless it is chosen', async () => {
+    await tokenVault();
+    const lichess = fakeLichess();
+    const app = purgeApp(lichess.fetcher);
+    // Not chosen in so many words: anything but `true` is no.
+    const { status, text } = await purgeWith(app, { revokeTokens: { past: 'yes', current: 1 } });
+    expect(status).toBe(200);
+    expect(JSON.parse(text)).toMatchObject({ ok: true, pruned: true, tokens: null });
+    expect(lichess.sent).toEqual([]);
+    expect(configNow()).toMatchObject({ lichessToken: IN_USE });
+
+    // And a purge asked with no body at all, as before this choice.
+    await backup!.stop();
+    rmSync(dir, { recursive: true, force: true });
+    await tokenVault();
+    const again = await purgeWith(purgeApp(lichess.fetcher));
+    expect(again.status).toBe(200);
+    expect(JSON.parse(again.text)).toMatchObject({ ok: true, tokens: null });
+    expect(lichess.sent).toEqual([]);
+  });
+
+  it('counts a token Lichess no longer takes as already invalid', async () => {
+    await tokenVault();
+    const lichess = fakeLichess((token) => (token === OLD_TWO ? 204 : 401));
+    const { status, text } = await purgeWith(purgeApp(lichess.fetcher), { revokeTokens: { past: true, current: true } });
+    expect(status).toBe(200);
+    expect(JSON.parse(text).tokens).toEqual({
+      past: { revoked: 1, invalid: 1, failed: 0 },
+      current: { revoked: 0, invalid: 1, failed: 0 },
+    });
+    // Of no use at Lichess either way, so it leaves config.json too.
+    expect(configNow()).not.toHaveProperty('lichessToken');
+  });
+
+  it('sends nothing where config.json cannot say which token is in use', async () => {
+    await tokenVault();
+    const app = purgeApp(fakeLichess().fetcher);
+    // Asked while config.json could be read: the token in use is its own row.
+    expect(JSON.parse(await (await app.request('/api/history/purge')).text()).secrets.token).toEqual({ current: true, past: 2 });
+    // Then, by the time of the purge, it cannot: read as no token in use,
+    // the one in use would go to Lichess on a choice that left it out.
+    write('config.json', `{"lichessToken": "${IN_USE}",`);
+    const lichess = fakeLichess();
+    const { status, text, logged } = await purgeWith(purgeApp(lichess.fetcher), { revokeTokens: { past: true, current: false } });
+    expect(status).toBe(200);
+    expect(JSON.parse(text)).toMatchObject({ ok: true, pruned: true, tokens: null });
+    expect(lichess.sent).toEqual([]);
+    expect(run(['log', '--all', '--full-history', '--format=%H', '--', 'config.json'])).toBe('');
+    expect(logged).toContain('no token was sent');
+    holdsNoToken(text, logged);
+  });
+
+  it('finishes the purge when Lichess cannot be reached, and says so', async () => {
+    await tokenVault();
+    const lichess = fakeLichess((token) => (token === OLD_ONE ? 500 : 'unreachable'));
+    const { status, text, logged } = await purgeWith(purgeApp(lichess.fetcher), { revokeTokens: { past: true, current: true } });
+    expect(status).toBe(200);
+    expect(JSON.parse(text)).toMatchObject({
+      ok: true,
+      pruned: true,
+      tokens: { past: { revoked: 0, invalid: 0, failed: 2 }, current: { revoked: 0, invalid: 0, failed: 1 } },
+    });
+    expect(lichess.sent).toHaveLength(3);
+    // The history is clean all the same, and the token in use, which may
+    // still work, is still the one in use.
+    expect(run(['log', '--all', '--full-history', '--format=%H', '--', 'config.json'])).toBe('');
+    expect(await backup!.leaks()).toMatchObject({ commits: 0, pending: false });
+    expect(configNow()).toMatchObject({ lichessToken: IN_USE });
+    // The log says what became of them, in numbers and nothing else.
+    expect(logged).toContain('2 not revoked');
+    holdsNoToken(text, logged);
   });
 
   it('says plainly when there is no history to purge', async () => {
