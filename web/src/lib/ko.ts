@@ -1943,28 +1943,32 @@ export const ko: Record<string, string> = {
   "Ends this device’s session on the server, so a copy of its cookie stops working too. Other devices stay signed in.":
     "이 기기의 세션을 서버에서 끝내므로 쿠키 사본도 더는 쓸 수 없습니다. 다른 기기는 로그인 상태로 남습니다.",
   "Signed out. Back to the lock screen…": "로그아웃했습니다. 잠금 화면으로 돌아갑니다…",
-  // Old credentials in the history (Security card, server/historyPurge.ts).
+  // Old secrets and old files in the history (Security card, server/historyPurge.ts).
   "Old secrets in the history": "변경 기록에 남은 옛 비밀 정보",
   "Old files in the history": "변경 기록에 남은 옛 파일",
-  "Removes the copy of the history’s own files that earlier saves left in it, which every downloaded copy carries. Every version of every document stays.":
-    "앞선 저장들이 변경 기록에 남겨 내려받은 사본마다 따라가는, 변경 기록 자신의 파일 사본을 제거합니다. 모든 문서의 모든 버전은 그대로 남습니다.",
   "Remove old secrets": "옛 비밀 정보 제거",
   "Remove old files": "옛 파일 제거",
   "Removing…": "제거하는 중…",
-  "Every version of every document stays, and only the copy of the history’s own files goes. A copy downloaded before still holds it.":
-    "모든 문서의 모든 버전은 남고, 변경 기록 자신의 파일 사본만 사라집니다. 전에 내려받은 사본에는 그대로 남아 있습니다.",
-  "The history no longer holds a copy of its own files.": "변경 기록에서 자신의 파일 사본을 제거했습니다.",
   "The old secrets are out of the history.": "변경 기록에서 옛 비밀 정보를 제거했습니다.",
+  "The old secrets and old files are out of the history.": "변경 기록에서 옛 비밀 정보와 옛 파일을 제거했습니다.",
+  "The old files are out of the history.": "변경 기록에서 옛 파일을 제거했습니다.",
+  "Removes the old secrets and old files that earlier saves left in the change history, which every downloaded copy carries. Every version of every document stays.":
+    "앞선 저장들이 변경 기록에 남겨 내려받은 사본마다 따라가는 옛 비밀 정보와 옛 파일을 제거합니다. 모든 문서의 모든 버전은 그대로 남습니다.",
+  "Removes the old files that earlier saves left in the change history, which every downloaded copy carries. Every version of every document stays.":
+    "앞선 저장들이 변경 기록에 남겨 내려받은 사본마다 따라가는 옛 파일을 제거합니다. 모든 문서의 모든 버전은 그대로 남습니다.",
+  "Every version of every document stays, and only old secrets and the old files below go. A copy downloaded before still holds them.":
+    "모든 문서의 모든 버전은 남고, 옛 비밀 정보와 아래의 옛 파일만 사라집니다. 전에 내려받은 사본에는 그대로 남아 있습니다.",
+  "Every version of every document stays, and only the old files below go. A copy downloaded before still holds them.":
+    "모든 문서의 모든 버전은 남고, 아래의 옛 파일만 사라집니다. 전에 내려받은 사본에는 그대로 남아 있습니다.",
+  "Book PDFs and their caches": "책 PDF와 그 캐시",
+  "PGN files for the databases": "데이터베이스용 PGN 파일",
+  "A copy of the history’s own files": "변경 기록 자신의 파일 사본",
+  "Other leftover files": "그 밖에 남은 파일",
+  "Copies of the vault’s settings, with no secret in them": "비밀 정보가 없는 보관함 설정 사본",
   "Removes the old secrets that earlier saves left in the change history, which every downloaded copy carries. Every version of every document stays.":
     "앞선 저장들이 변경 기록에 남겨 내려받은 사본마다 따라가는 옛 비밀 정보를 제거합니다. 모든 문서의 모든 버전은 그대로 남습니다.",
-  "Removes the old copies of the vault’s settings that earlier saves left in the change history, which every downloaded copy carries. They hold no password, 2FA secret or token.":
-    "앞선 저장들이 변경 기록에 남겨 내려받은 사본마다 따라가는 보관함 설정의 옛 사본을 제거합니다. 비밀번호, 2단계 인증 비밀키, 토큰은 들어 있지 않습니다.",
   "Every version of every document stays, and only old secrets go. A copy downloaded before still holds them.":
     "모든 문서의 모든 버전은 남고, 옛 비밀 정보만 사라집니다. 전에 내려받은 사본에는 그대로 남아 있습니다.",
-  "Every version of every document stays, and only the old copies of the vault’s settings go. A copy downloaded before still holds them.":
-    "모든 문서의 모든 버전은 남고, 보관함 설정의 옛 사본만 사라집니다. 전에 내려받은 사본에는 그대로 남아 있습니다.",
-  "The history no longer holds old copies of the vault’s settings.":
-    "변경 기록에서 보관함 설정의 옛 사본을 제거했습니다.",
   "A copy downloaded before still holds them.":
     "전에 내려받은 사본에는 그대로 남아 있습니다.",
   "The app password in use is among them: change it in this card.":

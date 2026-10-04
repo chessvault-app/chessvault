@@ -27,14 +27,21 @@ export interface Settings {
 }
 
 /** What GET /api/history/purge answers: whether the vault's history still
-    holds old credentials or its own folder (server/historyPurge.ts). The
-    counts are saves, and `pending` is a removal cut off before git's store
-    was emptied of the old ones. */
+    holds what it never should, old credentials, its own folder, book
+    files, the databases' PGN files or other leftovers
+    (server/historyPurge.ts). The counts are saves, `bytes` what the files
+    of each kind take in the history (absent from an older server), and
+    `pending` a removal cut off before git's store was emptied of the old
+    ones. */
 export interface HistoryLeaks {
   available: boolean;
   commits?: number;
   credentials?: number;
   folder?: number;
+  books?: number;
+  sources?: number;
+  other?: number;
+  bytes?: Partial<Record<'folder' | 'books' | 'sources' | 'other', number>>;
   pending?: boolean;
   /** Which secrets those saves hold, against the ones in use now: kinds
       and numbers, never a value. Null (or absent, from an older server)
