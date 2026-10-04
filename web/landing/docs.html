@@ -773,9 +773,11 @@
                 2FA secrets and tokens an older version or a wipe before 0.12.1 left in the change
                 history out of it. It is there only while the history holds some.
               </li>
-              <li data-ko="<strong>설정 → 보관함 내 데이터 초기화</strong>(Danger zone)가 보관함 전체를 비웁니다. 확인 문구를 직접 입력한 뒤, 비밀번호가 설정되어 있으면 그것까지 다시 물은 다음에야 진행됩니다. 되돌릴 수 없으니 먼저 사본을 내려받으세요.">
+              <li data-ko="<strong>설정 → 보관함 내 데이터 초기화</strong>(Danger zone)가 보관함 전체를 비웁니다. 확인 문구를 직접 입력한 뒤, 비밀번호가 설정되어 있으면 그것까지 다시 물은 다음에야 진행됩니다. 되돌릴 수 없으니 먼저 사본을 내려받으세요. 복원이 도중에 멈춰 있으면 그 복원이 옆에 비켜 둔 폴더도 함께 지우므로, 먼저 보관함을 되돌려 놓아야 그 폴더가 남습니다.">
                 <strong>Settings → Danger zone</strong> wipes the whole vault. It makes you type an
                 arming phrase, then asks for the app password when one is set. There is no undo, so download a copy first.
+                While a restore stands part way it deletes the folders that restore set aside too,
+                which putting the vault back first keeps.
               </li>
             </ul>
             <h2 data-ko="무엇이 어디에">What lives where</h2>
@@ -3101,12 +3103,16 @@
                   </tr>
                   <tr>
                     <td data-ko="보관함 내 데이터 초기화(Danger zone)">Danger zone</td>
-                    <td data-ko="보관함 전체를 비웁니다. 변경 이력까지 지워집니다. «비밀번호와 2단계 인증, 토큰은 남습니다. 되돌릴 수 없으니 먼저 사본을 내려받으세요.»(The password, 2FA and tokens survive. There is no undo, so download a copy first.) 칸이 요구하는 확인 문구(Type “wipe everything” to arm)를 입력해야 <strong>모든 데이터 지우기</strong>(Wipe all data)를 누를 수 있고, 비밀번호가 있으면 그것까지 다시 묻습니다. 틀린 비밀번호로는 아무것도 지워지지 않으며, 확인 창이 «비밀번호가 틀렸습니다. 아무것도 지우지 않았습니다.»(That password is wrong. Nothing was wiped.)라고 알려 줍니다.">
+                    <td data-ko="보관함 전체를 비웁니다. 변경 이력까지 지워집니다. «비밀번호와 2단계 인증, 토큰은 남습니다. 되돌릴 수 없으니 먼저 사본을 내려받으세요.»(The password, 2FA and tokens survive. There is no undo, so download a copy first.) 칸이 요구하는 확인 문구(Type “wipe everything” to arm)를 입력해야 <strong>모든 데이터 지우기</strong>(Wipe all data)를 누를 수 있고, 비밀번호가 있으면 그것까지 다시 묻습니다. 틀린 비밀번호로는 아무것도 지워지지 않으며, 확인 창이 «비밀번호가 틀렸습니다. 아무것도 지우지 않았습니다.»(That password is wrong. Nothing was wiped.)라고 알려 줍니다. 복원이 도중에 멈춰 있는 동안에도 지울 수 있으며, 그때 확인 창은 «먼저 보관함을 되돌려 놓지 않으면 멈춘 복원이 옆에 비켜 둔 폴더도 함께 지워집니다.»라고 덧붙입니다. 되돌려 놓기가 비켜 둔 폴더가 있으면 «복원 뒤 옆에 비켜 둔 폴더도 함께 지워지며, 내려받은 사본에는 들어 있지 않습니다.»라고 덧붙입니다.">
                       Wiping the vault — change history included. “The password, 2FA and
                       tokens survive. There is no undo, so download a copy first.” Typing the arming phrase the field asks
                       for — Type “wipe everything” to arm — unlocks <strong>Wipe all data</strong>,
                       and the confirm asks for the app password when one is set. A wrong one wipes
                       nothing, and the confirm says "That password is wrong. Nothing was wiped."
+                      It runs while a restore stands part way too, and then the confirm adds “The
+                      folders set aside by the stopped restore go too, unless you put the vault back
+                      first.” With folders a put-back set aside, it adds “The folders set aside after
+                      a restore go too, and a downloaded copy does not hold them.”
                     </td>
                   </tr>
                   <tr>

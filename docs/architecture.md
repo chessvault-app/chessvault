@@ -323,7 +323,10 @@ seven files set aside, and the put-back's save added them again, a
 duplicate version of each per episode). The saves under `exclusive()`
 are not held; a restore makes them before its journal is written and
 after it is gone. The wipe alone still runs, and
-deletes it all, the folders set aside included. A write was the danger: a note
+deletes it all, the folders set aside included: it is the one way out of
+a journal nobody can read, so it stays, and its confirmation reads `GET
+/api/storage/restore` as it opens to say those folders go too, and that
+putting the vault back first keeps them. A write was the danger: a note
 saved there made `notes/` again where the vault's own had to go back to,
 and the put-back, which skips a rename whose source is back, left the
 vault's own in `.restore`. What makes a put-back fail in a running
