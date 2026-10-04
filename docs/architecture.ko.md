@@ -42,7 +42,8 @@ vault/
   .history.git        자동 커밋 히스토리 저장소 (세밀한 되돌리기, config.json,
                       sessions.json, sources/, .restore/, *.part와 *.swp 파일 제외)
   .restore/           진행 중인 사본에서 복원 (server/restore.ts): 풀고 있는 업로드,
-                      그리고 복원을 유지하거나 되돌릴 때까지 그 전의 보관함
+                      그리고 복원을 유지하거나 되돌릴 때까지 그 전의 보관함.
+                      안에 아무것도 남지 않으면 삭제한다
 ```
 
 잃으면 아까울 만한 것은 전부 다른 도구도 읽을 수 있는 파일입니다. 노트는

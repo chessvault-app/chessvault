@@ -42,7 +42,8 @@ vault/
   .history.git        auto-commit history repo (fine-grained undo; excludes config.json,
                       sessions.json, sources/, .restore/, and *.part and *.swp files)
   .restore/           a restore from a copy at work (server/restore.ts): the upload being
-                      unpacked, and the vault it replaced until that is kept or undone
+                      unpacked, and the vault it replaced until that is kept or undone;
+                      deleted once nothing is left in it
 ```
 
 Everything a person would grieve losing is a file another tool can read.
