@@ -97,6 +97,21 @@ describe('vault backup', () => {
     expect(log(dir)).toHaveLength(2);
   });
 
+  it('saves a notes or studies folder named sources, and leaves out only the one at the top', async () => {
+    dir = mkdtempSync(join(tmpdir(), 'vault-backup-'));
+    mkdirSync(join(dir, 'sources'));
+    writeFileSync(join(dir, 'sources', 'big.pgn'), 'x'.repeat(1024));
+    mkdirSync(join(dir, 'notes', 'sources'), { recursive: true });
+    writeFileSync(join(dir, 'notes', 'sources', 'Reading list.md'), '# Reading list\n');
+    mkdirSync(join(dir, 'studies', 'Openings', 'sources'), { recursive: true });
+    writeFileSync(join(dir, 'studies', 'Openings', 'sources', 'Najdorf.pgn'), '1. e4 c5 *\n');
+    backup = await startVaultBackup(dir, 50);
+    const files = tracked(dir).split('\n');
+    expect(files).toContain('notes/sources/Reading list.md');
+    expect(files).toContain('studies/Openings/sources/Najdorf.pgn');
+    expect(files).not.toContain('sources/big.pgn');
+  });
+
   it('untracks the per-book files an older version committed, and keeps them on disk', async () => {
     dir = mkdtempSync(join(tmpdir(), 'vault-backup-'));
     const book = join(dir, 'books', 'b0123456789abcdef');

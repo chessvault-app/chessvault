@@ -6,7 +6,11 @@ import { HISTORY_DIR_NAME, RESTORE_DIR_NAME } from './vaultGit.ts';
  * The history repo (server/vaultBackup.ts) writes this list into its own
  * exclude file, never a file in the vault, at every start and at once
  * after a wipe or a restore makes a new repo. Every pattern means what it
- * means in a .gitignore at the top of the vault.
+ * means in a .gitignore at the top of the vault: one that starts with a
+ * slash is at the top only, and the rest match at any depth. Everything
+ * here that the server writes at the top of the vault is said so, since
+ * a pattern with no slash in it matches every folder of that name: with
+ * `sources/`, a notes or studies folder named sources was never saved.
  *
  * Each entry has a kind, which is how Settings names it when an earlier
  * save holds one anyway (server/historyPurge.ts):
@@ -38,14 +42,14 @@ import { HISTORY_DIR_NAME, RESTORE_DIR_NAME } from './vaultGit.ts';
 export type HistoryExcludedKind = 'credentials' | 'folder' | 'books' | 'sources' | 'other';
 
 export const NEVER_IN_HISTORY: readonly { pattern: string; kind: HistoryExcludedKind }[] = [
-  { pattern: `${HISTORY_DIR_NAME}/`, kind: 'folder' },
-  { pattern: `${RESTORE_DIR_NAME}/`, kind: 'other' },
-  { pattern: 'sources/', kind: 'sources' },
-  { pattern: 'books/*/book.pdf', kind: 'books' },
-  { pattern: 'books/*/open.bin', kind: 'books' },
+  { pattern: `/${HISTORY_DIR_NAME}/`, kind: 'folder' },
+  { pattern: `/${RESTORE_DIR_NAME}/`, kind: 'other' },
+  { pattern: '/sources/', kind: 'sources' },
+  { pattern: '/books/*/book.pdf', kind: 'books' },
+  { pattern: '/books/*/open.bin', kind: 'books' },
   { pattern: '*.part', kind: 'other' },
-  { pattern: 'config.json', kind: 'credentials' },
-  { pattern: 'sessions.json', kind: 'credentials' },
+  { pattern: '/config.json', kind: 'credentials' },
+  { pattern: '/sessions.json', kind: 'credentials' },
   { pattern: '*.swp', kind: 'other' },
 ];
 
