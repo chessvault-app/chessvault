@@ -1287,6 +1287,10 @@ export const ko: Record<string, string> = {
   'Clear all': '모두 지우기',
   'Wipe all data': '모든 데이터 지우기',
   'Wipe the entire vault?': '보관함 전체를 지울까요?',
+  'The folders set aside by the stopped restore go too, unless you put the vault back first.':
+    '먼저 보관함을 되돌려 놓지 않으면 멈춘 복원이 옆에 비켜 둔 폴더도 함께 지워집니다.',
+  'The folders set aside after a restore go too, and a downloaded copy does not hold them.':
+    '복원 뒤 옆에 비켜 둔 폴더도 함께 지워지며, 내려받은 사본에는 들어 있지 않습니다.',
   'Confirm your app password': '앱 비밀번호를 확인하세요',
   Language: '언어',
   'App language': '앱 언어',

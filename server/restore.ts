@@ -647,7 +647,8 @@ const RECOVER_PAUSES_MS = [1_000, 3_000];
  * touch it all: the wipe, which deletes the half vault and `.restore`
  * with it, the folders set aside included, and leaves an empty vault
  * with no journal. It is let through as before, behind its own
- * confirmation.
+ * confirmation, which says while a restore stands that those folders go
+ * too: it is the one way out of a journal nobody can read.
  */
 function answersWhileStuck(method: string, path: string): boolean {
   if (path === '/api/storage/restore' || path.startsWith('/api/storage/restore/')) return true;

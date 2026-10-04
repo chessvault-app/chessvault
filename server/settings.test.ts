@@ -7,6 +7,7 @@ import { gamesApi } from './games.ts';
 import { AnalysisStore } from './myGamesAnalysis.ts';
 import { hashPassword, isHashedPassword, verifyPassword } from './password.ts';
 import { VAULT_SKELETON } from './paths.ts';
+import { restoreApi, stuckGuard } from './restore.ts';
 import { settingsApi } from './settings.ts';
 import { studiesApi } from './studies.ts';
 import { totpAt } from './totp.ts';
@@ -490,6 +491,39 @@ describe('wipe', () => {
       store.close();
       rmSync(data, { recursive: true, force: true });
     }
+  });
+
+  it('still runs while a restore stands part way, and deletes what it set aside and what a put-back kept', async () => {
+    // Mounted as server/index.ts mounts them: the guard lets the wipe
+    // through, since it is the one way out of a journal nobody can read.
+    const guarded = new Hono();
+    guarded.use('/api/*', stuckGuard(vault));
+    guarded.route('/api', settingsApi({ configPath: join(vault, 'config.json'), vaultDir: vault, sameMachine: true, derived: [] }));
+    guarded.route('/api', restoreApi(vault, { free: async () => null }));
+    const state = async (): Promise<Record<string, unknown>> => (await guarded.request('/api/storage/restore')).json();
+    // What a put-back kept earlier, and a restore stopped since with the
+    // vault's notes set aside and a journal nobody can read.
+    mkdirSync(join(vault, '.restore', 'a0000001', 'out', 'studies'), { recursive: true });
+    writeFileSync(join(vault, '.restore', 'a0000001', 'out', 'studies', 'Kept.pgn'), '*');
+    writeFileSync(join(vault, '.restore', 'a0000001', 'kept.json'), JSON.stringify({ at: new Date().toISOString(), from: 'restore', entries: ['out/studies'] }));
+    mkdirSync(join(vault, '.restore', 'c0ffee01', 'out', 'notes'), { recursive: true });
+    writeFileSync(join(vault, '.restore', 'c0ffee01', 'out', 'notes', 'Set aside.md'), '# Set aside\n');
+    writeFileSync(join(vault, '.restore', 'journal.json'), '{"moves": [');
+    expect(await state()).toMatchObject({ stuck: true, kept: { folders: ['studies'], files: 1 } });
+    expect((await guarded.request('/api/notes')).status).toBe(503);
+
+    const wiped = await guarded.request('/api/settings/wipe', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ confirm: 'wipe everything', password: 'hunter22' }),
+    });
+    expect(wiped.status).toBe(200);
+    // All of it goes, and the vault is whole and empty, with no restore
+    // standing and nothing set aside.
+    expect(existsSync(join(vault, '.restore'))).toBe(false);
+    expect(await state()).toMatchObject({ stuck: false, pending: null, kept: null });
+    for (const d of VAULT_SKELETON) expect(existsSync(join(vault, d))).toBe(true);
+    expect(config().appPassword).toBe('hunter22');
   });
 
   it('skips the password check on an ungated vault', async () => {

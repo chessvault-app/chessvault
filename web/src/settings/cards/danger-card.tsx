@@ -9,6 +9,7 @@ import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescript
 import { api, apiErrorMessage } from '@/lib/api';
 import { t } from '@/lib/i18n';
 import { Feedback, type Note } from '@/settings/cards/shared';
+import { useRestoreState } from '@/settings/cards/restore-copy';
 
 // --- Danger zone -------------------------------------------------------------
 
@@ -57,6 +58,12 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
   const [password, setPassword] = useState('');
   const [note, setNote] = useState<Note>(null);
   const [busy, setBusy] = useState(false);
+  // Whether a restore has folders set aside, which the wipe deletes with
+  // the rest (server/settings.ts). Read as the question opens, since
+  // another device can have stopped one or put it back since the page was
+  // drawn; the wipe stays allowed, as it is the one way out of a stopped
+  // restore whose record cannot be read.
+  const { state: restore } = useRestoreState();
 
   const wipe = async (): Promise<void> => {
     setBusy(true);
@@ -94,6 +101,11 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
           <AlertDialogTitle>{t('Wipe the entire vault?')}</AlertDialogTitle>
           <AlertDialogDescription>
             {t('This permanently deletes every game, study, note, puzzle and book, and their history. There is no undo.')}
+            {restore?.stuck ? (
+              <> {t('The folders set aside by the stopped restore go too, unless you put the vault back first.')}</>
+            ) : restore?.kept ? (
+              <> {t('The folders set aside after a restore go too, and a downloaded copy does not hold them.')}</>
+            ) : null}
           </AlertDialogDescription>
         </AlertDialogHeader>
         {gate && (
