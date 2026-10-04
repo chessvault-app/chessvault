@@ -7,6 +7,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
 
 ## Unreleased
 
+- **A restore leaves no empty .restore folder in the vault.** Putting the
+  vault back, keeping or undoing a restore, and an upload that failed or
+  was refused each emptied the vault's .restore folder and left the
+  folder, which a vault that was never restored does not have. It is now
+  deleted once nothing is left in it. Tried on a server run from source,
+  with a real restore stopped by two other programs holding files open:
+  .restore was there and empty after the put-back, after a keep and after
+  an undo, and is now gone after each.
+
 ## 0.12.2
 
 The app now puts back a stopped restore, gets the newest puzzles past a dump
