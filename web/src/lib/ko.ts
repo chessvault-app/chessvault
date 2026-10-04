@@ -1987,6 +1987,31 @@ export const ko: Record<string, string> = {
     "지금 쓰는 2단계 인증 비밀키가 그중에 있을 수 있으니 이 카드에서 2단계 인증을 끄고 다시 설정하세요.",
   "The Lichess token in use may be among them: delete it at Lichess and save a new one in the Lichess token card.":
     "지금 쓰는 Lichess 토큰이 그중에 있을 수 있으니 Lichess에서 삭제하고, 새 토큰을 Lichess 토큰 카드에 저장하세요.",
+  // Deleting those tokens at Lichess from the same question: its rows,
+  // then what the line after it says Lichess did.
+  "Delete the old Lichess token at Lichess": "옛 Lichess 토큰을 Lichess에서 삭제",
+  "Delete the old Lichess tokens at Lichess": "옛 Lichess 토큰을 모두 Lichess에서 삭제",
+  "The server asks Lichess to delete it. Otherwise, delete it there yourself.":
+    "서버가 Lichess에 삭제를 요청합니다. 아니면 Lichess에서 직접 삭제하세요.",
+  "The server asks Lichess to delete them. Otherwise, delete them there yourself.":
+    "서버가 Lichess에 모두 삭제하도록 요청합니다. 아니면 Lichess에서 직접 모두 삭제하세요.",
+  "Delete the Lichess token in use at Lichess": "지금 쓰는 Lichess 토큰을 Lichess에서 삭제",
+  "The online opening explorer and private study imports stop until you save a new token.":
+    "새 토큰을 저장할 때까지 온라인 오프닝 탐색기와 비공개 스터디 가져오기가 멈춥니다.",
+  "Lichess deleted the token in use: save a new one in the Lichess token card.":
+    "Lichess에서 지금 쓰던 토큰을 삭제했으니 새 토큰을 Lichess 토큰 카드에 저장하세요.",
+  "The token in use was already gone at Lichess: save a new one in the Lichess token card.":
+    "지금 쓰던 토큰은 Lichess에 이미 없었으니 새 토큰을 Lichess 토큰 카드에 저장하세요.",
+  "The token in use could not be deleted from here: delete it at Lichess and save a new one in the Lichess token card.":
+    "지금 쓰는 토큰을 여기서 삭제하지 못했으니 Lichess에서 삭제하고, 새 토큰을 Lichess 토큰 카드에 저장하세요.",
+  "Lichess deleted 1 old token.": "Lichess에서 옛 토큰 1개를 삭제했습니다.",
+  "Lichess deleted {n} old tokens.": "Lichess에서 옛 토큰 {n}개를 삭제했습니다.",
+  "1 old token was already gone at Lichess.": "옛 토큰 1개는 Lichess에 이미 없었습니다.",
+  "{n} old tokens were already gone at Lichess.": "옛 토큰 {n}개는 Lichess에 이미 없었습니다.",
+  "1 old token could not be deleted from here: delete it at Lichess.":
+    "옛 토큰 1개는 여기서 삭제하지 못했으니 Lichess에서 삭제하세요.",
+  "{n} old tokens could not be deleted from here: delete them at Lichess.":
+    "옛 토큰 {n}개는 여기서 삭제하지 못했으니 Lichess에서 모두 삭제하세요.",
   "Token saved.": "토큰을 저장했습니다.",
   "Token removed.": "토큰을 제거했습니다.",
   "Vault wiped. Reloading…": "보관함을 지웠습니다. 다시 불러옵니다…",

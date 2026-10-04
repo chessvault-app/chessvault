@@ -4,6 +4,7 @@ import { Eraser, ShieldCheck } from 'lucide-react';
 import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Field } from '@/components/ui/field';
 import { SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
 import { Input } from '@/components/ui/input';
@@ -24,8 +25,10 @@ export function SecurityCard({
   /** What the history holds of old credentials, or null where it cannot say. */
   leaks: HistoryLeaks | null;
   onChanged: () => Promise<void>;
-  /** The history was written again, and is smaller for it. */
-  onHistoryRewritten: () => void;
+  /** The history was written again, and is smaller for it; `token`, the
+      token in use was sent to Lichess to be deleted, and the server may
+      have taken it out of the vault. */
+  onHistoryRewritten: (token: boolean) => void;
 }) {
   const held = leaks?.available === true && ((leaks.commits ?? 0) > 0 || leaks.pending === true);
   return (
@@ -71,6 +74,11 @@ export function SecurityCard({
  * wipe of a vault with no password and no token), or that holds only the
  * folder (a wipe of a vault with no config.json yet), is told so, with
  * nothing to change after.
+ *
+ * Of those, a Lichess token is the one nothing in this vault closes, so
+ * where the history holds any the question also offers to delete them at
+ * Lichess (TokenChoice). Off until ticked: it is a request to a third party
+ * on the user's account, and the user is who decides to send it.
  */
 function HistorySecretsBlock({
   leaks,
@@ -79,21 +87,27 @@ function HistorySecretsBlock({
 }: {
   leaks: HistoryLeaks;
   settings: Settings;
-  onRewritten: () => void;
+  onRewritten: (token: boolean) => void;
 }) {
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<Note>(null);
   /** Whether the line after it points at Lichess, where a token is deleted. */
   const [atLichess, setAtLichess] = useState(false);
+  /** Which tokens the user chose to have deleted at Lichess. */
+  const [chosen, setChosen] = useState<TokenAsk>(NONE);
   const held = heldOf(leaks);
-  const after = afterwards(leaks, settings);
+  const offer = tokenOffer(leaks, held);
+  const after = afterwards(leaks, settings, offer ? 'offered' : 'advise');
 
   const purge = async (): Promise<void> => {
     setBusy(true);
     setNote(null);
+    // Only what is offered and ticked: a tick cannot outlive its row.
+    const asked: TokenAsk = { past: (offer?.past ?? 0) > 0 && chosen.past, current: offer?.current === true && chosen.current };
+    let reply: PurgeReply | undefined;
     try {
-      await api('/api/history/purge', { method: 'POST' });
+      reply = await api<PurgeReply>('/api/history/purge', { method: 'POST', json: { revokeTokens: asked } });
     } catch (e) {
       // Through t(): every refusal the route gives is a sentence the
       // dictionary has.
@@ -101,10 +115,13 @@ function HistorySecretsBlock({
       setBusy(false);
       return;
     }
+    // What Lichess said, as the server counted it; where it says nothing
+    // (an older server), each token keeps the advice to delete it there.
+    const done = afterwards(leaks, settings, { asked, answered: reply?.tokens ?? null });
     setBusy(false);
-    setNote({ kind: 'ok', text: purgedLine(held, after.lines) });
-    setAtLichess(held === 'secrets' && after.lichess);
-    onRewritten();
+    setNote({ kind: 'ok', text: purgedLine(held, done) });
+    setAtLichess(held === 'secrets' && done.lichess);
+    onRewritten(asked.current);
   };
 
   // Done: what is left to do, in the block's place, until the page is
@@ -142,7 +159,15 @@ function HistorySecretsBlock({
             : t('Removes the copy of the history’s own files that earlier saves left in it, which every downloaded copy carries. Every version of every document stays.')}
       </p>
       <div className="flex items-center gap-3">
-        <Button variant="secondary" disabled={busy} onClick={() => setAsking(true)}>
+        <Button
+          variant="secondary"
+          disabled={busy}
+          onClick={() => {
+            // Every question starts with nothing to send to Lichess.
+            setChosen(NONE);
+            setAsking(true);
+          }}
+        >
           {busy ? t('Removing…') : held === 'secrets' ? t('Remove old secrets') : t('Remove old files')}
         </Button>
         <Feedback note={note} />
@@ -152,7 +177,8 @@ function HistorySecretsBlock({
           button too, and "Remove them from the history" was cut to
           "emove them from the histor" in that button at 1280 wide. Whole
           sentences, each its own string, so a translation never has to
-          mend a sentence assembled from parts. */}
+          mend a sentence assembled from parts. A token offered below is
+          left out of the question: its row says what happens to it. */}
       <ConfirmDialog
         icon={Eraser}
         tone="default"
@@ -167,7 +193,109 @@ function HistorySecretsBlock({
         }
         confirmLabel={held === 'secrets' ? 'Remove old secrets' : 'Remove old files'}
         onConfirm={() => void purge()}
-      />
+      >
+        {offer && <TokenChoice offer={offer} value={chosen} onChange={setChosen} />}
+      </ConfirmDialog>
+    </div>
+  );
+}
+
+/** Which tokens to delete at Lichess, as the purge's request says it. */
+interface TokenAsk {
+  /** The ones this vault no longer uses. */
+  past: boolean;
+  /** The one in use. */
+  current: boolean;
+}
+
+const NONE: TokenAsk = { past: false, current: false };
+
+/** What Lichess said to the tokens of one kind (server/historyPurge.ts). */
+interface RevokeCount {
+  revoked: number;
+  invalid: number;
+  failed: number;
+}
+
+/** What POST /api/history/purge answers, as far as this block reads it. */
+interface PurgeReply {
+  /** Null where none was asked for, or none could be read. */
+  tokens?: { past: RevokeCount; current: RevokeCount } | null;
+}
+
+/** Which tokens the history holds to offer: those no longer in use, and
+    whether the one in use is among them. Null where it holds none, or
+    where the server cannot say which it holds (the old advice stands). */
+function tokenOffer(leaks: HistoryLeaks, held: Held): { past: number; current: boolean } | null {
+  const token = leaks.secrets?.token;
+  if (held !== 'secrets' || !token || (token.past === 0 && !token.current)) return null;
+  return { past: token.past, current: token.current };
+}
+
+/**
+ * The question's choice to delete the tokens at Lichess: one row for the
+ * tokens this vault no longer uses and one for the token in use, each
+ * there only where the history holds it.
+ *
+ * Two rows, because the two cost different things. An old token is used
+ * by nothing here, so deleting it costs nothing. The token in use is what
+ * the online explorer and the import of private studies run on (public
+ * ones need none), and deleting it stops both until a new one is saved,
+ * since the server takes it out of the vault as well; offered as its own
+ * row, it is a
+ * cost the user takes on knowingly, and never as a side effect of the
+ * first. Both start off (HistorySecretsBlock says why). The rows are the
+ * puzzle rebuild's (DumpSourceChoice): the mark, the answer, and what it
+ * does under it.
+ */
+function TokenChoice({
+  offer,
+  value,
+  onChange,
+}: {
+  offer: { past: number; current: boolean };
+  value: TokenAsk;
+  onChange: (value: TokenAsk) => void;
+}) {
+  const rows: { kind: keyof TokenAsk; label: string; blurb: string }[] = [];
+  if (offer.past === 1) {
+    rows.push({
+      kind: 'past',
+      label: t('Delete the old Lichess token at Lichess'),
+      blurb: t('The server asks Lichess to delete it. Otherwise, delete it there yourself.'),
+    });
+  }
+  if (offer.past > 1) {
+    rows.push({
+      kind: 'past',
+      label: t('Delete the old Lichess tokens at Lichess'),
+      blurb: t('The server asks Lichess to delete them. Otherwise, delete them there yourself.'),
+    });
+  }
+  if (offer.current) {
+    rows.push({
+      kind: 'current',
+      label: t('Delete the Lichess token in use at Lichess'),
+      blurb: t('The online opening explorer and private study imports stop until you save a new token.'),
+    });
+  }
+  return (
+    <div className="flex flex-col gap-3">
+      {rows.map(({ kind, label, blurb }) => (
+        <label key={kind} className="flex cursor-pointer items-start gap-2 text-left">
+          {/* mt-0.5 lines the 16px box up with the first line of the
+              label; iOS draws a 22px circle, which -mt-px centres on it. */}
+          <Checkbox
+            className="mt-0.5 ios:-mt-px"
+            checked={value[kind]}
+            onCheckedChange={(on) => onChange({ ...value, [kind]: on === true })}
+          />
+          <span className="text-sm">
+            {label}
+            <span className="text-muted-foreground block">{blurb}</span>
+          </span>
+        </label>
+      ))}
     </div>
   );
 }
@@ -200,9 +328,22 @@ function heldOf(leaks: HistoryLeaks): Held {
  *
  * Where the server cannot tell which it holds, what is set now is named,
  * as what may be among them.
+ *
+ * The tokens are said as `tokens` asks. `advise`: each kind gets its
+ * advice. `offered`: none, since the question's own rows say what
+ * becomes of them. After a purge, `asked` and what Lichess `answered`: a
+ * kind that was not asked for, or that the server says nothing about,
+ * gets its advice; one Lichess deleted, or no longer knew, is said in
+ * `done`, as what was done; one it could not be reached for is advised
+ * again, as left to do.
  */
-function afterwards(leaks: HistoryLeaks, settings: Settings): { lines: string[]; lichess: boolean } {
+function afterwards(
+  leaks: HistoryLeaks,
+  settings: Settings,
+  tokens: 'advise' | 'offered' | { asked: TokenAsk; answered: PurgeReply['tokens'] | null },
+): { done: string[]; lines: string[]; lichess: boolean } {
   const kinds = leaks.secrets;
+  const done: string[] = [];
   const lines: string[] = [];
   if (!kinds) {
     if (settings.gate) lines.push(t('The app password in use may be among them: change it in this card.'));
@@ -210,26 +351,68 @@ function afterwards(leaks: HistoryLeaks, settings: Settings): { lines: string[];
     if (settings.lichess.configured) {
       lines.push(t('The Lichess token in use may be among them: delete it at Lichess and save a new one in the Lichess token card.'));
     }
-    return { lines, lichess: settings.lichess.configured };
+    return { done, lines, lichess: settings.lichess.configured };
   }
   const { password, totp, token } = kinds;
   if (password.current) lines.push(t('The app password in use is among them: change it in this card.'));
   if (password.past === 1) lines.push(t('An app password this vault no longer uses is among them: change it wherever you still use it.'));
   if (password.past > 1) lines.push(t('App passwords this vault no longer uses are among them: change them wherever you still use them.'));
   if (totp.current) lines.push(t('The 2FA secret in use is among them: turn 2FA off and set it up again in this card.'));
-  if (token.current) lines.push(t('The Lichess token in use is among them: delete it at Lichess and save a new one in the Lichess token card.'));
-  if (token.past === 1) lines.push(t('A Lichess token this vault no longer uses is among them: delete it at Lichess.'));
-  if (token.past > 1) lines.push(t('Lichess tokens this vault no longer uses are among them: delete them at Lichess.'));
-  return { lines, lichess: token.current || token.past > 0 };
+  let lichess = false;
+  /** What Lichess said to one kind, where it was asked and says. */
+  const answer = (kind: keyof TokenAsk): RevokeCount | null =>
+    typeof tokens === 'object' && tokens.asked[kind] ? (tokens.answered?.[kind] ?? null) : null;
+
+  /** Said after the old tokens, since it ends on what to do next. */
+  let inUseDone: string | null = null;
+  if (token.current && tokens !== 'offered') {
+    const said = answer('current');
+    if (!said) {
+      lines.push(t('The Lichess token in use is among them: delete it at Lichess and save a new one in the Lichess token card.'));
+      lichess = true;
+    } else if (said.revoked > 0) {
+      inUseDone = t('Lichess deleted the token in use: save a new one in the Lichess token card.');
+    } else if (said.invalid > 0) {
+      inUseDone = t('The token in use was already gone at Lichess: save a new one in the Lichess token card.');
+    } else if (said.failed > 0) {
+      lines.push(t('The token in use could not be deleted from here: delete it at Lichess and save a new one in the Lichess token card.'));
+      lichess = true;
+    }
+    // None of the three: by the time the server read config.json the
+    // token in use was another, which the history does not hold.
+  }
+  if (token.past > 0 && tokens !== 'offered') {
+    const said = answer('past');
+    if (!said) {
+      lines.push(
+        token.past === 1
+          ? t('A Lichess token this vault no longer uses is among them: delete it at Lichess.')
+          : t('Lichess tokens this vault no longer uses are among them: delete them at Lichess.'),
+      );
+      lichess = true;
+    } else {
+      // Counted by the server, which finds more than the page was told
+      // when the token in use was replaced since from another device.
+      if (said.revoked === 1) done.push(t('Lichess deleted 1 old token.'));
+      if (said.revoked > 1) done.push(t('Lichess deleted {n} old tokens.', { n: said.revoked }));
+      if (said.invalid === 1) done.push(t('1 old token was already gone at Lichess.'));
+      if (said.invalid > 1) done.push(t('{n} old tokens were already gone at Lichess.', { n: said.invalid }));
+      if (said.failed === 1) lines.push(t('1 old token could not be deleted from here: delete it at Lichess.'));
+      if (said.failed > 1) lines.push(t('{n} old tokens could not be deleted from here: delete them at Lichess.', { n: said.failed }));
+      if (said.failed > 0) lichess = true;
+    }
+  }
+  if (inUseDone) done.push(inUseDone);
+  return { done, lines, lichess };
 }
 
-/** What is left to do once the history no longer holds them: the same
-    sentences the question gave, after what is done. */
-function purgedLine(held: Held, lines: string[]): string {
+/** What is left to do once the history no longer holds them: what was
+    done at Lichess, then the question's sentences for what is not. */
+function purgedLine(held: Held, { done, lines }: { done: string[]; lines: string[] }): string {
   if (held === 'files') return t('The history no longer holds a copy of its own files.');
   if (held === 'settings') return t('The history no longer holds old copies of the vault’s settings.');
-  if (lines.length === 0) return t('The old secrets are out of the history.');
-  return [t('The old secrets are out of the history.'), t('A copy downloaded before still holds them.'), ...lines].join(' ');
+  const left = lines.length === 0 ? [] : [t('A copy downloaded before still holds them.'), ...lines];
+  return [t('The old secrets are out of the history.'), ...done, ...left].join(' ');
 }
 
 /**

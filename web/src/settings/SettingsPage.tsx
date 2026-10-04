@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useSlowLoad } from '@/components/skeletons';
 import { Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { forgetLichessToken } from '@/components/lichess-token-notice';
 import { PageHeader } from '@/components/page-header';
 import { PageShell } from '@/components/page-shell';
 import { routePlaceholderShown } from '@/lib/lazyRoute';
@@ -184,6 +185,17 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
   useEffect(() => {
     void refresh();
   }, []);
+  /** The settings alone, after the token in use may have left the vault;
+      every view that warns about a missing token asks again as well. A
+      failure leaves the page as it was, which the next visit corrects. */
+  const rereadSettings = async (): Promise<void> => {
+    forgetLichessToken();
+    try {
+      setSettings(await api<Settings>('/api/settings'));
+    } catch {
+      // As above: nothing on screen is wrong enough to say so.
+    }
+  };
 
   // Settings arrive fast on a local server, so nothing is shown at all
   // unless the wait is long enough to notice.
@@ -272,12 +284,20 @@ export function SettingsPage({ anchor }: { anchor?: string } = {}) {
             <VaultCard settings={settings} onSaved={refresh} storage={storage} outlineShown={outlineShown} />
             <DocumentsCard />
             {/* The history shrinks when old secrets are taken out of it,
-                and the Vault and Storage used cards are counting it. */}
+                and the Vault and Storage used cards are counting it. And
+                where the token in use went to Lichess to be deleted, the
+                server has taken it out of the vault too, so the Lichess
+                token card reads the settings again; only the settings,
+                since a fresh count would take the block, and the line
+                saying what is left to do, off the Security card. */}
             <SecurityCard
               settings={settings}
               leaks={leaks}
               onChanged={refresh}
-              onHistoryRewritten={() => setStorageStamp((n) => n + 1)}
+              onHistoryRewritten={(token) => {
+                setStorageStamp((n) => n + 1);
+                if (token) void rereadSettings();
+              }}
             />
             <LichessCard settings={settings} onChanged={refresh} />
             {/* Both of these empty a cache the Vault and Storage used
