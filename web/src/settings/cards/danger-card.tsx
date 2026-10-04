@@ -101,11 +101,11 @@ function WipeConfirmDialog({ gate, onClose }: { gate: boolean; onClose: () => vo
           <AlertDialogTitle>{t('Wipe the entire vault?')}</AlertDialogTitle>
           <AlertDialogDescription>
             {t('This permanently deletes every game, study, note, puzzle and book, and their history. There is no undo.')}
-            {restore?.stuck ? (
-              <> {t('The folders set aside by the stopped restore go too, unless you put the vault back first.')}</>
-            ) : restore?.kept ? (
-              <> {t('The folders set aside after a restore go too, and a downloaded copy does not hold them.')}</>
-            ) : null}
+            {/* Each when it is so, both at once included: putting the
+                vault back keeps the stopped restore's folders from the
+                wipe, and not those an earlier put-back set aside. */}
+            {restore?.stuck && <> {t('The folders set aside by the stopped restore go too, unless you put the vault back first.')}</>}
+            {restore?.kept && <> {t('The folders set aside after a restore go too, and a downloaded copy does not hold them.')}</>}
           </AlertDialogDescription>
         </AlertDialogHeader>
         {gate && (
