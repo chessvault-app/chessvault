@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { existsSync, mkdirSync, statSync, unlinkSync, watch, writeFileSync, type FSWatcher } from 'node:fs';
 import { resolve } from 'node:path';
+import { historyExcludeFile } from './historyExcludes.ts';
 import { finishInterruptedPurge, forgetHistoryLeaks, historyCount, historyLeaks, purgeHistory, type HistoryLeaks, type PurgeOutcome } from './historyPurge.ts';
 import { VAULT } from './paths.ts';
 import { git, historyGitDir, HISTORY_DIR_NAME, RESTORE_DIR_NAME, restoreJournalPath, unsafeHistoryRepo } from './vaultGit.ts';
@@ -64,30 +65,11 @@ export interface VaultBackup {
  * startup, and one taken over from a copy being restored
  * (server/restore.ts), which was made by whatever version wrote the copy.
  *
- * Repo-side excludes (never a file in the vault): the history repo must
- * not swallow its own git-dir (`.history.git` is not a magic name like
- * `.git`, so `add -A` would track it), the giant source PGN dumps are
- * rebuild inputs, the unsaved-changes swap files are a live buffer rather
- * than a version of anything (a history of every keystroke somebody had
- * not committed is exactly what this repo is not for), each book's
- * open.bin is a cache the server records from that book's PDF and
- * records again when the PDF changes (server/pdfWarm.ts), worth nothing
- * beside a PDF this repo does not hold (611 KB for a 448-page scan, and a
- * new copy each time the file is replaced), and — critically —
- * config.json holds the app password, TOTP secret and Lichess token,
- * which must never enter a repo that scripts/backup-vault.sh pulls
- * off-box (git would retain every past value). sessions.json sits under
- * the same rule: live session hashes are secrets-adjacent, and it churns
- * on every login, which is not a version of anything. A restore's work
- * folder holds a copy being unpacked and the vault it replaced, which the
- * history records as the vault on either side of the restore, not as files
- * of its own.
+ * Repo-side excludes (never a file in the vault): what the history never
+ * holds, and why each, is the list in server/historyExcludes.ts.
  */
 export async function prepareHistoryRepo(gitDir: string, dir: string): Promise<void> {
-  writeFileSync(
-    resolve(gitDir, 'info', 'exclude'),
-    `${HISTORY_DIR_NAME}/\n${RESTORE_DIR_NAME}/\nsources/\nbooks/*/book.pdf\nbooks/*/open.bin\n*.part\nconfig.json\nsessions.json\n*.swp\n`,
-  );
+  writeFileSync(resolve(gitDir, 'info', 'exclude'), historyExcludeFile());
   // Untrack them if an earlier version committed any; --ignore-unmatch
   // makes this a no-op once clean. Leaves the working files intact. The
   // per-book files are listed first and then named one by one: the
