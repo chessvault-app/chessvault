@@ -414,7 +414,10 @@ client, once whatever held its files has let go; the server's next start
 does the same, and a start that cannot put it back still comes up, touches
 nothing the restore moved, and refuses every page that would read the
 vault until it is put back. Until then the history saves nothing, so it
-never records a vault that is half one and half the other.
+never records a vault that is half one and half the other. A folder the
+put-back cannot move home, because something else (a sync client, say)
+made it again in the vault meanwhile, stays on the server, and the card
+offers it to download and to delete for as long as it is there.
 
 That history leaves `config.json` and `sessions.json` out, and has since
 0.4.x. Two kinds of vault may still carry them: one older than that, in
