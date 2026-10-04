@@ -37,6 +37,15 @@ What changed, newest first. Feature-level entries, not a commit ledger —
   byte, and the delete left nothing; and after an undo stopped and put
   back at a start, the note written since the restore was on the card,
   survived another restart, and was deleted only when asked.
+- **“Wipe all data” says it deletes what a stopped restore set aside.**
+  The wipe still runs while a restore stands part way, since it is the
+  only way out of one whose record cannot be read, and it deletes the
+  folders that restore set aside with everything else, which its
+  confirmation did not say. It now adds “The folders set aside by the
+  stopped restore go too, unless you put the vault back first.”, and with
+  folders a put-back set aside, that those go too and that a downloaded
+  copy does not hold them. Tried on a server run from source with a real
+  stopped restore, at a desktop's and an iPhone's size in both languages.
 
 ## 0.12.2
 
