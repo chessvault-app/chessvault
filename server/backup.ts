@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { open, readdir, stat } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { lstat, open, readdir, stat } from 'node:fs/promises';
+import { basename, dirname, resolve } from 'node:path';
 import { Readable } from 'node:stream';
 import { VAULT } from './paths.ts';
 
@@ -68,7 +68,9 @@ function header(name: string, size: number, mode: number, mtime: number, type: '
 
 const pad = (size: number): Buffer => Buffer.alloc((512 - (size % 512)) % 512);
 
-async function* entries(root: string, rel: string[]): AsyncGenerator<Buffer> {
+/** What the folder at `rel` under `root` holds, but at the top level
+    the dotfiles (the history aside) and the credentials. */
+async function* entries(root: string, rel: string[], prefix: string[] = []): AsyncGenerator<Buffer> {
   const dir = resolve(root, ...rel);
   let names: import('node:fs').Dirent[];
   try {
@@ -81,49 +83,59 @@ async function* entries(root: string, rel: string[]): AsyncGenerator<Buffer> {
     if (rel.length === 0 && entry.name.startsWith('.') && entry.name !== HISTORY) continue;
     if (rel.length === 0 && SKIP_FILES.has(entry.name)) continue;
     if (entry.isFile() && openCache(rel, entry.name)) continue;
-    const path = [...rel, entry.name];
-    const name = path.join('/');
-    const full = resolve(root, ...path);
-    if (entry.isDirectory()) {
-      let mtime = Date.now();
-      try {
-        mtime = (await stat(full)).mtimeMs;
-      } catch {
-        continue;
-      }
-      yield* paxPath(`${name}/`);
-      yield header(`${name}/`, 0, 0o755, mtime, '5');
-      yield* entries(root, path);
-    } else if (entry.isFile()) {
-      let handle: import('node:fs/promises').FileHandle;
-      try {
-        handle = await open(full, 'r');
-      } catch {
-        continue;
-      }
-      try {
-        // The size in the header is the size that is written, so it is
-        // read from the open handle, not from a stat that a save could
-        // have outdated; a file that grows while it is read is cut at
-        // the size announced.
-        const info = await handle.stat();
-        yield* paxPath(name);
-        yield header(name, info.size, 0o644, info.mtimeMs, '0');
-        let left = info.size;
-        const chunk = Buffer.alloc(Math.min(left, 1 << 16) || 1);
-        while (left > 0) {
-          const { bytesRead } = await handle.read(chunk, 0, Math.min(chunk.length, left));
-          if (bytesRead === 0) {
-            yield Buffer.alloc(left);
-            break;
-          }
-          yield Buffer.from(chunk.subarray(0, bytesRead));
-          left -= bytesRead;
+    yield* one(root, [...rel, entry.name], entry, prefix);
+  }
+}
+
+/** A file, or a folder and everything in it, at `path` under `root`,
+    named in the archive by `prefix` and `path` joined. */
+async function* one(
+  root: string,
+  path: string[],
+  kind: { isDirectory(): boolean; isFile(): boolean },
+  prefix: string[],
+): AsyncGenerator<Buffer> {
+  const name = [...prefix, ...path].join('/');
+  const full = resolve(root, ...path);
+  if (kind.isDirectory()) {
+    let mtime = Date.now();
+    try {
+      mtime = (await stat(full)).mtimeMs;
+    } catch {
+      return;
+    }
+    yield* paxPath(`${name}/`);
+    yield header(`${name}/`, 0, 0o755, mtime, '5');
+    yield* entries(root, path, prefix);
+  } else if (kind.isFile()) {
+    let handle: import('node:fs/promises').FileHandle;
+    try {
+      handle = await open(full, 'r');
+    } catch {
+      return;
+    }
+    try {
+      // The size in the header is the size that is written, so it is
+      // read from the open handle, not from a stat that a save could
+      // have outdated; a file that grows while it is read is cut at
+      // the size announced.
+      const info = await handle.stat();
+      yield* paxPath(name);
+      yield header(name, info.size, 0o644, info.mtimeMs, '0');
+      let left = info.size;
+      const chunk = Buffer.alloc(Math.min(left, 1 << 16) || 1);
+      while (left > 0) {
+        const { bytesRead } = await handle.read(chunk, 0, Math.min(chunk.length, left));
+        if (bytesRead === 0) {
+          yield Buffer.alloc(left);
+          break;
         }
-        yield pad(info.size);
-      } finally {
-        await handle.close();
+        yield Buffer.from(chunk.subarray(0, bytesRead));
+        left -= bytesRead;
       }
+      yield pad(info.size);
+    } finally {
+      await handle.close();
     }
   }
 }
@@ -163,23 +175,58 @@ function tarVault(vault: string): Readable {
   return Readable.from(gen);
 }
 
+/**
+ * Files and folders from anywhere, each in the archive inside a folder
+ * named `under`: what a stopped restore's put-back had to set aside
+ * (server/restore.ts), each set under a name that says what it is, so
+ * none lands on a vault folder of the same name when it is unpacked and a
+ * restore does not take it for a copy of a vault. Each folder is walked as
+ * the vault's own are, `books/<id>/open.bin` left out.
+ */
+export function tarPaths(items: { path: string; under: string }[]): Readable {
+  const gen = (async function* () {
+    const made = new Set<string>();
+    for (const item of items) {
+      let kind: import('node:fs').Stats;
+      try {
+        kind = await lstat(item.path);
+      } catch {
+        continue;
+      }
+      if (!made.has(item.under)) {
+        made.add(item.under);
+        yield* paxPath(`${item.under}/`);
+        yield header(`${item.under}/`, 0, 0o755, Date.now(), '5');
+      }
+      yield* one(dirname(item.path), [basename(item.path)], kind, [item.under]);
+    }
+    yield Buffer.alloc(1024);
+  })();
+  return Readable.from(gen);
+}
+
 /** The name the file is offered under: the vault's name, else its
-    folder's, and the day, so two copies sort themselves. */
-export function backupFilename(vault: string, name: string | null, today = new Date()): string {
+    folder's, what it holds when it is not the vault, and the day, so two
+    copies sort themselves. */
+export function backupFilename(vault: string, name: string | null, today = new Date(), what = ''): string {
   const folder = vault.split(/[\\/]/).filter(Boolean).pop() ?? 'vault';
   const base = (name?.trim() || folder).replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
-  return `${base} ${today.toISOString().slice(0, 10)}.tar`;
+  return `${base}${what ? ` ${what}` : ''} ${today.toISOString().slice(0, 10)}.tar`;
+}
+
+/** The Content-Disposition for a download named `filename`: the plain
+    form for what cannot read RFC 5987, the encoded one so a Korean vault
+    name survives. */
+export function attachment(filename: string): string {
+  const ascii = filename.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
+  return `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`;
 }
 
 export function backupApi(vault: string = VAULT, vaultName: () => string | null = () => null): Hono {
   const api = new Hono();
   api.get('/storage/backup', (c) => {
-    const filename = backupFilename(vault, vaultName());
-    const ascii = filename.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, '');
     c.header('Content-Type', 'application/x-tar');
-    // Both forms: the plain one for what cannot read RFC 5987, the
-    // encoded one so a Korean vault name survives.
-    c.header('Content-Disposition', `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(filename)}`);
+    c.header('Content-Disposition', attachment(backupFilename(vault, vaultName())));
     c.header('Cache-Control', 'no-store');
     return c.body(Readable.toWeb(tarVault(vault)) as ReadableStream);
   });

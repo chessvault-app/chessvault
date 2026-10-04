@@ -27,6 +27,7 @@ import { openVault } from './openVault.ts';
 import { puzzleBooksApi } from './puzzlebooks.ts';
 import { recoverInterruptedRestore, restoreApi, stuckGuard, type RestoreOptions } from './restore.ts';
 import { studiesApi } from './studies.ts';
+import { readTar } from './tarRead.ts';
 import { startVaultBackup, type VaultBackup } from './vaultBackup.ts';
 import { vaultHistoryApi } from './vaultHistory.ts';
 
@@ -140,10 +141,14 @@ const everything = (dir: string): Record<string, string> => tree(dir, ['.history
 
 const read = (vault: string, path: string): string => readFileSync(join(vault, ...path.split('/')), 'utf-8');
 
-/** What `.restore` holds besides a pending restore: nothing, after any request. */
+/** What `.restore` holds besides a pending restore: nothing, after any
+    request, and no empty `.restore` either, which every put-back, keep
+    and undo used to leave in the vault. */
 function leftovers(vault: string): string[] {
   const work = join(vault, '.restore');
-  return existsSync(work) ? readdirSync(work).filter((name) => name !== 'before') : [];
+  if (!existsSync(work)) return [];
+  const names = readdirSync(work);
+  return names.length === 0 ? ['(an empty .restore)'] : names.filter((name) => name !== 'before');
 }
 
 async function download(vault: string): Promise<Buffer> {
@@ -167,7 +172,34 @@ function restorer(vault: string, options: RestoreOptions = {}) {
     undo: () => app.request('/api/storage/restore/undo', { method: 'POST' }),
     keep: () => app.request('/api/storage/restore/keep', { method: 'POST' }),
     recover: () => app.request('/api/storage/restore/recover', { method: 'POST' }),
+    keptCopy: () => app.request('/api/storage/restore/kept'),
+    /** As the card asks: for the sets GET says are there, unless told which. */
+    dropKept: async (sets?: string[]) =>
+      app.request('/api/storage/restore/kept', {
+        method: 'DELETE',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          sets: sets ?? ((await (await app.request('/api/storage/restore')).json()) as { kept: { sets: string[] } | null }).kept?.sets ?? [],
+        }),
+      }),
   };
+}
+
+/** A tar's entries as `tree` lists a folder, read by the restore's own
+    reader: a folder as 'folder', a file as a hash of its bytes. */
+async function unpack(tar: Buffer): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  await readTar(Readable.from([tar]), async (entry, body) => {
+    const path = entry.segments.join('/');
+    if (entry.type === 'directory') {
+      out[`${path}/`] = 'folder';
+      return;
+    }
+    const hash = createHash('sha256');
+    for await (const piece of body) hash.update(piece);
+    out[path] = hash.digest('hex');
+  });
+  return out;
 }
 
 /**
@@ -672,7 +704,7 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
 
     recoverInterruptedRestore(target.vault);
     expect(everything(target.vault)).toEqual(before);
-    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
   });
 
   it('puts a stuck vault back from the app, byte for byte, and its pages answer again', async () => {
@@ -700,9 +732,9 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
 
     const res = await recover();
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true });
+    expect(await res.json()).toEqual({ ok: true, kept: null });
     expect(everything(target.vault)).toEqual(before);
-    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
     expect(await state()).toMatchObject({ stuck: false, pending: null });
     const listed = (await (await notes.request('/api/notes')).json()) as { studies: { id: string }[] };
     expect(listed.studies.map((s) => s.id)).toEqual(['Gone']);
@@ -792,7 +824,7 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     rmSync(join(work, 'in'));
     expect((await recover()).status).toBe(200);
     expect(everything(target.vault)).toEqual(before);
-    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
   });
 
   it('puts a stuck vault back once whatever held one of its folders lets go', async () => {
@@ -911,7 +943,7 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     // every folder home, the history included, with nothing new in it.
     expect((await app.request('/api/storage/restore/recover', { method: 'POST' })).status).toBe(200);
     expect(everything(target.vault)).toEqual(before);
-    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
     expect(inHistory(['rev-parse', 'HEAD']).trim()).toBe(head);
     const listed = (await (await app.request('/api/notes')).json()) as { studies: { id: string }[] };
     expect(listed.studies.map((s) => s.id)).toEqual(['Gone']);
@@ -959,7 +991,7 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     // once they are home, that note is no reason to keep the copy.
     expect((await recover()).status).toBe(200);
     expect(everything(target.vault)).toEqual(before);
-    expect(readdirSync(join(target.vault, '.restore'))).toEqual([]);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
   });
 
   it('saves nothing to the history while a restore stands part way, so no document gains a version from it', async () => {
@@ -1026,7 +1058,7 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     expect(((await (await recovery.request('/api/history/deleted')).json()) as { deleted: unknown[] }).deleted).toEqual([]);
   });
 
-  it('keeps what an undo set aside when something has taken its place, and deletes none of it', async () => {
+  it('keeps what an undo set aside when something has taken its place, says so, and gives it to download and delete', async () => {
     const source = scratch('source');
     fillSource(source.vault);
     const copy = await download(source.vault);
@@ -1035,7 +1067,8 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     const before = join(target.vault, '.restore', 'before');
     let sabotage = false;
     let calls = 0;
-    const { restore, undo, recover } = restorer(target.vault, {
+    let building = false;
+    const { restore, state, undo, recover, keptCopy, dropKept } = restorer(target.vault, {
       move: (from, to) => {
         // As in the undo above: its eight renames out and the first one
         // back made, the next failing, and the rollback stopped.
@@ -1046,24 +1079,257 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
         }
         renameSync(from, to);
       },
+      busy: () => (building ? 'A database build is reading the vault’s files.' : null),
+      name: () => 'My vault',
     });
     expect((await restore(copy)).status).toBe(200);
     put(target.vault, 'notes/Written since.md', 'work done after the restore\n');
+    const restoredNotes = Object.fromEntries(
+      Object.entries(tree(target.vault)).filter(([path]) => path.startsWith('notes/')),
+    );
     sabotage = true;
     expect((await undo()).status).toBe(500);
     rmSync(before);
     renameSync(`${before}-aside`, before);
+    sabotage = false;
     // Something outside the server makes notes/ again, where the
     // restored vault's notes, set aside by the undo, have to come back to.
     expect(existsSync(join(target.vault, 'notes'))).toBe(false);
-    mkdirSync(join(target.vault, 'notes'));
+    put(target.vault, 'notes/Made outside.md', 'by a sync client\n');
 
-    expect((await recover()).status).toBe(200);
-    // They could not go home; they are kept where the undo put them, not
-    // swept away with the work folder.
+    // The put-back says what it could not bring home, where it said only
+    // that the vault was back.
+    const res = await recover();
+    expect(res.status).toBe(200);
+    const kept = { folders: ['notes'], files: 5, bytes: expect.any(Number), sets: [expect.any(String)] };
+    expect(await res.json()).toEqual({ ok: true, kept });
+    // They are kept where the undo put them, not swept away with the work
+    // folder, and the restore it stopped is still pending.
     const [work] = readdirSync(join(target.vault, '.restore')).filter((name) => name !== 'before');
     expect(read(target.vault, `.restore/${work}/bin/notes/Written since.md`)).toBe('work done after the restore\n');
     expect(read(target.vault, 'studies/Najdorf.pgn')).toBe('[Event "Najdorf"]\n\n1. e4 c5 *\n');
+    expect(await state()).toMatchObject({ stuck: false, pending: { history: 'none' }, kept });
+    // For as long as they are there: 0.12.2 kept an undo's set-aside
+    // folder only until the next start, which deleted it.
+    recoverInterruptedRestore(target.vault);
+    expect((await state()).kept).toEqual(kept);
+
+    // The download: one tar of only what was set aside, under a folder
+    // that says when and what, named as a copy of the vault is.
+    const got = await keptCopy();
+    expect(got.status).toBe(200);
+    expect(got.headers.get('content-disposition')).toMatch(/filename\*=UTF-8''My%20vault%20set%20aside%20\d{4}-\d\d-\d\d\.tar$/);
+    const files = await unpack(Buffer.from(await got.arrayBuffer()));
+    const [label] = Object.keys(files)[0]!.split('/');
+    expect(label).toMatch(/^\d{4}-\d\d-\d\d \d\d\.\d\d restored vault$/);
+    const unpacked = Object.fromEntries(
+      Object.entries(files)
+        .filter(([path]) => path !== `${label}/`)
+        .map(([path, hash]) => [path.slice(label!.length + 1), hash]),
+    );
+    expect(unpacked).toEqual(restoredNotes);
+    expect(read(target.vault, 'notes/Made outside.md')).toBe('by a sync client\n');
+
+    // Deleting it asks what a put-back asks, and takes only it.
+    const { bytes } = (await state()).kept;
+    building = true;
+    const busy = await dropKept();
+    expect(busy.status).toBe(409);
+    expect((await busy.json()).error).toBe('A database build is reading the vault’s files.');
+    building = false;
+    const dropped = await dropKept();
+    expect(dropped.status).toBe(200);
+    expect(await dropped.json()).toEqual({ ok: true, freed: bytes });
+    expect(readdirSync(join(target.vault, '.restore'))).toEqual(['before']);
+    expect(await state()).toMatchObject({ kept: null, pending: { history: 'none' } });
+    for (const res of [await dropKept(), await keptCopy()]) {
+      expect(res.status).toBe(409);
+      expect((await res.json()).error).toBe('Nothing is set aside.');
+    }
+
+    // The restore it stopped can still be undone, which leaves nothing.
+    expect((await undo()).status).toBe(200);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
+  });
+
+  it('keeps what a restore set aside at a start, says so for as long as it is there, and holds no later restore up', async () => {
+    const source = scratch('source');
+    fillSource(source.vault);
+    const copy = await download(source.vault);
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const gone = read(target.vault, 'notes/Gone.md');
+    // A restore stopped with the vault's notes set aside, unpacked copy and all.
+    const { work } = stuckByHand(target.vault);
+    put(work, 'in/studies/Theirs.pgn', 'theirs\n');
+    put(work, 'out/.restored.json', '{"at":"2026-10-01T00:00:00.000Z","history":"kept"}\n');
+    // Something outside the server makes notes/ again while it stands.
+    put(target.vault, 'notes/Made outside.md', 'by a sync client\n');
+
+    // Put back at a start: the vault's own notes cannot go home.
+    expect(recoverInterruptedRestore(target.vault)).toBe('whole');
+    const { restore, state, undo, keep, keptCopy, dropKept } = restorer(target.vault);
+    const kept = { folders: ['notes'], files: 1, bytes: Buffer.byteLength(gone), sets: ['c0ffee01'] };
+    expect(await state()).toMatchObject({ stuck: false, pending: null, kept });
+
+    const files = await unpack(Buffer.from(await (await keptCopy()).arrayBuffer()));
+    const [label] = Object.keys(files)[0]!.split('/');
+    expect(label).toMatch(/^\d{4}-\d\d-\d\d \d\d\.\d\d vault before the restore$/);
+    expect(Object.keys(files).sort()).toEqual([`${label}/`, `${label}/notes/`, `${label}/notes/Gone.md`]);
+    // The unpacked copy is not part of it, and nor is the restore's note.
+    expect(JSON.stringify(files)).not.toMatch(/Theirs|restored\.json/);
+    // Nor is the download a copy of a vault: restoring it refuses it whole.
+    const refused = await restore(Buffer.from(await (await keptCopy()).arrayBuffer()));
+    expect(refused.status).toBe(400);
+    expect((await refused.json()).reason).toBe('not-tar');
+
+    // A later restore goes through beside it, as does its undo and keep,
+    // and none of them touches it.
+    expect((await restore(copy)).status).toBe(200);
+    expect((await state()).kept).toEqual(kept);
+    expect((await undo()).status).toBe(200);
+    expect((await restore(copy)).status).toBe(200);
+    expect((await keep()).status).toBe(200);
+    expect((await state()).kept).toEqual(kept);
+    recoverInterruptedRestore(target.vault);
+    expect((await state()).kept).toEqual(kept);
+
+    // Deleted, it is gone, and so is `.restore`.
+    expect((await dropKept()).status).toBe(200);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
+    expect(await state()).toMatchObject({ kept: null });
+  });
+
+  it('keeps what an older version set aside without a record, and sweeps what is only leftovers', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    const work = join(target.vault, '.restore');
+    // 0.12.2's restore that could not move the vault's notes home: kept by
+    // its `out`, with the copy it unpacked beside it.
+    put(work, 'a0000001/out/notes/Mine.md', 'mine\n');
+    put(work, 'a0000001/out/.restored.json', '{}\n');
+    put(work, 'a0000001/in/studies/Theirs.pgn', 'theirs\n');
+    // 0.12.2's undo that could not: only its `bin`, which that version's
+    // next start deleted.
+    put(work, 'a0000002/bin/notes/Written since.md', 'since\n');
+    // An undo that finished, killed before its folder went: the restored
+    // vault it was asked to delete, and the empty `before` it moved in.
+    put(work, 'a0000003/bin/notes/Discarded.md', 'asked to go\n');
+    mkdirSync(join(work, 'a0000003', 'before'));
+    // A restore that finished with its folder left: the copy's emptied
+    // `in`, and the vault's one-commit history it replaced.
+    mkdirSync(join(work, 'a0000004', 'in'), { recursive: true });
+    put(work, 'a0000004/bin/.history.git/HEAD', 'ref: refs/heads/master\n');
+    // A record whose files somebody has since deleted by hand.
+    put(work, 'a0000005/kept.json', '{"at":"2026-10-01T00:00:00.000Z","from":"undo","entries":["bin/notes"]}\n');
+    // And a record naming a path outside its folder, which is not read.
+    put(work, 'a0000006/kept.json', '{"at":"2026-10-01T00:00:00.000Z","from":"undo","entries":["../../studies"]}\n');
+
+    recoverInterruptedRestore(target.vault);
+    expect(readdirSync(work).sort()).toEqual(['a0000001', 'a0000002']);
+    const { state, keptCopy } = restorer(target.vault);
+    expect((await state()).kept).toMatchObject({ folders: ['notes'], files: 2, bytes: 11 });
+    expect((await state()).kept.sets.sort()).toEqual(['a0000001', 'a0000002']);
+    const files = await unpack(Buffer.from(await (await keptCopy()).arrayBuffer()));
+    const paths = Object.keys(files).filter((path) => !path.endsWith('/'));
+    expect(paths).toHaveLength(2);
+    expect(paths.find((path) => path.endsWith('vault before the restore/notes/Mine.md'))).toBeDefined();
+    expect(paths.find((path) => path.endsWith('restored vault/notes/Written since.md'))).toBeDefined();
+    expect(read(target.vault, 'studies/Old.pgn')).toBe('old study\n');
+  });
+
+  it('deletes nothing set aside while a restore stands part way, or while another restore runs', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    put(target.vault, '.restore/a0000001/out/notes/Mine.md', 'mine\n');
+    recoverInterruptedRestore(target.vault);
+    const { work, journal } = stuckByHand(target.vault, true);
+    writeFileSync(join(work, 'in'), '');
+    const written = readFileSync(journal, 'utf-8');
+    const { state, recover, dropKept } = restorer(target.vault, { recoverPauses: [300] });
+    // Said apart, as a stuck restore is: the card shows the put-back alone.
+    expect(await state()).toMatchObject({ stuck: true, kept: { folders: ['notes'] } });
+    const res = await dropKept();
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: 'The vault is still part way through a restore. Put it back under Settings, Vault.', reason: 'stuck' });
+
+    // One at a time with the put-back, as with everything else here.
+    const trying = recover();
+    await new Promise((done) => setTimeout(done, 50));
+    const second = await dropKept();
+    expect(second.status).toBe(409);
+    expect((await second.json()).error).toBe('A restore is already running.');
+    expect((await trying).status).toBe(500);
+    expect(readFileSync(journal, 'utf-8')).toBe(written);
+    expect(read(target.vault, '.restore/a0000001/out/notes/Mine.md')).toBe('mine\n');
+  });
+
+  it('deletes nothing set aside while a download of it is still being read, so the download holds all of it', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    // Laid out as a vault's books are, a folder per book, and big enough
+    // that the download is still being read when Delete is pressed. A
+    // delete let through here took the folders from under the stream,
+    // which then ended as a whole-looking tar without the rest.
+    for (let i = 0; i < 200; i += 1) {
+      const book = `.restore/a0000001/out/books/b${String(i).padStart(4, '0')}`;
+      put(target.vault, `${book}/book.json`, `{"title":"Book ${i}"}\n`);
+      put(target.vault, `${book}/book.pdf`, Buffer.alloc(20_000, i));
+    }
+    recoverInterruptedRestore(target.vault);
+    const { app, state, dropKept } = restorer(target.vault);
+    expect((await state()).kept).toMatchObject({ folders: ['books'], files: 400 });
+
+    const reader = (await app.request('/api/storage/restore/kept')).body!.getReader();
+    const pieces: Uint8Array[] = [(await reader.read()).value!];
+    const early = await dropKept();
+    expect(early.status).toBe(409);
+    expect((await early.json()).error).toBe('A download of the set-aside folders is still running. Try again once it finishes.');
+    for (let next = await reader.read(); !next.done; next = await reader.read()) pieces.push(next.value);
+    const files = Object.keys(await unpack(Buffer.concat(pieces))).filter((path) => !path.endsWith('/'));
+    expect(files).toHaveLength(400);
+
+    // Neither a HEAD nor a download given up part way holds it off.
+    expect((await app.request('/api/storage/restore/kept', { method: 'HEAD' })).status).toBe(200);
+    const abandoned = (await app.request('/api/storage/restore/kept')).body!.getReader();
+    await abandoned.read();
+    await abandoned.cancel();
+    let dropped = await dropKept();
+    for (let tries = 0; dropped.status === 409 && tries < 40; tries += 1) {
+      await new Promise((done) => setTimeout(done, 25));
+      dropped = await dropKept();
+    }
+    expect(dropped.status).toBe(200);
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
+  });
+
+  it('deletes only the set-aside folders its question named, not what a put-back set aside since', async () => {
+    const target = scratch('target');
+    fillTarget(target.vault);
+    put(target.vault, '.restore/a0000001/out/notes/Mine.md', 'mine\n');
+    recoverInterruptedRestore(target.vault);
+    const { app, state, dropKept } = restorer(target.vault);
+    const asked = (await state()).kept;
+    expect(asked).toEqual({ folders: ['notes'], files: 1, bytes: 5, sets: ['a0000001'] });
+    // While the question stands open, another device puts back a stopped
+    // restore and sets the vault's studies aside, as finishInterruptedSwap
+    // records it. The delete took that too, though nothing had named it.
+    put(target.vault, '.restore/b0000002/out/studies/Mine.pgn', 'mine too\n');
+    put(target.vault, '.restore/b0000002/kept.json', `${JSON.stringify({ at: new Date().toISOString(), from: 'restore', entries: ['out/studies'] })}\n`);
+
+    const dropped = await dropKept(asked.sets);
+    expect(dropped.status).toBe(200);
+    expect(await dropped.json()).toEqual({ ok: true, freed: 5 });
+    expect(read(target.vault, '.restore/b0000002/out/studies/Mine.pgn')).toBe('mine too\n');
+    expect((await state()).kept).toEqual({ folders: ['studies'], files: 1, bytes: 9, sets: ['b0000002'] });
+    // Handed nothing, or only sets that are gone, it deletes nothing.
+    for (const sets of [[], ['a0000001']]) {
+      const res = await dropKept(sets);
+      expect(res.status).toBe(409);
+      expect((await res.json()).error).toBe('Nothing is set aside.');
+    }
+    expect((await app.request('/api/storage/restore/kept', { method: 'DELETE' })).status).toBe(409);
+    expect(read(target.vault, '.restore/b0000002/out/studies/Mine.pgn')).toBe('mine too\n');
   });
 
   it('puts a stuck vault back only for a signed-in client, one at a time, and not while a build reads its files', async () => {
@@ -1123,7 +1389,8 @@ describe('restore from a copy', { timeout: 30_000 }, () => {
     const kept = await keep();
     expect(kept.status).toBe(200);
     expect((await kept.json()).freed).toBeGreaterThan(PDF.length);
-    expect(existsSync(join(target.vault, '.restore', 'before'))).toBe(false);
+    // Nothing of the restore is left, not even its folder.
+    expect(existsSync(join(target.vault, '.restore'))).toBe(false);
     expect(tree(target.vault)).toEqual(tree(source.vault));
     expect(read(target.vault, 'config.json')).toBe('{"appPassword":"target-secret"}\n');
     expect((await restore(copy)).status).toBe(200);

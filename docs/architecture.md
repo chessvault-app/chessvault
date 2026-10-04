@@ -42,7 +42,9 @@ vault/
   .history.git        auto-commit history repo (fine-grained undo; excludes config.json,
                       sessions.json, sources/, .restore/, and *.part and *.swp files)
   .restore/           a restore from a copy at work (server/restore.ts): the upload being
-                      unpacked, and the vault it replaced until that is kept or undone
+                      unpacked, the vault it replaced until that is kept or undone, and
+                      what a put-back could not move home until it is deleted; deleted
+                      once nothing is left in it
 ```
 
 Everything a person would grieve losing is a file another tool can read.
@@ -321,7 +323,10 @@ seven files set aside, and the put-back's save added them again, a
 duplicate version of each per episode). The saves under `exclusive()`
 are not held; a restore makes them before its journal is written and
 after it is gone. The wipe alone still runs, and
-deletes it all, the folders set aside included. A write was the danger: a note
+deletes it all, the folders set aside included: it is the one way out of
+a journal nobody can read, so it stays, and its confirmation reads `GET
+/api/storage/restore` as it opens to say those folders go too, and that
+putting the vault back first keeps them. A write was the danger: a note
 saved there made `notes/` again where the vault's own had to go back to,
 and the put-back, which skips a rename whose source is back, left the
 vault's own in `.restore`. What makes a put-back fail in a running
@@ -330,7 +335,27 @@ there, or a process working in it, refuses the folder's rename, and a
 watcher does not (measured). The server keeps nothing open there, so
 what is left is a request that was already reading and other processes
 (a scanner, an indexer, a sync client), and the retries wait for them
-rather than close anything. A restore and its undo are also
+rather than close anything. A rename the put-back skips because its
+source is there again (something outside the server made that folder
+in the vault meanwhile) leaves a vault entry in its work folder: the
+vault's own for a restore, in `out/`, or the restored vault's for an
+undo, in `bin/`. Before the journal goes the put-back writes `kept.json`
+in that folder naming each, and every sweep after keeps a folder with
+one, as it keeps what an older version left without one (a restore's
+`out/` holding entries, an undo's lone `bin/`, which 0.12.2's next start
+deleted). `GET /api/storage/restore` reports them as `kept` (names,
+files, bytes, and the `sets` they are in) and the put-back's answer
+says what it set aside; `GET
+/api/storage/restore/kept` streams them as one tar through the copy's
+writer (`tarPaths` in `server/backup.ts`), each set inside a folder named
+for when it was set aside and what it is, so nothing unpacks onto the
+vault and a restore refuses it as no copy of one; and `DELETE` takes
+only the `sets` the card's question was drawn from, renames each into a
+fresh work folder and deletes that, under the put-back's guards, never
+while a journal stands, and never while a download of them is still
+streaming, which it would cut short into a tar that reads as whole (the
+route counts its open streams, released when each closes). A later
+restore goes ahead beside them. A restore and its undo are also
 refused while a reference database job runs (`refgamesBuildRunning`),
 since a build reads `sources/`, which both of them move.
 Nothing is deleted: the vault's folders move into `.restore/before/`

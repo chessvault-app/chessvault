@@ -126,6 +126,16 @@ function Box({
 const collectionError = (e: unknown): string =>
   e instanceof ApiError ? apiErrorMessage(e) : t('Vault server unreachable');
 
+/** The line above the collection: what it says, and whose failure it is. */
+interface ListError {
+  text: string;
+  from: 'load' | 'action';
+}
+
+/** After a load that brought the list back: the load's own failure is
+    over, and an action's still stands. */
+const afterListLoaded = (now: ListError | null): ListError | null => (now?.from === 'load' ? null : now);
+
 /**
  * The tabbed games browser: reference databases, the collection, and
  * both online archives behind one tab strip, with all of the
@@ -241,7 +251,16 @@ export function GamesBrowser({
   // The warning box beside the field reads the live one, since it is
   // about what was typed.
   const shownQuery = useDeferredValue(query);
-  const [error, setError] = useState<string | null>(null);
+  /**
+   * The line above the list, and whose it is: the list's own load, which
+   * the next load that brings the list back clears, or an action's (a
+   * rename the server refused), which the reload after that action must
+   * not clear. Both used to share one string that only Try again cleared,
+   * so a kept Games page that had read the vault while a restore stood
+   * part way went on saying so above the list, after the vault had been
+   * put back from another device and the list had loaded again.
+   */
+  const [error, setError] = useState<ListError | null>(null);
   /** The collection's list never came back: the error line above it, with
       its Try again, is the whole answer. The list under it drew its wait
       for good, a column of placeholder rows under the sentence saying the
@@ -402,8 +421,9 @@ export function GamesBrowser({
     try {
       setGames(await loadCollection());
       setLoaded(true);
+      setError(afterListLoaded);
     } catch (e) {
-      setError(collectionError(e));
+      setError({ text: collectionError(e), from: 'load' });
     }
   }, []);
 
@@ -420,8 +440,9 @@ export function GamesBrowser({
       .then((games) => {
         setGames(games);
         setLoaded(true);
+        setError(afterListLoaded);
       })
-      .catch((e: unknown) => setError(collectionError(e)));
+      .catch((e: unknown) => setError({ text: collectionError(e), from: 'load' }));
     void afterRouteSettled(api<{ keys: string[] }>('/api/games/bookmarks'))
       .then((b) => setBookmarks(new Set(b.keys)))
       .catch(() => {});
@@ -525,7 +546,7 @@ export function GamesBrowser({
     try {
       await api('/api/games/docs/move', { method: 'POST', json: { from, to: next } });
     } catch (failure) {
-      setError(t(apiErrorMessage(failure)));
+      setError({ text: t(apiErrorMessage(failure)), from: 'action' });
     }
     void load();
   };
@@ -772,7 +793,7 @@ export function GamesBrowser({
         {error && (
           <div className="flex flex-wrap items-center gap-2 px-3 py-2">
             <p className="text-destructive text-sm" role="alert">
-              {error}
+              {error.text}
             </p>
             <Button
               variant="secondary"

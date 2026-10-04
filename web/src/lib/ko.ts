@@ -1295,6 +1295,10 @@ export const ko: Record<string, string> = {
   'Clear all': '모두 지우기',
   'Wipe all data': '모든 데이터 지우기',
   'Wipe the entire vault?': '보관함 전체를 지울까요?',
+  'The folders set aside by the stopped restore go too, unless you put the vault back first.':
+    '먼저 보관함을 되돌려 놓지 않으면 멈춘 복원이 옆에 비켜 둔 폴더도 함께 지워집니다.',
+  'The folders set aside after a restore go too, and a downloaded copy does not hold them.':
+    '복원 뒤 옆에 비켜 둔 폴더도 함께 지워지며, 내려받은 사본에는 들어 있지 않습니다.',
   'Confirm your app password': '앱 비밀번호를 확인하세요',
   Language: '언어',
   'App language': '앱 언어',
@@ -2100,6 +2104,10 @@ export const ko: Record<string, string> = {
     "복원이 옮긴 것을 적은 목록을 읽을 수 없어 아무것도 옮기지 않았습니다. 모든 폴더는 서버에 그대로 있습니다.",
   "Could not keep the restored vault, so the restore can still be undone.":
     "복원한 보관함을 유지하지 못했으므로 복원은 아직 되돌릴 수 있습니다.",
+  "Nothing is set aside.": "비켜 둔 것이 없습니다.",
+  "Could not delete the set-aside folders yet.": "아직 비켜 둔 폴더를 삭제하지 못했습니다.",
+  "A download of the set-aside folders is still running. Try again once it finishes.":
+    "비켜 둔 폴더를 아직 내려받는 중입니다. 내려받기가 끝나면 다시 시도하세요.",
 
   // --- puzzle themes and panel labels --------------------------------------
   "New study": "새 스터디",
@@ -2584,6 +2592,18 @@ export const ko: Record<string, string> = {
   'Put the vault back before downloading or restoring a copy.':
     '사본을 내려받거나 복원하기 전에 보관함을 되돌려 놓으세요.',
   'The vault is back. Reloading…': '보관함을 되돌려 놓았습니다. 다시 불러옵니다…',
+  // What a put-back could not move home stays 옆에 비켜, as the stuck
+  // warning says of the folders a stopped restore set aside.
+  'The vault is back, apart from {folders}, set aside on the server. Reloading…':
+    '보관함을 되돌려 놓았지만 {folders}은(는) 서버에 비켜 두었습니다. 다시 불러옵니다…',
+  'The server keeps {folders} set aside, {size}, because something else had taken their place when the vault was put back.':
+    '보관함을 되돌려 놓을 때 다른 것이 그 자리를 차지하고 있어서, 서버가 {folders}을(를) 옆에 비켜 두었습니다({size}).',
+  'They are not in the vault or in a downloaded copy.': '보관함에도, 내려받은 사본에도 들어 있지 않습니다.',
+  'Download the folders': '비켜 둔 폴더 내려받기',
+  'Delete the folders': '비켜 둔 폴더 삭제',
+  'This deletes {folders} from the server for good and frees {size}. Download them first to keep a copy.':
+    '{folders}을(를) 서버에서 영구히 삭제하고 {size}를 비웁니다. 남겨 두려면 먼저 내려받으세요.',
+  'Deleted. {size} freed.': '삭제했습니다. {size}를 비웠습니다.',
   'Close any other program that has the vault’s files open, such as a sync client, an editor or a terminal in a vault folder, and try again. If it still fails, quit and reopen the app.':
     '동기화 클라이언트나 편집기, 보관함 폴더에서 연 터미널처럼 보관함의 파일을 열어 둔 다른 프로그램을 닫고 다시 시도하세요. 그래도 안 되면 앱을 종료했다가 다시 여세요.',
   'Close any program on the server that has the vault’s files open, such as a sync client, an editor or a terminal in a vault folder, and try again. If it still fails, restart the server, or ask whoever runs it to.':
