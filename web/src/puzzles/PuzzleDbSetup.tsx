@@ -40,6 +40,9 @@ export interface BuildStatus {
   /** A dump is in place beside the database, which the next build can
       use instead of downloading. */
   dumpInPlace?: boolean;
+  /** How big that dump is, null where there is none: what Settings'
+      question names before deleting it. */
+  dumpBytes?: number | null;
 }
 
 /** What went wrong last: a build that failed, or a start the server
@@ -347,6 +350,9 @@ export function usePuzzleBuild(onReady: () => void): {
   failed: BuildProblem | null;
   /** `download`: the newest set, past a dump in place (PuzzleBuildButton). */
   start: (download?: boolean) => Promise<void>;
+  /** Ask now rather than at the next tick: Settings, once it has deleted
+      the dump, so its question stops offering it at once. */
+  refresh: () => void;
 } {
   const [status, setStatus] = useState<BuildStatus | null>(null);
   const [starting, setStarting] = useState(false);
@@ -417,7 +423,7 @@ export function usePuzzleBuild(onReady: () => void): {
     setStarting(false);
   };
 
-  return { status, starting, failed, start };
+  return { status, starting, failed, start, refresh: () => void poll() };
 }
 
 /**
@@ -491,6 +497,14 @@ export function PuzzleBuildProgress({ status }: { status: BuildStatus | null }) 
  * for, so its first words are already the right ones; the build's own
  * status takes over once it is read, and follows a dump put there or
  * taken away while the page is open.
+ *
+ * It offers no way to delete that dump, which Settings' Puzzle database
+ * card does. This screen is the way to a database, and the way past a
+ * stale dump is already in its question: the newest puzzles, which
+ * delete the dump only once the new database is built, so a download
+ * that fails still leaves the dump to build from. Deleting it first,
+ * for the disk, is a choice about what the server keeps, and that card
+ * is where the app names what it keeps and lets it go.
  */
 export function PuzzleDbSetup({ onReady, dumpInPlace: metaDump = false }: { onReady: () => void; dumpInPlace?: boolean }) {
   const { status, starting, failed, start } = usePuzzleBuild(onReady);

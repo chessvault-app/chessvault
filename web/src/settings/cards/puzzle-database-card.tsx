@@ -1,5 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Download, Hammer, Puzzle, RefreshCw, RotateCcw } from 'lucide-react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { Download, Hammer, Puzzle, RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
+import { PUZZLE_DUMP_PLACED } from '@shared/puzzleBuild';
+import { ConfirmDialog } from '@/components/confirm-dialog';
 import { Skeleton } from '@/components/skeletons';
 import { SETTINGS_LIST, SettingsCard as Card } from '@/settings/SettingsPage.skeleton';
 import {
@@ -11,10 +13,11 @@ import {
   retryPrefersDownload,
   usePuzzleBuild,
 } from '@/puzzles/PuzzleDbSetup';
-import { api, apiRefusal } from '@/lib/api';
+import { announce } from '@/lib/announce';
+import { api, apiErrorMessage, apiRefusal } from '@/lib/api';
 import { formatAgo } from '@/lib/dates';
 import { t } from '@/lib/i18n';
-import { Feedback } from '@/settings/cards/shared';
+import { Feedback, size, type Note } from '@/settings/cards/shared';
 
 /** What /api/puzzles/meta says about the file itself, and about a dump
     in place beside it. */
@@ -23,6 +26,7 @@ interface Installed {
   puzzles?: number;
   builtAt?: string | null;
   dumpInPlace?: boolean;
+  dumpBytes?: number | null;
 }
 
 /**
@@ -64,7 +68,13 @@ export function PuzzleDatabaseCard() {
     void api<Installed>('/api/puzzles/meta')
       .then((m) => {
         setRefusal(null);
-        setDb({ ready: m.ready, puzzles: m.puzzles, builtAt: m.builtAt ?? null, dumpInPlace: m.dumpInPlace === true });
+        setDb({
+          ready: m.ready,
+          puzzles: m.puzzles,
+          builtAt: m.builtAt ?? null,
+          dumpInPlace: m.dumpInPlace === true,
+          dumpBytes: m.dumpBytes ?? null,
+        });
       })
       .catch((e: unknown) => {
         setRefusal(apiRefusal(e));
@@ -74,7 +84,7 @@ export function PuzzleDatabaseCard() {
   useEffect(() => read(), [read]);
 
   // A finished build is the moment the figures change.
-  const { status, starting, failed, start } = usePuzzleBuild(read);
+  const { status, starting, failed, start, refresh } = usePuzzleBuild(read);
   const running = status?.running === true;
   // What went wrong last, whether it went wrong here or before this page
   // was opened: the server keeps the last build's error until the next
@@ -84,6 +94,58 @@ export function PuzzleDatabaseCard() {
   // The build's status follows the folder from its first poll on; until
   // then, what the meta said, which the figures wait for anyway.
   const dumpInPlace = status?.dumpInPlace ?? installed?.dumpInPlace ?? false;
+  const dumpBytes = status ? (status.dumpBytes ?? null) : (installed?.dumpBytes ?? null);
+  // The page's own measure (Storage used, Tablebase), or a dash where the
+  // server could not say.
+  const dumpSize = dumpBytes === null ? '—' : size(dumpBytes);
+  // In the question's sentence the number keeps its unit: at 1280 wide
+  // the English one broke "(35" from "kB)" across two lines.
+  const askedSize = dumpSize.replace(' ', '\u00a0');
+
+  /**
+   * Deleting the dump in place, the second row's bin.
+   *
+   * A build keeps the dump, and only one asked for the newest set deleted
+   * it, after building. So the 300 MB stayed on a server whose database
+   * was built, and a first build read a stale dump unless its question
+   * was answered the other way, with nothing in the app to let it go:
+   * only the server's disk could. The server refuses while a build runs
+   * (one is reading it, or will delete it itself), and the bin waits
+   * meanwhile, described by the progress under the rows.
+   */
+  const [deleting, setDeleting] = useState(false);
+  const [note, setNote] = useState<Note>(null);
+  const progressId = useId();
+  const listRef = useRef<HTMLDivElement>(null);
+  /** A delete went through and its row is going: see the effect below. */
+  const refocus = useRef(false);
+  const deleteDump = async (): Promise<void> => {
+    setDeleting(true);
+    setNote(null);
+    try {
+      await api('/api/puzzles/dump', { method: 'DELETE' });
+      refocus.current = true;
+      announce(t('Puzzle dump deleted.'));
+    } catch (e) {
+      setNote({ kind: 'error', text: apiErrorMessage(e) });
+    }
+    // Read again whatever the answer. Gone, every word the card adapts
+    // to the dump turns at once, the question included, rather than at
+    // the next poll; refused, the dump may be gone all the same (deleted
+    // from another device), and the row must not stay to be refused again.
+    read();
+    refresh();
+    setDeleting(false);
+  };
+  // The bin had the focus, given back to it as the question closed, and
+  // the row it sat on is gone: the focus would fall to the page's top.
+  // It goes to the card's build button, which is what is left to do.
+  useEffect(() => {
+    if (dumpInPlace || !refocus.current) return;
+    refocus.current = false;
+    if (document.activeElement && document.activeElement !== document.body) return;
+    listRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus();
+  }, [dumpInPlace]);
 
   // How many, and how old: the age is what a rebuild is for. An em dash
   // for a read that failed, as Storage used draws an area it could not
@@ -114,7 +176,7 @@ export function PuzzleDatabaseCard() {
               ? t('The Lichess puzzles the trainer draws from. Rebuild it from the puzzle dump in its folder, or from a download of the ones added since.')
               : t('The Lichess puzzles the trainer draws from. Rebuild it to get the ones added since.')}
       </p>
-      <div className={SETTINGS_LIST}>
+      <div ref={listRef} className={SETTINGS_LIST}>
         <div className="flex items-center gap-2 py-(--row-py-dense) pl-3 pr-1.5">
           {/* Under sm the figures go under the name: beside it and a
               labelled button, a 390px phone had the name down to "Lic…". */}
@@ -185,10 +247,49 @@ export function PuzzleDatabaseCard() {
             />
           )}
         </div>
+        {refusal === null && dumpInPlace && (
+          // The dump in place, wherever there is one: named, measured and
+          // let go of on its own row, the way this page shows everything
+          // it holds (Tablebase's cached answers, Browsed games). Gone,
+          // the lead above, the build's question, the Puzzles page and
+          // its hub and Themes all read as with no dump: they follow the
+          // same answer.
+          <div className="flex items-center gap-2 py-(--row-py-dense) pl-3 pr-1.5">
+            <div className="flex min-w-0 flex-1 items-baseline gap-2 max-sm:flex-col max-sm:items-start max-sm:gap-0">
+              <p className="min-w-0 flex-1 truncate type-row max-sm:max-w-full">{t('Puzzle dump')}</p>
+              <p className="text-muted-foreground shrink-0 type-row-sub tabular-nums">{dumpSize}</p>
+            </div>
+            {/* Asked, unlike the cache bins on this page: the file may be
+                one somebody put there, and the question names it, its
+                size and what goes with it. Red, as a delete is. */}
+            <ConfirmDialog
+              icon={Trash2}
+              triggerTitle="Delete the puzzle dump"
+              triggerTone="quiet"
+              triggerClassName="shrink-0"
+              disabled={starting || running || deleting}
+              triggerDescribedBy={running ? progressId : undefined}
+              question={
+                installed?.ready === true
+                  ? t(
+                      'Delete the puzzle dump {file} ({size})? The puzzle database keeps working, and the next rebuild downloads the newest puzzles, about 300 MB.',
+                      { file: PUZZLE_DUMP_PLACED, size: askedSize },
+                    )
+                  : t(
+                      'Delete the puzzle dump {file} ({size})? Building the database then downloads the newest puzzles, about 300 MB.',
+                      { file: PUZZLE_DUMP_PLACED, size: askedSize },
+                    )
+              }
+              confirmLabel="Delete"
+              onConfirm={() => void deleteDump()}
+            />
+          </div>
+        )}
       </div>
       {running && (
-        // One block, so a phone's settings group draws it as one row.
-        <div className="flex flex-col gap-2">
+        // One block, so a phone's settings group draws it as one row. It
+        // is also why the dump's bin waits, and describes it meanwhile.
+        <div id={progressId} className="flex flex-col gap-2">
           <PuzzleBuildProgress status={status} />
         </div>
       )}
@@ -196,7 +297,7 @@ export function PuzzleDatabaseCard() {
           own; it was the builder's last line passed through t(), which
           knew none of them. */}
       {error && <BuildProblemNote problem={error} source={status?.source} />}
-      <Feedback note={refusal === null ? null : { kind: 'error', text: refusal }} />
+      <Feedback note={refusal === null ? note : { kind: 'error', text: refusal }} />
     </Card>
   );
 }
